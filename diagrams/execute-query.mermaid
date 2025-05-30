@@ -1,0 +1,46 @@
+sequenceDiagram
+    participant OutputAppClient
+    participant OutputAppServer
+    participant QueryExecutor
+    participant API(Proxy)
+    participant SecureVault
+    participant ClientDB
+
+    Note over OutputAppClient: Initial Load
+    OutputAppClient->>OutputAppServer: Loader Request
+    Note over OutputAppServer: Query strings are stored and executed only on server side, never reaching client
+    OutputAppServer->>QueryExecutor: execute queries in parallel
+    
+    loop For each query
+        alt Production Environment (Deployed)
+            QueryExecutor->>QueryExecutor: Get Connection Successtring from .env
+            QueryExecutor->>ClientDB: Execute Query
+            ClientDB-->>QueryExecutor: Query Result
+        else Development Environment (In Builder)
+            QueryExecutor->>API(Proxy): POST /api/execute-query
+            API(Proxy)->>SecureVault: Get DB Connection String
+            SecureVault-->>API(Proxy): Return Connection String
+            API(Proxy)->>ClientDB: Execute Query
+            ClientDB-->>API(Proxy): Query Result
+            API(Proxy)-->>QueryExecutor: Query Result
+        end
+
+        alt Query Success
+            QueryExecutor->>QueryExecutor: Format Result (QueryData wrapper object)
+        else Query Error
+            QueryExecutor->>QueryExecutor: Format Error (QueryData wrapper with error fields)
+        end
+    end
+
+    Note over OutputAppServer,OutputAppClient: Server Response
+    OutputAppServer-->>OutputAppClient: Loader Data
+
+    Note over OutputAppClient: Render UI
+    loop For each query result
+        OutputAppClient->>OutputAppClient: Check isError
+        alt No Error
+            OutputAppClient->>OutputAppClient: Render Component With Data
+        else Has Error
+            OutputAppClient->>OutputAppClient: Show Error Component
+        end
+    end

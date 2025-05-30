@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Issues
+    url: https://github.com/liblaber/liblab.ai/issues
+    about: Report bugs, request features, or discuss project-related topics
+  - name: 📧 General Inquiries
+    url: mailto:community@liblab.ai
+    about: Contact us directly for general questions or concerns

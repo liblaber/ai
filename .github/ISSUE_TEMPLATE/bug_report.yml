@@ -1,0 +1,150 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior in liblab.ai
+title: '[Bug]: '
+labels: ['bug', 'needs-triage']
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug! This helps us improve liblab.ai for everyone.
+
+        Before submitting, please:
+        1. Search existing issues to avoid duplicates
+        2. Make sure you're using the latest version
+        3. Include as much detail as possible
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe what happened and what you expected to happen instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the bug.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Enter '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should have happened instead?
+      placeholder: Describe the expected behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: What environment are you using?
+      options:
+        - Local Development
+        - Production/Deployed
+        - Docker Container
+        - Other (specify in additional context)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of liblab.ai are you using? (Check package.json or about page)
+      placeholder: '0.0.1'
+    validations:
+      required: false
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      description: Which browser are you using?
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Edge
+        - Other (specify in additional context)
+    validations:
+      required: false
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you using?
+      placeholder: 'macOS 14.0, Windows 11, Ubuntu 22.04, etc.'
+    validations:
+      required: false
+
+  - type: input
+    id: node_version
+    attributes:
+      label: Node.js Version
+      description: What version of Node.js? (run `node --version`)
+      placeholder: 'v18.17.0'
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Include any relevant error messages, console logs, or stack traces.
+      placeholder: Paste error logs here...
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain the problem.
+      placeholder: Drag and drop images here or paste them directly.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Any other information that might be relevant.
+      placeholder: Add any other context about the problem here.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched for existing issues that might be related
+          required: true
+        - label: I have provided all the required information above
+          required: true
+        - label: I am willing to help test a fix if needed
+          required: false

@@ -1,0 +1,90 @@
+import type { AppLoadContext } from '@remix-run/cloudflare';
+import { RemixServer } from '@remix-run/react';
+import { isbot } from 'isbot';
+
+// @ts-ignore https://bun.sh/guides/ecosystem/ssr-react#:~:text=If%20you%20run%20into%20an,react%2328941%20for%20more%20information.
+import { renderToReadableStream } from 'react-dom/server.browser';
+import { renderHeadToString } from 'remix-island';
+import { Head } from './root';
+import { cors } from 'remix-utils/cors';
+
+export default async function handleRequest(
+  request: Request,
+  responseStatusCode: number,
+  responseHeaders: Headers,
+  remixContext: any,
+  _loadContext: AppLoadContext,
+) {
+  if (request.method === 'OPTIONS') {
+    return cors(request, new Response(null, { status: 204 }), {
+      origin: '*',
+    });
+  }
+
+  const readable = await renderToReadableStream(<RemixServer context={remixContext} url={request.url} />, {
+    signal: request.signal,
+    onError(error: unknown) {
+      console.error(error);
+      responseStatusCode = 500;
+    },
+  });
+
+  const body = new ReadableStream({
+    start(controller) {
+      const head = renderHeadToString({ request, remixContext, Head });
+
+      controller.enqueue(
+        new Uint8Array(
+          new TextEncoder().encode(
+            `<!DOCTYPE html><html lang="en" data-theme="dark"><head>${head}</head><body><div id="root" class="w-full h-full">`,
+          ),
+        ),
+      );
+
+      const reader = readable.getReader();
+
+      function read() {
+        reader
+          .read()
+          .then(({ done, value }: any) => {
+            if (done) {
+              controller.enqueue(new Uint8Array(new TextEncoder().encode('</div></body></html>')));
+              controller.close();
+
+              return;
+            }
+
+            controller.enqueue(value);
+            read();
+          })
+          .catch((error: any) => {
+            controller.error(error);
+            readable.cancel();
+          });
+      }
+      read();
+    },
+
+    cancel() {
+      readable.cancel();
+    },
+  });
+
+  if (isbot(request.headers.get('user-agent') || '')) {
+    await readable.allReady;
+  }
+
+  responseHeaders.set('Content-Type', 'text/html');
+
+  responseHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp');
+  responseHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
+
+  const response = new Response(body, {
+    headers: responseHeaders,
+    status: responseStatusCode,
+  });
+
+  return await cors(request, response, {
+    origin: '*',
+  });
+}

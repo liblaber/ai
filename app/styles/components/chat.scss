@@ -1,0 +1,209 @@
+.BaseChat[data-chat-visible='false'] {
+  --workbench-inner-width: 100%;
+  --workbench-left: 0;
+
+  .Chat {
+    --at-apply: liblab-ease-cubic-bezier;
+    transition-property: transform, opacity;
+    transition-duration: 0.3s;
+    will-change: transform, opacity;
+    transform: translateX(-50%);
+    opacity: 0;
+  }
+}
+
+.Chat {
+  opacity: 1;
+}
+
+.PromptEffectContainer {
+  --prompt-container-offset: 50px;
+  --prompt-line-stroke-width: 1px;
+  position: absolute;
+  pointer-events: none;
+  inset: calc(var(--prompt-container-offset) / -2);
+  width: calc(100% + var(--prompt-container-offset));
+  height: calc(100% + var(--prompt-container-offset));
+}
+
+.PromptEffectLine {
+  width: calc(100% - var(--prompt-container-offset) + var(--prompt-line-stroke-width));
+  height: calc(100% - var(--prompt-container-offset) + var(--prompt-line-stroke-width));
+  x: calc(var(--prompt-container-offset) / 2 - var(--prompt-line-stroke-width) / 2);
+  y: calc(var(--prompt-container-offset) / 2 - var(--prompt-line-stroke-width) / 2);
+  rx: calc(8px - var(--prompt-line-stroke-width));
+  fill: transparent;
+  stroke-width: var(--prompt-line-stroke-width);
+  stroke: url(#line-gradient);
+  stroke-dasharray: 35px 65px;
+  stroke-dashoffset: 10;
+}
+
+.PromptShine {
+  fill: url(#shine-gradient);
+  mix-blend-mode: overlay;
+}
+
+.CopyButtonContainer {
+  button:before {
+    content: 'Copied';
+    font-size: 12px;
+    position: absolute;
+    left: -53px;
+    padding: 2px 6px;
+    height: 30px;
+  }
+}
+
+$font-mono: ui-monospace, 'Fira Code', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+$code-font-size: 13px;
+
+.MarkdownContent {
+  line-height: 1.6;
+  color: var(--liblab-elements-textPrimary);
+
+  > *:not(:last-child) {
+    margin-block-end: 16px;
+  }
+
+  :global(.artifact) {
+    margin: 1.5em 0;
+  }
+
+  :is(h1, h2, h3, h4, h5, h6):not(:has(:global(.actions)), :global(.actions *)) {
+    margin-block-start: 24px;
+    margin-block-end: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--liblab-elements-textPrimary);
+  }
+
+  h1 {
+    font-size: 2em;
+    border-bottom: 1px solid var(--liblab-elements-borderColor);
+    padding-bottom: 0.3em;
+  }
+
+  h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid var(--liblab-elements-borderColor);
+    padding-bottom: 0.3em;
+  }
+
+  h3 {
+    font-size: 1.25em;
+  }
+
+  h4 {
+    font-size: 1em;
+  }
+
+  h5 {
+    font-size: 0.875em;
+  }
+
+  h6 {
+    font-size: 0.85em;
+    color: #6a737d;
+  }
+
+  p {
+    white-space: pre-wrap;
+
+    &:not(:last-of-type) {
+      margin-block-start: 0;
+      margin-block-end: 16px;
+    }
+  }
+
+  a {
+    color: var(--liblab-elements-messages-linkColor);
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  :not(pre) > code:not(:has(:global(.actions)), :global(.actions *)) {
+    font-family: $font-mono;
+    font-size: $code-font-size;
+    border-radius: 6px;
+    padding: 0.2em 0.4em;
+    background-color: var(--liblab-elements-messages-inlineCode-background);
+    color: var(--liblab-elements-messages-inlineCode-text);
+  }
+
+  pre {
+    padding: 20px 16px;
+    border-radius: 6px;
+
+    &:has(> code) {
+      font-family: $font-mono;
+      font-size: $code-font-size;
+      background: transparent;
+      overflow-x: auto;
+      min-width: 0;
+    }
+  }
+
+  blockquote {
+    margin: 0;
+    padding: 0 1em;
+    color: var(--liblab-elements-textTertiary);
+    border-left: 0.25em solid var(--liblab-elements-borderColor);
+  }
+
+  :is(ul, ol):not(:has(:global(.actions)), :global(.actions *)) {
+    padding-left: 2em;
+    margin-block-start: 0;
+    margin-block-end: 16px;
+  }
+
+  ul:not(:has(:global(.actions)), :global(.actions *)) {
+    list-style-type: disc;
+  }
+
+  ol:not(:has(:global(.actions)), :global(.actions *)) {
+    list-style-type: decimal;
+  }
+
+  li:not(:has(:global(.actions)), :global(.actions *)) {
+    & + li {
+      margin-block-start: 8px;
+    }
+
+    > *:not(:last-child) {
+      margin-block-end: 16px;
+    }
+  }
+
+  img {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: var(--liblab-elements-borderColor);
+    border: 0;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-block-end: 16px;
+
+    :is(th, td) {
+      padding: 6px 13px;
+      border: 1px solid #dfe2e5;
+    }
+
+    tr:nth-child(2n) {
+      background-color: #f6f8fa;
+    }
+  }
+}

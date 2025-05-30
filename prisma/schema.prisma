@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./liblab.db"
+}
+
+model DataSource {
+  id        String   @id @default(cuid())
+  name      String
+  type      String
+  host      String
+  port      Int
+  username  String
+  database  String
+  password  String
+  sslMode   String   @default("DISABLE") @map("ssl_mode")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("data_source")
+}
+
+model Website {
+  id        String   @id @default(cuid())
+  siteId    String?  @map("site_id")
+  siteName  String?  @map("site_name")
+  siteUrl   String?  @map("site_url")
+  chatId    String   @map("chat_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  isPublic  Boolean  @default(false) @map("is_public")
+
+  @@map("website")
+}
+
+model SchemaCache {
+  id             String   @id @default(cuid())
+  connectionHash String   @unique @map("connection_hash")
+  schemaData     String   @map("schema_data")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("schema_cache")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  content        String
+  model          String
+  inputTokens    Int
+  outputTokens   Int
+  finishReason   String
+  role           String       @default("USER") @map("role")
+  createdAt      DateTime     @default(now())
+
+  @@map("message")
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  messages  Message[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("conversation")
+}

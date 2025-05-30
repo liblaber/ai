@@ -1,0 +1,161 @@
+This project is implemented in Remix + Vite technology.
+Every generated file needs to be COMPLETE and must follow framework rules.
+When user requests new page initially, always implement it as a homepage. For subsequent requests, pay attention to the user requests and if it is a new page, add sidebar to enable app navigation.
+
+Follow these steps to create components:
+
+1. Component Structure:
+   - Use the existing components from app/components/ui and app/components/building-blocks
+   - For charts, use the recharts library in combination with the shadcn chart component
+   - Utilize the QuickInfoCard for metric display cards
+   - Implement UniversalTitle for metric titles and descriptions
+   - Always add colors in chart config
+   - For chart colors, use CSS variables with the following pattern:
+     - Fill color: `var(--chart-{number})` (e.g., `var(--chart-1)`, `var(--chart-2)`, etc.)
+     - Stroke color: `var(--chart-{number}-stroke)` (e.g., `var(--chart-1-stroke)`, `var(--chart-2-stroke)`, etc.)
+     - Number should be between 1 and 10
+     - Example usage in a chart component:
+       ```typescript
+       <Area
+         type="monotone"
+         dataKey="value"
+         stroke="var(--chart-1-stroke)"
+         fill="var(--chart-1)"
+         fillOpacity={0.3}
+       />
+       ```
+
+2. Technology Stack:
+   - This project is implemented in Remix + Vite technology. Stick to the Remix framework conventions!
+   - Use Tailwind for styling
+   - Use lucide-react for icons
+
+3. Layout:
+   - The Layout component is defined in app/components/layout/layout.tsx. This is the ONLY file where global layout changes should be made.
+   - IMPORTANT: NEVER modify app/root.tsx directly. The root.tsx file is strictly for:
+     * Error boundary handling
+     * App initialization
+     * Core Remix exports
+     * Basic routing setup
+   - When implementing layout changes (e.g., adding sidebar, header, navigation), you MUST:
+     * Make all changes in app/components/layout/layout.tsx
+     * Keep the Layout component as the single source of truth for global layout
+     * Maintain the existing HTML structure and Remix components (Meta, Links, Scripts, etc.)
+   - Homepage is always implemented in app/routes/_index.tsx
+
+4. Data Handling:
+   - Write raw SQL queries based on already defined guidelines
+   - Use executePostgresQuery from app/db/execute-query.ts to execute queries
+   - Always type your API responses
+   - Transform data values appropriately (e.g., milliseconds to seconds, decimals to percentages)
+   - IMPORTANT: If the query returns data that will be used for charts, limit result set to max 10 items to avoid large responses that are impossible to display in the charts. If the user is explicit enough, and wants more results, then do not limit the query.
+   - VERY IMPORTANT: For tables, use pagination.
+   - IMPORTANT: Colocate query, types, and component markup in a SINGLE file:
+     - Define the SQL query as a constant string, ALWAYS include "query" as part of the constant name (e.g. userGrowthQuery)
+     - Define TypeScript types for the query response
+     - Create the component that uses the data
+     - Example structure in a single file (e.g., UserGrowthChart.tsx):
+       ```typescript
+       // Types and query definition
+       export type UserGrowthData = {
+         month: string;
+         new_users: number;
+       };
+
+       export const userGrowthQuery = `
+         SELECT
+           DATE_TRUNC('month', created_at) as month,
+           COUNT(*) as new_users
+         FROM users
+         WHERE created_at >= NOW() - INTERVAL '6 months'
+         GROUP BY DATE_TRUNC('month', created_at)
+         ORDER BY month ASC
+       `;
+
+       // Component implementation
+       interface UserGrowthChartProps {
+         data: UserGrowthData[];
+       }
+
+       export function UserGrowthChart({ data }: UserGrowthChartProps) {
+         // Component implementation
+         return (
+           <div>
+             {/* Component JSX */}
+           </div>
+         );
+       }
+       ```
+
+5. Imports:
+   - Always import queries from components directly using their original name (e.g. import { userGrowthQuery } from '@/routes/analytics-dashboard/components/UserGrowthChart';)
+   - Always import ONLY existing lucide react icons. If you are not sure if the icon exists, omit using it.
+
+6. Error Handling:
+   - Always use WithErrorHandling component for each query result
+   - DO NOT change WithErrorHandling component!
+   - The component handles both error and loading states
+   - Example usage:
+     ```typescript
+     <WithErrorHandling
+       queryData={queryResult}
+       render={(data) => <YourComponent data={data} />}
+     />
+     ```
+
+7. Styling Instructions
+  - For any charts like Area Chart, Bar Chart, Line Chart, Pie Chart, Radar Chart, or Radial Chart use the shadcn chart component and follow component principles (https://ui.shadcn.com/docs/components/chart).
+  - A chart must not be wider or higher than the container it is in. It should be responsive and adapt to the container's width. Don't set explicit width or height, it produces a chart that is going out of the bounds of the container.
+  - Use the correct color variable pattern for charts (var(--chart-{number}) and var(--chart-{number}-stroke)). When displaying success or error data, use var(--chart-success) and var(--chart-success-stroke) or var(--chart-error) and var(--chart-error-stroke)
+  - When generating Area component, pay attention to stackId parameter which should be unique to have all values displayed correctly
+
+8. Best Practices:
+   - Use TypeScript for type safety
+   - Keep components focused and single-responsibility
+   - Include descriptive comments for complex logic
+   - Maintain consistent error handling patterns
+   - Ensure proper type definitions for all query responses
+   - Follow the colocation pattern for queries, types, and components in a single file
+
+9. More Complex Data Handling:
+In some cases, you may need to build dynamic, interactive components like tables with pagination, filtering, or live updates. For these scenarios:
+   - Use a separate resource route (e.g. resources.builds.ts) to handle the dynamic data fetching logic.
+   - Use the useFetcher hook to interact with the resource route from your component.
+   - Place fetcher logic in the parent component, and pass the fetcher's result to the UI via the WithErrorHandling component.
+   - Refetch the data by reacting to the event produced by the child component (e.g. handleBuildsTableFiltersChange)
+
+10. Page Implementation:
+   - Execute queries in the main page loader function
+   - Use Promise.all for parallel query execution
+   - Wrap each query result with WithErrorHandling component
+
+   - Example structure:
+     ```typescript
+     export async function loader() {
+       const [data1, data2] = await Promise.all([
+         executePostgresQuery<Type1>(query1),
+         executePostgresQuery<Type2>(query2),
+       ]);
+       return { data1, data2 };
+     }
+
+     export default function Page() {
+       const { data1, data2 } = useLoaderData<typeof loader>();
+       return (
+         <div>
+           <WithErrorHandling queryData={data1} render={(data) => <Component1 data={data} />} />
+           <WithErrorHandling queryData={data2} render={(data) => <Component2 data={data} />} />
+         </div>
+       );
+     }
+     ```
+
+    - When importing pages in _index.tsx, use the following import pattern:
+      ```typescript
+      import Page, { loader as pageLoader } from './page';
+      ```
+
+INSTRUCTION REMINDER
+- Ensure that your implementation follows all the guidelines and best practices outlined above.
+- Pay special attention to responsive design, proper error handling, and clear, concise code structure.
+- Always write COMPLETE files, even when a simple change is needed. Never truncate generated output!
