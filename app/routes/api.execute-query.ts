@@ -1,7 +1,7 @@
 import { executePostgresQuery } from '~/lib/database';
 import type { ActionFunctionArgs } from '@remix-run/cloudflare';
 import { json } from '@remix-run/cloudflare';
-import { decryptData } from '~/lib/encryption';
+import { decryptData, encryptData } from '~/lib/encryption';
 
 interface EncryptedRequestBody {
   encryptedData: string;
@@ -34,7 +34,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     const resultData = await executePostgresQuery(databaseUrl, query, params);
 
-    return json(resultData, { headers: { 'Content-Type': 'application/json' } });
+    const encryptedResponse = encryptData(resultData);
+
+    return json({ encryptedData: encryptedResponse }, { headers: { 'Content-Type': 'application/json' } });
   } catch (error: any) {
     console.error('Failed to execute query', error);
     return json({ error: `Failed to execute query: ${error?.message}` }, { status: 500 });
