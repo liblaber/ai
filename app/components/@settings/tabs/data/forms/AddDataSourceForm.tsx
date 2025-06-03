@@ -52,7 +52,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
           formData.append(key, value?.toString() || '');
         });
 
-        const response = await fetch('/api/data-sources/test', {
+        const response = await fetch('/api/data-sources/testing', {
           method: 'POST',
           body: formData,
         });

@@ -1,6 +1,7 @@
 import { json } from '@remix-run/cloudflare';
 import pg from 'pg';
 import { getSslModeConfig } from '~/utils/sslModeConfig';
+import { prisma } from '~/lib/prisma';
 
 export async function action({ request }: { request: Request }) {
   if (request.method !== 'POST') {
@@ -23,7 +24,7 @@ export async function action({ request }: { request: Request }) {
     }
 
     // TODO: @skos fetch password from storage if not present
-    const passwordValue = decodeURIComponent(password ?? '');
+    const passwordValue = decodeURIComponent(password ?? '') || (await getPassword(id));
 
     // For PostgreSQL, we'll use the node-postgres client to test the connection
     if (type === 'postgres') {
@@ -66,4 +67,19 @@ export async function action({ request }: { request: Request }) {
       { status: 500 },
     );
   }
+}
+
+async function getPassword(dataSourceId: string): Promise<string> {
+  const dataSource = await prisma?.dataSource.findUnique({
+    where: { id: dataSourceId },
+    select: {
+      password: true,
+    },
+  });
+
+  if (!dataSource) {
+    throw new Error('No password provided for datasource');
+  }
+
+  return dataSource.password;
 }

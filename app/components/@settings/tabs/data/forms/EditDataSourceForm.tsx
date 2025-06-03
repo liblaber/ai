@@ -95,7 +95,7 @@ export default function EditDataSourceForm({
             formData.append(key, value?.toString() || '');
           });
 
-        const response = await fetch('/api/data-sources/edit/test', {
+        const response = await fetch('/api/data-sources/edit/testing', {
           method: 'POST',
           body: formData,
         });
