@@ -1,6 +1,7 @@
-import type { BaseAccessor } from '../baseAccessor';
+import { BaseAccessor } from '../baseAccessor';
 import type { Table } from '../../types';
 import Database from 'better-sqlite3';
+import type { Database as SQLiteDatabase } from 'better-sqlite3';
 
 interface SqliteTable {
   tableName: string;
@@ -12,17 +13,26 @@ interface SqliteColumn {
   pk: number;
 }
 
-const accessor: BaseAccessor = {
-  async executeQuery(databaseUrl: string, query: string, params?: string[]): Promise<any[]> {
-    const db = new Database(databaseUrl);
+export class SqliteAccessor extends BaseAccessor {
+  private _db: SQLiteDatabase | null = null;
+
+  static override isAccessor(_databaseUrl: string): boolean {
+    return _databaseUrl.endsWith('.db') || _databaseUrl.endsWith('.sqlite') || _databaseUrl.endsWith('.sqlite3');
+  }
+
+  async executeQuery(query: string, params?: string[]): Promise<any[]> {
+    if (!this._db) {
+      throw new Error('Database connection not initialized. Call initialize() first.');
+    }
 
     try {
-      const result = params ? db.prepare(query).all(params) : db.prepare(query).all();
+      const result = params ? this._db.prepare(query).all(params) : this._db.prepare(query).all();
       return result;
-    } finally {
-      db.close();
+    } catch (error) {
+      console.error('Error executing query:', error);
+      throw new Error((error as Error)?.message);
     }
-  },
+  }
 
   guardAgainstMaliciousQuery(query: string): void {
     if (!query) {
@@ -50,14 +60,16 @@ const accessor: BaseAccessor = {
     if (forbiddenKeywords.some((keyword) => normalizedQuery.includes(keyword))) {
       throw new Error('SQL query contains forbidden keywords');
     }
-  },
+  }
 
-  async getSchema(databaseUrl: string): Promise<Table[]> {
-    const db = new Database(databaseUrl);
+  async getSchema(): Promise<Table[]> {
+    if (!this._db) {
+      throw new Error('Database connection not initialized. Call initialize() first.');
+    }
 
     try {
       // Get all tables
-      const tables = db
+      const tables = this._db
         .prepare<[], SqliteTable>(
           `
         SELECT name as tableName
@@ -71,7 +83,7 @@ const accessor: BaseAccessor = {
 
       // For each table, get its columns
       for (const table of tables) {
-        const columns = db
+        const columns = this._db
           .prepare<[string], SqliteColumn>(
             `
           PRAGMA table_info(?)
@@ -92,14 +104,24 @@ const accessor: BaseAccessor = {
       }
 
       return result;
-    } finally {
-      db.close();
+    } catch (error) {
+      console.error('Error fetching DB schema:', error);
+      throw new Error((error as Error)?.message);
     }
-  },
+  }
 
-  isAccessor(databaseUrl: string): boolean {
-    return databaseUrl.endsWith('.db') || databaseUrl.endsWith('.sqlite') || databaseUrl.endsWith('.sqlite3');
-  },
-};
+  async initialize(databaseUrl: string): Promise<void> {
+    if (this._db) {
+      await this.close();
+    }
 
-export default accessor;
+    this._db = new Database(databaseUrl);
+  }
+
+  async close(): Promise<void> {
+    if (this._db) {
+      this._db.close();
+      this._db = null;
+    }
+  }
+}

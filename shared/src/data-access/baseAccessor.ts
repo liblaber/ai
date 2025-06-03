@@ -1,9 +1,13 @@
 import type { Table } from '../types';
 
-export interface BaseAccessor {
-  executeQuery: (databaseUrl: string, query: string, params?: string[]) => Promise<any[]>;
-  guardAgainstMaliciousQuery: (query: string) => void;
-  getSchema: (databaseUrl: string) => Promise<Table[]>;
+export abstract class BaseAccessor {
+  static isAccessor(_databaseUrl: string): boolean {
+    return false;
+  }
 
-  isAccessor(databaseUrl: string): boolean;
+  abstract executeQuery(query: string, params?: string[]): Promise<any[]>;
+  abstract guardAgainstMaliciousQuery(query: string): void;
+  abstract getSchema(): Promise<Table[]>;
+  abstract initialize(databaseUrl: string): void | Promise<void>;
+  abstract close(): Promise<void>;
 }

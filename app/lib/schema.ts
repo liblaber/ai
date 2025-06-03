@@ -18,6 +18,9 @@ export const getDatabaseSchema = async (dataSourceId: string): Promise<Table[]> 
     throw new Error('Missing required connection parameters');
   }
 
+  const dataAccessor = DataAccessor.getAccessor(connectionUrl);
+  await dataAccessor.initialize(connectionUrl);
+
   try {
     logger.debug('Trying to get the schema from cache...');
 
@@ -30,8 +33,7 @@ export const getDatabaseSchema = async (dataSourceId: string): Promise<Table[]> 
 
     logger.debug('Schema cache miss, fetching remote schema...');
 
-    const dataAccessor = DataAccessor.getAccessor(connectionUrl);
-    const schema = await dataAccessor.getSchema(connectionUrl);
+    const schema = await dataAccessor.getSchema();
     logger.debug('Remote schema fetched successfully!');
 
     await setSchemaCache(connectionUrl, schema);
@@ -41,6 +43,8 @@ export const getDatabaseSchema = async (dataSourceId: string): Promise<Table[]> 
   } catch (error) {
     logger.error('Error getting database schema:', error);
     throw new Error('Failed to get database schema');
+  } finally {
+    await dataAccessor.close();
   }
 };
 

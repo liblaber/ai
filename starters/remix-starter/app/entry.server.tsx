@@ -5,6 +5,10 @@ import { createReadableStreamFromReadable } from '@remix-run/node';
 import { RemixServer } from '@remix-run/react';
 import * as isbotModule from 'isbot';
 import { renderToPipeableStream } from 'react-dom/server';
+import { setupServerLifecycle } from './lib/server-lifecycle';
+
+// Initialize server lifecycle management
+setupServerLifecycle();
 
 const ABORT_DELAY = 5_000;
 
