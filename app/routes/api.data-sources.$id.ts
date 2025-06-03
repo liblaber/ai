@@ -60,7 +60,7 @@ export async function action({ request, params }: { request: Request; params: { 
     };
 
     if (password) {
-      updateData.password = password;
+      updateData.password = decodeURIComponent(password);
     }
 
     const updatedDataSource = await prisma.dataSource.update({

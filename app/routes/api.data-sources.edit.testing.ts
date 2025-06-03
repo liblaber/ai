@@ -22,13 +22,16 @@ export async function action({ request }: { request: Request }) {
       return json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
+    // TODO: @skos fetch password from storage if not present
+    const passwordValue = decodeURIComponent(password ?? '');
+
     // For PostgreSQL, we'll use the node-postgres client to test the connection
     if (type === 'postgres') {
       const client = new pg.Client({
         host,
         port,
         user: username,
-        password,
+        password: passwordValue,
         database,
         ssl: getSslModeConfig(sslMode),
       });
@@ -40,10 +43,11 @@ export async function action({ request }: { request: Request }) {
 
         return json({ success: true, message: 'Connection successful' });
       } catch (error) {
+        console.error('Error connecting to database:', error);
         return json(
           {
             success: false,
-            message: error instanceof Error ? error.message : 'Failed to connect to database',
+            message: `Failed to connect to database${error instanceof Error ? `: ${error.message}` : ''}`,
           },
           { status: 400 },
         );

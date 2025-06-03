@@ -1,6 +1,12 @@
 import { components } from 'react-select';
 
-const DATASOURCES = [
+export type DataSourceOption = {
+  value: string;
+  label: string;
+  available: boolean;
+};
+
+export const DATASOURCES: DataSourceOption[] = [
   { value: 'sample', label: 'Sample Database', available: true },
   { value: 'postgres', label: 'PostgreSQL', available: true },
   { value: 'mongo', label: 'Mongo', available: false },
