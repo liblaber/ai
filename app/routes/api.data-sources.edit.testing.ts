@@ -23,10 +23,8 @@ export async function action({ request }: { request: Request }) {
       return json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    // TODO: @skos fetch password from storage if not present
     const passwordValue = decodeURIComponent(password ?? '') || (await getPassword(id));
 
-    // For PostgreSQL, we'll use the node-postgres client to test the connection
     if (type === 'postgres') {
       const client = new pg.Client({
         host,
