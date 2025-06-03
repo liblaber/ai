@@ -1,4 +1,4 @@
-import { executePostgresQuery } from '@/db/execute-query';
+import { executeQuery } from '@/db/execute-query';
 import { json } from '@remix-run/cloudflare';
 import {
   BuildCountData,
@@ -27,12 +27,14 @@ export async function action({ request }: { request: Request }) {
       });
     }
 
-    const buildsCount = await executePostgresQuery<BuildCountData>(buildsCountQuery, [status]);
+    const buildsCount = await executeQuery<BuildCountData>(buildsCountQuery, [status]);
+
     if (buildsCount.isError) {
       return json(buildsCount);
     }
 
-    const builds = await executePostgresQuery<BuildData>(buildsQuery, [status, limit.toString(), offset.toString()]);
+    const builds = await executeQuery<BuildData>(buildsQuery, [status, limit.toString(), offset.toString()]);
+
     if (builds.isError) {
       return json(builds);
     }

@@ -76,6 +76,76 @@ pnpm run dev
 
 ---
 
+## 📦 Shared Code and Data Accessors
+
+### Adding Shared Code
+
+The `@shared` directory contains reusable code that can be used across different parts of the application. When adding shared code:
+
+1. Place your code in the appropriate subdirectory under `shared/src/`
+2. Keep shared code independent of the main project's dependencies
+3. Use TypeScript for type safety and better maintainability
+4. Include proper documentation and type definitions
+5. Write unit tests for shared functionality
+
+Example structure:
+
+```
+shared/
+  src/
+    types/         # TypeScript type definitions
+    utils/         # Utility functions
+    constants/     # Shared constants
+    data-access/   # Database accessors
+```
+
+### Creating Data Accessors
+
+Data accessors provide a standardized way to interact with different database types. To add a new data accessor:
+
+1. Create a new file in `shared/src/data-access/accessors/` (e.g., `mysql.ts`)
+2. Implement the `BaseAccessor` interface:
+
+   ```typescript
+   import type { BaseAccessor } from '../baseAccessor';
+
+   const mysql: BaseAccessor = {
+     executeQuery: async (databaseUrl, query, params) => {
+       // Implementation
+     },
+     guardAgainstMaliciousQuery: (query) => {
+       // Implementation
+     },
+     getSchema: async (databaseUrl) => {
+       // Implementation
+     },
+     isAccessor: (databaseUrl) => {
+       // Check if URL is for MySQL
+       return databaseUrl.startsWith('mysql://');
+     },
+   };
+
+   export default mysql;
+   ```
+
+3. Register your accessor in `dataAccessor.ts`:
+
+   ```typescript
+   import mysql from './accessors/mysql';
+
+   const allAccessors = [postgres, sqlite, mysql];
+   ```
+
+Each accessor should:
+
+- Handle database-specific connection logic
+- Implement security measures (e.g., query validation)
+- Provide schema information
+- Support parameterized queries
+- Handle errors appropriately
+
+---
+
 ## 🚀 Deployment
 
 ### Deploy Generated Apps to Netlify

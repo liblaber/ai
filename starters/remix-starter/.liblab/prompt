@@ -133,8 +133,8 @@ In some cases, you may need to build dynamic, interactive components like tables
      ```typescript
      export async function loader() {
        const [data1, data2] = await Promise.all([
-         executePostgresQuery<Type1>(query1),
-         executePostgresQuery<Type2>(query2),
+         executeQuery<Type1>(query1),
+         executeQuery<Type2>(query2),
        ]);
        return { data1, data2 };
      }

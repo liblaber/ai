@@ -1,4 +1,4 @@
-export async function executePostgresQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
+export async function executeQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
   const databaseUrl = decodeURIComponent(process.env.DATABASE_URL || '');
 
   const requestBody = {
@@ -15,9 +15,11 @@ export async function executePostgresQueryThroughProxy<T>(query: string, params?
 
 async function fetchProxyApi<T>(endpoint: string, options: RequestInit = {}): Promise<{ data: T }> {
   const proxyBaseUrl = `${import.meta.env.VITE_API_BASE_URL}/api`;
+
   if (!proxyBaseUrl) {
     throw new Error(`No proxy baseUrl provided`);
   }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -42,6 +44,7 @@ async function fetchProxyApi<T>(endpoint: string, options: RequestInit = {}): Pr
       if (error.name === 'AbortError') {
         throw new ApiRequestError(408, 'Request timeout');
       }
+
       throw new ApiRequestError(500, error.message);
     }
 

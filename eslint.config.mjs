@@ -54,4 +54,11 @@ export default [
       ],
     },
   },
+  // Override for shared directory to allow relative imports
+  {
+    files: ['shared/**/*'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
 ];

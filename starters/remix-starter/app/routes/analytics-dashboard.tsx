@@ -11,7 +11,7 @@ import {
   userGrowthQuery,
 } from '@/routes/analytics-dashboard/components/UserGrowthChart';
 import { BuildData, BuildsTable, BuildStatus } from '@/routes/analytics-dashboard/components/BuildsTable';
-import { executePostgresQuery, QueryData } from '@/db/execute-query';
+import { executeQuery, QueryData } from '@/db/execute-query';
 import { LoaderError } from '@/types/loader-error';
 import { WithErrorHandling } from '@/components/hoc/error-handling-wrapper/error-handling-wrapper';
 import { useEffect } from 'react';
@@ -19,9 +19,9 @@ import { useEffect } from 'react';
 export async function loader(): Promise<AnalyticsDashboardProps | LoaderError> {
   try {
     const [keyMetrics, usersBySignupMethod, userGrowth] = await Promise.all([
-      executePostgresQuery<KeyMetricsData>(keyMetricsQuery),
-      executePostgresQuery<SignupMethodData>(signupMethodQuery),
-      executePostgresQuery<UserGrowthData>(userGrowthQuery),
+      executeQuery<KeyMetricsData>(keyMetricsQuery),
+      executeQuery<SignupMethodData>(signupMethodQuery),
+      executeQuery<UserGrowthData>(userGrowthQuery),
     ]);
 
     return {
