@@ -4,6 +4,8 @@ Build internal apps using AI.
 
 Securely connect your database, build an app, and deploy in seconds.
 
+**🚀 [Jump to Quick Start](#-quick-start)** - Get up and running in minutes!
+
 ![Alt text](/assets/videos/liblab-ai-preview.gif 'liblab ai builder - revenue dashboard')
 
 ### Key features
@@ -14,6 +16,19 @@ Securely connect your database, build an app, and deploy in seconds.
 - Preview your built app live and make edits
 - Download the built app code or connect directly to GitHub
 - Deploy your built app
+
+### Use cases
+
+- **Sales Dashboard**
+  - Generate a live dashboard from your CRM database to track leads, conversions, and rep performance.
+- **Finance Tracker**
+  - Build a financial report viewer that pulls expense and revenue data from your finance DB.
+- **Inventory Management**
+  - Build a tool to view, update, and restock inventory directly from your product database.
+- **Customer Support Tool**
+  - Create an internal app to search, view, and manage customer tickets pulled from your support database.
+- **Admin Portal**
+  - Create a secure interface for non-technical staff to input and edit structured data in your DB.
 
 ## 🔒 Security & Privacy
 
@@ -50,19 +65,6 @@ Local Machine ← Encrypted Response ← Secure Tunnel ← Preview Dashboard
 - ✅ Even if network traffic is intercepted, data remains unreadable
 - ✅ No data is stored on external servers
 - ✅ You maintain complete control over your data access
-
-### Use cases
-
-- **Sales Dashboard**
-  - Generate a live dashboard from your CRM database to track leads, conversions, and rep performance.
-- **Finance Tracker**
-  - Build a financial report viewer that pulls expense and revenue data from your finance DB.
-- **Inventory Management**
-  - Build a tool to view, update, and restock inventory directly from your product database.
-- **Customer Support Tool**
-  - Create an internal app to search, view, and manage customer tickets pulled from your support database.
-- **Admin Portal**
-  - Create a secure interface for non-technical staff to input and edit structured data in your DB.
 
 ---
 
