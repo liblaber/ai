@@ -1,13 +1,15 @@
 import type { Table } from '../types';
 
-export abstract class BaseAccessor {
-  static isAccessor(_databaseUrl: string): boolean {
-    return false;
-  }
+export interface BaseAccessor {
+  executeQuery: (query: string, params?: string[]) => Promise<any[]>;
+  guardAgainstMaliciousQuery: (query: string) => void;
+  getSchema: () => Promise<Table[]>;
+  testConnection: (databaseUrl: string) => Promise<boolean>;
+  initialize: (databaseUrl: string) => void | Promise<void>;
+  close: () => Promise<void>;
+}
 
-  abstract executeQuery(query: string, params?: string[]): Promise<any[]>;
-  abstract guardAgainstMaliciousQuery(query: string): void;
-  abstract getSchema(): Promise<Table[]>;
-  abstract initialize(databaseUrl: string): void | Promise<void>;
-  abstract close(): Promise<void>;
+export interface BaseAccessorConstructor {
+  new (): BaseAccessor;
+  isAccessor(databaseUrl: string): boolean;
 }

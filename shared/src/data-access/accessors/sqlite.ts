@@ -1,7 +1,7 @@
-import { BaseAccessor } from '../baseAccessor';
+import type { BaseAccessor } from '../baseAccessor';
 import type { Table } from '../../types';
-import Database from 'better-sqlite3';
 import type { Database as SQLiteDatabase } from 'better-sqlite3';
+import Database from 'better-sqlite3';
 
 interface SqliteTable {
   tableName: string;
@@ -13,20 +13,32 @@ interface SqliteColumn {
   pk: number;
 }
 
-export class SqliteAccessor extends BaseAccessor {
+export class SqliteAccessor implements BaseAccessor {
   private _db: SQLiteDatabase | null = null;
 
-  static override isAccessor(_databaseUrl: string): boolean {
-    return _databaseUrl.endsWith('.db') || _databaseUrl.endsWith('.sqlite') || _databaseUrl.endsWith('.sqlite3');
+  static isAccessor(databaseUrl: string): boolean {
+    return databaseUrl.endsWith('.db') || databaseUrl.endsWith('.sqlite') || databaseUrl.endsWith('.sqlite3');
+  }
+
+  async testConnection(databaseUrl: string): Promise<boolean> {
+    try {
+      const db = new Database(databaseUrl);
+      db.prepare('SELECT 1').get();
+      db.close();
+
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   async executeQuery(query: string, params?: string[]): Promise<any[]> {
     if (!this._db) {
-      throw new Error('Database connection not initialized. Call initialize() first.');
+      throw new Error('Database connection not initialized. Please call initialize() first.');
     }
 
     try {
-      const result = params ? this._db.prepare(query).all(params) : this._db.prepare(query).all();
+      const result = params ? this._db!.prepare(query).all(params) : this._db!.prepare(query).all();
       return result;
     } catch (error) {
       console.error('Error executing query:', error);
@@ -64,32 +76,28 @@ export class SqliteAccessor extends BaseAccessor {
 
   async getSchema(): Promise<Table[]> {
     if (!this._db) {
-      throw new Error('Database connection not initialized. Call initialize() first.');
+      throw new Error('Database connection not initialized. Please call initialize() first.');
     }
 
     try {
       // Get all tables
-      const tables = this._db
-        .prepare<[], SqliteTable>(
-          `
+      const tables = this._db!.prepare<[], SqliteTable>(
+        `
         SELECT name as tableName
         FROM sqlite_master
         WHERE type='table' AND name NOT LIKE 'sqlite_%'
       `,
-        )
-        .all() as SqliteTable[];
+      ).all() as SqliteTable[];
 
       const result: Table[] = [];
 
       // For each table, get its columns
       for (const table of tables) {
-        const columns = this._db
-          .prepare<[string], SqliteColumn>(
-            `
+        const columns = this._db!.prepare<[string], SqliteColumn>(
+          `
           PRAGMA table_info(?)
         `,
-          )
-          .all(table.tableName) as SqliteColumn[];
+        ).all(table.tableName) as SqliteColumn[];
 
         const tableColumns = columns.map((col) => ({
           name: col.name,

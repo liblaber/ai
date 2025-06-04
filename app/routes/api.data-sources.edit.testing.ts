@@ -1,6 +1,5 @@
 import { json } from '@remix-run/cloudflare';
-import pg from 'pg';
-import { getSslModeConfig } from '~/utils/sslModeConfig';
+import { DataAccessor } from '@liblab/data-access/dataAccessor';
 
 export async function action({ request }: { request: Request }) {
   if (request.method !== 'POST') {
@@ -22,35 +21,38 @@ export async function action({ request }: { request: Request }) {
       return json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    // For PostgreSQL, we'll use the node-postgres client to test the connection
+    let databaseUrl: string;
+
     if (type === 'postgres') {
-      const client = new pg.Client({
-        host,
-        port,
-        user: username,
-        password,
-        database,
-        ssl: getSslModeConfig(sslMode),
-      });
+      databaseUrl = `postgres://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode || 'disable'}`;
+    } else {
+      return json({ error: 'Unsupported database type' }, { status: 400 });
+    }
 
-      try {
-        await client.connect();
-        await client.query('SELECT 1');
-        await client.end();
+    try {
+      const accessor = DataAccessor.getAccessor(databaseUrl);
+      const isConnected = await accessor.testConnection(databaseUrl);
 
+      if (isConnected) {
         return json({ success: true, message: 'Connection successful' });
-      } catch (error) {
+      } else {
         return json(
           {
             success: false,
-            message: error instanceof Error ? error.message : 'Failed to connect to database',
+            message: 'Failed to connect to database',
           },
           { status: 400 },
         );
       }
+    } catch (error) {
+      return json(
+        {
+          success: false,
+          message: error instanceof Error ? error.message : 'Failed to connect to database',
+        },
+        { status: 400 },
+      );
     }
-
-    return json({ success: false, error: 'Unsupported database type' }, { status: 400 });
   } catch (error) {
     console.error('Error testing connection:', error);
     return json(

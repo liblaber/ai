@@ -374,7 +374,7 @@ export function UserGrowthChart({ data }: UserGrowthChartProps) {
         </liblabAction>
 
         <liblabAction type="file" filePath="app/routes/resources.builds.ts">
-import { executePostgresQuery } from '@/db/execute-query';
+import { executeQuery } from '@/db/execute-query';
 import {
   BuildCountData,
   BuildData,
@@ -402,12 +402,12 @@ export async function action({ request }: { request: Request }) {
       });
     }
 
-    const buildsCount = await executePostgresQuery<BuildCountData>(buildsCountQuery, [status]);
+    const buildsCount = await executeQuery<BuildCountData>(buildsCountQuery, [status]);
     if (buildsCount.isError) {
       return Response.json(buildsCount);
     }
 
-    const builds = await executePostgresQuery<BuildData>(buildsQuery, [status, limit.toString(), offset.toString()]);
+    const builds = await executeQuery<BuildData>(buildsQuery, [status, limit.toString(), offset.toString()]);
     if (builds.isError) {
       return Response.json(builds);
     }

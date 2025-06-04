@@ -1,17 +1,17 @@
-import { BaseAccessor } from './baseAccessor';
+import type { BaseAccessor, BaseAccessorConstructor } from './baseAccessor';
 import { PostgresAccessor } from './accessors/postgres';
 import { SqliteAccessor } from './accessors/sqlite';
 
 export class DataAccessor {
   static getAccessor(databaseUrl: string): BaseAccessor {
-    const allAccessors = [PostgresAccessor, SqliteAccessor];
+    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, SqliteAccessor];
 
-    const AccessorClass = allAccessors.find((Accessor) => Accessor.isAccessor(databaseUrl));
+    const accessorClass = allAccessors.find((Acc: BaseAccessorConstructor) => Acc.isAccessor(databaseUrl));
 
-    if (!AccessorClass) {
+    if (!accessorClass) {
       throw new Error(`No accessor found for database URL: ${databaseUrl}`);
     }
 
-    return new AccessorClass();
+    return new accessorClass();
   }
 }
