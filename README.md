@@ -44,7 +44,8 @@ Local Machine ← Encrypted Response ← Secure Tunnel ← Preview Dashboard
 ```
 
 **What this means for you:**
-- ✅ Database credentials never leave your machine  
+
+- ✅ Database credentials never leave your machine
 - ✅ All data transmission is encrypted with your unique key
 - ✅ Even if network traffic is intercepted, data remains unreadable
 - ✅ No data is stored on external servers
