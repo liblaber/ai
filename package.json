@@ -111,6 +111,7 @@
     "jspdf": "^3.0.1",
     "jszip": "^3.10.1",
     "mime": "^4.0.4",
+    "mysql2": "^3.14.1",
     "nanostores": "^0.10.3",
     "netlify": "^13.3.4",
     "ollama-ai-provider": "^0.15.2",

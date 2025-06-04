@@ -7,6 +7,7 @@ export interface BaseAccessor {
   testConnection: (databaseUrl: string) => Promise<boolean>;
   initialize: (databaseUrl: string) => void | Promise<void>;
   close: () => Promise<void>;
+  readonly label: string;
 }
 
 export interface BaseAccessorConstructor {

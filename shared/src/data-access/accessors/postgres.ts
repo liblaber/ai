@@ -8,6 +8,7 @@ typesToParse.forEach((type) => {
 });
 
 export class PostgresAccessor implements BaseAccessor {
+  readonly label = 'PostgreSQL';
   private _pool: Pool | null = null;
 
   static isAccessor(databaseUrl: string): boolean {

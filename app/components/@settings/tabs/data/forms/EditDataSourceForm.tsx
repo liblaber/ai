@@ -1,5 +1,5 @@
 import { classNames } from '~/utils/classNames';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { getFormData } from '~/utils/form';
 import { toast } from 'sonner';
@@ -22,6 +22,11 @@ interface DataSourceResponse {
   message?: string;
 }
 
+interface DatabaseType {
+  value: string;
+  label: string;
+}
+
 interface EditDataSourceFormProps {
   selectedDataSource: DataSource | null;
   isSubmitting: boolean;
@@ -39,7 +44,23 @@ export default function EditDataSourceForm({
 }: EditDataSourceFormProps) {
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
+  const [databaseTypes, setDatabaseTypes] = useState<DatabaseType[]>([]);
   const formRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchDatabaseTypes = async () => {
+      try {
+        const response = await fetch('/api/data-sources/types');
+        const types = (await response.json()) as DatabaseType[];
+        setDatabaseTypes(types);
+      } catch (error) {
+        console.error('Failed to fetch database types:', error);
+        toast.error('Failed to load database types');
+      }
+    };
+
+    fetchDatabaseTypes();
+  }, []);
 
   const handleTestConnection = async () => {
     if (!formRef.current) {
@@ -178,7 +199,11 @@ export default function EditDataSourceForm({
                 'disabled:opacity-50 disabled:cursor-not-allowed',
               )}
             >
-              <option value="postgres">PostgreSQL</option>
+              {databaseTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>

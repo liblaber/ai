@@ -24,6 +24,8 @@ export async function action({ request }: { request: Request }) {
 
     if (type === 'postgres') {
       databaseUrl = `postgres://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode || 'disable'}`;
+    } else if (type === 'mysql') {
+      databaseUrl = `mysql://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode || 'disable'}`;
     } else {
       return json({ error: 'Unsupported database type' }, { status: 400 });
     }

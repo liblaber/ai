@@ -1,30 +1,21 @@
 import type { BaseAccessor } from '../baseAccessor';
 import type { Table } from '../../types';
-import type { Database as SQLiteDatabase } from 'better-sqlite3';
-import Database from 'better-sqlite3';
+import type { Connection } from 'mysql2/promise';
+import mysql from 'mysql2/promise';
 
-interface SqliteTable {
-  tableName: string;
-}
-
-interface SqliteColumn {
-  name: string;
-  type: string;
-  pk: number;
-}
-
-export class SqliteAccessor implements BaseAccessor {
-  private _db: SQLiteDatabase | null = null;
+export class MySQLAccessor implements BaseAccessor {
+  readonly label = 'MySQL';
+  private _connection: Connection | null = null;
 
   static isAccessor(databaseUrl: string): boolean {
-    return databaseUrl.endsWith('.db') || databaseUrl.endsWith('.sqlite') || databaseUrl.endsWith('.sqlite3');
+    return databaseUrl.startsWith('mysql://');
   }
 
   async testConnection(databaseUrl: string): Promise<boolean> {
     try {
-      const db = new Database(databaseUrl);
-      db.prepare('SELECT 1').get();
-      db.close();
+      const connection = await mysql.createConnection(databaseUrl);
+      await connection.query('SELECT 1');
+      await connection.end();
 
       return true;
     } catch (error) {
@@ -33,13 +24,13 @@ export class SqliteAccessor implements BaseAccessor {
   }
 
   async executeQuery(query: string, params?: string[]): Promise<any[]> {
-    if (!this._db) {
+    if (!this._connection) {
       throw new Error('Database connection not initialized. Please call initialize() first.');
     }
 
     try {
-      const result = params ? this._db!.prepare(query).all(params) : this._db!.prepare(query).all();
-      return result;
+      const [rows] = await this._connection.query(query, params);
+      return rows as any[];
     } catch (error) {
       console.error('Error executing query:', error);
       throw new Error((error as Error)?.message);
@@ -75,39 +66,36 @@ export class SqliteAccessor implements BaseAccessor {
   }
 
   async getSchema(): Promise<Table[]> {
-    if (!this._db) {
+    if (!this._connection) {
       throw new Error('Database connection not initialized. Please call initialize() first.');
     }
 
     try {
-      // Get all tables
-      const tables = this._db!.prepare<[], SqliteTable>(
-        `
-        SELECT name as tableName
-        FROM sqlite_master
-        WHERE type='table' AND name NOT LIKE 'sqlite_%'
-      `,
-      ).all() as SqliteTable[];
+      const [tables] = await this._connection.query(`
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = DATABASE()
+      `);
 
       const result: Table[] = [];
 
-      // For each table, get its columns
-      for (const table of tables) {
-        const columns = this._db!.prepare<[string], SqliteColumn>(
+      for (const table of tables as any[]) {
+        const [columns] = await this._connection.query(
           `
-          PRAGMA table_info(?)
+          SELECT
+            column_name as name,
+            data_type as type,
+            column_key = 'PRI' as isPrimary
+          FROM information_schema.columns
+          WHERE table_schema = DATABASE()
+            AND table_name = ?
         `,
-        ).all(table.tableName) as SqliteColumn[];
-
-        const tableColumns = columns.map((col) => ({
-          name: col.name,
-          type: col.type,
-          isPrimary: col.pk === 1,
-        }));
+          [table.table_name],
+        );
 
         result.push({
-          tableName: table.tableName,
-          columns: tableColumns,
+          tableName: table.table_name,
+          columns: columns as any[],
         });
       }
 
@@ -119,17 +107,17 @@ export class SqliteAccessor implements BaseAccessor {
   }
 
   async initialize(databaseUrl: string): Promise<void> {
-    if (this._db) {
+    if (this._connection) {
       await this.close();
     }
 
-    this._db = new Database(databaseUrl);
+    this._connection = await mysql.createConnection(databaseUrl);
   }
 
   async close(): Promise<void> {
-    if (this._db) {
-      this._db.close();
-      this._db = null;
+    if (this._connection) {
+      await this._connection.end();
+      this._connection = null;
     }
   }
 }

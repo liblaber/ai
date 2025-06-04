@@ -24,9 +24,11 @@ type DataSourceOption = {
   available: boolean;
 };
 
+// TODO: pull dynamically?
 const DATASOURCES: DataSourceOption[] = [
   { value: 'sample', label: 'Sample Database', available: true },
   { value: 'postgres', label: 'PostgreSQL', available: true },
+  { value: 'mysql', label: 'MySQL', available: true },
   { value: 'mongo', label: 'Mongo', available: false },
   { value: 'hubspot', label: 'Hubspot', available: false },
   { value: 'salesforce', label: 'Salesfoirce', available: false },
@@ -214,50 +216,51 @@ export default function DataSourceConnectionPage() {
               />
             </div>
           </div>
-          {dbType.value === 'postgres' && (
-            <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
-              <div>
-                <Label htmlFor="conn-str" className="mb-3 block text-gray-300">
-                  Connection String
-                </Label>
-                <Input id="conn-str" type="text" value={connStr} onChange={(e) => setConnStr(e.target.value)} />
-                <Label className="mb-3 block !text-[13px] text-gray-300 mt-2">
-                  e.g. postgresql://username:password@host:port/database
-                </Label>
-              </div>
-              {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
-              <Button
-                type="submit"
-                variant="primary"
-                className={`min-w-[150px] max-w-[220px] transition-all duration-300 ${isSuccess ? 'bg-green-500 hover:bg-green-500 !disabled:opacity-100' : ''}`}
-                disabled={!connStr || isTesting || isSuccess}
-              >
-                {isSuccess ? (
-                  <div className="flex items-center gap-2">
-                    <span className="i-ph:check-circle-fill text-lg" />
-                    Data Source Connected
+          {dbType.value === 'postgres' ||
+            (dbType.value === 'mysql' && (
+              <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
+                <div>
+                  <Label htmlFor="conn-str" className="mb-3 block text-gray-300">
+                    Connection String
+                  </Label>
+                  <Input id="conn-str" type="text" value={connStr} onChange={(e) => setConnStr(e.target.value)} />
+                  <Label className="mb-3 block !text-[13px] text-gray-300 mt-2">
+                    e.g. postgresql://username:password@host:port/database
+                  </Label>
+                </div>
+                {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className={`min-w-[150px] max-w-[220px] transition-all duration-300 ${isSuccess ? 'bg-green-500 hover:bg-green-500 !disabled:opacity-100' : ''}`}
+                  disabled={!connStr || isTesting || isSuccess}
+                >
+                  {isSuccess ? (
+                    <div className="flex items-center gap-2">
+                      <span className="i-ph:check-circle-fill text-lg" />
+                      Data Source Connected
+                    </div>
+                  ) : isTesting ? (
+                    'Testing...'
+                  ) : (
+                    'Test & Continue'
+                  )}
+                </Button>
+                <div>
+                  <div className="border-b border-gray-700 mb-7" />
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="i-ph:lock-fill text-lg text-gray-400 !text-[var(--liblab-elements-textPrimary)]" />
+                    <span className="font-medium text-[var(--liblab-elements-textPrimary)] text-sm">
+                      100% Secure & Encrypted
+                    </span>
                   </div>
-                ) : isTesting ? (
-                  'Testing...'
-                ) : (
-                  'Test & Continue'
-                )}
-              </Button>
-              <div>
-                <div className="border-b border-gray-700 mb-7" />
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="i-ph:lock-fill text-lg text-gray-400 !text-[var(--liblab-elements-textPrimary)]" />
-                  <span className="font-medium text-[var(--liblab-elements-textPrimary)] text-sm">
-                    100% Secure & Encrypted
-                  </span>
+                  <div className="text-gray-400 text-[13px] leading-snug">
+                    Your company's data is protected through AES-256 encryption, HTTPS with TLS 1.2/1.3, and strict
+                    network policies.
+                  </div>
                 </div>
-                <div className="text-gray-400 text-[13px] leading-snug">
-                  Your company's data is protected through AES-256 encryption, HTTPS with TLS 1.2/1.3, and strict
-                  network policies.
-                </div>
-              </div>
-            </form>
-          )}
+              </form>
+            ))}
           {dbType.value === 'sample' && (
             <>
               {error && <div className="text-red-500 text-sm mb-4">{error}</div>}

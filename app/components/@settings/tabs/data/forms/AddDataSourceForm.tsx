@@ -1,5 +1,5 @@
 import { classNames } from '~/utils/classNames';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { getFormData } from '~/utils/form';
@@ -7,6 +7,11 @@ import { getFormData } from '~/utils/form';
 interface DataSourceResponse {
   success: boolean;
   message?: string;
+}
+
+interface DatabaseType {
+  value: string;
+  label: string;
 }
 
 interface AddDataSourceFormProps {
@@ -18,7 +23,23 @@ interface AddDataSourceFormProps {
 export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuccess }: AddDataSourceFormProps) {
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
+  const [databaseTypes, setDatabaseTypes] = useState<DatabaseType[]>([]);
   const formRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchDatabaseTypes = async () => {
+      try {
+        const response = await fetch('/api/data-sources/types');
+        const types = (await response.json()) as DatabaseType[];
+        setDatabaseTypes(types);
+      } catch (error) {
+        console.error('Failed to fetch database types:', error);
+        toast.error('Failed to load database types');
+      }
+    };
+
+    fetchDatabaseTypes();
+  }, []);
 
   const handleTestConnection = async () => {
     if (!formRef.current) {
@@ -150,7 +171,11 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                 'disabled:opacity-50 disabled:cursor-not-allowed',
               )}
             >
-              <option value="postgres">PostgreSQL</option>
+              {databaseTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>
