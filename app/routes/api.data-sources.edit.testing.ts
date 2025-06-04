@@ -68,7 +68,7 @@ export async function action({ request }: { request: Request }) {
 }
 
 async function getPassword(dataSourceId: string): Promise<string> {
-  const dataSource = await prisma?.dataSource.findUnique({
+  const dataSource = await prisma.dataSource.findUnique({
     where: { id: dataSourceId },
     select: {
       password: true,
@@ -76,7 +76,7 @@ async function getPassword(dataSourceId: string): Promise<string> {
   });
 
   if (!dataSource) {
-    throw new Error('No password provided for datasource');
+    throw new Error('Data source not found or password retrieval failed');
   }
 
   return dataSource.password;

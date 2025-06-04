@@ -60,7 +60,7 @@ export async function createDataSource(data: {
 }
 
 export async function getDatabaseUrl(datasourceId: string) {
-  const dataSource = await prisma?.dataSource.findUnique({
+  const dataSource = await prisma.dataSource.findUnique({
     where: { id: datasourceId },
     select: {
       type: true,

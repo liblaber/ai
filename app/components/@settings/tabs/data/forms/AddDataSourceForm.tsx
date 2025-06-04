@@ -1,5 +1,5 @@
 import { classNames } from '~/utils/classNames';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { BaseSelect } from '~/components/ui/Select';
@@ -31,7 +31,6 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const formRef = useRef<HTMLDivElement>(null);
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
@@ -161,7 +160,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
 
   return (
     <div className="space-y-6">
-      <div ref={formRef} className="space-y-4">
+      <div className="space-y-4">
         <div className="space-y-4">
           <div className="flex gap-2 mb-6 items-end">
             <div className="min-w-[160px] flex-1">

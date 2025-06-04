@@ -1,5 +1,5 @@
 import { classNames } from '~/utils/classNames';
-import { useRef, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { toast } from 'sonner';
 import { BaseSelect } from '~/components/ui/Select';
@@ -49,13 +49,14 @@ export default function EditDataSourceForm({
   onSuccess,
   onDelete,
 }: EditDataSourceFormProps) {
-  const [dbType, setDbType] = useState<DataSourceOption>(DATASOURCES[1]); // Default to postgres
+  const [dbType, setDbType] = useState<DataSourceOption>(
+    DATASOURCES.find((ds) => ds.value === 'postgres') || DATASOURCES[0],
+  );
   const [connStr, setConnStr] = useState('');
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
-  const formRef = useRef<HTMLDivElement>(null);
 
   // Initialize form data when selectedDataSource changes
   useEffect(() => {
@@ -186,7 +187,7 @@ export default function EditDataSourceForm({
 
   return (
     <div className="space-y-6">
-      <div ref={formRef} className="space-y-4">
+      <div className="space-y-4">
         <div className="space-y-4">
           <div className="flex gap-2 mb-6 items-end">
             <div className="min-w-[160px] flex-1">
