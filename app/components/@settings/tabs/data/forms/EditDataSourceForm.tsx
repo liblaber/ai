@@ -65,7 +65,7 @@ export default function EditDataSourceForm({
         setDbType(DATASOURCES[0]); // Sample Database
         setConnStr('');
       } else {
-        setDbType(DATASOURCES.find((opt) => opt.value === selectedDataSource.type)!);
+        setDbType(DATASOURCES.find((opt) => opt.value === selectedDataSource.type) || DATASOURCES[0]);
         setConnStr(generateConnectionString(selectedDataSource));
       }
 
