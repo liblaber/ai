@@ -12,7 +12,7 @@ export async function action({ request }: { request: Request }) {
     const host = formData.get('host') as string;
     const port = parseInt(formData.get('port') as string);
     const username = formData.get('username') as string;
-    const password = formData.get('password') as string;
+    const password = decodeURIComponent(formData.get('password') as string);
     const type = formData.get('type') as string;
     const database = formData.get('database') as string;
     const sslMode = formData.get('sslMode') as string;
@@ -26,7 +26,7 @@ export async function action({ request }: { request: Request }) {
         host,
         port,
         user: username,
-        password: decodeURIComponent(password),
+        password,
         database,
         ssl: getSslModeConfig(sslMode),
       });
@@ -37,11 +37,12 @@ export async function action({ request }: { request: Request }) {
         await client.end();
 
         return json({ success: true, message: 'Connection successful' });
-      } catch (error) {
+      } catch (error: any) {
+        console.error('Error connecting to database:', error);
         return json(
           {
             success: false,
-            message: error instanceof Error ? error.message : 'Failed to connect to database',
+            message: `Failed to connect to database${error instanceof Error ? `: ${error.message}` : ''}`,
           },
           { status: 400 },
         );

@@ -9,7 +9,7 @@ export const TAB_ICONS: Record<TabType, string | ComponentType<IconProps>> = {
 };
 
 export const TAB_LABELS: Record<TabType, string> = {
-  data: 'Data Management',
+  data: 'Data Sources',
   github: 'GitHub',
   'deployed-apps': 'Deployed Apps',
 };

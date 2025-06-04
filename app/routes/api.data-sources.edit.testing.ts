@@ -1,6 +1,7 @@
 import { json } from '@remix-run/cloudflare';
 import pg from 'pg';
 import { getSslModeConfig } from '~/utils/sslModeConfig';
+import { prisma } from '~/lib/prisma';
 
 export async function action({ request }: { request: Request }) {
   if (request.method !== 'POST') {
@@ -22,13 +23,14 @@ export async function action({ request }: { request: Request }) {
       return json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    // For PostgreSQL, we'll use the node-postgres client to test the connection
+    const passwordValue = decodeURIComponent(password ?? '') || (await getPassword(id));
+
     if (type === 'postgres') {
       const client = new pg.Client({
         host,
         port,
         user: username,
-        password,
+        password: passwordValue,
         database,
         ssl: getSslModeConfig(sslMode),
       });
@@ -40,10 +42,11 @@ export async function action({ request }: { request: Request }) {
 
         return json({ success: true, message: 'Connection successful' });
       } catch (error) {
+        console.error('Error connecting to database:', error);
         return json(
           {
             success: false,
-            message: error instanceof Error ? error.message : 'Failed to connect to database',
+            message: `Failed to connect to database${error instanceof Error ? `: ${error.message}` : ''}`,
           },
           { status: 400 },
         );
@@ -62,4 +65,19 @@ export async function action({ request }: { request: Request }) {
       { status: 500 },
     );
   }
+}
+
+async function getPassword(dataSourceId: string): Promise<string> {
+  const dataSource = await prisma.dataSource.findUnique({
+    where: { id: dataSourceId },
+    select: {
+      password: true,
+    },
+  });
+
+  if (!dataSource) {
+    throw new Error('Data source not found or password retrieval failed');
+  }
+
+  return dataSource.password;
 }

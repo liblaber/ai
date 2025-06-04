@@ -5,6 +5,16 @@ import { env } from '~/lib/config/env';
 export async function action({ request }: { request: Request }) {
   if (request.method === 'POST') {
     try {
+      const existingSampleDatabase = await prisma.dataSource.findFirst({
+        where: {
+          name: 'Sample Database',
+        },
+      });
+
+      if (existingSampleDatabase) {
+        return json({ success: false, error: 'Sample database already exists' }, { status: 400 });
+      }
+
       const exampleDbConfig = {
         host: env.EXAMPLE_DB_HOST,
         port: parseInt(env.EXAMPLE_DB_PORT || '5432'),
@@ -35,9 +45,16 @@ export async function action({ request }: { request: Request }) {
       });
 
       return json({ success: true, dataSource });
-    } catch (error) {
-      console.error('Error creating example datasource:', error);
-      return json({ success: false, error: 'Failed to create example datasource' }, { status: 500 });
+    } catch (error: any) {
+      // Check if this is a "secret already exists" error from Infisical
+      if (error?.message?.includes('Secret already exist')) {
+        console.error('Sample database already exists', error);
+        return json({ success: false, error: 'Sample database already exists' }, { status: 400 });
+      }
+
+      console.error('Error creating Sample database:', error);
+
+      return json({ success: false, error: 'Failed to create Sample database' }, { status: 500 });
     }
   }
 
