@@ -1,7 +1,6 @@
 import { type ActionFunctionArgs } from '@remix-run/cloudflare';
 import { streamText } from '~/lib/.server/llm/stream-text';
 import { stripIndents } from '~/utils/stripIndent';
-import { getApiKeysFromCookie } from '~/lib/api/cookies';
 import { createScopedLogger } from '~/utils/logger';
 import { env } from '~/lib/config/env';
 import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '~/utils/constants';
@@ -12,16 +11,13 @@ export async function action(args: ActionFunctionArgs) {
 
 const logger = createScopedLogger('api.enhancher');
 
-async function enhancerAction({ context, request }: ActionFunctionArgs) {
+async function enhancerAction({ request }: ActionFunctionArgs) {
   const { message } = await request.json<{
     message: string;
   }>();
 
   const model = env.DEFAULT_LLM_MODEL || DEFAULT_MODEL;
   const providerName = env.DEFAULT_LLM_PROVIDER || DEFAULT_PROVIDER.name;
-
-  const cookieHeader = request.headers.get('Cookie');
-  const apiKeys = getApiKeysFromCookie(cookieHeader);
 
   try {
     const result = await streamText({
@@ -60,8 +56,6 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
           `,
         },
       ],
-      env: context.cloudflare?.env as any,
-      apiKeys,
       options: {
         system:
           'You are a senior software principal architect, you should help the user analyse the user query and enrich it with the necessary context and constraints to make it more specific, actionable, and effective. You should also ensure that the prompt is self-contained and uses professional language. Your response should ONLY contain the enhanced prompt text. Do not include any explanations, metadata, or wrapper tags.',

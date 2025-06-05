@@ -1,7 +1,7 @@
 import { type CoreTool, generateText, type GenerateTextResult, type Message } from 'ai';
 import ignore from 'ignore';
 import { type FileMap, IGNORE_PATTERNS } from './constants';
-import { DEFAULT_MODEL, DEFAULT_PROVIDER, PROVIDER_LIST } from '~/utils/constants';
+import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '~/utils/constants';
 import {
   createFilesContext,
   extractCurrentContext,
@@ -27,7 +27,6 @@ export async function selectContext(props: {
 }) {
   const { messages, env: serverEnv, apiKeys, files, summary, onFinish } = props;
   const currentModel = DEFAULT_MODEL;
-  const currentProvider = DEFAULT_PROVIDER.name;
   const processedMessages = messages.map((message) => {
     if (message.role === 'user') {
       const { content } = extractPropertiesFromMessage(message);
@@ -47,7 +46,7 @@ export async function selectContext(props: {
     return message;
   });
 
-  const provider = PROVIDER_LIST.find((p) => p.name === currentProvider) || DEFAULT_PROVIDER;
+  const provider = DEFAULT_PROVIDER;
 
   const { codeContext } = extractCurrentContext(processedMessages);
 

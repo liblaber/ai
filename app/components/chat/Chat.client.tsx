@@ -100,11 +100,10 @@ export const ChatImpl = memo(
     const llmManager = LLMManager.getInstance();
     const [model] = useState(() => llmManager.defaultModel);
     const [provider] = useState(() => {
-      const provider = llmManager.getDefaultProvider();
+      const provider = llmManager.getProvider();
       return {
         name: provider.name,
         staticModels: provider.staticModels,
-        getModelInstance: provider.getModelInstance,
         getApiKeyLink: provider.getApiKeyLink,
         labelForGetApiKey: provider.labelForGetApiKey,
         icon: provider.icon,
@@ -113,11 +112,10 @@ export const ChatImpl = memo(
 
     const [sqlLlmModel] = useState(() => llmManager.defaultModel);
     const [sqlLlmProvider] = useState(() => {
-      const provider = llmManager.getDefaultProvider();
+      const provider = llmManager.getProvider();
       return {
         name: provider.name,
         staticModels: provider.staticModels,
-        getModelInstance: provider.getModelInstance,
         getApiKeyLink: provider.getApiKeyLink,
         labelForGetApiKey: provider.labelForGetApiKey,
         icon: provider.icon,
