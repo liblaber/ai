@@ -78,6 +78,7 @@ pnpm run dev
 
 > **💡 Recommended Providers**  
 > For optimal performance with liblab.ai, we recommend:
+>
 > - **Anthropic Claude-3 Sonnet** (Default) - Best overall performance with excellent code understanding and large context handling
 > - **Google Gemini Pro** - Strong alternative with robust code generation capabilities
 >
@@ -92,26 +93,27 @@ DEFAULT_LLM_MODEL=<model_name>        # Default: 'claude-3-5-sonnet-latest'
 
 #### Cloud Providers
 
-| Provider | API Key Variable | Get API Key |
-|----------|-----------------|-------------|
-| Anthropic | `ANTHROPIC_API_KEY` | [Console](https://console.anthropic.com/settings/keys) |
-| Google | `GOOGLE_GENERATIVE_AI_API_KEY` | [Console](https://console.cloud.google.com/apis/credentials) |
-| OpenAI | `OPENAI_API_KEY` | [Console](https://platform.openai.com/api-keys) |
-| Groq | `GROQ_API_KEY` | [Console](https://console.groq.com/keys) |
-| HuggingFace | `HuggingFace_API_KEY` | [Console](https://huggingface.co/settings/tokens) |
-| Mistral | `MISTRAL_API_KEY` | [Console](https://console.mistral.ai/api-keys/) |
-| Cohere | `COHERE_API_KEY` | [Console](https://dashboard.cohere.com/api-keys) |
-| xAI | `XAI_API_KEY` | [Docs](https://x.ai/api) |
-| Perplexity | `PERPLEXITY_API_KEY` | [Settings](https://www.perplexity.ai/settings/api) |
-| DeepSeek | `DEEPSEEK_API_KEY` | Contact DeepSeek |
-| OpenRouter | `OPEN_ROUTER_API_KEY` | [Settings](https://openrouter.ai/settings/keys) |
-| Together | `TOGETHER_API_KEY` | [Console](https://api.together.xyz/settings/api-keys) |
-| Amazon Bedrock | `AWS_BEDROCK_CONFIG` | [AWS Console](https://aws.amazon.com/bedrock/) |
-| GitHub | `GITHUB_API_KEY` | [Settings](https://github.com/settings/tokens) |
+| Provider       | API Key Variable               | Get API Key                                                  |
+| -------------- | ------------------------------ | ------------------------------------------------------------ |
+| Anthropic      | `ANTHROPIC_API_KEY`            | [Console](https://console.anthropic.com/settings/keys)       |
+| Google         | `GOOGLE_GENERATIVE_AI_API_KEY` | [Console](https://console.cloud.google.com/apis/credentials) |
+| OpenAI         | `OPENAI_API_KEY`               | [Console](https://platform.openai.com/api-keys)              |
+| Groq           | `GROQ_API_KEY`                 | [Console](https://console.groq.com/keys)                     |
+| HuggingFace    | `HuggingFace_API_KEY`          | [Console](https://huggingface.co/settings/tokens)            |
+| Mistral        | `MISTRAL_API_KEY`              | [Console](https://console.mistral.ai/api-keys/)              |
+| Cohere         | `COHERE_API_KEY`               | [Console](https://dashboard.cohere.com/api-keys)             |
+| xAI            | `XAI_API_KEY`                  | [Docs](https://x.ai/api)                                     |
+| Perplexity     | `PERPLEXITY_API_KEY`           | [Settings](https://www.perplexity.ai/settings/api)           |
+| DeepSeek       | `DEEPSEEK_API_KEY`             | Contact DeepSeek                                             |
+| OpenRouter     | `OPEN_ROUTER_API_KEY`          | [Settings](https://openrouter.ai/settings/keys)              |
+| Together       | `TOGETHER_API_KEY`             | [Console](https://api.together.xyz/settings/api-keys)        |
+| Amazon Bedrock | `AWS_BEDROCK_CONFIG`           | [AWS Console](https://aws.amazon.com/bedrock/)               |
+| GitHub         | `GITHUB_API_KEY`               | [Settings](https://github.com/settings/tokens)               |
 
 #### Alternative Services
 
 **Local Models**
+
 ```bash
 # Ollama - Local open-source models
 OLLAMA_API_BASE_URL=
