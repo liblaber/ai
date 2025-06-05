@@ -7,6 +7,7 @@ import { LLMManager } from '~/lib/modules/llm/manager';
 import { parseCookies } from '~/lib/api/cookies';
 import { DEFAULT_MODEL } from '~/utils/constants';
 import { getLlm } from '~/lib/.server/llm/get-llm';
+import { prisma } from '~/lib/prisma';
 
 const logger = createScopedLogger('generate-sql');
 const llmManager = LLMManager.getInstance(import.meta.env);
@@ -14,15 +15,16 @@ const llmManager = LLMManager.getInstance(import.meta.env);
 const requestSchema = z.object({
   prompt: z.string(),
   existingQuery: z.string().optional(),
+  dataSourceId: z.string(),
 });
 
 export const action: ActionFunction = async ({ request }) => {
   try {
     const body = await request.json();
-    const { prompt, existingQuery } = requestSchema.parse(body);
+    const { prompt, existingQuery, dataSourceId } = requestSchema.parse(body);
     const existingQueries = existingQuery ? [existingQuery] : [];
 
-    const schema = await getDatabaseSchema('unused');
+    const schema = await getDatabaseSchema(dataSourceId);
 
     const cookieHeader = request.headers.get('Cookie');
     const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
@@ -33,7 +35,18 @@ export const action: ActionFunction = async ({ request }) => {
       apiKeys,
     });
 
-    const queries = await generateSqlQueries(schema, prompt, llm.instance, llm.maxTokens, existingQueries);
+    const dataSource = await prisma.dataSource.findUniqueOrThrow({
+      where: { id: dataSourceId },
+    });
+
+    const queries = await generateSqlQueries(
+      schema,
+      prompt,
+      llm.instance,
+      llm.maxTokens,
+      dataSource.type,
+      existingQueries,
+    );
 
     if (!queries || queries.length === 0) {
       return json({ error: 'Failed to generate SQL query' }, { status: 500 });

@@ -1,5 +1,6 @@
 import { prisma } from '~/lib/prisma';
 import { SSL_MODE, type SSLMode } from '~/types/database';
+import { DataAccessor } from '@liblab/data-access/dataAccessor';
 
 export interface DataSource {
   id: string;
@@ -41,8 +42,10 @@ export async function createDataSource(data: {
   database: string;
   sslMode: SSLMode;
 }) {
-  if (data.type !== 'postgres') {
-    throw new Error('Only postgres data sources are supported');
+  const availableDataSourceTypes = DataAccessor.getAvailableDatabaseTypes();
+
+  if (!availableDataSourceTypes.find(({ value }) => value === data.type)) {
+    throw new Error(`Unsupported data source type: ${data.type}`);
   }
 
   return prisma.dataSource.create({

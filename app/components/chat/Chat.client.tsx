@@ -568,7 +568,14 @@ export const ChatImpl = memo(
           clearAlert={() => workbenchStore.clearAlert()}
           data={chatData}
         />
-        {selectedQueryId && <QueryModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} queryId={selectedQueryId} />}
+        {selectedQueryId && (
+          <QueryModal
+            isOpen={isModalOpen}
+            onOpenChange={setIsModalOpen}
+            queryId={selectedQueryId}
+            dataSourceId={selectedDataSourceId!}
+          />
+        )}
       </>
     );
   },

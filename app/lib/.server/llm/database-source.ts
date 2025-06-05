@@ -45,6 +45,7 @@ export async function generateSqlQueries(
   userPrompt: string,
   model: LanguageModel,
   maxTokens: number,
+  databaseType: string,
   existingQueries?: string[],
 ): Promise<SqlQueryOutput | undefined> {
   const dbSchema = formatDbSchemaForLLM(schema);
@@ -54,7 +55,7 @@ Your goal is to create accurate, optimized queries that address the user's reque
 
 You will be working with the following database type:
 <databaseType>
-PostgresSQL
+${databaseType}
 </databaseType>
 
 Here is the database schema you should use:

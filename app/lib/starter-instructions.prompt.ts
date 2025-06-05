@@ -18,6 +18,7 @@ export const STARTER_DIRECTORY = process.env.STARTER_PATH!;
 export function readDirectory(dirPath: string, basePath: string = ''): any[] {
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
   const files: any[] = [];
+  const sharedFiles = getSharedFiles();
 
   for (const entry of entries) {
     const fullPath = path.join(dirPath, entry.name);
@@ -34,6 +35,44 @@ export function readDirectory(dirPath: string, basePath: string = ''): any[] {
         continue;
       }
 
+      if (entry.name === 'package.json') {
+        const packageJson = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+        const dependencies = packageJson.dependencies || {};
+
+        // Extract all imports from shared files
+        const sharedImports = new Set<string>();
+        sharedFiles.forEach((file) => {
+          const importMatches = file.content.match(/from ['"]([^'"]+)['"]/g) || [];
+          importMatches.forEach((match) => {
+            const importPath = match.match(/from ['"]([^'"]+)['"]/)?.[1];
+
+            if (importPath && !importPath.startsWith('.') && !importPath.startsWith('@/')) {
+              // Extract the package name from the import
+              const packageName = importPath.split('/')[0];
+
+              if (packageName) {
+                sharedImports.add(packageName);
+              }
+            }
+          });
+        });
+
+        // Add missing dependencies
+        let hasChanges = false;
+        sharedImports.forEach((pkg) => {
+          if (!dependencies[pkg]) {
+            dependencies[pkg] = 'latest';
+            hasChanges = true;
+          }
+        });
+
+        // Update package.json if there were changes
+        if (hasChanges) {
+          packageJson.dependencies = dependencies;
+          fs.writeFileSync(fullPath, JSON.stringify(packageJson, null, 2));
+        }
+      }
+
       files.push({
         name: entry.name,
         path: relativePath,
@@ -41,8 +80,6 @@ export function readDirectory(dirPath: string, basePath: string = ''): any[] {
       });
     }
   }
-
-  const sharedFiles = getSharedFiles();
 
   return [...files, ...sharedFiles];
 }

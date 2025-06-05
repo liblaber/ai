@@ -18,6 +18,7 @@ import { generateSqlQueries, shouldGenerateSqlQueries } from '~/lib/.server/llm/
 import { getDatabaseSchema } from '~/lib/schema';
 import { mapSqlQueriesToPrompt } from '~/lib/common/prompts/sql';
 import { getLlm } from '~/lib/.server/llm/get-llm';
+import { prisma } from '~/lib/prisma';
 
 export type Messages = Message[];
 
@@ -166,12 +167,15 @@ ${props.summary}
     isFirstUserMessage(processedMessages) ||
     (await shouldGenerateSqlQueries(lastUserMessage, sqlLlm.instance, sqlLlm.maxTokens, existingQueries))
   ) {
+    const dataSource = await prisma.dataSource.findUniqueOrThrow({ where: { id: currentDataSourceId } });
     const schema = await getDatabaseSchema(currentDataSourceId);
+
     const sqlQueries = await generateSqlQueries(
       schema,
       lastUserMessage,
       sqlLlm.instance,
       sqlLlm.maxTokens,
+      dataSource.type,
       existingQueries,
     );
 

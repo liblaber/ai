@@ -20,15 +20,7 @@ export async function action({ request }: { request: Request }) {
       return json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    let databaseUrl: string;
-
-    if (type === 'postgres') {
-      databaseUrl = `postgres://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode || 'disable'}`;
-    } else if (type === 'mysql') {
-      databaseUrl = `mysql://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode || 'disable'}`;
-    } else {
-      return json({ error: 'Unsupported database type' }, { status: 400 });
-    }
+    const databaseUrl = `${type}://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode || 'disable'}`;
 
     try {
       const accessor = DataAccessor.getAccessor(databaseUrl);

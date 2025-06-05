@@ -3,15 +3,11 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { getFormData } from '~/utils/form';
+import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 
 interface DataSourceResponse {
   success: boolean;
   message?: string;
-}
-
-interface DatabaseType {
-  value: string;
-  label: string;
 }
 
 interface AddDataSourceFormProps {
@@ -23,23 +19,18 @@ interface AddDataSourceFormProps {
 export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuccess }: AddDataSourceFormProps) {
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
-  const [databaseTypes, setDatabaseTypes] = useState<DatabaseType[]>([]);
   const formRef = useRef<HTMLDivElement>(null);
+  const { types: databaseTypes, fetchTypes, isLoading: isLoadingTypes, error: typesError } = useDataSourceTypesStore();
 
   useEffect(() => {
-    const fetchDatabaseTypes = async () => {
-      try {
-        const response = await fetch('/api/data-sources/types');
-        const types = (await response.json()) as DatabaseType[];
-        setDatabaseTypes(types);
-      } catch (error) {
-        console.error('Failed to fetch database types:', error);
-        toast.error('Failed to load database types');
-      }
-    };
+    fetchTypes();
+  }, [fetchTypes]);
 
-    fetchDatabaseTypes();
-  }, []);
+  useEffect(() => {
+    if (typesError) {
+      toast.error('Failed to load database types');
+    }
+  }, [typesError]);
 
   const handleTestConnection = async () => {
     if (!formRef.current) {
@@ -161,7 +152,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
             <select
               name="type"
               required
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLoadingTypes}
               className={classNames(
                 'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
                 'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary text-base',

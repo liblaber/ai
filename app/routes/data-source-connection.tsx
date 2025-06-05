@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
 import { BaseSelect } from '~/components/ui/Select';
 import { SelectDatabaseTypeOptions } from '~/components/database/SelectDatabaseTypeOptions';
 import { useDataSourceActions, useDataSourcesStore } from '~/lib/stores/dataSources';
+import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { SSL_MODE, type SSLMode } from '~/types/database';
 import { useNavigate } from '@remix-run/react';
 import { Header } from '~/components/header/Header';
@@ -24,11 +25,9 @@ type DataSourceOption = {
   available: boolean;
 };
 
-// TODO: pull dynamically?
-const DATASOURCES: DataSourceOption[] = [
+// Hardcoded data sources that are not available through the API
+const HARDCODED_DATASOURCES: DataSourceOption[] = [
   { value: 'sample', label: 'Sample Database', available: true },
-  { value: 'postgres', label: 'PostgreSQL', available: true },
-  { value: 'mysql', label: 'MySQL', available: true },
   { value: 'mongo', label: 'Mongo', available: false },
   { value: 'hubspot', label: 'Hubspot', available: false },
   { value: 'salesforce', label: 'Salesfoirce', available: false },
@@ -39,7 +38,7 @@ const DATASOURCES: DataSourceOption[] = [
 export const DATA_SOURCE_CONNECTION_ROUTE = '/data-source-connection';
 
 export default function DataSourceConnectionPage() {
-  const [dbType, setDbType] = useState<DataSourceOption>(DATASOURCES[0]);
+  const [dbType, setDbType] = useState<DataSourceOption>(HARDCODED_DATASOURCES[0]);
   const [connStr, setConnStr] = useState('');
   const [isTesting, setIsTesting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -48,6 +47,14 @@ export default function DataSourceConnectionPage() {
   const { setSelectedDataSourceId } = useDataSourcesStore();
   const { refetchDataSources } = useDataSourceActions();
   const navigate = useNavigate();
+  const { types: apiTypes, fetchTypes, isLoading: isLoadingTypes } = useDataSourceTypesStore();
+
+  useEffect(() => {
+    fetchTypes();
+  }, [fetchTypes]);
+
+  // Merge API types with hardcoded types, excluding postgres from hardcoded list
+  const allDataSourceTypes = [...apiTypes, ...HARDCODED_DATASOURCES.filter((type) => type.value !== 'postgres')];
 
   const parseConnectionString = (connStr: string) => {
     try {
@@ -208,59 +215,64 @@ export default function DataSourceConnectionPage() {
                   setDbType(value as DataSourceOption);
                   setError(null);
                 }}
-                options={DATASOURCES.filter((opt) => opt.available)}
+                options={allDataSourceTypes.filter((opt) => opt.available)}
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}
                 components={{ MenuList: SelectDatabaseTypeOptions }}
+                isDisabled={isLoadingTypes}
               />
+              {isLoadingTypes && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+                  <span className="i-ph:spinner-gap text-lg animate-spin text-liblab-elements-textPrimary" />
+                </div>
+              )}
             </div>
           </div>
-          {dbType.value === 'postgres' ||
-            (dbType.value === 'mysql' && (
-              <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
-                <div>
-                  <Label htmlFor="conn-str" className="mb-3 block text-gray-300">
-                    Connection String
-                  </Label>
-                  <Input id="conn-str" type="text" value={connStr} onChange={(e) => setConnStr(e.target.value)} />
-                  <Label className="mb-3 block !text-[13px] text-gray-300 mt-2">
-                    e.g. postgresql://username:password@host:port/database
-                  </Label>
-                </div>
-                {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
-                <Button
-                  type="submit"
-                  variant="primary"
-                  className={`min-w-[150px] max-w-[220px] transition-all duration-300 ${isSuccess ? 'bg-green-500 hover:bg-green-500 !disabled:opacity-100' : ''}`}
-                  disabled={!connStr || isTesting || isSuccess}
-                >
-                  {isSuccess ? (
-                    <div className="flex items-center gap-2">
-                      <span className="i-ph:check-circle-fill text-lg" />
-                      Data Source Connected
-                    </div>
-                  ) : isTesting ? (
-                    'Testing...'
-                  ) : (
-                    'Test & Continue'
-                  )}
-                </Button>
-                <div>
-                  <div className="border-b border-gray-700 mb-7" />
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="i-ph:lock-fill text-lg text-gray-400 !text-[var(--liblab-elements-textPrimary)]" />
-                    <span className="font-medium text-[var(--liblab-elements-textPrimary)] text-sm">
-                      100% Secure & Encrypted
-                    </span>
+          {dbType.value !== 'sample' && (
+            <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
+              <div>
+                <Label htmlFor="conn-str" className="mb-3 block text-gray-300">
+                  Connection String
+                </Label>
+                <Input id="conn-str" type="text" value={connStr} onChange={(e) => setConnStr(e.target.value)} />
+                <Label className="mb-3 block !text-[13px] text-gray-300 mt-2">
+                  e.g. postgresql://username:password@host:port/database
+                </Label>
+              </div>
+              {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
+              <Button
+                type="submit"
+                variant="primary"
+                className={`min-w-[150px] max-w-[220px] transition-all duration-300 ${isSuccess ? 'bg-green-500 hover:bg-green-500 !disabled:opacity-100' : ''}`}
+                disabled={!connStr || isTesting || isSuccess}
+              >
+                {isSuccess ? (
+                  <div className="flex items-center gap-2">
+                    <span className="i-ph:check-circle-fill text-lg" />
+                    Data Source Connected
                   </div>
-                  <div className="text-gray-400 text-[13px] leading-snug">
-                    Your company's data is protected through AES-256 encryption, HTTPS with TLS 1.2/1.3, and strict
-                    network policies.
-                  </div>
+                ) : isTesting ? (
+                  'Testing...'
+                ) : (
+                  'Test & Continue'
+                )}
+              </Button>
+              <div>
+                <div className="border-b border-gray-700 mb-7" />
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="i-ph:lock-fill text-lg text-gray-400 !text-[var(--liblab-elements-textPrimary)]" />
+                  <span className="font-medium text-[var(--liblab-elements-textPrimary)] text-sm">
+                    100% Secure & Encrypted
+                  </span>
                 </div>
-              </form>
-            ))}
+                <div className="text-gray-400 text-[13px] leading-snug">
+                  Your company's data is protected through AES-256 encryption, HTTPS with TLS 1.2/1.3, and strict
+                  network policies.
+                </div>
+              </div>
+            </form>
+          )}
           {dbType.value === 'sample' && (
             <>
               {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
