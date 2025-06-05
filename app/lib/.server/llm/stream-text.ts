@@ -30,21 +30,11 @@ export async function streamText(props: {
   request: Request;
 }) {
   const { messages, options, files, promptId, contextOptimization, contextFiles, summary } = props;
-  let currentSqlModel: string | undefined;
-  let currentSqlProvider: string | undefined;
   let currentDataSourceId: string | undefined = '';
 
   let processedMessages = messages.map((message) => {
     if (message.role === MessageRole.User) {
-      const {
-        sqlModel: extractedSqlModel,
-        sqlProvider: extractedSqlProvider,
-        content,
-        isFirstUserMessage,
-        dataSourceId,
-      } = extractPropertiesFromMessage(message);
-      currentSqlModel = extractedSqlModel;
-      currentSqlProvider = extractedSqlProvider;
+      const { content, isFirstUserMessage, dataSourceId } = extractPropertiesFromMessage(message);
       currentDataSourceId = dataSourceId;
 
       return { ...message, content, isFirstUserMessage };
@@ -61,9 +51,7 @@ export async function streamText(props: {
 
   const provider = DEFAULT_PROVIDER;
 
-  const regularLlm = await getLlm();
-
-  const sqlLlm = currentSqlModel && currentSqlProvider ? await getLlm() : regularLlm;
+  const llm = await getLlm();
 
   const lastUserMessage = getLastUserMessageContent(processedMessages);
 
@@ -123,16 +111,10 @@ ${props.summary}
 
   if (
     isFirstUserMessage(processedMessages) ||
-    (await shouldGenerateSqlQueries(lastUserMessage, sqlLlm.instance, sqlLlm.maxTokens, existingQueries))
+    (await shouldGenerateSqlQueries(lastUserMessage, llm.instance, llm.maxTokens, existingQueries))
   ) {
     const schema = await getDatabaseSchema(currentDataSourceId);
-    const sqlQueries = await generateSqlQueries(
-      schema,
-      lastUserMessage,
-      sqlLlm.instance,
-      sqlLlm.maxTokens,
-      existingQueries,
-    );
+    const sqlQueries = await generateSqlQueries(schema, lastUserMessage, llm.instance, llm.maxTokens, existingQueries);
 
     if (sqlQueries?.length) {
       logger.debug(`Adding SQL queries as the hidden user message`);
@@ -144,12 +126,12 @@ ${props.summary}
     }
   }
 
-  logger.info(`Sending llm call to ${provider.name} with model ${regularLlm.details.name}`);
+  logger.info(`Sending llm call to ${provider.name} with model ${llm.details.name}`);
 
   return _streamText({
-    model: regularLlm.instance,
+    model: llm.instance,
     system: systemPrompt,
-    maxTokens: regularLlm.maxTokens,
+    maxTokens: llm.maxTokens,
     messages: convertToCoreMessages(processedMessages as any),
     ...options,
   });
