@@ -6,7 +6,9 @@ import { BaseSelect } from '~/components/ui/Select';
 import {
   type DataSourceOption,
   DATASOURCES,
+  DatabaseType,
   SelectDatabaseTypeOptions,
+  SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
 import { parseDatabaseConnectionUrl } from '~/utils/parseDatabaseConnectionUrl';
 
@@ -80,7 +82,7 @@ export default function EditDataSourceForm({
     setError(null);
 
     try {
-      if (dbType.value === 'postgres') {
+      if (dbType.value === DatabaseType.POSTGRES) {
         if (!connStr) {
           setError('Please enter a connection string');
           return;
@@ -116,7 +118,7 @@ export default function EditDataSourceForm({
   };
 
   const handleSaveConfirm = async () => {
-    if (dbType.value === 'sample') {
+    if (dbType.value === DatabaseType.SAMPLE) {
       setError('Cannot edit sample database');
       setTestResult(null);
 
@@ -204,12 +206,15 @@ export default function EditDataSourceForm({
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}
-                components={{ MenuList: SelectDatabaseTypeOptions }}
+                components={{
+                  MenuList: SelectDatabaseTypeOptions,
+                  SingleValue: SingleValueWithTooltip,
+                }}
               />
             </div>
           </div>
 
-          {dbType.value === 'postgres' && (
+          {dbType.value === DatabaseType.POSTGRES && (
             <div>
               <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
                 Connection String
@@ -238,7 +243,7 @@ export default function EditDataSourceForm({
             </div>
           )}
 
-          {dbType.value === 'sample' && (
+          {dbType.value === DatabaseType.SAMPLE && (
             <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
               <div className="flex items-center gap-2">
                 <div className="i-ph:info w-5 h-5 text-blue-500" />
@@ -288,7 +293,7 @@ export default function EditDataSourceForm({
         <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {dbType.value === 'postgres' && (
+              {dbType.value === DatabaseType.POSTGRES && (
                 <button
                   type="button"
                   onClick={async (e) => {
@@ -335,7 +340,11 @@ export default function EditDataSourceForm({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isSubmitting || dbType.value === 'sample' || (dbType.value === 'postgres' && !connStr)}
+                disabled={
+                  isSubmitting ||
+                  dbType.value === DatabaseType.SAMPLE ||
+                  (dbType.value === DatabaseType.POSTGRES && !connStr)
+                }
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',

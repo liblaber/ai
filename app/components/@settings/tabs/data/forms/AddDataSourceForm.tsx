@@ -6,7 +6,9 @@ import { BaseSelect } from '~/components/ui/Select';
 import {
   type DataSourceOption,
   DATASOURCES,
+  DatabaseType,
   SelectDatabaseTypeOptions,
+  SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
 import { parseDatabaseConnectionUrl } from '~/utils/parseDatabaseConnectionUrl';
 
@@ -38,7 +40,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     setError(null);
 
     try {
-      if (dbType.value === 'postgres') {
+      if (dbType.value === DatabaseType.POSTGRES) {
         if (!connStr) {
           setError('Please enter a connection string');
           return;
@@ -105,7 +107,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
-    if (dbType.value === 'sample') {
+    if (dbType.value === DatabaseType.SAMPLE) {
       await handleSampleDatabase();
       return;
     }
@@ -177,12 +179,15 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}
-                components={{ MenuList: SelectDatabaseTypeOptions }}
+                components={{
+                  MenuList: SelectDatabaseTypeOptions,
+                  SingleValue: SingleValueWithTooltip,
+                }}
               />
             </div>
           </div>
 
-          {dbType.value === 'postgres' && (
+          {dbType.value === DatabaseType.POSTGRES && (
             <div>
               <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
                 Connection String
@@ -246,7 +251,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
         <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {dbType.value === 'postgres' && (
+              {dbType.value === DatabaseType.POSTGRES && (
                 <button
                   type="button"
                   onClick={async (e) => {
@@ -279,7 +284,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isSubmitting || (dbType.value === 'postgres' && !connStr)}
+                disabled={isSubmitting || (dbType.value === DatabaseType.POSTGRES && !connStr)}
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',
