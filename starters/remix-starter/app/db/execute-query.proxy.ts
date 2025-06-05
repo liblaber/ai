@@ -1,3 +1,5 @@
+import { decryptData, encryptData } from '@/lib/crypto.server';
+
 export async function executePostgresQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
   const databaseUrl = decodeURIComponent(process.env.DATABASE_URL || '');
 
@@ -7,17 +9,25 @@ export async function executePostgresQueryThroughProxy<T>(query: string, params?
     ...(Array.isArray(params) && params.length > 0 ? { params } : {}),
   };
 
-  return await fetchProxyApi<T[]>('/execute-query', {
+  const encryptedBody = encryptData(requestBody);
+
+  const response = await fetchProxyApi<{ encryptedData: string }>('/execute-query', {
     method: 'POST',
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify({ encryptedData: encryptedBody }),
   });
+
+  const decryptedData = decryptData(response.data.encryptedData);
+
+  return { data: decryptedData };
 }
 
 async function fetchProxyApi<T>(endpoint: string, options: RequestInit = {}): Promise<{ data: T }> {
   const proxyBaseUrl = `${import.meta.env.VITE_API_BASE_URL}/api`;
+
   if (!proxyBaseUrl) {
     throw new Error(`No proxy baseUrl provided`);
   }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -42,6 +52,7 @@ async function fetchProxyApi<T>(endpoint: string, options: RequestInit = {}): Pr
       if (error.name === 'AbortError') {
         throw new ApiRequestError(408, 'Request timeout');
       }
+
       throw new ApiRequestError(500, error.message);
     }
 
