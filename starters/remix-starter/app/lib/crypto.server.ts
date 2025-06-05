@@ -5,8 +5,15 @@ const IV_SIZE = 12; // 96 bits for GCM
 
 export function encryptData(data: any): string {
   // Create cipher
+
+  const encryptionKey = process.env.ENCRYPTION_KEY;
+
+  if (!encryptionKey) {
+    throw new Error('ENCRYPTION_KEY must be set and must be a base64-encoded 32-byte key.');
+  }
+
   const iv = randomBytes(IV_SIZE);
-  const cipher = createCipheriv(AES_ALGORITHM, Buffer.from(process.env.ENCRYPTION_KEY!, 'base64'), iv);
+  const cipher = createCipheriv(AES_ALGORITHM, Buffer.from(encryptionKey, 'base64'), iv);
 
   // Encrypt the data
   const dataBuffer = Buffer.from(JSON.stringify(data));
@@ -28,12 +35,14 @@ export function encryptData(data: any): string {
 export function decryptData(encryptedData: string): any {
   const { iv, authTag, encryptedData: data } = JSON.parse(encryptedData);
 
+  const encryptionKey = process.env.ENCRYPTION_KEY;
+
+  if (!encryptionKey) {
+    throw new Error('ENCRYPTION_KEY must be set and must be a base64-encoded 32-byte key.');
+  }
+
   // Create decipher
-  const decipher = createDecipheriv(
-    AES_ALGORITHM,
-    Buffer.from(process.env.ENCRYPTION_KEY!, 'base64'),
-    Buffer.from(iv, 'base64'),
-  );
+  const decipher = createDecipheriv(AES_ALGORITHM, Buffer.from(encryptionKey, 'base64'), Buffer.from(iv, 'base64'));
 
   // Set auth tag
   decipher.setAuthTag(Buffer.from(authTag, 'base64'));
