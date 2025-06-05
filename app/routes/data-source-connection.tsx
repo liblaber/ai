@@ -6,7 +6,9 @@ import { BaseSelect } from '~/components/ui/Select';
 import {
   type DataSourceOption,
   DATASOURCES,
+  DatabaseType,
   SelectDatabaseTypeOptions,
+  SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
 import { useDataSourceActions, useDataSourcesStore } from '~/lib/stores/dataSources';
 import { useNavigate } from '@remix-run/react';
@@ -158,11 +160,14 @@ export default function DataSourceConnectionPage() {
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}
-                components={{ MenuList: SelectDatabaseTypeOptions }}
+                components={{
+                  MenuList: SelectDatabaseTypeOptions,
+                  SingleValue: SingleValueWithTooltip,
+                }}
               />
             </div>
           </div>
-          {dbType.value === 'postgres' && (
+          {dbType.value === DatabaseType.POSTGRES && (
             <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
               <div>
                 <Label htmlFor="conn-str" className="mb-3 block text-gray-300">
@@ -206,7 +211,7 @@ export default function DataSourceConnectionPage() {
               </div>
             </form>
           )}
-          {dbType.value === 'sample' && (
+          {dbType.value === DatabaseType.SAMPLE && (
             <>
               {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
               <Button
