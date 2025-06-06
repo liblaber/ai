@@ -4,10 +4,6 @@ export const parseDatabaseConnectionUrl = (connStr: string) => {
   try {
     const url = new URL(connStr);
 
-    if (!url.protocol.startsWith('postgresql:')) {
-      throw new Error('Connection string must start with postgresql://');
-    }
-
     if (!url.hostname) {
       throw new Error('Host is required');
     }
@@ -32,7 +28,7 @@ export const parseDatabaseConnectionUrl = (connStr: string) => {
       username: url.username,
       password: url.password,
       database: url.pathname.slice(1),
-      type: 'postgres',
+      type: url.protocol.replace(':', ''),
       sslMode: sslMode as SSLMode,
     };
   } catch (error) {

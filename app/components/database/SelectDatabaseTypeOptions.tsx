@@ -1,30 +1,23 @@
 import { components } from 'react-select';
 import { SampleDatabaseTooltip } from './SampleDatabaseTooltip';
-
-export enum DatabaseType {
-  SAMPLE = 'sample',
-  POSTGRES = 'postgres',
-  MONGO = 'mongo',
-  HUBSPOT = 'hubspot',
-  SALESFORCE = 'salesforce',
-  JIRA = 'jira',
-  GITHUB = 'github',
-}
+import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
+import { useEffect } from 'react';
 
 export type DataSourceOption = {
-  value: DatabaseType;
+  value: string;
   label: string;
   available: boolean;
 };
 
+export const SAMPLE_DATABASE = 'sample';
+
 export const DATASOURCES: DataSourceOption[] = [
-  { value: DatabaseType.SAMPLE, label: 'Sample Database', available: true },
-  { value: DatabaseType.POSTGRES, label: 'PostgreSQL', available: true },
-  { value: DatabaseType.MONGO, label: 'Mongo', available: false },
-  { value: DatabaseType.HUBSPOT, label: 'Hubspot', available: false },
-  { value: DatabaseType.SALESFORCE, label: 'Salesforce', available: false },
-  { value: DatabaseType.JIRA, label: 'Jira', available: false },
-  { value: DatabaseType.GITHUB, label: 'Github', available: false },
+  { value: SAMPLE_DATABASE, label: 'Sample Database', available: true },
+  { value: 'mongo', label: 'Mongo', available: false },
+  { value: 'hubspot', label: 'Hubspot', available: false },
+  { value: 'salesforce', label: 'Salesforce', available: false },
+  { value: 'jira', label: 'Jira', available: false },
+  { value: 'github', label: 'Github', available: false },
 ];
 
 export const SingleValueWithTooltip = (props: any) => {
@@ -32,15 +25,30 @@ export const SingleValueWithTooltip = (props: any) => {
     <components.SingleValue {...props}>
       <div className="flex items-center">
         <span>{props.data.label}</span>
-        {props.data.value === DatabaseType.SAMPLE && <SampleDatabaseTooltip />}
+        {props.data.value === SAMPLE_DATABASE && <SampleDatabaseTooltip />}
       </div>
     </components.SingleValue>
   );
 };
 
 export function SelectDatabaseTypeOptions(props: any) {
-  const available = DATASOURCES.filter((opt) => opt.available);
-  const comingSoon = DATASOURCES.filter((opt) => !opt.available);
+  useEffect(() => {
+    fetchTypes();
+  }, []);
+
+  const { types, fetchTypes } = useDataSourceTypesStore();
+
+  const allDataSources = [
+    ...(types || []).map((type) => ({
+      value: type.value,
+      label: type.label,
+      available: true,
+    })),
+    ...DATASOURCES,
+  ];
+
+  const available = allDataSources.filter((opt) => opt.available);
+  const comingSoon = allDataSources.filter((opt) => !opt.available);
 
   return (
     <components.MenuList {...props} className="bg-elements-depth-2">
@@ -74,7 +82,7 @@ export function SelectDatabaseTypeOptions(props: any) {
       {comingSoon.map((opt) => (
         <div
           key={opt.value}
-          className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-90 cursor-default"
+          className="flex hover:cursor-not-allowed items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-90 cursor-default"
         >
           <span>{opt.label}</span>
         </div>

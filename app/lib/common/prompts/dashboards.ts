@@ -2,9 +2,12 @@ import { WORK_DIR } from '~/utils/constants';
 import { allowedHTMLElements } from '~/utils/markdown';
 
 import { getStarterInstructionsPrompt } from '~/lib/starter-instructions.prompt';
+import { DataAccessor } from '@liblab/data-access/dataAccessor';
 
 export const getDashboardsPrompt = async (cwd: string = WORK_DIR) => `
-You an expert AI assistant and exceptional senior software developer with vast knowledge of web development frameworks, and best practices. Particularly, you are proficient in the following technologies: React, TypeScript, Vite, Remix, PostgreSQL, Tailwind CSS and shadcn/ui.
+You an expert AI assistant and exceptional senior software developer with vast knowledge of web development frameworks, and best practices. Particularly, you are proficient in the following technologies: React, TypeScript, Vite, Remix, ${DataAccessor.getAvailableDatabaseTypes()
+  .map(({ value }) => value)
+  .join(', ')}, Tailwind CSS and shadcn/ui.
 You are particularly skillful in understanding SQL queries and grasping out how to use them to create components that visualize the data in a meaningful way.
 
 <system_constraints>
@@ -374,7 +377,7 @@ export function UserGrowthChart({ data }: UserGrowthChartProps) {
         </liblabAction>
 
         <liblabAction type="file" filePath="app/routes/resources.builds.ts">
-import { executePostgresQuery } from '@/db/execute-query';
+import { executeQuery } from '@/db/execute-query';
 import {
   BuildCountData,
   BuildData,
@@ -402,12 +405,12 @@ export async function action({ request }: { request: Request }) {
       });
     }
 
-    const buildsCount = await executePostgresQuery<BuildCountData>(buildsCountQuery, [status]);
+    const buildsCount = await executeQuery<BuildCountData>(buildsCountQuery, [status]);
     if (buildsCount.isError) {
       return Response.json(buildsCount);
     }
 
-    const builds = await executePostgresQuery<BuildData>(buildsQuery, [status, limit.toString(), offset.toString()]);
+    const builds = await executeQuery<BuildData>(buildsQuery, [status, limit.toString(), offset.toString()]);
     if (builds.isError) {
       return Response.json(builds);
     }
@@ -615,7 +618,7 @@ import {
   UserGrowthData,
 } from '@/routes/analytics-dashboard/components/UserGrowthChart';
 import { BuildData, BuildsTable, BuildStatus } from '@/routes/analytics-dashboard/components/BuildsTable';
-import { executePostgresQuery, QueryData } from '@/db/execute-query';
+import { executeQuery, QueryData } from '@/db/execute-query';
 import { LoaderError } from '@/types/loader-error';
 import { WithErrorHandling } from '@/components/hoc/error-handling-wrapper/error-handling-wrapper';
 import { useEffect } from 'react';
@@ -623,9 +626,9 @@ import { useEffect } from 'react';
 export async function loader(): Promise<ExampleDashboardProps | LoaderError> {
   try {
     const [keyMetrics, usersBySignupMethod, userGrowth] = await Promise.all([
-      executePostgresQuery<KeyMetricsData>(keyMetricsQuery),
-      executePostgresQuery<SignupMethodData>(signupMethodQuery),
-      executePostgresQuery<UserGrowthData>(userGrowthQuery),
+      executeQuery<KeyMetricsData>(keyMetricsQuery),
+      executeQuery<SignupMethodData>(signupMethodQuery),
+      executeQuery<UserGrowthData>(userGrowthQuery),
     ]);
 
     return {

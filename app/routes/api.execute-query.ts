@@ -1,7 +1,7 @@
-import { executePostgresQuery } from '~/lib/database';
 import type { ActionFunctionArgs } from '@remix-run/cloudflare';
 import { json } from '@remix-run/cloudflare';
 import { decryptData, encryptData } from '~/lib/encryption';
+import { executeQuery } from '~/lib/database';
 
 interface EncryptedRequestBody {
   encryptedData: string;
@@ -32,7 +32,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return json({ error: 'Query must be provided in the request body' }, { status: 400 });
     }
 
-    const resultData = await executePostgresQuery(databaseUrl, query, params);
+    const resultData = await executeQuery(databaseUrl, query, params);
 
     const encryptedResponse = encryptData(resultData);
 

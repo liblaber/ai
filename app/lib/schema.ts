@@ -1,9 +1,10 @@
-import { getRemotePostgresSchema, type Table } from 'app/lib/database';
+import { type Table } from '@liblab/types';
 import { createScopedLogger } from '~/utils/logger';
 import { prisma } from '~/lib/prisma';
 import crypto from 'crypto';
 
 import { getDatabaseUrl } from '~/lib/services/datasourceService';
+import { DataAccessor } from '@liblab/data-access/dataAccessor';
 
 // Cache duration in seconds (31 days)
 const SCHEMA_CACHE_TTL = 60 * 60 * 24 * 31;
@@ -17,6 +18,9 @@ export const getDatabaseSchema = async (dataSourceId: string): Promise<Table[]> 
     throw new Error('Missing required connection parameters');
   }
 
+  const dataAccessor = DataAccessor.getAccessor(connectionUrl);
+  await dataAccessor.initialize(connectionUrl);
+
   try {
     logger.debug('Trying to get the schema from cache...');
 
@@ -29,7 +33,7 @@ export const getDatabaseSchema = async (dataSourceId: string): Promise<Table[]> 
 
     logger.debug('Schema cache miss, fetching remote schema...');
 
-    const schema = await getRemotePostgresSchema(connectionUrl);
+    const schema = await dataAccessor.getSchema();
     logger.debug('Remote schema fetched successfully!');
 
     await setSchemaCache(connectionUrl, schema);
@@ -39,6 +43,8 @@ export const getDatabaseSchema = async (dataSourceId: string): Promise<Table[]> 
   } catch (error) {
     logger.error('Error getting database schema:', error);
     throw new Error('Failed to get database schema');
+  } finally {
+    await dataAccessor.close();
   }
 };
 

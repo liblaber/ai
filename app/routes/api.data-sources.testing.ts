@@ -1,6 +1,5 @@
 import { json } from '@remix-run/cloudflare';
-import pg from 'pg';
-import { getSslModeConfig } from '~/utils/sslModeConfig';
+import { DataAccessor } from '@liblab/data-access/dataAccessor';
 
 export async function action({ request }: { request: Request }) {
   if (request.method !== 'POST') {
@@ -21,35 +20,32 @@ export async function action({ request }: { request: Request }) {
       return json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    if (type === 'postgres') {
-      const client = new pg.Client({
-        host,
-        port,
-        user: username,
-        password,
-        database,
-        ssl: getSslModeConfig(sslMode),
-      });
+    const databaseUrl = `${type}://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode ? sslMode.toLowerCase() : 'disable'}`;
 
-      try {
-        await client.connect();
-        await client.query('SELECT 1');
-        await client.end();
+    try {
+      const accessor = DataAccessor.getAccessor(databaseUrl);
+      const isConnected = await accessor.testConnection(databaseUrl);
 
+      if (isConnected) {
         return json({ success: true, message: 'Connection successful' });
-      } catch (error: any) {
-        console.error('Error connecting to database:', error);
+      } else {
         return json(
           {
             success: false,
-            message: `Failed to connect to database${error instanceof Error ? `: ${error.message}` : ''}`,
+            message: 'Failed to connect to database',
           },
           { status: 400 },
         );
       }
+    } catch (error) {
+      return json(
+        {
+          success: false,
+          message: error instanceof Error ? error.message : 'Failed to connect to database',
+        },
+        { status: 400 },
+      );
     }
-
-    return json({ error: 'Unsupported database type' }, { status: 400 });
   } catch (error) {
     console.error('Error testing connection:', error);
     return json(

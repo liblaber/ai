@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
 import { BaseSelect } from '~/components/ui/Select';
 import {
-  type DataSourceOption,
   DATASOURCES,
-  DatabaseType,
+  SAMPLE_DATABASE,
   SelectDatabaseTypeOptions,
   SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
 import { useDataSourceActions, useDataSourcesStore } from '~/lib/stores/dataSources';
+import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useNavigate } from '@remix-run/react';
 import { Header } from '~/components/header/Header';
 import { parseDatabaseConnectionUrl } from '~/utils/parseDatabaseConnectionUrl';
@@ -24,6 +24,12 @@ interface ApiResponse {
   };
 }
 
+type DataSourceOption = {
+  value: string;
+  label: string;
+  available: boolean;
+};
+
 export const DATA_SOURCE_CONNECTION_ROUTE = '/data-source-connection';
 
 export default function DataSourceConnectionPage() {
@@ -36,6 +42,13 @@ export default function DataSourceConnectionPage() {
   const { setSelectedDataSourceId } = useDataSourcesStore();
   const { refetchDataSources } = useDataSourceActions();
   const navigate = useNavigate();
+  const { types: dataSourceTypes, fetchTypes } = useDataSourceTypesStore();
+
+  useEffect(() => {
+    fetchTypes();
+  }, [fetchTypes]);
+
+  const allDataSourceTypes = [...dataSourceTypes, ...DATASOURCES];
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,8 +156,8 @@ export default function DataSourceConnectionPage() {
           <h1 className="text-2xl text-liblab-elements-textPrimary mb-6 text-center">Let's connect your data source</h1>
           <div className="mb-6">
             <p className="text-center text-base font-light text-liblab-elements-textPrimary">
-              Continue with a sample database or connect your PostgreSQL database. More options, such as MongoDB and
-              Github are coming soon!
+              Continue with a sample database or connect your own database. More options, such as MongoDB and Github are
+              coming soon!
             </p>
           </div>
           <div className="flex gap-2 mb-6 items-end">
@@ -156,7 +169,7 @@ export default function DataSourceConnectionPage() {
                   setDbType(value as DataSourceOption);
                   setError(null);
                 }}
-                options={DATASOURCES.filter((opt) => opt.available)}
+                options={allDataSourceTypes.filter((opt) => opt.available)}
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}
@@ -167,7 +180,7 @@ export default function DataSourceConnectionPage() {
               />
             </div>
           </div>
-          {dbType.value === DatabaseType.POSTGRES && (
+          {dbType.value !== 'sample' && (
             <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
               <div>
                 <Label htmlFor="conn-str" className="mb-3 block text-gray-300">
@@ -175,7 +188,7 @@ export default function DataSourceConnectionPage() {
                 </Label>
                 <Input id="conn-str" type="text" value={connStr} onChange={(e) => setConnStr(e.target.value)} />
                 <Label className="mb-3 block !text-[13px] text-gray-300 mt-2">
-                  e.g. postgresql://username:password@host:port/database
+                  e.g. {dbType.value}://username:password@host:port/database
                 </Label>
               </div>
               {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
@@ -211,7 +224,7 @@ export default function DataSourceConnectionPage() {
               </div>
             </form>
           )}
-          {dbType.value === DatabaseType.SAMPLE && (
+          {dbType.value === SAMPLE_DATABASE && (
             <>
               {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
               <Button

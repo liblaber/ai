@@ -11,6 +11,7 @@ import { generateSqlQueries, shouldGenerateSqlQueries } from '~/lib/.server/llm/
 import { getDatabaseSchema } from '~/lib/schema';
 import { mapSqlQueriesToPrompt } from '~/lib/common/prompts/sql';
 import { getLlm } from '~/lib/.server/llm/get-llm';
+import { prisma } from '~/lib/prisma';
 
 export type Messages = Message[];
 
@@ -113,8 +114,17 @@ ${props.summary}
     isFirstUserMessage(processedMessages) ||
     (await shouldGenerateSqlQueries(lastUserMessage, llm.instance, llm.maxTokens, existingQueries))
   ) {
+    const dataSource = await prisma.dataSource.findUniqueOrThrow({ where: { id: currentDataSourceId } });
     const schema = await getDatabaseSchema(currentDataSourceId);
-    const sqlQueries = await generateSqlQueries(schema, lastUserMessage, llm.instance, llm.maxTokens, existingQueries);
+
+    const sqlQueries = await generateSqlQueries(
+      schema,
+      lastUserMessage,
+      llm.instance,
+      llm.maxTokens,
+      dataSource.type,
+      existingQueries,
+    );
 
     if (sqlQueries?.length) {
       logger.debug(`Adding SQL queries as the hidden user message`);

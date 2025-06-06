@@ -1,64 +1,36 @@
-import pkg from 'pg';
+import { DataAccessor } from '@/lib/data-access/dataAccessor';
 
-const { Pool } = pkg;
-const types = pkg.types;
+const databaseUrlDecoded = decodeURIComponent(process.env.DATABASE_URL || '');
+let accessor: ReturnType<typeof DataAccessor.getAccessor> | null = null;
 
-// Scalars
-const typesToParse = [types.builtins.INT4, types.builtins.INT8, types.builtins.NUMERIC];
+async function getAccessor() {
+  if (!accessor) {
+    accessor = DataAccessor.getAccessor(databaseUrlDecoded);
+    await accessor.initialize(databaseUrlDecoded);
+  }
 
-// Arrays
-const arrayTypesToParse = [
-  1007, // INT4[]
-  1016, // INT8[]
-  1231, // NUMERIC[]
-];
-
-typesToParse.forEach((type) => {
-  types.setTypeParser(type, (value) => parseFloat(value));
-});
-
-arrayTypesToParse.forEach((type) => {
-  types.setTypeParser(type, (value) => {
-    return value
-      .slice(1, -1) // remove curly braces
-      .split(',')
-      .map((v) => (v === 'NULL' ? null : parseFloat(v)));
-  });
-});
-
-export interface Column {
-  name: string;
-  type: string;
-  isPrimary: boolean;
-  enumValues?: string[];
+  return accessor;
 }
 
-export interface Table {
-  tableName: string;
-  columns: Column[];
+// Cleanup function to be called when the application shuts down
+export async function cleanupDatabaseConnection() {
+  if (accessor) {
+    await accessor.close();
+    accessor = null;
+  }
 }
-
-const pool = new Pool({
-  connectionString: decodeURIComponent(process.env.DATABASE_URL || ''),
-  connectionTimeoutMillis: 10000, // Increased to 10 seconds
-  idleTimeoutMillis: 60000, // 1 minute
-  max: 10, // Increased pool size
-  ssl: {
-    rejectUnauthorized: false, // Required for RDS connections
-  },
-});
-
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
-});
 
 async function retryQuery<T>(query: string, params?: string[], maxRetries = 1): Promise<{ data: T[] }> {
   let lastError: Error | null = null;
+  const currentAccessor = await getAccessor();
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const result = params && params.length > 0 ? await pool.query(query, params) : await pool.query(query);
-      return { data: result.rows };
+      const data =
+        params && params.length > 0
+          ? await currentAccessor.executeQuery(query, params)
+          : await currentAccessor.executeQuery(query);
+      return { data };
     } catch (error) {
       lastError = error as Error;
       console.error(`Query attempt ${attempt} failed:`, error);
@@ -73,7 +45,10 @@ async function retryQuery<T>(query: string, params?: string[], maxRetries = 1): 
   throw new Error(lastError?.message);
 }
 
-export async function executePostgresQueryDirectly<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
+export async function executeQueryDirectly<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
+  const currentAccessor = await getAccessor();
+  currentAccessor.guardAgainstMaliciousQuery(query);
+
   try {
     return params && params.length > 0 ? await retryQuery<T>(query, params) : await retryQuery<T>(query);
   } catch (error) {

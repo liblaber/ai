@@ -1,6 +1,5 @@
 import { json } from '@remix-run/cloudflare';
-import pg from 'pg';
-import { getSslModeConfig } from '~/utils/sslModeConfig';
+import { DataAccessor } from '@liblab/data-access/dataAccessor';
 import { prisma } from '~/lib/prisma';
 
 export async function action({ request }: { request: Request }) {
@@ -25,35 +24,32 @@ export async function action({ request }: { request: Request }) {
 
     const passwordValue = decodeURIComponent(password ?? '') || (await getPassword(id));
 
-    if (type === 'postgres') {
-      const client = new pg.Client({
-        host,
-        port,
-        user: username,
-        password: passwordValue,
-        database,
-        ssl: getSslModeConfig(sslMode),
-      });
+    const databaseUrl = `${type}://${username}:${encodeURIComponent(passwordValue)}@${host}:${port}/${database}?sslmode=${sslMode ? sslMode.toLowerCase() : 'disable'}`;
 
-      try {
-        await client.connect();
-        await client.query('SELECT 1');
-        await client.end();
+    try {
+      const accessor = DataAccessor.getAccessor(databaseUrl);
+      const isConnected = await accessor.testConnection(databaseUrl);
 
+      if (isConnected) {
         return json({ success: true, message: 'Connection successful' });
-      } catch (error) {
-        console.error('Error connecting to database:', error);
+      } else {
         return json(
           {
             success: false,
-            message: `Failed to connect to database${error instanceof Error ? `: ${error.message}` : ''}`,
+            message: 'Failed to connect to database',
           },
           { status: 400 },
         );
       }
+    } catch (error) {
+      return json(
+        {
+          success: false,
+          message: error instanceof Error ? error.message : 'Failed to connect to database',
+        },
+        { status: 400 },
+      );
     }
-
-    return json({ success: false, error: 'Unsupported database type' }, { status: 400 });
   } catch (error) {
     console.error('Error testing connection:', error);
     return json(

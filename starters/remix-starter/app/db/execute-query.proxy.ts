@@ -1,6 +1,6 @@
 import { decryptData, encryptData } from '@/lib/crypto.server';
 
-export async function executePostgresQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
+export async function executeQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
   const databaseUrl = decodeURIComponent(process.env.DATABASE_URL || '');
 
   const requestBody = {
