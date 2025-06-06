@@ -3,6 +3,9 @@ import type { MySqlColumn, MySqlTable } from '../../types';
 import type { Connection } from 'mysql2/promise';
 import mysql from 'mysql2/promise';
 
+// Configure type casting for numeric values
+const typesToParse = ['INT', 'BIGINT', 'DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE'];
+
 export class MySQLAccessor implements BaseAccessor {
   readonly label = 'MySQL';
   private _connection: Connection | null = null;
@@ -160,7 +163,17 @@ export class MySQLAccessor implements BaseAccessor {
       await this.close();
     }
 
-    this._connection = await mysql.createConnection(databaseUrl);
+    this._connection = await mysql.createConnection({
+      uri: databaseUrl,
+      typeCast: (field, next) => {
+        if (typesToParse.includes(field.type)) {
+          const value = field.string();
+          return value !== null ? parseFloat(value) : null;
+        }
+
+        return next();
+      },
+    });
   }
 
   async close(): Promise<void> {

@@ -153,8 +153,6 @@ export const ModelSelector = ({
     }
   }, [providerList, provider, setProvider, modelList, setModel]);
 
-  console.log({ modelLoading });
-
   if (providerList.length === 0) {
     return (
       <div className="mb-2 p-4 rounded-lg border border-liblab-elements-borderColor bg-liblab-elements-prompt-background text-liblab-elements-textPrimary">

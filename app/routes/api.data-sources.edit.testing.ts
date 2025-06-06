@@ -24,7 +24,7 @@ export async function action({ request }: { request: Request }) {
 
     const passwordValue = decodeURIComponent(password ?? '') || (await getPassword(id));
 
-    const databaseUrl = `${type}://${username}:${encodeURIComponent(passwordValue)}@${host}:${port}/${database}?sslmode=${sslMode || 'disable'}`;
+    const databaseUrl = `${type}://${username}:${encodeURIComponent(passwordValue)}@${host}:${port}/${database}?sslmode=${sslMode ? sslMode.toLowerCase() : 'disable'}`;
 
     try {
       const accessor = DataAccessor.getAccessor(databaseUrl);

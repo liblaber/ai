@@ -20,7 +20,7 @@ export async function action({ request }: { request: Request }) {
       return json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    const databaseUrl = `${type}://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode || 'disable'}`;
+    const databaseUrl = `${type}://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode ? sslMode.toLowerCase() : 'disable'}`;
 
     try {
       const accessor = DataAccessor.getAccessor(databaseUrl);

@@ -5,9 +5,9 @@ import { toast } from 'sonner';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { BaseSelect } from '~/components/ui/Select';
 import {
-  DatabaseType,
   type DataSourceOption,
   DATASOURCES,
+  SAMPLE_DATABASE,
   SelectDatabaseTypeOptions,
   SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
@@ -42,10 +42,8 @@ interface EditDataSourceFormProps {
 
 const generateConnectionString = (dataSource: DataSource): string => {
   const sslMode = dataSource.sslMode?.toLowerCase() || 'disable';
-  return `postgresql://${dataSource.username}:HIDDEN_PASSWORD@${dataSource.host}:${dataSource.port}/${dataSource.database}?sslmode=${sslMode}`;
+  return `${dataSource.type}://${dataSource.username}:HIDDEN_PASSWORD@${dataSource.host}:${dataSource.port}/${dataSource.database}?sslmode=${sslMode}`;
 };
-
-console.log(generateConnectionString, 'TODO');
 
 export default function EditDataSourceForm({
   selectedDataSource,
@@ -54,19 +52,41 @@ export default function EditDataSourceForm({
   onSuccess,
   onDelete,
 }: EditDataSourceFormProps) {
-  const [dbType, setDbType] = useState<DataSourceOption>(
-    DATASOURCES.find((ds) => ds.value === 'postgres') || DATASOURCES[0],
-  );
+  const { types: databaseTypes, fetchTypes, error: typesError } = useDataSourceTypesStore();
+  useEffect(() => {
+    fetchTypes();
+  }, [fetchTypes]);
+
+  const allDatabaseTypes = [
+    ...databaseTypes.map(({ value, label }) => ({
+      value,
+      label,
+      available: true,
+    })),
+    ...DATASOURCES,
+  ];
+
+  const [dbType, setDbType] = useState<DataSourceOption>({} as DataSourceOption);
   const [connStr, setConnStr] = useState('');
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
-  const { types: databaseTypes, fetchTypes, error: typesError } = useDataSourceTypesStore();
 
   useEffect(() => {
-    fetchTypes();
-  }, [fetchTypes]);
+    if (selectedDataSource) {
+      if (selectedDataSource.name === 'Sample Database') {
+        setDbType(DATASOURCES[0]); // Sample Database
+        setConnStr('');
+      } else {
+        setDbType(DATASOURCES.find((opt) => opt.value === selectedDataSource.type) || DATASOURCES[0]);
+        setConnStr(generateConnectionString(selectedDataSource));
+      }
+
+      setError(null);
+      setTestResult(null);
+    }
+  }, [selectedDataSource]);
 
   useEffect(() => {
     if (typesError) {
@@ -74,13 +94,17 @@ export default function EditDataSourceForm({
     }
   }, [typesError]);
 
+  useEffect(() => {
+    setDbType(allDatabaseTypes.find((opt) => opt.value === selectedDataSource?.type) || allDatabaseTypes[0]);
+  }, [allDatabaseTypes]);
+
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
     setTestResult(null);
     setError(null);
 
     try {
-      if (dbType.value === DatabaseType.POSTGRES) {
+      if (dbType.value !== SAMPLE_DATABASE) {
         if (!connStr) {
           setError('Please enter a connection string');
           return;
@@ -116,7 +140,7 @@ export default function EditDataSourceForm({
   };
 
   const handleSaveConfirm = async () => {
-    if (dbType.value === DatabaseType.SAMPLE) {
+    if (dbType.value === SAMPLE_DATABASE) {
       setError('Cannot edit sample database');
       setTestResult(null);
 
@@ -212,7 +236,7 @@ export default function EditDataSourceForm({
             </div>
           </div>
 
-          {dbType.value === DatabaseType.POSTGRES && (
+          {dbType.value !== SAMPLE_DATABASE && (
             <div>
               <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
                 Connection String
@@ -231,17 +255,17 @@ export default function EditDataSourceForm({
                     'transition-all duration-200',
                     'disabled:opacity-50 disabled:cursor-not-allowed',
                   )}
-                  placeholder="postgresql://username:password@host:port/database"
+                  placeholder={`${dbType.value}://username:password@host:port/database`}
                 />
               </div>
               <label className="mb-3 block !text-[13px] text-liblab-elements-textSecondary mt-2">
-                e.g. postgresql://username:password@host:port/database <br />
+                e.g. {dbType.value}://username:password@host:port/database <br />
                 By changing the HIDDEN_PASSWORD placeholder, you actually change the password.
               </label>
             </div>
           )}
 
-          {dbType.value === DatabaseType.SAMPLE && (
+          {dbType.value === SAMPLE_DATABASE && (
             <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
               <div className="flex items-center gap-2">
                 <div className="i-ph:info w-5 h-5 text-blue-500" />
@@ -291,7 +315,7 @@ export default function EditDataSourceForm({
         <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {dbType.value === DatabaseType.POSTGRES && (
+              {dbType.value !== SAMPLE_DATABASE && (
                 <button
                   type="button"
                   onClick={async (e) => {
@@ -338,11 +362,7 @@ export default function EditDataSourceForm({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={
-                  isSubmitting ||
-                  dbType.value === DatabaseType.SAMPLE ||
-                  (dbType.value === DatabaseType.POSTGRES && !connStr)
-                }
+                disabled={isSubmitting || dbType.value === SAMPLE_DATABASE || !connStr}
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',

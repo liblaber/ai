@@ -4,7 +4,7 @@ import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
 import { BaseSelect } from '~/components/ui/Select';
 import {
-  DatabaseType,
+  SAMPLE_DATABASE,
   SelectDatabaseTypeOptions,
   SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
@@ -58,7 +58,7 @@ export default function DataSourceConnectionPage() {
   }, [fetchTypes]);
 
   // Merge API types with hardcoded types, excluding postgres from hardcoded list
-  const allDataSourceTypes = [...apiTypes, ...HARDCODED_DATASOURCES.filter((type) => type.value !== 'postgres')];
+  const allDataSourceTypes = [...apiTypes, ...HARDCODED_DATASOURCES];
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,7 +240,7 @@ export default function DataSourceConnectionPage() {
               </div>
             </form>
           )}
-          {dbType.value === DatabaseType.SAMPLE && (
+          {dbType.value === SAMPLE_DATABASE && (
             <>
               {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
               <Button

@@ -5,9 +5,9 @@ import type { TestConnectionResponse } from '~/components/@settings/tabs/data/Da
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { BaseSelect } from '~/components/ui/Select';
 import {
-  DatabaseType,
   type DataSourceOption,
   DATASOURCES,
+  SAMPLE_DATABASE,
   SelectDatabaseTypeOptions,
   SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
@@ -52,7 +52,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     setError(null);
 
     try {
-      if (dbType.value === DatabaseType.POSTGRES) {
+      if (dbType.value !== SAMPLE_DATABASE) {
         if (!connStr) {
           setError('Please enter a connection string');
           return;
@@ -119,7 +119,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
-    if (dbType.value === DatabaseType.SAMPLE) {
+    if (dbType.value === SAMPLE_DATABASE) {
       await handleSampleDatabase();
       return;
     }
@@ -189,6 +189,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                 }}
                 options={databaseTypes}
                 width="100%"
+                menuPlacement={'bottom'}
                 minWidth="100%"
                 isSearchable={false}
                 components={{
@@ -199,7 +200,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
             </div>
           </div>
 
-          {dbType.value === DatabaseType.POSTGRES && (
+          {dbType.value !== SAMPLE_DATABASE && (
             <div>
               <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
                 Connection String
@@ -217,10 +218,10 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   'transition-all duration-200',
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                 )}
-                placeholder="postgresql://username:password@host:port/database"
+                placeholder={`${dbType.value}://username:password@host:port/database`}
               />
               <label className="mb-3 block !text-[13px] text-liblab-elements-textSecondary mt-2">
-                e.g. postgresql://username:password@host:port/database
+                e.g. {dbType.value}://username:password@host:port/database
               </label>
             </div>
           )}
@@ -263,7 +264,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
         <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {dbType.value === DatabaseType.POSTGRES && (
+              {dbType.value !== SAMPLE_DATABASE && (
                 <button
                   type="button"
                   onClick={async (e) => {
@@ -296,7 +297,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isSubmitting || (dbType.value === DatabaseType.POSTGRES && !connStr)}
+                disabled={isSubmitting || (dbType.value !== SAMPLE_DATABASE && !connStr)}
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',
