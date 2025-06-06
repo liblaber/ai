@@ -11,7 +11,7 @@ export async function action({ request }: { request: Request }) {
     const host = formData.get('host') as string;
     const port = parseInt(formData.get('port') as string);
     const username = formData.get('username') as string;
-    const password = formData.get('password') as string;
+    const password = decodeURIComponent(formData.get('password') as string);
     const type = formData.get('type') as string;
     const database = formData.get('database') as string;
     const sslMode = formData.get('sslMode') as string;

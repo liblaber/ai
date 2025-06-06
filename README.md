@@ -4,6 +4,8 @@ Build internal apps using AI.
 
 Securely connect your database, build an app, and deploy in seconds.
 
+**🚀 [Jump to Quick Start](#-quick-start)** - Get up and running in minutes!
+
 ![Alt text](/assets/videos/liblab-ai-preview.gif 'liblab ai builder - revenue dashboard')
 
 ### Key features
@@ -27,6 +29,42 @@ Securely connect your database, build an app, and deploy in seconds.
   - Create an internal app to search, view, and manage customer tickets pulled from your support database.
 - **Admin Portal**
   - Create a secure interface for non-technical staff to input and edit structured data in your DB.
+
+## 🔒 Security & Privacy
+
+**Your data stays yours.** We've designed liblab.ai with security and privacy as core principles.
+
+### How Your Database Connection Works
+
+When you connect your database to liblab.ai, here's exactly what happens:
+
+1. **🏠 Local Connection**: Your database credentials are stored locally on your machine and never sent to external servers
+2. **🔧 App Generation**: When you build an app, it runs in a secure web container that displays live dashboards with your data
+3. **🌐 Secure Tunneling**: Since the web container can't directly access your local database, we use ngrok to create a secure tunnel
+4. **🔐 End-to-End Encryption**: Every database request, response, query, and data output is encrypted using AES-256 encryption
+
+### Your Encryption Key
+
+- **🔑 Locally Generated**: A unique encryption key is generated on your machine during setup
+- **🔒 Never Shared**: This key stays on your local machine and is never transmitted anywhere
+- **🎯 User-Specific**: Each user gets their own unique encryption key
+- **💾 Secure Storage**: Keys are stored securely in your local environment
+
+### Data Flow Security
+
+```
+Your Database → Encrypted Request → Secure Tunnel → Web Container
+     ↑                                                    ↓
+Local Machine ← Encrypted Response ← Secure Tunnel ← Preview Dashboard
+```
+
+**What this means for you:**
+
+- ✅ Database credentials never leave your machine
+- ✅ All data transmission is encrypted with your unique key
+- ✅ Even if network traffic is intercepted, data remains unreadable
+- ✅ No data is stored on external servers
+- ✅ You maintain complete control over your data access
 
 ---
 

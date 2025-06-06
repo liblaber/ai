@@ -8,9 +8,15 @@ interface StarterTemplateResponse {
   error?: string;
 }
 
-function setDatabaseUrlToEnvFile(files: RepoFile[], databaseUrl: string): RepoFile {
+function writeSensitiveDataToEnvFile(files: RepoFile[], databaseUrl: string): RepoFile {
   const envFile = files.find((x) => x.path.includes('.env'));
   const encodedDatabaseUrl = encodeURIComponent(databaseUrl);
+
+  const encryptionKey = process.env.ENCRYPTION_KEY;
+
+  if (!encryptionKey) {
+    throw new Error('ENCRYPTION_KEY environment variable is not set');
+  }
 
   if (envFile) {
     // Append database URL to existing env file content
@@ -19,14 +25,20 @@ function setDatabaseUrlToEnvFile(files: RepoFile[], databaseUrl: string): RepoFi
       ? `${existingContent}\nDATABASE_URL='${encodedDatabaseUrl}'`
       : `DATABASE_URL='${encodedDatabaseUrl}'`;
 
+    envFile.content += '\n'; // Ensure it ends with a newline
+    envFile.content += `ENCRYPTION_KEY='${encryptionKey}'\n`;
+
     return envFile;
   }
+
+  let content = `DATABASE_URL='${encodedDatabaseUrl}'\n`;
+  content += `ENCRYPTION_KEY='${encryptionKey}'\n`;
 
   // Create new env file if none exists
   return {
     name: '.env',
     path: '.env',
-    content: `DATABASE_URL='${encodedDatabaseUrl}'`,
+    content,
   };
 }
 
@@ -57,7 +69,7 @@ const getStarterTemplateFiles = async (): Promise<RepoFile[]> => {
 
 export async function getStarterTemplateMessages(title: string, databaseUrl: string): Promise<Message[]> {
   const starterFiles = await getStarterTemplateFiles();
-  const envFile = setDatabaseUrlToEnvFile(starterFiles, databaseUrl);
+  const envFile = writeSensitiveDataToEnvFile(starterFiles, databaseUrl);
   const allFiles = [...starterFiles, envFile];
 
   return [

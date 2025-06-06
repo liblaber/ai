@@ -1,3 +1,5 @@
+import { decryptData, encryptData } from '@/lib/crypto.server';
+
 export async function executeQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
   const databaseUrl = decodeURIComponent(process.env.DATABASE_URL || '');
 
@@ -7,10 +9,16 @@ export async function executeQueryThroughProxy<T>(query: string, params?: string
     ...(Array.isArray(params) && params.length > 0 ? { params } : {}),
   };
 
-  return await fetchProxyApi<T[]>('/execute-query', {
+  const encryptedBody = encryptData(requestBody);
+
+  const response = await fetchProxyApi<{ encryptedData: string }>('/execute-query', {
     method: 'POST',
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify({ encryptedData: encryptedBody }),
   });
+
+  const decryptedData = decryptData(response.data.encryptedData);
+
+  return { data: decryptedData };
 }
 
 async function fetchProxyApi<T>(endpoint: string, options: RequestInit = {}): Promise<{ data: T }> {

@@ -3,12 +3,16 @@ import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
 import { BaseSelect } from '~/components/ui/Select';
-import { SelectDatabaseTypeOptions } from '~/components/database/SelectDatabaseTypeOptions';
+import {
+  DatabaseType,
+  SelectDatabaseTypeOptions,
+  SingleValueWithTooltip,
+} from '~/components/database/SelectDatabaseTypeOptions';
 import { useDataSourceActions, useDataSourcesStore } from '~/lib/stores/dataSources';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
-import { SSL_MODE, type SSLMode } from '~/types/database';
 import { useNavigate } from '@remix-run/react';
 import { Header } from '~/components/header/Header';
+import { parseDatabaseConnectionUrl } from '~/utils/parseDatabaseConnectionUrl';
 
 interface ApiResponse {
   success: boolean;
@@ -26,7 +30,7 @@ type DataSourceOption = {
 };
 
 // Hardcoded data sources that are not available through the API
-const HARDCODED_DATASOURCES: DataSourceOption[] = [
+export const HARDCODED_DATASOURCES: DataSourceOption[] = [
   { value: 'sample', label: 'Sample Database', available: true },
   { value: 'mongo', label: 'Mongo', available: false },
   { value: 'hubspot', label: 'Hubspot', available: false },
@@ -56,53 +60,13 @@ export default function DataSourceConnectionPage() {
   // Merge API types with hardcoded types, excluding postgres from hardcoded list
   const allDataSourceTypes = [...apiTypes, ...HARDCODED_DATASOURCES.filter((type) => type.value !== 'postgres')];
 
-  const parseConnectionString = (connStr: string) => {
-    try {
-      const url = new URL(connStr);
-
-      if (!url.protocol.startsWith('postgresql:')) {
-        throw new Error('Connection string must start with postgresql://');
-      }
-
-      if (!url.hostname) {
-        throw new Error('Host is required');
-      }
-
-      if (!url.pathname.slice(1)) {
-        throw new Error('Database name is required');
-      }
-
-      const sslMode = url.searchParams.get('sslmode')?.toUpperCase() || 'DISABLE';
-
-      if (!Object.values(SSL_MODE).includes(sslMode as SSLMode)) {
-        throw new Error(`Invalid SSL mode: ${sslMode}. Valid modes are: ${Object.values(SSL_MODE).join(', ')}`);
-      }
-
-      return {
-        host: url.hostname,
-        port: url.port || '5432',
-        username: url.username,
-        password: url.password,
-        database: url.pathname.slice(1),
-        type: 'postgres',
-        sslMode: sslMode as SSLMode,
-      };
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Invalid connection string: ${error.message}`);
-      }
-
-      throw new Error('Invalid connection string format');
-    }
-  };
-
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsTesting(true);
     setError(null);
 
     try {
-      const connectionDetails = parseConnectionString(connStr);
+      const connectionDetails = parseDatabaseConnectionUrl(connStr);
 
       const formData = new FormData();
       Object.entries(connectionDetails).forEach(([key, value]) => {
@@ -132,7 +96,7 @@ export default function DataSourceConnectionPage() {
     try {
       setError(null);
 
-      const connectionDetails = parseConnectionString(connStr);
+      const connectionDetails = parseDatabaseConnectionUrl(connStr);
       const formData = new FormData();
 
       formData.append('name', connectionDetails.database || '');
@@ -219,7 +183,10 @@ export default function DataSourceConnectionPage() {
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}
-                components={{ MenuList: SelectDatabaseTypeOptions }}
+                components={{
+                  MenuList: SelectDatabaseTypeOptions,
+                  SingleValue: SingleValueWithTooltip,
+                }}
                 isDisabled={isLoadingTypes}
               />
               {isLoadingTypes && (
@@ -273,7 +240,7 @@ export default function DataSourceConnectionPage() {
               </div>
             </form>
           )}
-          {dbType.value === 'sample' && (
+          {dbType.value === DatabaseType.SAMPLE && (
             <>
               {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
               <Button

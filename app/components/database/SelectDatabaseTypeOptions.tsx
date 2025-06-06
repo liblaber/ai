@@ -1,14 +1,42 @@
 import { components } from 'react-select';
+import { SampleDatabaseTooltip } from './SampleDatabaseTooltip';
 
-const DATASOURCES = [
-  { value: 'sample', label: 'Sample Database', available: true },
-  { value: 'postgres', label: 'PostgreSQL', available: true },
-  { value: 'mongo', label: 'Mongo', available: false },
-  { value: 'hubspot', label: 'Hubspot', available: false },
-  { value: 'salesforce', label: 'Salesforce', available: false },
-  { value: 'jira', label: 'Jira', available: false },
-  { value: 'github', label: 'Github', available: false },
+export enum DatabaseType {
+  SAMPLE = 'sample',
+  POSTGRES = 'postgres',
+  MONGO = 'mongo',
+  HUBSPOT = 'hubspot',
+  SALESFORCE = 'salesforce',
+  JIRA = 'jira',
+  GITHUB = 'github',
+}
+
+export type DataSourceOption = {
+  value: DatabaseType;
+  label: string;
+  available: boolean;
+};
+
+export const DATASOURCES: DataSourceOption[] = [
+  { value: DatabaseType.SAMPLE, label: 'Sample Database', available: true },
+  { value: DatabaseType.POSTGRES, label: 'PostgreSQL', available: true },
+  { value: DatabaseType.MONGO, label: 'Mongo', available: false },
+  { value: DatabaseType.HUBSPOT, label: 'Hubspot', available: false },
+  { value: DatabaseType.SALESFORCE, label: 'Salesforce', available: false },
+  { value: DatabaseType.JIRA, label: 'Jira', available: false },
+  { value: DatabaseType.GITHUB, label: 'Github', available: false },
 ];
+
+export const SingleValueWithTooltip = (props: any) => {
+  return (
+    <components.SingleValue {...props}>
+      <div className="flex items-center">
+        <span>{props.data.label}</span>
+        {props.data.value === DatabaseType.SAMPLE && <SampleDatabaseTooltip />}
+      </div>
+    </components.SingleValue>
+  );
+};
 
 export function SelectDatabaseTypeOptions(props: any) {
   const available = DATASOURCES.filter((opt) => opt.available);
@@ -31,7 +59,9 @@ export function SelectDatabaseTypeOptions(props: any) {
           }}
         >
           <div className="flex items-center justify-between w-full rounded-lg text-left text-sm font-medium py-1 px-2">
-            <span>{opt.label}</span>
+            <div className="flex items-center">
+              <span>{opt.label}</span>
+            </div>
             {props.selectProps.value?.value === opt.value && (
               <span className="i-ph:check-bold text-base text-gray-100 ml-2" />
             )}

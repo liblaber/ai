@@ -12,6 +12,29 @@ else
     SED_IN_PLACE=("sed" "-i")
 fi
 
+# Generate AES key if not exists
+echo "📋 Checking for encryption key..."
+if [ ! -f .env ] || ! grep -q "^ENCRYPTION_KEY=." .env; then
+    echo "⏳ Generating AES-256-GCM key..."
+    # Generate a cryptographically secure random 32-byte (256-bit) key
+    # Using /dev/urandom for better entropy
+    ENCRYPTION_KEY=$(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64)
+
+    # Verify the key length (base64 encoding of 32 bytes should be 44 characters)
+    if [ ${#ENCRYPTION_KEY} -ne 44 ]; then
+        echo "❌ Failed to generate proper encryption key"
+        exit 1
+    fi
+
+    # Add to .env file
+    if [ -f .env ]; then
+        echo "ENCRYPTION_KEY='$ENCRYPTION_KEY'" >> .env
+    else
+        echo "ENCRYPTION_KEY='$ENCRYPTION_KEY'" > .env
+    fi
+    echo "✅ Generated and stored AES-256-GCM encryption key."
+fi
+
 # Check if ngrok is installed, otherwise install it
 echo "📋 Checking if ngrok is installed..."
 if ! command -v ngrok &> /dev/null; then
@@ -74,7 +97,7 @@ echo "📋 Validating environment variables..."
 if ! grep -q "^ANTHROPIC_API_KEY=." .env; then
     echo "⚠️ ANTHROPIC_API_KEY not found or empty in .env file."
     read -p "Please enter your Anthropic API key: " anthropic_key
-    "${SED_IN_PLACE[@]}" "s/^ANTHROPIC_API_KEY=.*/ANTHROPIC_API_KEY='$anthropic_key'/" .env
+    echo "ANTHROPIC_API_KEY='$anthropic_key'" >> .env
     echo "✅ Updated ANTHROPIC_API_KEY in .env file."
 fi
 
@@ -86,6 +109,12 @@ if ! grep -q "BASE_URL" .env; then
     fi
     echo "BASE_URL=$base_url" >> .env
     echo "✅ Added BASE_URL to .env file."
+fi
+
+if ! grep -q "VITE_ENV_NAME" .env; then
+    echo "⚠️ VITE_ENV_NAME not found in .env file."
+    echo "VITE_ENV_NAME=local" >> .env
+    echo "✅ Added VITE_ENV_NAME to .env file."
 fi
 
 # Install dependencies

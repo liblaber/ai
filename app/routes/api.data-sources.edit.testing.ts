@@ -1,5 +1,6 @@
 import { json } from '@remix-run/cloudflare';
 import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { prisma } from '~/lib/prisma';
 
 export async function action({ request }: { request: Request }) {
   if (request.method !== 'POST') {
@@ -21,7 +22,9 @@ export async function action({ request }: { request: Request }) {
       return json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    const databaseUrl = `${type}://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode || 'disable'}`;
+    const passwordValue = decodeURIComponent(password ?? '') || (await getPassword(id));
+
+    const databaseUrl = `${type}://${username}:${encodeURIComponent(passwordValue)}@${host}:${port}/${database}?sslmode=${sslMode || 'disable'}`;
 
     try {
       const accessor = DataAccessor.getAccessor(databaseUrl);
@@ -58,4 +61,19 @@ export async function action({ request }: { request: Request }) {
       { status: 500 },
     );
   }
+}
+
+async function getPassword(dataSourceId: string): Promise<string> {
+  const dataSource = await prisma.dataSource.findUnique({
+    where: { id: dataSourceId },
+    select: {
+      password: true,
+    },
+  });
+
+  if (!dataSource) {
+    throw new Error('Data source not found or password retrieval failed');
+  }
+
+  return dataSource.password;
 }
