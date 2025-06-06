@@ -384,12 +384,11 @@ Data accessors provide a standardized way to interact with different database ty
    ```typescript
    import type { BaseAccessor, BaseAccessorConstructor } from './baseAccessor';
    import { PostgresAccessor } from './accessors/postgres';
-   import { SqliteAccessor } from './accessors/sqlite';
    import { MySQLAccessor } from './accessors/mysql';
 
    export class DataAccessor {
      static getAccessor(databaseUrl: string): BaseAccessor {
-       const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, SqliteAccessor, MySQLAccessor];
+       const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor];
 
        const AccessorClass = allAccessors.find((Acc) => Acc.isAccessor(databaseUrl));
 
