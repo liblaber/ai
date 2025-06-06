@@ -6,6 +6,7 @@ import type { ApiError } from '~/types/api-error';
 import { AiGeneration } from '~/components/chat/query-modal/AiGeneration';
 import { QueryResults } from '~/components/chat/query-modal/QueryResults';
 import { QueryEditor } from '~/components/chat/query-modal/QueryEditor';
+import type { DataSource } from '~/lib/services/datasourceService';
 
 interface QueryModalProps {
   isOpen: boolean;
@@ -24,6 +25,26 @@ export const QueryModal = memo(
     const [isTesting, setIsTesting] = useState(false);
     const [userPrompt, setUserPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [dataSource, setDataSource] = useState<DataSource | null>(null);
+
+    async function fetchDataSource() {
+      try {
+        const response = await fetch(`/api/data-sources/${dataSourceId}`);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch data source');
+        }
+
+        const dataSourceData = (await response.json()) as DataSource;
+        setDataSource(dataSourceData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch data source');
+      }
+    }
+
+    useEffect(() => {
+      fetchDataSource();
+    }, []);
 
     useEffect(() => {
       if (isOpen) {
@@ -38,9 +59,33 @@ export const QueryModal = memo(
     }, [isOpen, queryId]);
 
     const formatSql = (sql: string) => {
+      if (!dataSource) {
+        return sql;
+      }
+
       try {
         return format(sql, {
-          language: 'postgresql',
+          language: dataSource.type as
+            | 'bigquery'
+            | 'db2'
+            | 'db2i'
+            | 'duckdb'
+            | 'hive'
+            | 'mariadb'
+            | 'mysql'
+            | 'tidb'
+            | 'n1ql'
+            | 'plsql'
+            | 'postgresql'
+            | 'redshift'
+            | 'spark'
+            | 'sqlite'
+            | 'sql'
+            | 'trino'
+            | 'transactsql'
+            | 'singlestoredb'
+            | 'snowflake'
+            | 'tsql',
           keywordCase: 'upper',
           linesBetweenQueries: 1,
           tabWidth: 2,

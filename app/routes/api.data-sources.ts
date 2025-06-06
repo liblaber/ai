@@ -1,6 +1,7 @@
 import { json } from '@remix-run/cloudflare';
 import { type SSLMode } from '~/types/database';
-import { getDataSources, createDataSource } from '~/lib/services/datasourceService';
+import { createDataSource, getDataSources } from '~/lib/services/datasourceService';
+import { DataAccessor } from '@liblab/data-access/dataAccessor';
 
 export async function loader() {
   const dataSources = await getDataSources();
@@ -19,6 +20,12 @@ export async function action({ request }: { request: Request }) {
     const password = decodeURIComponent(formData.get('password') as string);
     const database = formData.get('database') as string;
     const sslMode = formData.get('sslMode') as SSLMode;
+
+    const availableTypes = DataAccessor.getAvailableDatabaseTypes().map((dbType) => dbType.value);
+
+    if (!availableTypes.includes(type)) {
+      throw new Error('Invalid database type, available types are: ' + availableTypes.join(', '));
+    }
 
     try {
       const dataSource = await createDataSource({

@@ -1,5 +1,6 @@
 import { prisma } from '~/lib/prisma';
 import { json } from '@remix-run/cloudflare';
+import { DataAccessor } from '@liblab/data-access/dataAccessor';
 
 export async function loader({ params }: { request: Request; params: { id: string } }) {
   const dataSource = await prisma.dataSource.findFirst({
@@ -45,8 +46,10 @@ export async function action({ request, params }: { request: Request; params: { 
     const database = formData.get('database') as string;
     const sslMode = formData.get('sslMode') as string;
 
-    if (type !== 'postgres') {
-      return json({ success: false, error: 'Only postgres data sources are supported' }, { status: 400 });
+    const availableTypes = DataAccessor.getAvailableDatabaseTypes().map((dbType) => dbType.value);
+
+    if (!availableTypes.includes(type)) {
+      throw new Error('Invalid database type, available types are: ' + availableTypes.join(', '));
     }
 
     const updateData: any = {

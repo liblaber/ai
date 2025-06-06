@@ -4,6 +4,7 @@ import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
 import { BaseSelect } from '~/components/ui/Select';
 import {
+  DATASOURCES,
   SAMPLE_DATABASE,
   SelectDatabaseTypeOptions,
   SingleValueWithTooltip,
@@ -29,20 +30,10 @@ type DataSourceOption = {
   available: boolean;
 };
 
-// Hardcoded data sources that are not available through the API
-export const HARDCODED_DATASOURCES: DataSourceOption[] = [
-  { value: 'sample', label: 'Sample Database', available: true },
-  { value: 'mongo', label: 'Mongo', available: false },
-  { value: 'hubspot', label: 'Hubspot', available: false },
-  { value: 'salesforce', label: 'Salesfoirce', available: false },
-  { value: 'jira', label: 'Jira', available: false },
-  { value: 'github', label: 'Github', available: false },
-];
-
 export const DATA_SOURCE_CONNECTION_ROUTE = '/data-source-connection';
 
 export default function DataSourceConnectionPage() {
-  const [dbType, setDbType] = useState<DataSourceOption>(HARDCODED_DATASOURCES[0]);
+  const [dbType, setDbType] = useState<DataSourceOption>(DATASOURCES[0]);
   const [connStr, setConnStr] = useState('');
   const [isTesting, setIsTesting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -51,14 +42,13 @@ export default function DataSourceConnectionPage() {
   const { setSelectedDataSourceId } = useDataSourcesStore();
   const { refetchDataSources } = useDataSourceActions();
   const navigate = useNavigate();
-  const { types: apiTypes, fetchTypes, isLoading: isLoadingTypes } = useDataSourceTypesStore();
+  const { types: dataSourceTypes, fetchTypes } = useDataSourceTypesStore();
 
   useEffect(() => {
     fetchTypes();
   }, [fetchTypes]);
 
-  // Merge API types with hardcoded types, excluding postgres from hardcoded list
-  const allDataSourceTypes = [...apiTypes, ...HARDCODED_DATASOURCES];
+  const allDataSourceTypes = [...dataSourceTypes, ...DATASOURCES];
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,8 +156,8 @@ export default function DataSourceConnectionPage() {
           <h1 className="text-2xl text-liblab-elements-textPrimary mb-6 text-center">Let's connect your data source</h1>
           <div className="mb-6">
             <p className="text-center text-base font-light text-liblab-elements-textPrimary">
-              Continue with a sample database or connect your PostgreSQL database. More options, such as MongoDB and
-              Github are coming soon!
+              Continue with a sample database or connect your own database. More options, such as MongoDB and Github are
+              coming soon!
             </p>
           </div>
           <div className="flex gap-2 mb-6 items-end">
@@ -187,13 +177,7 @@ export default function DataSourceConnectionPage() {
                   MenuList: SelectDatabaseTypeOptions,
                   SingleValue: SingleValueWithTooltip,
                 }}
-                isDisabled={isLoadingTypes}
               />
-              {isLoadingTypes && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-                  <span className="i-ph:spinner-gap text-lg animate-spin text-liblab-elements-textPrimary" />
-                </div>
-              )}
             </div>
           </div>
           {dbType.value !== 'sample' && (
@@ -204,7 +188,7 @@ export default function DataSourceConnectionPage() {
                 </Label>
                 <Input id="conn-str" type="text" value={connStr} onChange={(e) => setConnStr(e.target.value)} />
                 <Label className="mb-3 block !text-[13px] text-gray-300 mt-2">
-                  e.g. postgresql://username:password@host:port/database
+                  e.g. {dbType.value}://username:password@host:port/database
                 </Label>
               </div>
               {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
