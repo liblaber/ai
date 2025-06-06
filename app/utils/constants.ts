@@ -9,7 +9,6 @@ export const SQL_MODEL_REGEX = /\[SqlModel: (.*?)\]\n\n/;
 export const SQL_PROVIDER_REGEX = /\[SqlProvider: (.*?)\]\n\n/;
 export const FIRST_USER_MESSAGE_REGEX = /\[FirstUserMessage: (.*?)\]\n\n/;
 export const ASK_LIBLAB_REGEX = /\[AskLiblab: (.*?)\]\n\n/;
-export const DEFAULT_MODEL = 'claude-3-5-sonnet-latest';
 export const PROMPT_COOKIE_KEY = 'cachedPrompt';
 export const DATA_SOURCE_ID_REGEX = /\[DataSourceId: (.*?)\]\n\n/;
 
@@ -19,15 +18,7 @@ export enum MessageRole {
   Assistant = 'assistant',
 }
 
-const llmManager = LLMManager.getInstance(import.meta.env);
+const llmManager = LLMManager.getInstance();
 
-export const PROVIDER_LIST = llmManager.getAllProviders();
-export const DEFAULT_PROVIDER = llmManager.getDefaultProvider();
-
-export const providerBaseUrlEnvKeys: Record<string, { baseUrlKey?: string; apiTokenKey?: string }> = {};
-PROVIDER_LIST.forEach((provider) => {
-  providerBaseUrlEnvKeys[provider.name] = {
-    baseUrlKey: provider.config.baseUrlKey,
-    apiTokenKey: provider.config.apiTokenKey,
-  };
-});
+export const DEFAULT_PROVIDER = llmManager.getProvider();
+export const DEFAULT_MODEL = llmManager.defaultModel;

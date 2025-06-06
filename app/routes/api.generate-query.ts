@@ -3,13 +3,9 @@ import { type ActionFunction, json } from '@remix-run/cloudflare';
 import { generateSqlQueries } from '~/lib/.server/llm/database-source';
 import { createScopedLogger } from '~/utils/logger';
 import { z } from 'zod';
-import { LLMManager } from '~/lib/modules/llm/manager';
-import { parseCookies } from '~/lib/api/cookies';
-import { DEFAULT_MODEL } from '~/utils/constants';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 
 const logger = createScopedLogger('generate-sql');
-const llmManager = LLMManager.getInstance(import.meta.env);
 
 const requestSchema = z.object({
   prompt: z.string(),
@@ -24,14 +20,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     const schema = await getDatabaseSchema('unused');
 
-    const cookieHeader = request.headers.get('Cookie');
-    const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
-
-    const llm = await getLlm({
-      modelName: DEFAULT_MODEL,
-      provider: llmManager.getDefaultProvider(),
-      apiKeys,
-    });
+    const llm = await getLlm();
 
     const queries = await generateSqlQueries(schema, prompt, llm.instance, llm.maxTokens, existingQueries);
 

@@ -1,8 +1,7 @@
 import { type CoreTool, generateText, type GenerateTextResult, type Message } from 'ai';
-import { DEFAULT_MODEL, DEFAULT_PROVIDER, PROVIDER_LIST } from '~/utils/constants';
+import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '~/utils/constants';
 import { extractCurrentContext, extractPropertiesFromMessage, simplifyLiblabActions } from './utils';
 import { createScopedLogger } from '~/utils/logger';
-import { LLMManager } from '~/lib/modules/llm/manager';
 
 const logger = createScopedLogger('create-summary');
 
@@ -16,7 +15,6 @@ export async function createSummary(props: {
 }) {
   const { messages, env: serverEnv, apiKeys, onFinish } = props;
   const currentModel = DEFAULT_MODEL;
-  const currentProvider = DEFAULT_PROVIDER.name;
   const processedMessages = messages.map((message) => {
     if (message.role === 'user') {
       const { content } = extractPropertiesFromMessage(message);
@@ -35,13 +33,7 @@ export async function createSummary(props: {
     return message;
   });
 
-  const provider = PROVIDER_LIST.find((p) => p.name === currentProvider) || DEFAULT_PROVIDER;
-  const staticModels = LLMManager.getInstance().getStaticModelListFromProvider(provider);
-  const modelDetails = staticModels.find((m) => m.name === currentModel);
-
-  if (!modelDetails) {
-    throw new Error(`Invalid model: ${currentModel} for provider: ${currentProvider}`);
-  }
+  const provider = DEFAULT_PROVIDER;
 
   let slicedMessages = processedMessages;
   const { summary } = extractCurrentContext(processedMessages);
