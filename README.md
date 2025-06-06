@@ -146,11 +146,16 @@ Data accessors provide a standardized way to interact with different database ty
 
    ```typescript
    import type { BaseAccessor } from '../baseAccessor';
-   import type { Table } from '../../types';
-   import Database from 'mysql2/promise';
+   import type { MySqlColumn, MySqlTable } from '../../types';
+   import type { Connection } from 'mysql2/promise';
+   import mysql from 'mysql2/promise';
+
+   // Configure type casting for numeric values
+   const typesToParse = ['INT', 'BIGINT', 'DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE', 'NEWDECIMAL'];
 
    export class MySQLAccessor implements BaseAccessor {
-     private _connection: Database.Connection | null = null;
+     readonly label = 'MySQL';
+     private _connection: Connection | null = null;
 
      static isAccessor(databaseUrl: string): boolean {
        return databaseUrl.startsWith('mysql://');
@@ -158,22 +163,22 @@ Data accessors provide a standardized way to interact with different database ty
 
      async testConnection(databaseUrl: string): Promise<boolean> {
        try {
-         const connection = await Database.createConnection(databaseUrl);
+         const connection = await mysql.createConnection(databaseUrl);
          await connection.query('SELECT 1');
          await connection.end();
          return true;
-       } catch (error) {
+       } catch (error: any) {
          return false;
        }
      }
 
-     async executeQuery(databaseUrl: string, query: string, params?: string[]): Promise<any[]> {
+     async executeQuery(query: string, params?: string[]): Promise<any[]> {
        if (!this._connection) {
-         await this.initialize(databaseUrl);
+         throw new Error('Database connection not initialized. Please call initialize() first.');
        }
 
        try {
-         const [rows] = await this._connection!.query(query, params);
+         const [rows] = await this._connection.query(query, params);
          return rows as any[];
        } catch (error) {
          console.error('Error executing query:', error);
@@ -183,10 +188,11 @@ Data accessors provide a standardized way to interact with different database ty
 
      guardAgainstMaliciousQuery(query: string): void {
        if (!query) {
-         throw new Error('No SQL query provided');
+         throw new Error('No SQL query provided. Please provide a valid SQL query to execute.');
        }
 
        const normalizedQuery = query.trim().toUpperCase();
+
        if (!normalizedQuery.startsWith('SELECT') && !normalizedQuery.startsWith('WITH')) {
          throw new Error('SQL query must start with SELECT or WITH');
        }
@@ -208,44 +214,90 @@ Data accessors provide a standardized way to interact with different database ty
        }
      }
 
-     async getSchema(databaseUrl: string): Promise<Table[]> {
+     async getSchema(): Promise<MySqlTable[]> {
        if (!this._connection) {
-         await this.initialize(databaseUrl);
+         throw new Error('Database connection not initialized. Please call initialize() first.');
        }
 
+       // Query to get all tables with their comments
+       const tablesQuery = `
+         SELECT
+           TABLE_NAME,
+           TABLE_COMMENT
+         FROM INFORMATION_SCHEMA.TABLES
+         WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_TYPE = 'BASE TABLE'
+         ORDER BY TABLE_NAME;
+       `;
+
+       // Query to get all columns with their details
+       const columnsQuery = `
+         SELECT
+           c.TABLE_NAME,
+           c.COLUMN_NAME,
+           c.DATA_TYPE,
+           c.COLUMN_TYPE,
+           c.IS_NULLABLE,
+           c.COLUMN_DEFAULT,
+           c.COLUMN_COMMENT,
+           c.COLUMN_KEY,
+           c.EXTRA
+         FROM INFORMATION_SCHEMA.COLUMNS c
+         WHERE c.TABLE_SCHEMA = DATABASE()
+         ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION;
+       `;
+
        try {
-         const [tables] = await this._connection!.query(`
-           SELECT table_name
-           FROM information_schema.tables
-           WHERE table_schema = DATABASE()
-         `);
+         // Execute both queries
+         const [tablesResult] = await this._connection.execute(tablesQuery);
+         const [columnsResult] = await this._connection.execute(columnsQuery);
 
-         const result: Table[] = [];
+         const tables = tablesResult as any[];
+         const columns = columnsResult as any[];
 
-         for (const table of tables as any[]) {
-           const [columns] = await this._connection!.query(
-             `
-             SELECT 
-               column_name as name,
-               data_type as type,
-               column_key = 'PRI' as isPrimary
-             FROM information_schema.columns
-             WHERE table_schema = DATABASE()
-               AND table_name = ?
-           `,
-             [table.table_name],
-           );
+         // Group columns by table
+         const columnsByTable = new Map<string, any[]>();
+         columns.forEach((column) => {
+           if (!columnsByTable.has(column.TABLE_NAME)) {
+             columnsByTable.set(column.TABLE_NAME, []);
+           }
+           columnsByTable.get(column.TABLE_NAME)!.push(column);
+         });
 
-           result.push({
-             tableName: table.table_name,
-             columns: columns as any[],
-           });
-         }
+         // Build the result
+         const result: MySqlTable[] = tables.map((table) => ({
+           tableName: table.TABLE_NAME,
+           tableComment: table.TABLE_COMMENT || '',
+           columns: (columnsByTable.get(table.TABLE_NAME) || []).map((col) => {
+             const column: MySqlColumn = {
+               name: col.COLUMN_NAME,
+               type: col.DATA_TYPE,
+               fullType: col.COLUMN_TYPE,
+               nullable: col.IS_NULLABLE,
+               defaultValue: col.COLUMN_DEFAULT,
+               comment: col.COLUMN_COMMENT || '',
+               isPrimary: col.COLUMN_KEY === 'PRI',
+               extra: col.EXTRA || '',
+             };
+
+             // Extract enum values if the column type is ENUM
+             if (col.DATA_TYPE === 'enum') {
+               const enumMatch = col.COLUMN_TYPE.match(/enum\((.+)\)/i);
+               if (enumMatch) {
+                 const enumString = enumMatch[1];
+                 const enumValues = enumString.split(',').map((val: string) => val.trim().replace(/^'|'$/g, ''));
+                 column.enumValues = enumValues;
+               }
+             }
+
+             return column;
+           }),
+         }));
 
          return result;
        } catch (error) {
-         console.error('Error fetching schema:', error);
-         throw new Error((error as Error)?.message);
+         console.error('Error fetching database schema:', error);
+         throw error;
        }
      }
 
@@ -253,7 +305,17 @@ Data accessors provide a standardized way to interact with different database ty
        if (this._connection) {
          await this.close();
        }
-       this._connection = await Database.createConnection(databaseUrl);
+
+       this._connection = await mysql.createConnection({
+         uri: databaseUrl,
+         typeCast: (field, next) => {
+           if (typesToParse.includes(field.type)) {
+             const value = field.string();
+             return value !== null ? parseFloat(value) : null;
+           }
+           return next();
+         },
+       });
      }
 
      async close(): Promise<void> {
@@ -297,6 +359,9 @@ Each accessor should:
 - Handle errors appropriately
 - Implement connection testing
 - Properly manage database connections (initialize/close)
+- Support type casting for numeric values
+- Handle enum types and their values
+- Include table and column comments in schema information
 
 The accessor interface ensures consistent behavior across different database types while allowing for database-specific optimizations and features.
 

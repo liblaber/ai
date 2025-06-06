@@ -4,7 +4,7 @@ import type { Connection } from 'mysql2/promise';
 import mysql from 'mysql2/promise';
 
 // Configure type casting for numeric values
-const typesToParse = ['INT', 'BIGINT', 'DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE'];
+const typesToParse = ['INT', 'BIGINT', 'DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE', 'NEWDECIMAL'];
 
 export class MySQLAccessor implements BaseAccessor {
   readonly label = 'MySQL';
