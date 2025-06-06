@@ -1,14 +1,7 @@
 import { convertToCoreMessages, type Message, streamText as _streamText } from 'ai';
 import { type FileMap } from './constants';
 import { getSystemPrompt } from '~/lib/common/prompts/prompts';
-import {
-  DEFAULT_MODEL,
-  DEFAULT_PROVIDER,
-  MessageRole,
-  MODIFICATIONS_TAG_NAME,
-  PROVIDER_LIST,
-  WORK_DIR,
-} from '~/utils/constants';
+import { DEFAULT_PROVIDER, MessageRole, MODIFICATIONS_TAG_NAME, WORK_DIR } from '~/utils/constants';
 import { PromptLibrary } from '~/lib/common/prompt-library';
 import { allowedHTMLElements } from '~/utils/markdown';
 import { createScopedLogger } from '~/utils/logger';
@@ -28,9 +21,7 @@ const logger = createScopedLogger('stream-text');
 
 export async function streamText(props: {
   messages: Omit<Message, 'id'>[];
-  env?: Env;
   options?: StreamingOptions;
-  apiKeys?: Record<string, string>;
   files?: FileMap;
   promptId?: string;
   contextOptimization?: boolean;
@@ -39,38 +30,12 @@ export async function streamText(props: {
   messageSliceId?: number;
   request: Request;
 }) {
-  const {
-    messages,
-    env: serverEnv,
-    options,
-    apiKeys,
-    files,
-    promptId,
-    contextOptimization,
-    contextFiles,
-    summary,
-  } = props;
-  let currentModel = DEFAULT_MODEL;
-  let currentProvider = DEFAULT_PROVIDER.name;
-  let currentSqlModel: string | undefined;
-  let currentSqlProvider: string | undefined;
+  const { messages, options, files, promptId, contextOptimization, contextFiles, summary } = props;
   let currentDataSourceId: string | undefined = '';
 
   let processedMessages = messages.map((message) => {
     if (message.role === MessageRole.User) {
-      const {
-        model,
-        provider,
-        sqlModel: extractedSqlModel,
-        sqlProvider: extractedSqlProvider,
-        content,
-        isFirstUserMessage,
-        dataSourceId,
-      } = extractPropertiesFromMessage(message);
-      currentModel = model;
-      currentProvider = provider;
-      currentSqlModel = extractedSqlModel;
-      currentSqlProvider = extractedSqlProvider;
+      const { content, isFirstUserMessage, dataSourceId } = extractPropertiesFromMessage(message);
       currentDataSourceId = dataSourceId;
 
       return { ...message, content, isFirstUserMessage };
@@ -85,27 +50,9 @@ export async function streamText(props: {
     return message;
   });
 
-  const provider = PROVIDER_LIST.find((p) => p.name === currentProvider) || DEFAULT_PROVIDER;
-  const sqlProvider = currentSqlProvider
-    ? PROVIDER_LIST.find((p) => p.name === currentSqlProvider) || DEFAULT_PROVIDER
-    : provider;
+  const provider = DEFAULT_PROVIDER;
 
-  const regularLlm = await getLlm({
-    modelName: currentModel,
-    provider,
-    apiKeys,
-    serverEnv,
-  });
-
-  const sqlLlm =
-    currentSqlModel && currentSqlProvider
-      ? await getLlm({
-          modelName: currentSqlModel,
-          provider: sqlProvider,
-          apiKeys,
-          serverEnv,
-        })
-      : regularLlm;
+  const llm = await getLlm();
 
   const lastUserMessage = getLastUserMessageContent(processedMessages);
 
@@ -165,7 +112,7 @@ ${props.summary}
 
   if (
     isFirstUserMessage(processedMessages) ||
-    (await shouldGenerateSqlQueries(lastUserMessage, sqlLlm.instance, sqlLlm.maxTokens, existingQueries))
+    (await shouldGenerateSqlQueries(lastUserMessage, llm.instance, llm.maxTokens, existingQueries))
   ) {
     const dataSource = await prisma.dataSource.findUniqueOrThrow({ where: { id: currentDataSourceId } });
     const schema = await getDatabaseSchema(currentDataSourceId);
@@ -173,8 +120,8 @@ ${props.summary}
     const sqlQueries = await generateSqlQueries(
       schema,
       lastUserMessage,
-      sqlLlm.instance,
-      sqlLlm.maxTokens,
+      llm.instance,
+      llm.maxTokens,
       dataSource.type,
       existingQueries,
     );
@@ -189,12 +136,12 @@ ${props.summary}
     }
   }
 
-  logger.info(`Sending llm call to ${provider.name} with model ${regularLlm.details.name}`);
+  logger.info(`Sending llm call to ${provider.name} with model ${llm.details.name}`);
 
   return _streamText({
-    model: regularLlm.instance,
+    model: llm.instance,
     system: systemPrompt,
-    maxTokens: regularLlm.maxTokens,
+    maxTokens: llm.maxTokens,
     messages: convertToCoreMessages(processedMessages as any),
     ...options,
   });
