@@ -1,8 +1,7 @@
 import { type CoreTool, generateText, type GenerateTextResult, type Message } from 'ai';
 import ignore from 'ignore';
-import type { IProviderSetting } from '~/types/model';
 import { type FileMap, IGNORE_PATTERNS } from './constants';
-import { DEFAULT_MODEL, DEFAULT_PROVIDER, PROVIDER_LIST } from '~/utils/constants';
+import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '~/utils/constants';
 import {
   createFilesContext,
   extractCurrentContext,
@@ -10,7 +9,6 @@ import {
   simplifyLiblabActions,
 } from './utils';
 import { createScopedLogger } from '~/utils/logger';
-import { LLMManager } from '~/lib/modules/llm/manager';
 
 // Common patterns to ignore, similar to .gitignore
 
@@ -22,20 +20,16 @@ export async function selectContext(props: {
   env?: Env;
   apiKeys?: Record<string, string>;
   files: FileMap;
-  providerSettings?: Record<string, IProviderSetting>;
   promptId?: string;
   contextOptimization?: boolean;
   summary: string;
   onFinish?: (resp: GenerateTextResult<Record<string, CoreTool<any, any>>, never>) => void;
 }) {
-  const { messages, env: serverEnv, apiKeys, files, providerSettings, summary, onFinish } = props;
-  let currentModel = DEFAULT_MODEL;
-  let currentProvider = DEFAULT_PROVIDER.name;
+  const { messages, env: serverEnv, apiKeys, files, summary, onFinish } = props;
+  const currentModel = DEFAULT_MODEL;
   const processedMessages = messages.map((message) => {
     if (message.role === 'user') {
-      const { model, provider, content } = extractPropertiesFromMessage(message);
-      currentModel = model;
-      currentProvider = provider;
+      const { content } = extractPropertiesFromMessage(message);
 
       return { ...message, content };
     } else if (message.role == 'assistant') {
@@ -52,34 +46,7 @@ export async function selectContext(props: {
     return message;
   });
 
-  const provider = PROVIDER_LIST.find((p) => p.name === currentProvider) || DEFAULT_PROVIDER;
-  const staticModels = LLMManager.getInstance().getStaticModelListFromProvider(provider);
-  let modelDetails = staticModels.find((m) => m.name === currentModel);
-
-  if (!modelDetails) {
-    const modelsList = [
-      ...(provider.staticModels || []),
-      ...(await LLMManager.getInstance().getModelListFromProvider(provider, {
-        apiKeys,
-        providerSettings,
-        serverEnv: serverEnv as any,
-      })),
-    ];
-
-    if (!modelsList.length) {
-      throw new Error(`No models found for provider ${provider.name}`);
-    }
-
-    modelDetails = modelsList.find((m) => m.name === currentModel);
-
-    if (!modelDetails) {
-      // Fallback to first model
-      logger.warn(
-        `MODEL [${currentModel}] not found in provider [${provider.name}]. Falling back to first model. ${modelsList[0].name}`,
-      );
-      modelDetails = modelsList[0];
-    }
-  }
+  const provider = DEFAULT_PROVIDER;
 
   const { codeContext } = extractCurrentContext(processedMessages);
 
@@ -177,7 +144,6 @@ export async function selectContext(props: {
       model: currentModel,
       serverEnv,
       apiKeys,
-      providerSettings,
     }),
   });
 

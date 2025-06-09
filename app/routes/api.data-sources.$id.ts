@@ -74,7 +74,7 @@ export async function action({ request, params }: { request: Request; params: { 
       await infisical.secrets().createSecret(secretName, {
         environment: env.INFISICAL_ENVIRONMENT!,
         projectId: env.INFISICAL_PROJECT_ID!,
-        secretValue: password,
+        secretValue: decodeURIComponent(password),
       });
 
       updateData.secretName = secretName;

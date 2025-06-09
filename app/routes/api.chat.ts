@@ -3,7 +3,6 @@ import { type FileMap, MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/l
 import { CONTINUE_PROMPT } from '~/lib/common/prompts/prompts';
 import SwitchableStream from '~/lib/.server/llm/switchable-stream';
 import type { Message } from 'ai';
-import type { IProviderSetting } from '~/types/model';
 import { createScopedLogger } from '~/utils/logger';
 import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
 import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
@@ -82,9 +81,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
   const cookieHeader = request.headers.get('Cookie');
   const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
-  const providerSettings: Record<string, IProviderSetting> = JSON.parse(
-    parseCookies(cookieHeader || '').providers || '{}',
-  );
 
   const stream = new SwitchableStream();
 
@@ -130,7 +126,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             messages: [...messages],
             env: context.cloudflare?.env,
             apiKeys,
-            providerSettings,
             promptId,
             contextOptimization,
             onFinish(resp) {
@@ -173,7 +168,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             env: context.cloudflare?.env,
             apiKeys,
             files,
-            providerSettings,
             promptId,
             contextOptimization,
             summary,
@@ -268,7 +262,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
               options,
               apiKeys,
               files,
-              providerSettings,
               promptId,
               contextOptimization,
               contextFiles: filteredFiles,
@@ -295,7 +288,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           options,
           apiKeys,
           files,
-          providerSettings,
           promptId,
           contextOptimization,
           contextFiles: filteredFiles,

@@ -1,5 +1,4 @@
 import { atom, map } from 'nanostores';
-import { PROVIDER_LIST } from '~/utils/constants';
 import type { IProviderConfig } from '~/types/model';
 import type {
   DevTabConfig,
@@ -65,17 +64,6 @@ const isBrowser = typeof window !== 'undefined';
 // Initialize provider settings from both localStorage and defaults
 const getInitialProviderSettings = (): ProviderSetting => {
   const initialSettings: ProviderSetting = {};
-
-  // Start with default settings
-  PROVIDER_LIST.forEach((provider) => {
-    initialSettings[provider.name] = {
-      ...provider,
-      settings: {
-        // Local providers should be disabled by default
-        enabled: !LOCAL_PROVIDERS.includes(provider.name),
-      },
-    };
-  });
 
   // Only try to load from localStorage in the browser
   if (isBrowser) {

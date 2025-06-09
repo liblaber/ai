@@ -1,41 +1,25 @@
 import { type ActionFunctionArgs } from '@remix-run/cloudflare';
 import { streamText } from '~/lib/.server/llm/stream-text';
 import { stripIndents } from '~/utils/stripIndent';
-import type { ProviderInfo } from '~/types/model';
-import { getApiKeysFromCookie, getProviderSettingsFromCookie } from '~/lib/api/cookies';
+import { getApiKeysFromCookie } from '~/lib/api/cookies';
+import { env } from '~/lib/config/env';
+import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '~/utils/constants';
 
 export async function action(args: ActionFunctionArgs) {
   return enhancerAction(args);
 }
 
 async function enhancerAction({ context, request }: ActionFunctionArgs) {
-  const { message, model, provider } = await request.json<{
+  const { message } = await request.json<{
     message: string;
-    model: string;
-    provider: ProviderInfo;
-    apiKeys?: Record<string, string>;
   }>();
 
-  const { name: providerName } = provider;
-
-  // validate 'model' and 'provider' fields
-  if (!model || typeof model !== 'string') {
-    throw new Response('Invalid or missing model', {
-      status: 400,
-      statusText: 'Bad Request',
-    });
-  }
-
-  if (!providerName || typeof providerName !== 'string') {
-    throw new Response('Invalid or missing provider', {
-      status: 400,
-      statusText: 'Bad Request',
-    });
-  }
+  // Use environment variables for model and provider
+  const model = env.DEFAULT_LLM_MODEL || DEFAULT_MODEL;
+  const providerName = env.DEFAULT_LLM_PROVIDER || DEFAULT_PROVIDER.name;
 
   const cookieHeader = request.headers.get('Cookie');
   const apiKeys = getApiKeysFromCookie(cookieHeader);
-  const providerSettings = getProviderSettingsFromCookie(cookieHeader);
 
   try {
     const result = await streamText({
@@ -76,19 +60,9 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
       ],
       env: context.cloudflare?.env as any,
       apiKeys,
-      providerSettings,
       options: {
         systemPrompt:
           'You are a senior software principal architect, you should help the user analyse the user query and enrich it with the necessary context and constraints to make it more specific, actionable, and effective. You should also ensure that the prompt is self-contained and uses professional language. Your response should ONLY contain the enhanced prompt text. Do not include any explanations, metadata, or wrapper tags.',
-
-        /*
-         * onError: (event) => {
-         *   throw new Response(null, {
-         *     status: 500,
-         *     statusText: 'Internal Server Error',
-         *   });
-         * }
-         */
       },
       request,
     });

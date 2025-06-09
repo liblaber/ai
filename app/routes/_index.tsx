@@ -31,16 +31,6 @@ export default function Index() {
   const { usedCredits, maxCreditsPerDay } = useCreditsStore();
 
   useEffect(() => {
-    const storedRedirectUrl = localStorage.getItem('authRedirectUrl');
-
-    if (storedRedirectUrl) {
-      localStorage.removeItem('authRedirectUrl');
-
-      navigate(storedRedirectUrl);
-    }
-  }, [navigate]);
-
-  useEffect(() => {
     if (!session || hasInsufficientCredits()) {
       return;
     }

@@ -12,9 +12,9 @@ export function requireAuth<T extends LoaderFunction | ActionFunction>(handler: 
     const session = await auth.api.getSession({ headers: args.request.headers });
 
     if (!session) {
-      // If it's a GET request, redirect to login
+      // If it's a GET request, redirect to root
       if (args.request.method === 'GET') {
-        return redirect('/login');
+        return redirect('/');
       }
 
       // For other methods, return 401

@@ -2,15 +2,7 @@ import { Anthropic } from '@anthropic-ai/sdk';
 import { GoogleGenAI } from '@google/genai';
 import { type FileMap } from './constants';
 import { getSystemPrompt } from '~/lib/common/prompts/prompts';
-import {
-  DEFAULT_MODEL,
-  DEFAULT_PROVIDER,
-  MessageRole,
-  MODIFICATIONS_TAG_NAME,
-  PROVIDER_LIST,
-  WORK_DIR,
-} from '~/utils/constants';
-import type { IProviderSetting } from '~/types/model';
+import { DEFAULT_PROVIDER, MessageRole, MODIFICATIONS_TAG_NAME, WORK_DIR } from '~/utils/constants';
 import { PromptLibrary } from '~/lib/common/prompt-library';
 import { allowedHTMLElements } from '~/utils/markdown';
 import { createScopedLogger } from '~/utils/logger';
@@ -26,8 +18,6 @@ import { env } from '~/lib/config/env';
 import { randomUUID } from 'crypto';
 
 const logger = createScopedLogger('stream-text');
-
-// type MessageContent = string | Array<{ type: string; text: string }>;
 
 function convertMessageToAnthropicFormat(message: Omit<Message, 'id'>) {
   const role = message.role === 'system' ? 'assistant' : message.role === 'data' ? 'user' : message.role;
@@ -60,7 +50,6 @@ export async function streamText(props: {
   options?: StreamTextOptions;
   apiKeys?: Record<string, string>;
   files?: FileMap;
-  providerSettings?: Record<string, IProviderSetting>;
   promptId?: string;
   contextOptimization?: boolean;
   contextFiles?: FileMap;
@@ -75,21 +64,7 @@ export async function streamText(props: {
   now: () => string;
   usage: () => { completionTokens: number; promptTokens: number; totalTokens: number };
 }> {
-  const {
-    messages,
-    env: serverEnv,
-    options,
-    apiKeys,
-    files,
-    providerSettings,
-    promptId,
-    contextOptimization,
-    contextFiles,
-    summary,
-    request,
-  } = props;
-  const currentModel = DEFAULT_MODEL;
-  const currentProvider = DEFAULT_PROVIDER.name;
+  const { messages, options, files, promptId, contextOptimization, contextFiles, summary, request } = props;
   let currentDataSourceId: string | undefined = '';
 
   let processedMessages = messages.map((message) => {
@@ -112,15 +87,9 @@ export async function streamText(props: {
     return message;
   });
 
-  const provider = PROVIDER_LIST.find((p) => p.name === currentProvider) || DEFAULT_PROVIDER;
+  const provider = DEFAULT_PROVIDER;
 
-  const llm = await getLlm({
-    modelName: currentModel,
-    provider,
-    apiKeys,
-    providerSettings,
-    serverEnv,
-  });
+  const llm = await getLlm();
 
   const lastUserMessage = getLastUserMessageContent(processedMessages);
 

@@ -61,7 +61,7 @@ export interface TabWindowConfig {
 
 export const TAB_LABELS: Record<TabType, string> = {
   settings: 'Settings',
-  data: 'Data Management',
+  data: 'Data Sources',
   'service-status': 'Service Status',
   github: 'GitHub',
   'task-manager': 'Task Manager',

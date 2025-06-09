@@ -24,7 +24,7 @@ export async function action({ request }: { request: Request }) {
       return json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    const passwordValue = password || (await getPassword(id));
+    const passwordValue = decodeURIComponent(password ?? '') || (await getPassword(id));
 
     // For PostgreSQL, we'll use the node-postgres client to test the connection
     if (type === 'postgres') {
@@ -44,10 +44,11 @@ export async function action({ request }: { request: Request }) {
 
         return json({ success: true, message: 'Connection successful' });
       } catch (error) {
+        console.error('Error connecting to database:', error);
         return json(
           {
             success: false,
-            message: error instanceof Error ? error.message : 'Failed to connect to database',
+            message: `Failed to connect to database${error instanceof Error ? `: ${error.message}` : ''}`,
           },
           { status: 400 },
         );
