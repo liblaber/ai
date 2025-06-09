@@ -14,12 +14,13 @@ import fileSaver from 'file-saver';
 import { Octokit, type RestEndpointMethodTypes } from '@octokit/rest';
 import { path } from '~/utils/path';
 import { extractRelativePath } from '~/utils/diff';
-import { description } from '~/lib/persistence';
+import { chatId, description } from '~/lib/persistence';
 import Cookies from 'js-cookie';
 import { createSampler } from '~/utils/sampler';
 import type { ActionAlert } from '~/types/actions';
 import type { LiblabShell } from '~/utils/shell';
 import { toast } from 'sonner';
+import { useGitCommitStore } from './git';
 
 const { saveAs } = fileSaver;
 
@@ -557,6 +558,17 @@ export class WorkbenchStore {
         ref: `heads/${repo.default_branch || 'main'}`, // Handle dynamic branch
         sha: newCommit.sha,
       });
+
+      // Store the commit hash and metadata in the persistent store under the current chat ID
+      const currentChatId = chatId.get();
+
+      if (currentChatId) {
+        useGitCommitStore.getState().setGitMetadata(currentChatId, {
+          gitUrl: repo.html_url,
+          latestCommitHash: newCommit.sha,
+          gitBranch: repo.default_branch || 'main',
+        });
+      }
 
       toast.success(`Repository created and code pushed: ${repo.html_url}`);
     } catch (error) {

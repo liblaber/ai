@@ -27,6 +27,7 @@ import { LLMManager } from '~/lib/modules/llm/manager';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { type Message, useChat } from '@ai-sdk/react';
 import { generateId } from 'ai';
+import { useGitPullSync } from '~/lib/stores/git';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -172,6 +173,8 @@ export const ChatImpl = memo(
     const { parsedMessages, parseMessages } = useMessageParser();
 
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
+
+    useGitPullSync({ setMessages, messagesRef });
 
     useEffect(() => {
       messagesRef.current = messages;

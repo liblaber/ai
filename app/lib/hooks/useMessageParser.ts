@@ -1,4 +1,4 @@
-import type { Message } from 'ai';
+import type { Message } from '@ai-sdk/react';
 import { useCallback, useState } from 'react';
 import { StreamingMessageParser } from '~/lib/runtime/message-parser';
 import { workbenchStore } from '~/lib/stores/workbench';
