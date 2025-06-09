@@ -85,8 +85,6 @@ export const useGitStore = create<GitState>()(
   ),
 );
 
-export const tempLog = console.log;
-
 interface ChangedFile {
   filename: string;
   status: string;
@@ -105,12 +103,10 @@ export async function getRemoteChanges(): Promise<RemoteChanges | undefined> {
   const currentChatId = chatId.get();
 
   if (!currentChatId) {
-    tempLog('Early return', { currentChatId });
     return undefined;
   }
 
   const storedMetadata = useGitStore.getState().getGitMetadata(currentChatId);
-  tempLog('Checking latest commit', storedMetadata);
 
   if (!storedMetadata?.gitUrl) {
     return undefined;
@@ -127,7 +123,6 @@ export async function getRemoteChanges(): Promise<RemoteChanges | undefined> {
     const repoName = storedMetadata.gitUrl.split('/').pop()?.replace('.git', '');
 
     if (!repoName) {
-      tempLog('Early return', { repoName });
       return undefined;
     }
 
@@ -138,7 +133,6 @@ export async function getRemoteChanges(): Promise<RemoteChanges | undefined> {
     });
 
     const latestCommitHash = ref.object.sha;
-    tempLog({ storedMetadata, latestCommitHash });
 
     const lastKnownCommit = storedMetadata.commitHistory.at(-1);
 
@@ -159,7 +153,6 @@ export async function getRemoteChanges(): Promise<RemoteChanges | undefined> {
 
       // Check if this commit is already in our history
       if (storedMetadata.commitHistory.includes(latestCommitHash)) {
-        tempLog('Commit already exists in history, skipping changes check');
         return undefined;
       }
 
@@ -247,18 +240,14 @@ export function useGitPullSync({ setMessages, messagesRef }: UseGitPullSyncOptio
       const remoteChanges = await getRemoteChanges();
 
       if (!remoteChanges) {
-        tempLog('No files changed.');
         return;
       }
 
       const remotelyChangedFilesArtifact = mapRemoteChangesToArtifact(remoteChanges);
 
       if (!remotelyChangedFilesArtifact) {
-        tempLog('No files changed.');
         return;
       }
-
-      tempLog({ remotelyChangedFilesArtifact });
 
       setMessages([...messagesRef.current, remotelyChangedFilesArtifact]);
 

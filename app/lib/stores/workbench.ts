@@ -19,7 +19,7 @@ import Cookies from 'js-cookie';
 import { createSampler } from '~/utils/sampler';
 import type { ActionAlert } from '~/types/actions';
 import type { LiblabShell } from '~/utils/shell';
-import { tempLog, useGitStore } from './git';
+import { useGitStore } from './git';
 
 const { saveAs } = fileSaver;
 
@@ -61,7 +61,6 @@ export class WorkbenchStore {
   }
 
   setMostRecentCommitMessage(message: string) {
-    tempLog('Setting most recent commit message', message);
     this.#mostRecentCommitMessage = message;
   }
 
