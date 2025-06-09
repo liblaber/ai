@@ -1,8 +1,15 @@
 import { atom, map } from 'nanostores';
+import { PROVIDER_LIST } from '~/utils/constants';
 import type { IProviderConfig } from '~/types/model';
-import type { TabVisibilityConfig, TabWindowConfig } from '~/components/@settings/core/types';
+import type {
+  DevTabConfig,
+  TabVisibilityConfig,
+  TabWindowConfig,
+  UserTabConfig,
+} from '~/components/@settings/core/types';
 import { DEFAULT_TAB_CONFIG } from '~/components/@settings/core/constants';
 import Cookies from 'js-cookie';
+import { toggleTheme } from './theme';
 import { create } from 'zustand';
 
 export interface Shortcut {
@@ -18,6 +25,7 @@ export interface Shortcut {
 }
 
 export interface Shortcuts {
+  toggleTheme: Shortcut;
   toggleTerminal: Shortcut;
 }
 
@@ -28,6 +36,15 @@ export type ProviderSetting = Record<string, IProviderConfig>;
 
 // Simplified shortcuts store with only theme toggle
 export const shortcutsStore = map<Shortcuts>({
+  toggleTheme: {
+    key: 'd',
+    metaKey: true,
+    altKey: true,
+    shiftKey: true,
+    action: () => toggleTheme(),
+    description: 'Toggle theme',
+    isPreventDefault: true,
+  },
   toggleTerminal: {
     key: '`',
     ctrlOrMetaKey: true,
@@ -48,6 +65,17 @@ const isBrowser = typeof window !== 'undefined';
 // Initialize provider settings from both localStorage and defaults
 const getInitialProviderSettings = (): ProviderSetting => {
   const initialSettings: ProviderSetting = {};
+
+  // Start with default settings
+  PROVIDER_LIST.forEach((provider) => {
+    initialSettings[provider.name] = {
+      ...provider,
+      settings: {
+        // Local providers should be disabled by default
+        enabled: !LOCAL_PROVIDERS.includes(provider.name),
+      },
+    };
+  });
 
   // Only try to load from localStorage in the browser
   if (isBrowser) {
@@ -129,6 +157,7 @@ const getInitialSettings = () => {
     autoSelectTemplate: getStoredBoolean(SETTINGS_KEYS.AUTO_SELECT_TEMPLATE, true),
     contextOptimization: getStoredBoolean(SETTINGS_KEYS.CONTEXT_OPTIMIZATION, true),
     promptId: isBrowser ? localStorage.getItem(SETTINGS_KEYS.PROMPT_ID) || 'default' : 'default',
+    developerMode: getStoredBoolean(SETTINGS_KEYS.DEVELOPER_MODE, false),
   };
 };
 
@@ -164,7 +193,8 @@ export const updatePromptId = (id: string) => {
 // Initialize tab configuration from localStorage or defaults
 const getInitialTabConfiguration = (): TabWindowConfig => {
   const defaultConfig: TabWindowConfig = {
-    userTabs: DEFAULT_TAB_CONFIG,
+    userTabs: DEFAULT_TAB_CONFIG.filter((tab): tab is UserTabConfig => tab.window === 'user'),
+    developerTabs: DEFAULT_TAB_CONFIG.filter((tab): tab is DevTabConfig => tab.window === 'developer'),
   };
 
   if (!isBrowser) {
@@ -180,12 +210,16 @@ const getInitialTabConfiguration = (): TabWindowConfig => {
 
     const parsed = JSON.parse(saved);
 
-    if (!parsed?.userTabs) {
+    if (!parsed?.userTabs || !parsed?.developerTabs) {
       return defaultConfig;
     }
 
+    // Ensure proper typing of loaded configuration
     return {
-      userTabs: parsed.userTabs,
+      userTabs: parsed.userTabs.filter((tab: TabVisibilityConfig): tab is UserTabConfig => tab.window === 'user'),
+      developerTabs: parsed.developerTabs.filter(
+        (tab: TabVisibilityConfig): tab is DevTabConfig => tab.window === 'developer',
+      ),
     };
   } catch (error) {
     console.warn('Failed to parse tab configuration:', error);
@@ -202,7 +236,8 @@ export const updateTabConfiguration = (config: TabVisibilityConfig) => {
   const currentConfig = tabConfigurationStore.get();
   console.log('Current tab configuration before update:', currentConfig);
 
-  const targetArray = 'userTabs';
+  const isUserTab = config.window === 'user';
+  const targetArray = isUserTab ? 'userTabs' : 'developerTabs';
 
   // Only update the tab in its respective window
   const updatedTabs = currentConfig[targetArray].map((tab) => (tab.id === config.id ? { ...config } : tab));
@@ -212,6 +247,7 @@ export const updateTabConfiguration = (config: TabVisibilityConfig) => {
     updatedTabs.push(config);
   }
 
+  // Create new config, only updating the target window's tabs
   const newConfig: TabWindowConfig = {
     ...currentConfig,
     [targetArray]: updatedTabs,
@@ -230,11 +266,23 @@ export const updateTabConfiguration = (config: TabVisibilityConfig) => {
 // Helper function to reset tab configuration
 export const resetTabConfiguration = () => {
   const defaultConfig: TabWindowConfig = {
-    userTabs: DEFAULT_TAB_CONFIG,
+    userTabs: DEFAULT_TAB_CONFIG.filter((tab): tab is UserTabConfig => tab.window === 'user'),
+    developerTabs: DEFAULT_TAB_CONFIG.filter((tab): tab is DevTabConfig => tab.window === 'developer'),
   };
 
   tabConfigurationStore.set(defaultConfig);
   localStorage.setItem('liblab_tab_configuration', JSON.stringify(defaultConfig));
+};
+
+// Developer mode store with persistence
+export const developerModeStore = atom<boolean>(initialSettings.developerMode);
+
+export const setDeveloperMode = (value: boolean) => {
+  developerModeStore.set(value);
+
+  if (isBrowser) {
+    localStorage.setItem(SETTINGS_KEYS.DEVELOPER_MODE, JSON.stringify(value));
+  }
 };
 
 // First, let's define the SettingsStore interface

@@ -8,6 +8,7 @@ import { Switch } from '~/components/ui/Switch';
 interface DraggableTabListProps {
   tabs: TabVisibilityConfig[];
   onReorder: (tabs: TabVisibilityConfig[]) => void;
+  onWindowChange?: (tab: TabVisibilityConfig, window: 'user' | 'developer') => void;
   onVisibilityChange?: (tab: TabVisibilityConfig, visible: boolean) => void;
   showControls?: boolean;
 }
@@ -17,6 +18,7 @@ interface DraggableTabItemProps {
   index: number;
   moveTab: (dragIndex: number, hoverIndex: number) => void;
   showControls?: boolean;
+  onWindowChange?: (tab: TabVisibilityConfig, window: 'user' | 'developer') => void;
   onVisibilityChange?: (tab: TabVisibilityConfig, visible: boolean) => void;
 }
 
@@ -26,7 +28,14 @@ interface DragItem {
   id: string;
 }
 
-const DraggableTabItem = ({ tab, index, moveTab, showControls, onVisibilityChange }: DraggableTabItemProps) => {
+const DraggableTabItem = ({
+  tab,
+  index,
+  moveTab,
+  showControls,
+  onWindowChange,
+  onVisibilityChange,
+}: DraggableTabItemProps) => {
   const [{ isDragging }, dragRef] = useDrag({
     type: 'tab',
     item: { type: 'tab', index, id: tab.id },
@@ -81,7 +90,11 @@ const DraggableTabItem = ({ tab, index, moveTab, showControls, onVisibilityChang
         </div>
         <div>
           <div className="font-medium text-liblab-elements-textPrimary">{TAB_LABELS[tab.id]}</div>
-          {showControls && <div className="text-xs text-liblab-elements-textSecondary">Order: {tab.order}</div>}
+          {showControls && (
+            <div className="text-xs text-liblab-elements-textSecondary">
+              Order: {tab.order}, Window: {tab.window}
+            </div>
+          )}
         </div>
       </div>
       {showControls && !tab.locked && (
@@ -95,6 +108,16 @@ const DraggableTabItem = ({ tab, index, moveTab, showControls, onVisibilityChang
             />
             <label className="text-sm text-liblab-elements-textSecondary">Visible</label>
           </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-liblab-elements-textSecondary">User</label>
+            <Switch
+              checked={tab.window === 'developer'}
+              onCheckedChange={(checked: boolean) => onWindowChange?.(tab, checked ? 'developer' : 'user')}
+              className="data-[state=checked]:bg-accent-500"
+              aria-label={`Toggle ${TAB_LABELS[tab.id]} window assignment`}
+            />
+            <label className="text-sm text-liblab-elements-textSecondary">Dev</label>
+          </div>
         </div>
       )}
     </motion.div>
@@ -104,6 +127,7 @@ const DraggableTabItem = ({ tab, index, moveTab, showControls, onVisibilityChang
 export const DraggableTabList = ({
   tabs,
   onReorder,
+  onWindowChange,
   onVisibilityChange,
   showControls = false,
 }: DraggableTabListProps) => {
@@ -130,6 +154,7 @@ export const DraggableTabList = ({
           index={index}
           moveTab={moveTab}
           showControls={showControls}
+          onWindowChange={onWindowChange}
           onVisibilityChange={onVisibilityChange}
         />
       ))}

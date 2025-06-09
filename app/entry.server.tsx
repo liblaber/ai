@@ -6,7 +6,11 @@ import { isbot } from 'isbot';
 import { renderToReadableStream } from 'react-dom/server.browser';
 import { renderHeadToString } from 'remix-island';
 import { Head } from './root';
-import { cors } from 'remix-utils/cors';
+import { themeStore } from '~/lib/stores/theme';
+import { initializeCronJobs } from '~/lib/cronJobs';
+
+// Initialize cron jobs
+initializeCronJobs();
 
 export default async function handleRequest(
   request: Request,
@@ -15,12 +19,7 @@ export default async function handleRequest(
   remixContext: any,
   _loadContext: AppLoadContext,
 ) {
-  if (request.method === 'OPTIONS') {
-    return cors(request, new Response(null, { status: 204 }), {
-      origin: '*',
-    });
-  }
-
+  // await initializeModelList({});
   const readable = await renderToReadableStream(<RemixServer context={remixContext} url={request.url} />, {
     signal: request.signal,
     onError(error: unknown) {
@@ -36,7 +35,7 @@ export default async function handleRequest(
       controller.enqueue(
         new Uint8Array(
           new TextEncoder().encode(
-            `<!DOCTYPE html><html lang="en" data-theme="dark"><head>${head}</head><body><div id="root" class="w-full h-full">`,
+            `<!DOCTYPE html><html lang="en" data-theme="${themeStore.value}"><head>${head}</head><body><div id="root" class="w-full h-full">`,
           ),
         ),
       );
@@ -75,16 +74,11 @@ export default async function handleRequest(
   }
 
   responseHeaders.set('Content-Type', 'text/html');
-
   responseHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp');
   responseHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
 
-  const response = new Response(body, {
+  return new Response(body, {
     headers: responseHeaders,
     status: responseStatusCode,
-  });
-
-  return await cors(request, response, {
-    origin: '*',
   });
 }

@@ -3,6 +3,7 @@ import { create } from 'zustand';
 export interface TabConfig {
   id: string;
   visible: boolean;
+  window: 'developer' | 'user';
   order: number;
   locked?: boolean;
 }

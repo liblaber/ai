@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "SSLMode" AS ENUM ('DISABLE', 'ALLOW', 'PREFER', 'REQUIRE', 'VERIFY_CA', 'VERIFY_FULL');
+
+-- AlterTable
+ALTER TABLE "data_source" ADD COLUMN     "ssl_mode" "SSLMode" NOT NULL DEFAULT 'DISABLE';

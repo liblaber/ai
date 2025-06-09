@@ -1,6 +1,6 @@
 import { prisma } from '~/lib/prisma';
 import type { Message } from '@prisma/client';
-import { MESSAGE_ROLE, type MessageRole } from '~/types/database';
+import { MessageRole } from '@prisma/client';
 
 export const messageService = {
   async saveMessage(
@@ -10,7 +10,7 @@ export const messageService = {
     inputTokens: number = 0,
     outputTokens: number = 0,
     finishReason: string = '-',
-    role: MessageRole = MESSAGE_ROLE.USER,
+    role: MessageRole = MessageRole.USER,
   ): Promise<Message> {
     return await prisma.message.create({
       data: {

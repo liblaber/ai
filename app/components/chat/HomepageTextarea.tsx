@@ -125,7 +125,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
               onChange={onChange}
               onKeyDown={onKeyDown}
               onPaste={onPaste}
-              placeholder="Create a clean revenue dashboard"
+              placeholder="Create a clean performance dashboard for a marketing agency"
               className={classNames(
                 'w-full max-h-120px text-2xl font-light tracking-wide',
                 'bg-transparent resize-none',

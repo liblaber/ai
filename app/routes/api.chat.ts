@@ -1,9 +1,9 @@
-import { type ActionFunctionArgs } from '@remix-run/cloudflare';
-import { createDataStream, generateId } from 'ai';
+import { type ActionFunctionArgs, json } from '@remix-run/cloudflare';
 import { type FileMap, MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/llm/constants';
 import { CONTINUE_PROMPT } from '~/lib/common/prompts/prompts';
-import { type Messages, type StreamingOptions, streamText } from '~/lib/.server/llm/stream-text';
 import SwitchableStream from '~/lib/.server/llm/switchable-stream';
+import type { Message } from 'ai';
+import type { IProviderSetting } from '~/types/model';
 import { createScopedLogger } from '~/utils/logger';
 import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
 import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
@@ -11,9 +11,29 @@ import { WORK_DIR } from '~/utils/constants';
 import { createSummary } from '~/lib/.server/llm/create-summary';
 import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
 import { messageService } from '~/lib/services/messageService';
-import { MESSAGE_ROLE } from '~/types/database';
+import { MessageRole } from '@prisma/client';
+import { requireUserId } from '~/session';
+import { userService } from '~/lib/services/userService';
+import { env } from '~/lib/config/env';
+import { streamText } from '~/lib/.server/llm/stream-text';
+import { generateId } from '~/lib/types/ai';
+import { createDataStream } from '~/lib/.server/llm/create-data-stream';
+
+type StreamingOptions = {
+  toolChoice: string;
+  onFinish: (result: { text: string; finishReason: string; usage?: any }) => void;
+};
+
+type Messages = Message[];
 
 export async function action(args: ActionFunctionArgs) {
+  const userId = await requireUserId(args.request);
+  const userCredits = await userService.getUserCredits(userId);
+
+  if (userCredits >= Number(env.MAX_CREDITS_PER_DAY)) {
+    return json({ error: 'No credits left' }, { status: 400 });
+  }
+
   return chatAction(args);
 }
 
@@ -54,8 +74,17 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
   await messageService.saveMessage(conversationId, textContent, messageProperties.model);
 
+  if (!messageProperties.askLiblab) {
+    const userId = await requireUserId(request);
+
+    await userService.incrementUserCredits(userId);
+  }
+
   const cookieHeader = request.headers.get('Cookie');
   const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
+  const providerSettings: Record<string, IProviderSetting> = JSON.parse(
+    parseCookies(cookieHeader || '').providers || '{}',
+  );
 
   const stream = new SwitchableStream();
 
@@ -68,7 +97,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   let progressCounter: number = 1;
 
   try {
-    const totalMessageContent = messages.reduce((acc, message) => acc + message.content, '');
+    const totalMessageContent = messages.reduce((acc: string, message: any) => acc + message.content, '');
     logger.debug(`Total message length: ${totalMessageContent.split(' ').length}, words`);
 
     let lastChunk: string | undefined = undefined;
@@ -101,6 +130,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             messages: [...messages],
             env: context.cloudflare?.env,
             apiKeys,
+            providerSettings,
             promptId,
             contextOptimization,
             onFinish(resp) {
@@ -143,6 +173,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             env: context.cloudflare?.env,
             apiKeys,
             files,
+            providerSettings,
             promptId,
             contextOptimization,
             summary,
@@ -190,7 +221,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           onFinish: async ({ text: content, finishReason, usage }) => {
             logger.debug('usage', JSON.stringify(usage));
 
-            if (usage) {
+            if (usage && finishReason !== 'length') {
               try {
                 await messageService.saveMessage(
                   conversationId,
@@ -199,7 +230,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
                   usage.promptTokens,
                   usage.completionTokens,
                   finishReason,
-                  MESSAGE_ROLE.AGENT,
+                  MessageRole.AGENT,
                 );
 
                 logger.debug('Prompt saved');
@@ -210,27 +241,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
               cumulativeUsage.completionTokens += usage.completionTokens || 0;
               cumulativeUsage.promptTokens += usage.promptTokens || 0;
               cumulativeUsage.totalTokens += usage.totalTokens || 0;
-            }
 
-            if (finishReason !== 'length') {
-              dataStream.writeMessageAnnotation({
-                type: 'usage',
-                value: {
-                  completionTokens: cumulativeUsage.completionTokens,
-                  promptTokens: cumulativeUsage.promptTokens,
-                  totalTokens: cumulativeUsage.totalTokens,
-                },
-              });
-              dataStream.writeData({
-                type: 'progress',
-                label: 'response',
-                status: 'complete',
-                order: progressCounter++,
-                message: 'Response Generated',
-              } satisfies ProgressAnnotation);
-              await new Promise((resolve) => setTimeout(resolve, 0));
-
-              // stream.close();
               return;
             }
 
@@ -242,7 +253,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
             logger.info(`Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
 
-            const lastUserMessage = messages.filter((x) => x.role == 'user').slice(-1)[0];
+            const lastUserMessage = messages.filter(({ role }: Message) => role == 'user').slice(-1)[0];
             const { model, provider } = extractPropertiesFromMessage(lastUserMessage);
             messages.push({ id: generateId(), role: 'assistant', content });
             messages.push({
@@ -253,8 +264,11 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
             const result = await streamText({
               messages,
+              env: context.cloudflare?.env,
               options,
+              apiKeys,
               files,
+              providerSettings,
               promptId,
               contextOptimization,
               contextFiles: filteredFiles,
@@ -263,20 +277,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
               request,
             });
 
-            result.mergeIntoDataStream(dataStream);
-
-            (async () => {
-              for await (const part of result.fullStream) {
-                if (part.type === 'error') {
-                  const error: any = part.error;
-                  logger.error(`${error}`);
-
-                  return;
-                }
-              }
-            })();
-
-            return;
+            await result.mergeIntoDataStream(dataStream);
           },
         };
 
@@ -290,8 +291,11 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
         const result = await streamText({
           messages,
+          env: context.cloudflare?.env,
           options,
+          apiKeys,
           files,
+          providerSettings,
           promptId,
           contextOptimization,
           contextFiles: filteredFiles,
@@ -300,17 +304,20 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           request,
         });
 
-        (async () => {
-          for await (const part of result.fullStream) {
-            if (part.type === 'error') {
-              const error: any = part.error;
-              logger.error(`${error}`);
+        await result.mergeIntoDataStream(dataStream);
 
-              return;
-            }
-          }
-        })();
-        result.mergeIntoDataStream(dataStream);
+        dataStream.writeData({
+          type: 'progress',
+          label: 'response',
+          status: 'complete',
+          order: progressCounter++,
+          message: 'Response Generated',
+        } satisfies ProgressAnnotation);
+
+        dataStream.writeMessageAnnotation({
+          type: 'usage',
+          value: result.usage(),
+        });
       },
       onError: (error: any) => `Custom error: ${error.message}`,
     }).pipeThrough(
@@ -318,16 +325,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         transform: (chunk, controller) => {
           if (!lastChunk) {
             lastChunk = ' ';
-          }
-
-          if (typeof chunk === 'string') {
-            if (chunk.startsWith('g') && !lastChunk.startsWith('g')) {
-              controller.enqueue(encoder.encode(`0: "<div class=\\"__liblabThought__\\">"\n`));
-            }
-
-            if (lastChunk.startsWith('g') && !chunk.startsWith('g')) {
-              controller.enqueue(encoder.encode(`0: "</div>\\n"\n`));
-            }
           }
 
           lastChunk = chunk;

@@ -1,81 +1,34 @@
 import { type ActionFunctionArgs } from '@remix-run/cloudflare';
 import type { NetlifySiteInfo } from '~/types/netlify';
-import { type ChildProcess, spawn } from 'child_process';
-import { mkdir, unlink, writeFile } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { rimraf } from 'rimraf';
-import AdmZip from 'adm-zip';
 import { prisma } from '~/lib/prisma';
+import { requireUserId } from '~/session';
 import { logger } from '~/utils/logger';
 import { env } from '~/lib/config/env';
+import { mkdir } from 'fs/promises';
+import { join } from 'path';
+import { rimraf } from 'rimraf';
+import AdmZip from 'adm-zip';
+import { exec } from 'child_process';
 
-interface CommandResult {
-  output: string;
-  error: string;
-}
-
-async function runCommand(
-  command: string,
-  args: string[],
-  cwd: string,
-  env: Record<string, string> = {},
-  timeout?: number,
-  onProgress?: (message: string) => void,
-): Promise<CommandResult> {
-  return new Promise((resolve, reject) => {
-    const proc = spawn(command, args, {
-      cwd,
-      env: {
-        ...env,
-        ...process.env,
-      },
-      timeout,
-    }) as ChildProcess;
-
-    let output = '';
-    let error = '';
-
-    proc.stdout?.on('data', (data: Buffer) => {
-      const message = data.toString();
-      output += message;
-      onProgress?.(message);
+/*
+ * Custom promisify function for ESM compatibility
+ */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+const promisify = (fn: Function) => {
+  return (...args: any[]) => {
+    return new Promise((resolve, reject) => {
+      fn(...args, (error: Error | null, ...results: any[]) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(results.length === 1 ? results[0] : results);
+        }
+      });
     });
+  };
+};
 
-    proc.stderr?.on('data', (data: Buffer) => {
-      const message = data.toString();
-      error += message;
-      onProgress?.(message);
-    });
-
-    proc.on('close', (code: number | null) => {
-      if (code === 0) {
-        resolve({ output, error });
-      } else {
-        reject(new Error(`Command failed: ${error}`));
-      }
-    });
-
-    proc.on('error', (err: Error) => {
-      reject(err);
-    });
-  });
-}
-
-// !IMPORTANT: there is a 64 char limit for the url so we need to trim the site name and slug
-function generateSlug(text: string): string {
-  // Convert to lowercase and replace spaces with hyphens
-  let slug = text.toLowerCase().replace(/\s+/g, '-');
-
-  // Remove any non-alphanumeric characters except hyphens
-  slug = slug.replace(/[^a-z0-9-]/g, '');
-
-  // Remove leading/trailing hyphens
-  slug = slug.replace(/^-+|-+$/g, '');
-
-  // Limit to 8 characters
-  return slug.slice(0, 8);
-}
+const execAsync = promisify(exec);
 
 function generateSiteName(chatId: string, length: number = 12): string {
   const shortId = chatId.slice(0, length);
@@ -107,10 +60,181 @@ async function generateUniqueSiteName(chatId: string): Promise<string> {
   throw new Error('Maximum number of site name generation attempts reached');
 }
 
+function generateSlug(text: string): string {
+  let slug = text.toLowerCase().replace(/\s+/g, '-');
+  slug = slug.replace(/[^a-z0-9-]/g, '');
+  slug = slug.replace(/^-+|-+$/g, '');
+
+  return slug.slice(0, 8);
+}
+
+async function deployToNetlify(
+  siteId: string,
+  deployPath: string,
+  netlifyToken: string,
+  branchName: string,
+): Promise<string> {
+  // Set environment variables for Netlify CLI
+  const env = {
+    ...process.env,
+    NETLIFY_AUTH_TOKEN: netlifyToken,
+    HOME: '/tmp', // Override HOME to use writable directory
+    NETLIFY_CONFIG_PATH: '/tmp/.netlify',
+    XDG_CONFIG_HOME: '/tmp/.config',
+    NPM_CONFIG_CACHE: '/tmp/.npm',
+    PNPM_HOME: '/tmp/.pnpm',
+  };
+
+  // Create necessary directories in /tmp
+  await mkdir('/tmp/.config/netlify', { recursive: true });
+  await mkdir('/tmp/.netlify', { recursive: true });
+  await mkdir('/tmp/.npm', { recursive: true });
+  await mkdir('/tmp/.pnpm', { recursive: true });
+
+  try {
+    // Link the site
+    await execAsync(`netlify link --id ${siteId}`, {
+      cwd: deployPath,
+      env,
+    });
+
+    // Import environment variables if .env exists
+    try {
+      await execAsync('netlify env:import .env', {
+        cwd: deployPath,
+        env,
+      });
+    } catch (error) {
+      console.log('No .env file found or failed to import, continuing...', error);
+    }
+
+    // Set production environment
+    await execAsync('netlify env:set VITE_PROD true', {
+      cwd: deployPath,
+      env,
+    });
+
+    console.log('Starting build...');
+
+    await execAsync('netlify build', {
+      cwd: deployPath,
+      env,
+      timeout: 300000, // 5 minutes timeout
+    });
+
+    console.log('Build completed successfully.');
+
+    console.log('Starting deploy...');
+
+    // Deploy using Netlify CLI with explicit timeout
+    const { stdout } = (await execAsync(`netlify deploy --alias ${branchName}`, {
+      cwd: deployPath,
+      env,
+      timeout: 300000, // 5 minutes timeout
+    })) as { stdout: string; stderr: string };
+
+    console.log('Deploy completed successfully.');
+
+    // Extract deploy URL from CLI output
+    const deployUrlMatch = stdout.match(/https:\/\/[^\s]+/);
+
+    if (!deployUrlMatch) {
+      throw new Error('Could not find deploy URL in Netlify CLI output');
+    }
+
+    return deployUrlMatch[0];
+  } catch (error) {
+    console.error('Netlify deployment error:', error);
+    throw error;
+  }
+}
+
+async function handleLocalDeployment(
+  zipFile: File,
+  siteId: string,
+  description: string,
+  chatId: string,
+  netlifyToken: string,
+): Promise<{ success: boolean; deployUrl: string }> {
+  // Use /tmp directory for all operations
+  const tempDir = join('/tmp', `netlify-deploy-${chatId}-${Date.now()}`);
+  await mkdir(tempDir, { recursive: true });
+
+  try {
+    // Extract the zip file
+    const arrayBuffer = await zipFile.arrayBuffer();
+    const zipBuffer = Buffer.from(arrayBuffer);
+    const zip = new AdmZip(zipBuffer);
+    zip.extractAllTo(tempDir, true);
+    console.log('Extracted zip file to:', tempDir);
+
+    const installEnv = {
+      ...process.env,
+      HOME: '/tmp',
+      NPM_CONFIG_CACHE: '/tmp/.npm',
+      PNPM_HOME: '/tmp/.pnpm',
+      XDG_CONFIG_HOME: '/tmp/.config',
+    };
+
+    // Create cache directories
+    await mkdir('/tmp/.npm', { recursive: true });
+    await mkdir('/tmp/.pnpm', { recursive: true });
+    await mkdir('/tmp/.npm/_cacache', { recursive: true });
+    await mkdir('/tmp/.config', { recursive: true });
+
+    console.log('Installing dependencies...');
+
+    try {
+      await execAsync('pnpm install --no-frozen-lockfile --prefer-offline', {
+        cwd: tempDir,
+        env: installEnv,
+        timeout: 180000, // 3 minutes timeout
+      });
+      console.log('Dependencies installed successfully with pnpm');
+    } catch (pnpmError) {
+      console.log('pnpm failed, trying npm...');
+
+      try {
+        await execAsync('npm install --no-package-lock --no-audit', {
+          cwd: tempDir,
+          env: installEnv,
+          timeout: 180000,
+        });
+        console.log('Dependencies installed successfully with npm');
+      } catch (npmError) {
+        console.error('Both pnpm and npm failed:', { pnpmError, npmError });
+
+        // Continue anyway - Netlify might handle the build
+      }
+    }
+
+    // Generate deployment alias from description
+    const deploymentAlias = description ? generateSlug(description) : `${chatId.slice(0, 6)}`;
+
+    // Deploy using Netlify CLI
+    console.log('Deploying to Netlify...');
+
+    const deployUrl = await deployToNetlify(siteId, tempDir, netlifyToken, deploymentAlias);
+
+    return {
+      success: true,
+      deployUrl,
+    };
+  } finally {
+    // Clean up temporary directory
+    try {
+      await rimraf(tempDir);
+    } catch (cleanupError) {
+      console.warn('Failed to clean up temp directory:', cleanupError);
+    }
+  }
+}
+
 export async function action({ request }: ActionFunctionArgs) {
   const encoder = new TextEncoder();
   const stream = new TransformStream();
   const writer = stream.writable.getWriter();
+  const userId = await requireUserId(request);
 
   const safeCloseWriter = async () => {
     if (!writer.closed) {
@@ -156,7 +280,7 @@ export async function action({ request }: ActionFunctionArgs) {
         encoder.encode(
           `data: ${JSON.stringify({
             step: 1,
-            totalSteps: 6,
+            totalSteps: 3,
             message: 'Initializing deployment...',
             status: 'in_progress',
           })}\n\n`,
@@ -170,7 +294,7 @@ export async function action({ request }: ActionFunctionArgs) {
           encoder.encode(
             `data: ${JSON.stringify({
               step: 2,
-              totalSteps: 6,
+              totalSteps: 3,
               message: 'Creating new Netlify site...',
               status: 'in_progress',
             })}\n\n`,
@@ -222,7 +346,7 @@ export async function action({ request }: ActionFunctionArgs) {
         });
 
         if (!createSiteResponse.ok) {
-          const errorData = await createSiteResponse.json().catch(() => null);
+          const errorData = await createSiteResponse.json<{ message: string }>().catch(() => null);
           logger.error(
             'Failed to create site',
             JSON.stringify({
@@ -231,7 +355,24 @@ export async function action({ request }: ActionFunctionArgs) {
               error: errorData,
             }),
           );
-          throw new Error('Failed to create site');
+          await writer.write(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                step: 2,
+                totalSteps: 3,
+                message: 'Failed to create Netlify site. Please try again.',
+                status: 'error',
+                error: {
+                  code: 'SITE_CREATION_FAILED',
+                  message: errorData?.message || 'Failed to create site',
+                  details: errorData,
+                },
+              })}\n\n`,
+            ),
+          );
+          await safeCloseWriter();
+
+          return;
         }
 
         const newSite = (await createSiteResponse.json()) as any;
@@ -242,6 +383,42 @@ export async function action({ request }: ActionFunctionArgs) {
           url: newSite.url,
           chatId,
         };
+
+        // Update website entity with site info immediately after creation
+        try {
+          if (websiteId) {
+            await prisma.website.update({
+              where: { id: websiteId },
+              data: {
+                siteId: newSite.id,
+                siteName: newSite.name,
+                siteUrl: newSite.url,
+              },
+            });
+          } else {
+            await prisma.website.create({
+              data: {
+                siteId: newSite.id,
+                siteName: newSite.name,
+                siteUrl: newSite.url,
+                chatId,
+                userId,
+              },
+            });
+          }
+        } catch (dbError) {
+          logger.error(
+            'Failed to update website in database',
+            JSON.stringify({
+              chatId,
+              siteId: newSite.id,
+              error: dbError instanceof Error ? dbError.message : 'Unknown error',
+            }),
+          );
+
+          // Continue with deployment even if DB update fails
+        }
+
         logger.info('Site created successfully', JSON.stringify({ chatId, siteId: targetSiteId }));
       } else {
         // Get existing site info
@@ -250,7 +427,7 @@ export async function action({ request }: ActionFunctionArgs) {
           encoder.encode(
             `data: ${JSON.stringify({
               step: 2,
-              totalSteps: 6,
+              totalSteps: 3,
               message: 'Getting existing site info...',
               status: 'in_progress',
             })}\n\n`,
@@ -284,271 +461,172 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       }
 
-      // Create a temporary directory for the deployment
-      const tempDir = join(tmpdir(), `netlify-deploy-${chatId}`);
-      await mkdir(tempDir, { recursive: true });
-      logger.info('Created temporary directory', JSON.stringify({ chatId, tempDir }));
+      // Convert zip file to base64
+      const arrayBuffer = await zipFile.arrayBuffer();
+      const base64Zip = Buffer.from(arrayBuffer).toString('base64');
 
-      try {
-        // Write the zip file to disk
-        logger.info('Preparing deployment files', JSON.stringify({ chatId }));
-        await writer.write(
-          encoder.encode(
-            `data: ${JSON.stringify({
-              step: 3,
-              totalSteps: 6,
-              message: 'Preparing deployment files...',
-              status: 'in_progress',
-            })}\n\n`,
-          ),
-        );
+      // Call Lambda function
+      logger.info('Calling deployment Lambda', JSON.stringify({ chatId }));
+      await writer.write(
+        encoder.encode(
+          `data: ${JSON.stringify({
+            step: 3,
+            totalSteps: 3,
+            message: 'Deploying to Netlify...',
+            status: 'in_progress',
+          })}\n\n`,
+        ),
+      );
 
-        const zipPath = join(tempDir, 'project.zip');
-        const arrayBuffer = await zipFile.arrayBuffer();
-        await writeFile(zipPath, new Uint8Array(arrayBuffer));
+      let deployResult: { success: boolean; deployUrl: string };
 
-        // Extract the zip file
-        const zip = new AdmZip(zipPath);
-
-        try {
-          zip.extractAllTo(tempDir, true);
-        } catch (error) {
-          logger.error(
-            'Failed to extract zip file',
-            JSON.stringify({
-              chatId,
-              error: error instanceof Error ? error.message : 'Unknown error',
-            }),
-          );
-          throw new Error('Failed to extract project files');
+      if (env.USE_LOCAL_LAMBDA === 'true') {
+        // Use local Lambda handler
+        deployResult = await handleLocalDeployment(zipFile, targetSiteId, description, chatId, token);
+      } else {
+        // Use remote Lambda
+        if (!env.DEPLOY_LAMBDA_URL) {
+          throw new Error('DEPLOY_LAMBDA_URL not configured');
         }
 
-        // Remove the zip file
-        await unlink(zipPath);
-        logger.info('Files extracted successfully', JSON.stringify({ chatId }));
-
-        // Install dependencies
-        logger.info('Installing dependencies', JSON.stringify({ chatId }));
-        await writer.write(
-          encoder.encode(
-            `data: ${JSON.stringify({
-              step: 4,
-              totalSteps: 6,
-              message: 'Installing dependencies...',
-              status: 'in_progress',
-            })}\n\n`,
-          ),
-        );
-
-        await runCommand(
-          'pnpm',
-          ['install'],
-          tempDir,
-          {
-            NETLIFY_AUTH_TOKEN: token,
-          },
-          undefined,
-          (message) => {
-            if (message.includes('error') || message.includes('failed')) {
-              logger.warn(
-                'Dependency installation warning',
-                JSON.stringify({ chatId, message: JSON.stringify(message) }),
-              );
-            }
-
-            writer.write(
-              encoder.encode(
-                `data: ${JSON.stringify({
-                  step: 4,
-                  totalSteps: 6,
-                  message,
-                  status: 'in_progress',
-                })}\n\n`,
-              ),
-            );
-          },
-        );
-        logger.info('Dependencies installed successfully', JSON.stringify({ chatId }));
-
-        // Link and configure Netlify
-        logger.info('Configuring Netlify', JSON.stringify({ chatId }));
-
-        try {
-          await runCommand('netlify', ['link', '--id', targetSiteId], tempDir, {
-            NETLIFY_AUTH_TOKEN: token,
-          });
-          await runCommand('netlify', ['env:import', '.env'], tempDir, {
-            NETLIFY_AUTH_TOKEN: token,
-          });
-          await runCommand('netlify', ['env:set', 'VITE_PROD', 'true'], tempDir, {
-            NETLIFY_AUTH_TOKEN: token,
-          });
-          logger.info('Netlify configuration completed', JSON.stringify({ chatId }));
-        } catch (error) {
-          logger.error(
-            'Netlify configuration failed',
-            JSON.stringify({
-              chatId,
-              error: error instanceof Error ? error.message : 'Unknown error',
-            }),
-          );
-          throw new Error('Failed to configure Netlify');
-        }
-
-        // Generate deployment alias from description
-        const deploymentAlias = description ? generateSlug(description) : `${chatId.slice(0, 6)}`;
-        logger.info('Starting deployment', JSON.stringify({ chatId, deploymentAlias }));
-
-        // Deploy
-        await writer.write(
-          encoder.encode(
-            `data: ${JSON.stringify({
-              step: 6,
-              totalSteps: 6,
-              message: 'Deploying to Netlify...',
-              status: 'in_progress',
-            })}\n\n`,
-          ),
-        );
-
-        await runCommand(
-          'netlify',
-          ['deploy', '--build', '--branch', deploymentAlias],
-          tempDir,
-          {
-            NETLIFY_AUTH_TOKEN: token,
-          },
-          3 * 60 * 1000, // 3 minutes timeout
-          (message) => {
-            if (!message.includes('accountId')) {
-              writer.write(
-                encoder.encode(
-                  `data: ${JSON.stringify({
-                    step: 6,
-                    totalSteps: 6,
-                    message,
-                    status: 'in_progress',
-                  })}\n\n`,
-                ),
-              );
-            }
-          },
-        );
-
-        // Get the latest deploy info
-        logger.info('Getting deployment info', JSON.stringify({ chatId }));
-
-        const deployResponse = await fetch(`https://api.netlify.com/api/v1/sites/${targetSiteId}/deploys`, {
+        const lambdaResponse = await fetch(env.DEPLOY_LAMBDA_URL, {
+          method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
+          body: JSON.stringify({
+            zipFile: base64Zip,
+            siteId: targetSiteId,
+            description,
+            chatId,
+          }),
         });
 
-        if (!deployResponse.ok) {
-          const errorData = await deployResponse.json().catch(() => null);
+        if (!lambdaResponse.ok) {
+          const errorData = await lambdaResponse
+            .json<{ message: string; code: string; details: string }>()
+            .catch(() => null);
           logger.error(
-            'Failed to get deploy info',
+            'Lambda deployment failed',
             JSON.stringify({
               chatId,
-              status: deployResponse.status,
+              status: lambdaResponse.status,
               error: errorData,
             }),
           );
-          throw new Error('Failed to get deploy info');
+
+          const errorMessage = errorData?.message || 'Deployment failed';
+          const errorCode = errorData?.code || 'DEPLOYMENT_FAILED';
+          const errorDetails = errorData?.details || errorData;
+
+          await writer.write(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                step: 3,
+                totalSteps: 3,
+                message: 'Deployment failed',
+                status: 'error',
+                error: {
+                  code: errorCode,
+                  message: errorMessage,
+                  details: errorDetails,
+                  canRetry: true,
+                },
+              })}\n\n`,
+            ),
+          );
+          await safeCloseWriter();
+
+          return;
         }
 
-        const deploys = (await deployResponse.json()) as any[];
-        const latestDeploy = deploys[0];
+        deployResult = await lambdaResponse.json();
+      }
 
-        // After successful deployment, save to database
-        if (siteInfo) {
-          logger.info('Saving website to database', JSON.stringify({ chatId, siteId: siteInfo.id }));
+      if (!deployResult.success || !deployResult.deployUrl) {
+        throw new Error('Invalid deployment result');
+      }
 
-          try {
-            let website;
+      // After successful deployment, save to database
+      if (siteInfo) {
+        logger.info('Saving website to database', JSON.stringify({ chatId, siteId: siteInfo.id }));
 
-            if (websiteId) {
-              // Update existing website
-              website = await prisma.website.update({
-                where: {
-                  id: websiteId,
-                },
-                data: {
-                  siteId: siteInfo.id,
-                  siteName: siteInfo.name,
-                  siteUrl: latestDeploy.links.permalink,
-                },
-              });
-              logger.info('Website updated in database', JSON.stringify({ chatId, siteId: siteInfo.id }));
-            } else {
-              // Create new website
-              website = await prisma.website.create({
-                data: {
-                  siteId: siteInfo.id,
-                  siteName: siteInfo.name,
-                  siteUrl: latestDeploy.links.permalink,
-                  chatId: siteInfo.chatId,
-                },
-              });
-              logger.info('Website saved to database successfully', JSON.stringify({ chatId, siteId: siteInfo.id }));
-            }
+        try {
+          let website;
 
-            // Send single success message with website data
-            await writer.write(
-              encoder.encode(
-                `data: ${JSON.stringify({
-                  step: 6,
-                  totalSteps: 6,
-                  message: 'Deployment successful!',
-                  status: 'success',
-                  data: {
-                    deploy: {
-                      id: latestDeploy.id,
-                      state: latestDeploy.state,
-                      url: latestDeploy.links.permalink,
-                    },
-                    site: siteInfo,
-                    website,
-                  },
-                })}\n\n`,
-              ),
-            );
-          } catch (error) {
-            logger.error(
-              'Failed to save website to database',
-              JSON.stringify({
-                chatId,
+          if (websiteId) {
+            // Update existing website
+            website = await prisma.website.update({
+              where: {
+                id: websiteId,
+              },
+              data: {
                 siteId: siteInfo.id,
-                error: error instanceof Error ? error.message : 'Unknown error',
-              }),
-            );
-
-            // Send success message without website data
-            await writer.write(
-              encoder.encode(
-                `data: ${JSON.stringify({
-                  step: 6,
-                  totalSteps: 6,
-                  message: 'Deployment successful!',
-                  status: 'success',
-                  data: {
-                    deploy: {
-                      id: latestDeploy.id,
-                      state: latestDeploy.state,
-                      url: latestDeploy.links.permalink,
-                    },
-                    site: siteInfo,
-                  },
-                })}\n\n`,
-              ),
-            );
+                siteName: siteInfo.name,
+                siteUrl: deployResult.deployUrl,
+              },
+            });
+            logger.info('Website updated in database', JSON.stringify({ chatId, siteId: siteInfo.id }));
+          } else {
+            // Create new website
+            website = await prisma.website.create({
+              data: {
+                siteId: siteInfo.id,
+                siteName: siteInfo.name,
+                siteUrl: deployResult.deployUrl,
+                chatId: siteInfo.chatId,
+                userId,
+              },
+            });
+            logger.info('Website saved to database successfully', JSON.stringify({ chatId, siteId: siteInfo.id }));
           }
+
+          // Send success message
+          await writer.write(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                step: 3,
+                totalSteps: 3,
+                message: 'Deployment successful!',
+                status: 'success',
+                data: {
+                  deploy: {
+                    url: deployResult.deployUrl,
+                  },
+                  site: siteInfo,
+                  website,
+                },
+              })}\n\n`,
+            ),
+          );
+        } catch (error) {
+          logger.error(
+            'Failed to save website to database',
+            JSON.stringify({
+              chatId,
+              siteId: siteInfo.id,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            }),
+          );
+
+          // Send success message without website data
+          await writer.write(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                step: 3,
+                totalSteps: 3,
+                message: 'Deployment successful!',
+                status: 'success',
+                data: {
+                  deploy: {
+                    url: deployResult.deployUrl,
+                  },
+                  site: siteInfo,
+                },
+              })}\n\n`,
+            ),
+          );
         }
-      } finally {
-        // Clean up temporary directory
-        logger.info('Cleaning up temporary directory', JSON.stringify({ chatId, tempDir }));
-        await rimraf(tempDir);
-        await safeCloseWriter();
       }
     } catch (error) {
       logger.error(
@@ -565,7 +643,7 @@ export async function action({ request }: ActionFunctionArgs) {
           encoder.encode(
             `data: ${JSON.stringify({
               step: 0,
-              totalSteps: 6,
+              totalSteps: 3,
               message: error instanceof Error ? error.message : 'Deployment failed',
               status: 'error',
             })}\n\n`,

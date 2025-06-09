@@ -1,15 +1,18 @@
 import { json } from '@remix-run/cloudflare';
-import { type SSLMode } from '~/types/database';
-import { createDataSource, getDataSources } from '~/lib/services/datasourceService';
-import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { requireUserId } from '~/session';
+import { SSLMode } from '@prisma/client';
+import { getDataSources, createDataSource } from '~/lib/services/datasourceService';
 
-export async function loader() {
-  const dataSources = await getDataSources();
+export async function loader({ request }: { request: Request }) {
+  const userId = await requireUserId(request);
+  const dataSources = await getDataSources(userId);
 
   return json({ success: true, dataSources });
 }
 
 export async function action({ request }: { request: Request }) {
+  const userId = await requireUserId(request);
+
   if (request.method === 'POST') {
     const formData = await request.formData();
     const name = formData.get('name') as string;
@@ -17,18 +20,12 @@ export async function action({ request }: { request: Request }) {
     const host = formData.get('host') as string;
     const port = parseInt(formData.get('port') as string);
     const username = formData.get('username') as string;
-    const password = decodeURIComponent(formData.get('password') as string);
+    const password = formData.get('password') as string;
     const database = formData.get('database') as string;
     const sslMode = formData.get('sslMode') as SSLMode;
 
-    const availableTypes = DataAccessor.getAvailableDatabaseTypes().map((dbType) => dbType.value);
-
-    if (!availableTypes.includes(type)) {
-      throw new Error('Invalid database type, available types are: ' + availableTypes.join(', '));
-    }
-
     try {
-      const dataSource = await createDataSource({
+      const dataSource = await createDataSource(userId, {
         name,
         type,
         host,

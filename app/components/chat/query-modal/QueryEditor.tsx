@@ -1,5 +1,6 @@
 import { CodeMirrorEditor } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { Button } from '~/components/ui/Button';
+import type { Theme } from '~/types/theme';
 
 export interface QueryEditorProps {
   query: string | undefined;
@@ -7,6 +8,7 @@ export interface QueryEditorProps {
   onFormatQuery: () => void;
   onTestQuery: () => void;
   isTesting: boolean;
+  theme: Theme;
   queryId: string | number;
 }
 
@@ -16,6 +18,7 @@ export const QueryEditor = ({
   onFormatQuery,
   onTestQuery,
   isTesting,
+  theme,
   queryId,
 }: QueryEditorProps) => (
   <div className="flex-1 relative rounded-lg border border-[#1E1E1E] flex flex-col">
@@ -41,6 +44,7 @@ export const QueryEditor = ({
     </div>
     <div className="flex-1 overflow-hidden">
       <CodeMirrorEditor
+        theme={theme}
         editable={true}
         settings={{
           fontSize: '14px',

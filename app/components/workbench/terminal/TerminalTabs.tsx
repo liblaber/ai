@@ -3,6 +3,7 @@ import React, { memo, useEffect, useRef, useState } from 'react';
 import { type ImperativePanelHandle, Panel } from 'react-resizable-panels';
 import { IconButton } from '~/components/ui/IconButton';
 import { shortcutEventEmitter } from '~/lib/hooks';
+import { themeStore } from '~/lib/stores/theme';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
 import { Terminal, type TerminalRef } from './Terminal';
@@ -15,6 +16,7 @@ export const DEFAULT_TERMINAL_SIZE = 25;
 
 export const TerminalTabs = memo(() => {
   const showTerminal = useStore(workbenchStore.showTerminal);
+  const theme = useStore(themeStore);
 
   const terminalRefs = useRef<Array<TerminalRef | null>>([]);
   const terminalPanelRef = useRef<ImperativePanelHandle>(null);
@@ -53,8 +55,15 @@ export const TerminalTabs = memo(() => {
       terminalToggledByShortcut.current = true;
     });
 
+    const unsubscribeFromThemeStore = themeStore.subscribe(() => {
+      for (const ref of Object.values(terminalRefs.current)) {
+        ref?.reloadStyles();
+      }
+    });
+
     return () => {
       unsubscribeFromEventEmitter();
+      unsubscribeFromThemeStore();
     };
   }, []);
 
@@ -135,6 +144,7 @@ export const TerminalTabs = memo(() => {
                 }}
                 onTerminalReady={(terminal) => workbenchStore.attachTerminal(terminal)}
                 onTerminalResize={(cols, rows) => workbenchStore.onTerminalResize(cols, rows)}
+                theme={theme}
               />
             );
           })}

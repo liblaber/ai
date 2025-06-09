@@ -4,8 +4,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useStore } from '@nanostores/react';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { classNames } from '~/utils/classNames';
+import { TabManagement } from '~/components/@settings/shared/components/TabManagement';
 import {
   closeSettingsPanel,
+  developerModeStore,
   resetTabConfiguration,
   settingsPanelStore,
   tabConfigurationStore,
@@ -16,12 +18,27 @@ import type { IconProps } from 'iconsax-reactjs';
 import { CloseCircle } from 'iconsax-reactjs';
 
 // Import all tab components
+import SettingsTab from '~/components/@settings/tabs/settings/SettingsTab';
 import DataTab from '~/components/@settings/tabs/data/DataTab';
+import TaskManagerTab from '~/components/@settings/tabs/task-manager/TaskManagerTab';
+import ServiceStatusTab from '~/components/@settings/tabs/providers/status/ServiceStatusTab';
 import DeployedAppsTab from '~/components/@settings/tabs/deployed-apps/DeployedAppsTab';
 import GitHubTab from '~/components/@settings/tabs/connections/GitHubTab';
+import CreditsTab from '~/components/@settings/tabs/credits/CreditsTab';
 
 interface TabWithDevType extends TabVisibilityConfig {
   isExtraDevTab?: boolean;
+}
+
+interface ExtendedTabConfig extends TabVisibilityConfig {
+  isExtraDevTab?: boolean;
+}
+
+interface BaseTabConfig {
+  id: TabType;
+  visible: boolean;
+  window: 'user' | 'developer';
+  order: number;
 }
 
 const LAST_ACCESSED_TAB_KEY = 'control-panel-last-tab';
@@ -29,9 +46,11 @@ const LAST_ACCESSED_TAB_KEY = 'control-panel-last-tab';
 export const ControlPanel = () => {
   const { isOpen, selectedTab } = useStore(settingsPanelStore);
   const [activeTab, setActiveTab] = useState<TabType | null>(null);
+  const [showTabManagement, setShowTabManagement] = useState(false);
 
   // Store values
   const tabConfiguration = useStore(tabConfigurationStore);
+  const developerMode = useStore(developerModeStore);
 
   // Memoize the base tab configurations to avoid recalculation
   const baseTabConfig = useMemo(() => {
@@ -47,6 +66,41 @@ export const ControlPanel = () => {
       return [];
     }
 
+    // In developer mode, show ALL tabs without restrictions
+    if (developerMode) {
+      const seenTabs = new Set<TabType>();
+      const devTabs: ExtendedTabConfig[] = [];
+
+      // Process tabs in order of priority: developer, user, default
+      const processTab = (tab: BaseTabConfig) => {
+        if (!seenTabs.has(tab.id)) {
+          seenTabs.add(tab.id);
+          devTabs.push({
+            id: tab.id,
+            visible: true,
+            window: 'developer',
+            order: tab.order || devTabs.length,
+          });
+        }
+      };
+
+      // Process tabs in priority order
+      tabConfiguration.developerTabs?.forEach((tab) => processTab(tab as BaseTabConfig));
+      tabConfiguration.userTabs.forEach((tab) => processTab(tab as BaseTabConfig));
+      DEFAULT_TAB_CONFIG.forEach((tab) => processTab(tab as BaseTabConfig));
+
+      // Add Tab Management tile
+      devTabs.push({
+        id: 'tab-management' as TabType,
+        visible: true,
+        window: 'developer',
+        order: devTabs.length,
+        isExtraDevTab: true,
+      });
+
+      return devTabs.sort((a, b) => a.order - b.order);
+    }
+
     // Optimize user mode tab filtering
     return tabConfiguration.userTabs
       .filter((tab) => {
@@ -54,15 +108,16 @@ export const ControlPanel = () => {
           return false;
         }
 
-        return tab.visible;
+        return tab.visible && tab.window === 'user';
       })
       .sort((a, b) => a.order - b.order);
-  }, [tabConfiguration, baseTabConfig]);
+  }, [tabConfiguration, developerMode, baseTabConfig]);
 
   // Reset to default view when modal opens/closes
   useEffect(() => {
     if (!isOpen) {
       setActiveTab(null);
+      setShowTabManagement(false);
     } else {
       // Try to restore the last accessed tab
       const lastAccessedTab = localStorage.getItem(LAST_ACCESSED_TAB_KEY) as TabType | null;
@@ -88,24 +143,36 @@ export const ControlPanel = () => {
   // Handle closing
   const handleClose = () => {
     setActiveTab(null);
+    setShowTabManagement(false);
     closeSettingsPanel();
   };
 
   const handleTabClick = (tabId: TabType) => {
     setActiveTab(tabId);
+    setShowTabManagement(false);
 
     // Store the selected tab
     localStorage.setItem(LAST_ACCESSED_TAB_KEY, tabId);
   };
 
-  const getTabComponent = (tabId: TabType) => {
+  const getTabComponent = (tabId: TabType | 'tab-management') => {
     switch (tabId) {
+      case 'settings':
+        return <SettingsTab />;
       case 'data':
         return <DataTab />;
+      case 'task-manager':
+        return <TaskManagerTab />;
+      case 'service-status':
+        return <ServiceStatusTab />;
       case 'deployed-apps':
         return <DeployedAppsTab />;
+      case 'credits':
+        return <CreditsTab />;
       case 'github':
         return <GitHubTab />;
+      case 'tab-management':
+        return <TabManagement />;
       default:
         return null;
     }
@@ -202,7 +269,9 @@ export const ControlPanel = () => {
                     transition={{ duration: 0.2 }}
                     className="p-6 pt-16"
                   >
-                    {activeTab ? (
+                    {showTabManagement ? (
+                      <TabManagement />
+                    ) : activeTab ? (
                       getTabComponent(activeTab)
                     ) : (
                       <div className="flex items-center justify-center h-full">

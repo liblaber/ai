@@ -10,6 +10,7 @@ import { diffFiles, extractRelativePath } from '~/utils/diff';
 import { ActionRunner } from '~/lib/runtime/action-runner';
 import type { FileHistory } from '~/types/actions';
 import { getLanguageFromExtension } from '~/utils/getLanguageFromExtension';
+import { themeStore } from '~/lib/stores/theme';
 
 interface CodeComparisonProps {
   beforeCode: string;
@@ -345,7 +346,17 @@ const renderContentWarning = (type: 'binary' | 'error') => (
 );
 
 const NoChangesView = memo(
-  ({ beforeCode, language, highlighter }: { beforeCode: string; language: string; highlighter: any }) => (
+  ({
+    beforeCode,
+    language,
+    highlighter,
+    theme,
+  }: {
+    beforeCode: string;
+    language: string;
+    highlighter: any;
+    theme: string;
+  }) => (
     <div className="h-full flex flex-col items-center justify-center p-4">
       <div className="text-center text-liblab-elements-textTertiary">
         <div className="i-ph:files text-4xl text-green-400 mb-2 mx-auto" />
@@ -368,7 +379,7 @@ const NoChangesView = memo(
                       ? highlighter
                           .codeToHtml(line, {
                             lang: language,
-                            theme: 'github-dark',
+                            theme: theme === 'dark' ? 'github-dark' : 'github-light',
                           })
                           .replace(/<\/?pre[^>]*>/g, '')
                           .replace(/<\/?code[^>]*>/g, '')
@@ -398,6 +409,7 @@ const CodeLine = memo(
     highlighter,
     language,
     block,
+    theme,
   }: {
     lineNumber: number;
     content: string;
@@ -405,6 +417,7 @@ const CodeLine = memo(
     highlighter: any;
     language: string;
     block: DiffBlock;
+    theme: string;
   }) => {
     const bgColor = diffLineStyles[type];
 
@@ -412,7 +425,7 @@ const CodeLine = memo(
       if (type === 'unchanged' || !block.charChanges) {
         const highlightedCode = highlighter
           ? highlighter
-              .codeToHtml(content, { lang: language, theme: 'github-dark' })
+              .codeToHtml(content, { lang: language, theme: theme === 'dark' ? 'github-dark' : 'github-light' })
               .replace(/<\/?pre[^>]*>/g, '')
               .replace(/<\/?code[^>]*>/g, '')
           : content;
@@ -428,7 +441,7 @@ const CodeLine = memo(
               ? highlighter
                   .codeToHtml(change.value, {
                     lang: language,
-                    theme: 'github-dark',
+                    theme: theme === 'dark' ? 'github-dark' : 'github-light',
                   })
                   .replace(/<\/?pre[^>]*>/g, '')
                   .replace(/<\/?code[^>]*>/g, '')
@@ -532,6 +545,7 @@ const FileInfo = memo(
 const InlineDiffComparison = memo(({ beforeCode, afterCode, filename, language }: CodeComparisonProps) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [highlighter, setHighlighter] = useState<any>(null);
+  const theme = useStore(themeStore);
 
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen((prev) => !prev);
@@ -591,11 +605,12 @@ const InlineDiffComparison = memo(({ beforeCode, afterCode, filename, language }
                   highlighter={highlighter}
                   language={language}
                   block={block}
+                  theme={theme}
                 />
               ))}
             </div>
           ) : (
-            <NoChangesView beforeCode={beforeCode} language={language} highlighter={highlighter} />
+            <NoChangesView beforeCode={beforeCode} language={language} highlighter={highlighter} theme={theme} />
           )}
         </div>
       </div>

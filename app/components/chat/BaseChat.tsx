@@ -10,6 +10,7 @@ import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { Messages } from './Messages.client';
 import * as Tooltip from '@radix-ui/react-tooltip';
+import { useSession } from '~/lib/auth-client';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 
 import type { ProviderInfo } from '~/types/model';
@@ -19,6 +20,8 @@ import ProgressCompilation from './ProgressCompilation';
 import type { ProgressAnnotation } from '~/types/context';
 import type { ActionRunner } from '~/lib/runtime/action-runner';
 import { ChatTextarea } from './ChatTextarea';
+import { useCreditsStore } from '~/lib/stores/credits';
+import { openSettingsPanel } from '~/lib/stores/settings';
 import { AUTOFIX_ATTEMPT_EVENT } from '~/lib/error-handler';
 
 export interface PendingPrompt {
@@ -94,10 +97,15 @@ export const BaseChat = ({
   data,
   actionRunner,
 }: BaseChatProps) => {
+  const { data: session } = useSession();
   const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
+
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
 
   const [progressAnnotations, setProgressAnnotations] = useState<ProgressAnnotation[]>([]);
   const { dataSources } = useDataSourcesStore();
+
+  const { usedCredits, maxCreditsPerDay, fetchCredits } = useCreditsStore();
 
   useEffect(() => {
     if (data) {
@@ -112,11 +120,63 @@ export const BaseChat = ({
     onStreamingChange?.(isStreaming);
   }, [isStreaming, onStreamingChange]);
 
+  useEffect(() => {
+    if (!isStreaming && session?.user) {
+      fetchCredits();
+    }
+  }, [isStreaming]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map((result) => result[0])
+          .map((result) => result.transcript)
+          .join('');
+
+        if (handleInputChange) {
+          const syntheticEvent = {
+            target: { value: transcript },
+          } as React.ChangeEvent<HTMLTextAreaElement>;
+          handleInputChange(syntheticEvent);
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+      };
+
+      setRecognition(recognition);
+    }
+  }, []);
+
   const handleSendMessage = async (event: React.UIEvent, messageInput?: string) => {
     if (sendMessage) {
       const message = messageInput || input;
 
+      if (usedCredits >= maxCreditsPerDay) {
+        openSettingsPanel('credits');
+        return;
+      }
+
       await sendMessage(event, message);
+
+      if (recognition) {
+        recognition.abort(); // Stop current recognition
+
+        // Clear the input by triggering handleInputChange with empty value
+        if (handleInputChange) {
+          const syntheticEvent = {
+            target: { value: '' },
+          } as React.ChangeEvent<HTMLTextAreaElement>;
+          handleInputChange(syntheticEvent);
+        }
+      }
     }
   };
 
@@ -230,7 +290,7 @@ export const BaseChat = ({
 
   const baseChat = (
     <div className={classNames('BaseChat relative flex h-full w-full overflow-hidden')} data-chat-visible={showChat}>
-      <ClientOnly>{() => <Menu />}</ClientOnly>
+      {session?.user && <ClientOnly>{() => <Menu />}</ClientOnly>}
       <div
         ref={scrollRef}
         className={classNames('flex flex-col lg:flex-row overflow-y-auto w-full h-full', {

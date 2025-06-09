@@ -18,8 +18,22 @@ import { useCallback, useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import type { IProviderSetting, ProviderInfo, IProviderConfig } from '~/types/model';
 import type { TabWindowConfig, TabVisibilityConfig } from '~/components/@settings/core/types';
+import { getLocalStorage, setLocalStorage } from '~/lib/persistence';
+
+export interface Settings {
+  theme: 'light' | 'dark' | 'system';
+  language: string;
+  timezone: string;
+  tabConfiguration: TabWindowConfig;
+}
 
 export interface UseSettingsReturn {
+  // Theme and UI settings
+  setTheme: (theme: Settings['theme']) => void;
+  setLanguage: (language: string) => void;
+  setTimezone: (timezone: string) => void;
+  settings: Settings;
+
   // Provider settings
   providers: Record<string, IProviderConfig>;
   activeProviders: ProviderInfo[];
@@ -54,6 +68,15 @@ export function useSettings(): UseSettingsReturn {
   const [activeProviders, setActiveProviders] = useState<ProviderInfo[]>([]);
   const contextOptimizationEnabled = useStore(enableContextOptimizationStore);
   const tabConfiguration = useStore(tabConfigurationStore);
+  const [settings, setSettings] = useState<Settings>(() => {
+    const storedSettings = getLocalStorage('settings');
+    return {
+      theme: storedSettings?.theme || 'system',
+      language: storedSettings?.language || 'en',
+      timezone: storedSettings?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      tabConfiguration,
+    };
+  });
 
   useEffect(() => {
     const active = Object.entries(providers)
@@ -62,6 +85,15 @@ export function useSettings(): UseSettingsReturn {
 
     setActiveProviders(active);
   }, [providers]);
+
+  const saveSettings = useCallback((newSettings: Partial<Settings>) => {
+    setSettings((prev) => {
+      const updated = { ...prev, ...newSettings };
+      setLocalStorage('settings', updated);
+
+      return updated;
+    });
+  }, []);
 
   const updateProviderSettings = useCallback((provider: string, config: ProviderSettingWithIndex) => {
     updateProviderSettingsStore(provider, config);
@@ -83,9 +115,30 @@ export function useSettings(): UseSettingsReturn {
     updateContextOptimization(enabled);
   }, []);
 
+  const setTheme = useCallback(
+    (theme: Settings['theme']) => {
+      saveSettings({ theme });
+    },
+    [saveSettings],
+  );
+
+  const setLanguage = useCallback(
+    (language: string) => {
+      saveSettings({ language });
+    },
+    [saveSettings],
+  );
+
+  const setTimezone = useCallback(
+    (timezone: string) => {
+      saveSettings({ timezone });
+    },
+    [saveSettings],
+  );
+
   useEffect(() => {
     const providers = providersStore.get();
-    const providerSetting: Record<string, IProviderSetting> = {};
+    const providerSetting: Record<string, IProviderSetting> = {}; // preserve the entire settings object for each provider
     Object.keys(providers).forEach((provider) => {
       providerSetting[provider] = providers[provider].settings;
     });
@@ -93,6 +146,7 @@ export function useSettings(): UseSettingsReturn {
   }, [providers]);
 
   return {
+    ...settings,
     providers,
     activeProviders,
     updateProviderSettings,
@@ -104,6 +158,10 @@ export function useSettings(): UseSettingsReturn {
     setAutoSelectTemplate,
     contextOptimizationEnabled,
     enableContextOptimization,
+    setTheme,
+    setLanguage,
+    setTimezone,
+    settings,
     tabConfiguration,
     updateTabConfiguration: updateTabConfig,
     resetTabConfiguration: resetTabConfig,

@@ -43,12 +43,6 @@ interface WebsiteResponse {
   error?: string;
 }
 
-interface WebsitesConfigResponse {
-  netlify: {
-    enabled: boolean;
-  };
-}
-
 interface HeaderActionButtonsProps {}
 
 export function HeaderActionButtons({}: HeaderActionButtonsProps) {
@@ -64,24 +58,6 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   const currentChatId = useStore(chatId);
   const chatDescription = useStore(description);
   const [modalMode, setModalMode] = useState<'publish' | 'settings'>('publish');
-  const [hasNetlifyToken, setHasNetlifyToken] = useState(false);
-
-  useEffect(() => {
-    async function checkNetlifyConfig() {
-      try {
-        const response = await fetch('/api/websites/config');
-
-        if (response.ok) {
-          const data = (await response.json()) as WebsitesConfigResponse;
-          setHasNetlifyToken(data.netlify.enabled);
-        }
-      } catch (error) {
-        console.error('Failed to check Netlify configuration:', error);
-      }
-    }
-
-    checkNetlifyConfig();
-  }, []);
 
   useEffect(() => {
     if (currentChatId) {
@@ -343,40 +319,6 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
     startDeployment();
   };
 
-  const renderDropdownContent = () => {
-    if (!hasNetlifyToken) {
-      return (
-        <div className="w-48 p-4 text-sm text-gray-700 dark:text-gray-300">
-          <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-500">
-            <div className="i-ph:warning w-4 h-4" />
-            Setup Required
-          </div>
-          <p className="mb-2">To publish your site, you need to set up your Netlify authentication token first.</p>
-          <p className="text-xs text-gray-500">Add NETLIFY_AUTH_TOKEN to your environment variables.</p>
-        </div>
-      );
-    }
-
-    return (
-      <>
-        <button
-          onClick={handlePublishClick}
-          className="w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
-        >
-          <div className="i-ph:rocket-launch w-4 h-4" />
-          Publish New Version
-        </button>
-        <button
-          onClick={handleSettings}
-          className="w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
-        >
-          <div className="i-ph:gear w-4 h-4" />
-          Site Settings
-        </button>
-      </>
-    );
-  };
-
   return (
     <>
       <div className="flex">
@@ -393,7 +335,20 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           </div>
           {isDropdownOpen && (
             <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-[#111111] rounded-md shadow-lg border border-[#E5E5E5] dark:border-[#2A2A2A] z-50">
-              {renderDropdownContent()}
+              <button
+                onClick={handlePublishClick}
+                className="w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+              >
+                <div className="i-ph:rocket-launch w-4 h-4" />
+                Publish New Version
+              </button>
+              <button
+                onClick={handleSettings}
+                className="w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+              >
+                <div className="i-ph:gear w-4 h-4" />
+                Site Settings
+              </button>
             </div>
           )}
         </div>

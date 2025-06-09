@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Message } from 'ai';
 import { toast } from 'sonner';
-import { MAX_FILES, isBinaryFile, shouldIncludeFile } from '~/utils/fileUtils';
+import { isBinaryFile, MAX_FILES, shouldIncludeFile } from '~/utils/fileUtils';
 import { createChatFromFolder } from '~/utils/folderImport';
 import { Button } from '~/components/ui/Button';
 import { classNames } from '~/utils/classNames';

@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "website" ALTER COLUMN "site_id" DROP NOT NULL,
+ALTER COLUMN "site_name" DROP NOT NULL,
+ALTER COLUMN "site_url" DROP NOT NULL;

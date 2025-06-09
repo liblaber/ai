@@ -3,7 +3,8 @@ import { Link, useFetcher } from '@remix-run/react';
 import { motion } from 'framer-motion';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
-import { Trash } from 'iconsax-reactjs';
+import { Edit, Trash } from 'iconsax-reactjs';
+import { PublishProgressModal } from '~/components/publish/PublishProgressModal.client';
 
 interface Website {
   id: string;
@@ -24,7 +25,7 @@ interface Response {
   error?: string;
 }
 
-function AppItem({ website, onDelete }: { website: Website; onDelete: () => void }) {
+function AppItem({ website, onEdit, onDelete }: { website: Website; onEdit: () => void; onDelete: () => void }) {
   return (
     <motion.div
       className="flex flex-col p-4 border border-gray-700 rounded-lg"
@@ -39,6 +40,16 @@ function AppItem({ website, onDelete }: { website: Website; onDelete: () => void
           {website.siteName}
         </Link>
         <div className="flex items-center gap-2">
+          <button
+            onClick={onEdit}
+            className={classNames(
+              'bg-gray-50 dark:bg-gray-900',
+              'text-gray-700 hover:text-accent-500 dark:text-gray-500 dark:hover:text-accent-400',
+              'transition-colors',
+            )}
+          >
+            <Edit variant="Bold" className="w-6 h-6" />
+          </button>
           <button
             onClick={onDelete}
             className={classNames(
@@ -128,7 +139,9 @@ export default function DeployedAppsTab() {
   const fetcher = useFetcher<FetcherData>();
   const [websites, setWebsites] = useState<Website[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [editingWebsite, setEditingWebsite] = useState<Website | null>(null);
   const [websiteToDelete, setWebsiteToDelete] = useState<Website | null>(null);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   useEffect(() => {
     fetcher.load('/api/websites');
@@ -158,6 +171,24 @@ export default function DeployedAppsTab() {
     setWebsiteToDelete(null);
   };
 
+  const handleEdit = (website: Website) => {
+    setEditingWebsite(website);
+    setIsSettingsModalOpen(true);
+  };
+
+  const handleSettingsModalClose = () => {
+    setIsSettingsModalOpen(false);
+    setEditingWebsite(null);
+  };
+
+  const handlePublishClick = () => {
+    /*
+     * This is called when the "Publish New Version" button is clicked in the settings modal
+     * You can implement the publish logic here if needed
+     */
+    toast.info('Publish functionality will be implemented soon');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between p-2">
@@ -176,7 +207,12 @@ export default function DeployedAppsTab() {
         ) : (
           <div className="space-y-4">
             {websites.map((website) => (
-              <AppItem key={website.id} website={website} onDelete={() => setWebsiteToDelete(website)} />
+              <AppItem
+                key={website.id}
+                website={website}
+                onEdit={() => handleEdit(website)}
+                onDelete={() => setWebsiteToDelete(website)}
+              />
             ))}
           </div>
         )}
@@ -189,6 +225,16 @@ export default function DeployedAppsTab() {
         title="Delete App"
         message="Are you sure you want to delete this app? This action cannot be undone and all associated data will be permanently lost."
       />
+
+      {editingWebsite && (
+        <PublishProgressModal
+          isOpen={isSettingsModalOpen}
+          onClose={handleSettingsModalClose}
+          onCancel={handleSettingsModalClose}
+          mode="settings"
+          onPublishClick={handlePublishClick}
+        />
+      )}
     </div>
   );
 }

@@ -8,9 +8,11 @@ export const conversationService = {
     });
   },
 
-  async createConversation(): Promise<Conversation> {
+  async createConversation(userId: string): Promise<Conversation> {
     return await prisma.conversation.create({
-      data: {},
+      data: {
+        userId,
+      },
     });
   },
 };

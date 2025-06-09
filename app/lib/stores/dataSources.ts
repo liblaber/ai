@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { useFetcher, useNavigate } from '@remix-run/react';
 import { useEffect } from 'react';
+import { useSession } from '~/lib/auth-client';
 import { persist } from 'zustand/middleware';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/routes/data-source-connection';
 
@@ -58,6 +59,7 @@ export const useDataSourcesStore = create<DataSourcesState>()(
 export const useDataSourceActions = () => {
   const dataSourcesFetcher = useFetcher<{ success: boolean; dataSources: any[] }>();
   const { setDataSources } = useDataSourcesStore();
+  const { data: session } = useSession();
   const navigate = useNavigate();
 
   const refetchDataSources = () => {
@@ -71,10 +73,10 @@ export const useDataSourceActions = () => {
   }, [dataSourcesFetcher.data]);
 
   useEffect(() => {
-    if (dataSourcesFetcher.data?.success && !dataSourcesFetcher.data?.dataSources?.length) {
+    if (dataSourcesFetcher.data?.success && !dataSourcesFetcher.data?.dataSources?.length && session?.user) {
       navigate(DATA_SOURCE_CONNECTION_ROUTE);
     }
-  }, [dataSourcesFetcher.data]);
+  }, [session?.user?.id, dataSourcesFetcher.data]);
 
   return {
     refetchDataSources,

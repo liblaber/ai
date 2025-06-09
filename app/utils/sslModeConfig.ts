@@ -1,17 +1,19 @@
-import { SSL_MODE } from '~/types/database';
+import { SSLMode } from '@prisma/client';
 
 export function getSslModeConfig(sslMode: string) {
   switch (sslMode.toUpperCase()) {
-    case SSL_MODE.DISABLE:
+    case SSLMode.DISABLE:
       return undefined;
-    case SSL_MODE.ALLOW:
-    case SSL_MODE.PREFER:
+    case SSLMode.ALLOW:
+    case SSLMode.PREFER:
       return { rejectUnauthorized: false };
-    case SSL_MODE.REQUIRE:
+    case SSLMode.REQUIRE:
       return { rejectUnauthorized: true };
-    case SSL_MODE.VERIFY_CA:
+    case SSLMode.VERIFY_CA:
+      // TODO: Implement verify-ca mode in future. This will require additional CA certificate configuration.
       return { rejectUnauthorized: true };
-    case SSL_MODE.VERIFY_FULL:
+    case SSLMode.VERIFY_FULL:
+      // TODO: Implement verify-full mode in future. This will require additional CA certificate and hostname verification.
       return { rejectUnauthorized: true };
     default:
       return undefined;

@@ -257,6 +257,10 @@ export class WorkbenchStore {
     this.#filesStore.resetFileModifications();
   }
 
+  abortAllActions() {
+    // TODO: what do we wanna do and how do we wanna recover from this?
+  }
+
   setReloadedMessages(messages: string[]) {
     this.#reloadedMessages = new Set(messages);
   }
@@ -374,7 +378,7 @@ export class WorkbenchStore {
 
   actionStreamSampler = createSampler(async (data: ActionCallbackData, isStreaming: boolean = false) => {
     return await this._runAction(data, isStreaming);
-  }, 100);
+  }, 100); // TODO: remove this magic number to have it configurable
 
   #getArtifact(id: string) {
     const artifacts = this.artifacts.get();
@@ -450,13 +454,7 @@ export class WorkbenchStore {
     return syncedFiles;
   }
 
-  async pushToGitHub(
-    repoName: string,
-    commitMessage?: string,
-    githubUsername?: string,
-    ghToken?: string,
-    isPrivate?: boolean,
-  ) {
+  async pushToGitHub(repoName: string, commitMessage?: string, githubUsername?: string, ghToken?: string) {
     try {
       // Use cookies if username and token are not provided
       const githubToken = ghToken || Cookies.get('githubToken');
@@ -480,7 +478,7 @@ export class WorkbenchStore {
           // Repository doesn't exist, so create a new one
           const { data: newRepo } = await octokit.repos.createForAuthenticatedUser({
             name: repoName,
-            private: isPrivate ?? false,
+            private: false,
             auto_init: true,
           });
           repo = newRepo;

@@ -6,6 +6,8 @@ export interface Website {
   siteId: string | null;
   siteName: string | null;
   siteUrl: string | null;
+  isPublic: boolean;
+  allowedUserEmails: string[];
 }
 
 interface WebsiteResponse {
@@ -26,6 +28,12 @@ export interface DeploymentProgress {
     };
     site: NetlifySiteInfo;
     website?: Website;
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+    canRetry?: boolean;
   };
 }
 

@@ -1,6 +1,8 @@
 import { json } from '@remix-run/cloudflare';
-import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import pg from 'pg';
 import { prisma } from '~/lib/prisma';
+import { getInfisicalClient } from '~/lib/vault/client';
+import { getSslModeConfig } from '~/utils/sslModeConfig';
 
 export async function action({ request }: { request: Request }) {
   if (request.method !== 'POST') {
@@ -22,34 +24,37 @@ export async function action({ request }: { request: Request }) {
       return json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    const passwordValue = decodeURIComponent(password ?? '') || (await getPassword(id));
+    const passwordValue = password || (await getPassword(id));
 
-    const databaseUrl = `${type}://${username}:${encodeURIComponent(passwordValue)}@${host}:${port}/${database}?sslmode=${sslMode ? sslMode.toLowerCase() : 'disable'}`;
+    // For PostgreSQL, we'll use the node-postgres client to test the connection
+    if (type === 'postgres') {
+      const client = new pg.Client({
+        host,
+        port,
+        user: username,
+        password: passwordValue,
+        database,
+        ssl: getSslModeConfig(sslMode),
+      });
 
-    try {
-      const accessor = DataAccessor.getAccessor(databaseUrl);
-      const isConnected = await accessor.testConnection(databaseUrl);
+      try {
+        await client.connect();
+        await client.query('SELECT 1');
+        await client.end();
 
-      if (isConnected) {
         return json({ success: true, message: 'Connection successful' });
-      } else {
+      } catch (error) {
         return json(
           {
             success: false,
-            message: 'Failed to connect to database',
+            message: error instanceof Error ? error.message : 'Failed to connect to database',
           },
           { status: 400 },
         );
       }
-    } catch (error) {
-      return json(
-        {
-          success: false,
-          message: error instanceof Error ? error.message : 'Failed to connect to database',
-        },
-        { status: 400 },
-      );
     }
+
+    return json({ success: false, error: 'Unsupported database type' }, { status: 400 });
   } catch (error) {
     console.error('Error testing connection:', error);
     return json(
@@ -66,14 +71,20 @@ export async function action({ request }: { request: Request }) {
 async function getPassword(dataSourceId: string): Promise<string> {
   const dataSource = await prisma.dataSource.findUnique({
     where: { id: dataSourceId },
-    select: {
-      password: true,
-    },
+    select: { secretName: true },
   });
 
   if (!dataSource) {
-    throw new Error('Data source not found or password retrieval failed');
+    throw new Error('Data source not found');
   }
 
-  return dataSource.password;
+  const secretName = dataSource.secretName;
+  const infisical = await getInfisicalClient();
+  const secret = await infisical.secrets().getSecret({
+    secretName,
+    environment: process.env.INFISICAL_ENVIRONMENT!,
+    projectId: process.env.INFISICAL_PROJECT_ID!,
+  });
+
+  return secret.secretValue;
 }

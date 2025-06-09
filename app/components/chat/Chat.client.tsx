@@ -95,15 +95,17 @@ export const ChatImpl = memo(
       chatStore.setKey('started', chatStarted);
     }, [chatStarted]);
 
+    // TODO: we will need to lock this conversation to the selected datasource
     const { selectedDataSourceId } = useDataSourcesStore();
 
     const llmManager = LLMManager.getInstance();
     const [model] = useState(() => llmManager.defaultModel);
     const [provider] = useState(() => {
-      const provider = llmManager.getProvider();
+      const provider = llmManager.getDefaultProvider();
       return {
         name: provider.name,
         staticModels: provider.staticModels,
+        getModelInstance: provider.getModelInstance,
         getApiKeyLink: provider.getApiKeyLink,
         labelForGetApiKey: provider.labelForGetApiKey,
         icon: provider.icon,
@@ -112,10 +114,11 @@ export const ChatImpl = memo(
 
     const [sqlLlmModel] = useState(() => llmManager.defaultModel);
     const [sqlLlmProvider] = useState(() => {
-      const provider = llmManager.getProvider();
+      const provider = llmManager.getDefaultProvider();
       return {
         name: provider.name,
         staticModels: provider.staticModels,
+        getModelInstance: provider.getModelInstance,
         getApiKeyLink: provider.getApiKeyLink,
         labelForGetApiKey: provider.labelForGetApiKey,
         icon: provider.icon,
@@ -146,6 +149,8 @@ export const ChatImpl = memo(
       body: {
         apiKeys,
         files,
+
+        // TODO: Overriding the useSettings promptId to always use dashboards from PromptLibrary until we introduce more starter projects with custom prompts | Jira: https://liblab.atlassian.net/browse/GROW-163
         promptId: 'dashboards',
         contextOptimization: contextOptimizationEnabled,
       },
@@ -158,7 +163,6 @@ export const ChatImpl = memo(
       },
       onFinish: async () => {
         setData(undefined);
-
         logger.debug('Finished streaming');
 
         await storeMessageHistory(messagesRef.current);
@@ -175,7 +179,6 @@ export const ChatImpl = memo(
 
     useEffect(() => {
       messagesRef.current = messages;
-
       processSampledMessages({
         messages,
         isLoading,
@@ -194,6 +197,7 @@ export const ChatImpl = memo(
     const abort = () => {
       stop();
       chatStore.setKey('aborted', true);
+      workbenchStore.abortAllActions();
     };
 
     useEffect(() => {
@@ -491,6 +495,8 @@ export const ChatImpl = memo(
 
     useEffect(() => {
       const handleIframeMessage = (event: MessageEvent<OutputAppEvent>) => {
+        // TODO: Validate the origin of the message: https://liblab.atlassian.net/browse/GROW-147
+
         try {
           const data = event.data;
 
@@ -566,14 +572,7 @@ export const ChatImpl = memo(
           clearAlert={() => workbenchStore.clearAlert()}
           data={chatData}
         />
-        {selectedQueryId && (
-          <QueryModal
-            isOpen={isModalOpen}
-            onOpenChange={setIsModalOpen}
-            queryId={selectedQueryId}
-            dataSourceId={selectedDataSourceId!}
-          />
-        )}
+        {selectedQueryId && <QueryModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} queryId={selectedQueryId} />}
       </>
     );
   },

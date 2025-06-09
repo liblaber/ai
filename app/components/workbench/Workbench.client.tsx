@@ -449,10 +449,10 @@ export const Workbench = memo(
           <PushToGitHubDialog
             isOpen={isPushDialogOpen}
             onClose={() => setIsPushDialogOpen(false)}
-            onPush={async (repoName, username, token, isPrivate) => {
+            onPush={async (repoName, username, token) => {
               try {
                 const commitMessage = 'liblab ai syncing files';
-                await workbenchStore.pushToGitHub(repoName, commitMessage, username, token, isPrivate);
+                await workbenchStore.pushToGitHub(repoName, commitMessage, username, token);
 
                 const repoUrl = `https://github.com/${username}/${repoName}`;
 

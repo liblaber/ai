@@ -1,6 +1,7 @@
+import { getInfisicalClient } from '~/lib/vault/client';
 import { prisma } from '~/lib/prisma';
-import { SSL_MODE, type SSLMode } from '~/types/database';
-import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { env } from '~/lib/config/env';
+import { SSLMode } from '@prisma/client';
 
 export interface DataSource {
   id: string;
@@ -10,13 +11,14 @@ export interface DataSource {
   database: string;
   port: number;
   username: string;
-  sslMode: string;
+  sslMode: SSLMode;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export async function getDataSources(): Promise<DataSource[]> {
+export async function getDataSources(userId: string): Promise<DataSource[]> {
   return prisma.dataSource.findMany({
+    where: { userId },
     select: {
       id: true,
       name: true,
@@ -32,21 +34,31 @@ export async function getDataSources(): Promise<DataSource[]> {
   });
 }
 
-export async function createDataSource(data: {
-  name: string;
-  type: string;
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  database: string;
-  sslMode: SSLMode;
-}) {
-  const availableDataSourceTypes = DataAccessor.getAvailableDatabaseTypes();
-
-  if (!availableDataSourceTypes.find(({ value }) => value === data.type)) {
-    throw new Error(`Unsupported data source type: ${data.type}`);
+export async function createDataSource(
+  userId: string,
+  data: {
+    name: string;
+    type: string;
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+    database: string;
+    sslMode: SSLMode;
+  },
+) {
+  if (data.type !== 'postgres') {
+    throw new Error('Only postgres data sources are supported');
   }
+
+  const infisical = await getInfisicalClient();
+  const secretName = `datasource-${Date.now()}-${data.name.toLowerCase().replace(/\s+/g, '-')}`;
+
+  await infisical.secrets().createSecret(secretName, {
+    environment: env.INFISICAL_ENVIRONMENT!,
+    projectId: env.INFISICAL_PROJECT_ID!,
+    secretValue: data.password,
+  });
 
   return prisma.dataSource.create({
     data: {
@@ -56,22 +68,23 @@ export async function createDataSource(data: {
       port: data.port,
       database: data.database,
       username: data.username,
-      password: data.password,
-      sslMode: data.sslMode || SSL_MODE.DISABLE,
+      secretName,
+      userId,
+      sslMode: data.sslMode || SSLMode.DISABLE,
     },
   });
 }
 
-export async function getDatabaseUrl(datasourceId: string) {
-  const dataSource = await prisma.dataSource.findUnique({
-    where: { id: datasourceId },
+export async function getDatabaseUrl(userId: string, datasourceId: string) {
+  const dataSource = await prisma?.dataSource.findUnique({
+    where: { id: datasourceId, userId },
     select: {
       type: true,
       host: true,
       database: true,
       port: true,
       username: true,
-      password: true,
+      secretName: true,
       sslMode: true,
     },
   });
@@ -80,7 +93,24 @@ export async function getDatabaseUrl(datasourceId: string) {
     throw new Error('Data source not found');
   }
 
-  const { type, host, database, port, username, password, sslMode } = dataSource;
+  const { type, host, database, port, username, secretName, sslMode } = dataSource;
+
+  const password = await getDatasourcePassword(secretName);
 
   return `${type}://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode.toLowerCase()}`;
+}
+
+export async function getDatasourcePassword(secretName: string) {
+  const infisical = await getInfisicalClient();
+  const secret = await infisical.secrets().getSecret({
+    secretName,
+    projectId: env.INFISICAL_PROJECT_ID!,
+    environment: env.INFISICAL_ENVIRONMENT!,
+  });
+
+  if (!secret.secretValue) {
+    throw new Error('Failed to fetch secret');
+  }
+
+  return secret.secretValue;
 }

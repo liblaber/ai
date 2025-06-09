@@ -1,10 +1,14 @@
+import { requireUserId } from '~/session';
 import { prisma } from '~/lib/prisma';
+import { getInfisicalClient } from '~/lib/vault/client';
 import { json } from '@remix-run/cloudflare';
-import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { env } from '~/lib/config/env';
 
-export async function loader({ params }: { request: Request; params: { id: string } }) {
+export async function loader({ request, params }: { request: Request; params: { id: string } }) {
+  const userId = await requireUserId(request);
+
   const dataSource = await prisma.dataSource.findFirst({
-    where: { id: params.id },
+    where: { id: params.id, userId },
     select: {
       id: true,
       name: true,
@@ -27,13 +31,17 @@ export async function loader({ params }: { request: Request; params: { id: strin
 }
 
 export async function action({ request, params }: { request: Request; params: { id: string } }) {
+  const userId = await requireUserId(request);
+
   const dataSource = await prisma.dataSource.findFirst({
-    where: { id: params.id },
+    where: { id: params.id, userId },
   });
 
   if (!dataSource) {
     return json({ success: false, error: 'Data source not found' }, { status: 404 });
   }
+
+  const infisical = await getInfisicalClient();
 
   if (request.method === 'PUT') {
     const formData = await request.formData();
@@ -46,10 +54,8 @@ export async function action({ request, params }: { request: Request; params: { 
     const database = formData.get('database') as string;
     const sslMode = formData.get('sslMode') as string;
 
-    const availableTypes = DataAccessor.getAvailableDatabaseTypes().map((dbType) => dbType.value);
-
-    if (!availableTypes.includes(type)) {
-      throw new Error('Invalid database type, available types are: ' + availableTypes.join(', '));
+    if (type !== 'postgres') {
+      return json({ success: false, error: 'Only postgres data sources are supported' }, { status: 400 });
     }
 
     const updateData: any = {
@@ -63,7 +69,15 @@ export async function action({ request, params }: { request: Request; params: { 
     };
 
     if (password) {
-      updateData.password = decodeURIComponent(password);
+      const secretName = `datasource-${Date.now()}-${name.toLowerCase().replace(/\s+/g, '-')}`;
+
+      await infisical.secrets().createSecret(secretName, {
+        environment: env.INFISICAL_ENVIRONMENT!,
+        projectId: env.INFISICAL_PROJECT_ID!,
+        secretValue: password,
+      });
+
+      updateData.secretName = secretName;
     }
 
     const updatedDataSource = await prisma.dataSource.update({
@@ -75,6 +89,11 @@ export async function action({ request, params }: { request: Request; params: { 
   }
 
   if (request.method === 'DELETE') {
+    await infisical.secrets().deleteSecret(dataSource.secretName, {
+      environment: env.INFISICAL_ENVIRONMENT!,
+      projectId: env.INFISICAL_PROJECT_ID!,
+    });
+
     await prisma.dataSource.delete({
       where: { id: params.id },
     });

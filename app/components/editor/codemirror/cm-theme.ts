@@ -3,6 +3,7 @@ import { EditorView } from '@codemirror/view';
 import { tokyoNight } from '@uiw/codemirror-theme-tokyo-night';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
+import type { Theme } from '~/types/theme.js';
 import type { EditorSettings } from './CodeMirrorEditor.js';
 
 export const darkTheme = EditorView.theme({}, { dark: true });
@@ -11,12 +12,16 @@ export const themeSelection = new Compartment();
 // Add highlighting style for type names
 const typeNameHighlight = HighlightStyle.define([{ tag: tags.typeName, color: '#3BCEFF' }]);
 
-export function getTheme(settings: EditorSettings = {}): Extension {
-  return [getEditorTheme(settings), syntaxHighlighting(typeNameHighlight), themeSelection.of([getDarkTheme()])];
+export function getTheme(theme: Theme, settings: EditorSettings = {}): Extension {
+  return [
+    getEditorTheme(settings),
+    syntaxHighlighting(typeNameHighlight),
+    theme === 'dark' ? themeSelection.of([getDarkTheme()]) : themeSelection.of([getLightTheme()]),
+  ];
 }
 
-export function reconfigureTheme() {
-  return themeSelection.reconfigure(getDarkTheme());
+export function reconfigureTheme(theme: Theme) {
+  return themeSelection.reconfigure(theme === 'dark' ? getDarkTheme() : getLightTheme());
 }
 
 function getEditorTheme(settings: EditorSettings) {
@@ -182,6 +187,10 @@ function getEditorTheme(settings: EditorSettings) {
       },
     },
   });
+}
+
+function getLightTheme() {
+  return tokyoNight;
 }
 
 function getDarkTheme() {

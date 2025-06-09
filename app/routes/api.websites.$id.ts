@@ -1,8 +1,10 @@
 import { json } from '@remix-run/cloudflare';
+import { requireUserId } from '~/session';
 import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
 
 export async function action({ request, params }: { request: Request; params: { id: string } }) {
+  const userId = await requireUserId(request);
   const websiteId = params.id;
 
   if (!websiteId) {
@@ -18,6 +20,7 @@ export async function action({ request, params }: { request: Request; params: { 
     const website = await prisma.website.findFirst({
       where: {
         id: websiteId,
+        userId, // Ensure user can only update their own websites
       },
     });
 
@@ -25,7 +28,17 @@ export async function action({ request, params }: { request: Request; params: { 
       return json({ error: 'Website not found' }, { status: 404 });
     }
 
+    const formData = await request.formData();
     const updateData: any = {};
+
+    if (formData.has('isPublic')) {
+      const isPublic = formData.get('isPublic') === 'true';
+      updateData.isPublic = isPublic;
+    }
+
+    if (formData.has('allowedUserEmails')) {
+      updateData.allowedUserEmails = JSON.parse(formData.get('allowedUserEmails') as string);
+    }
 
     const updatedWebsite = await prisma.website.update({
       where: {

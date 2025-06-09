@@ -2,7 +2,29 @@ import type { ReactNode } from 'react';
 
 export type SettingCategory = 'file_sharing' | 'connectivity' | 'system' | 'services' | 'preferences';
 
-export type TabType = 'data' | 'github' | 'deployed-apps';
+export type TabType =
+  | 'settings'
+  | 'data'
+  | 'service-status'
+  | 'github'
+  | 'task-manager'
+  | 'deployed-apps'
+  | 'tab-management'
+  | 'credits';
+
+export type WindowType = 'user' | 'developer';
+
+export interface UserProfile {
+  nickname: any;
+  name: string;
+  email: string;
+  avatar?: string;
+  theme: 'light' | 'dark' | 'system';
+  password?: string;
+  bio?: string;
+  language: string;
+  timezone: string;
+}
 
 export interface SettingItem {
   id: TabType;
@@ -18,19 +40,34 @@ export interface SettingItem {
 export interface TabVisibilityConfig {
   id: TabType;
   visible: boolean;
+  window: WindowType;
   order: number;
   isExtraDevTab?: boolean;
   locked?: boolean;
 }
 
+export interface DevTabConfig extends TabVisibilityConfig {
+  window: 'developer';
+}
+
+export interface UserTabConfig extends TabVisibilityConfig {
+  window: 'user';
+}
+
 export interface TabWindowConfig {
-  userTabs: TabVisibilityConfig[];
+  userTabs: UserTabConfig[];
+  developerTabs: DevTabConfig[];
 }
 
 export const TAB_LABELS: Record<TabType, string> = {
-  data: 'Data Sources',
+  settings: 'Settings',
+  data: 'Data Management',
+  'service-status': 'Service Status',
   github: 'GitHub',
+  'task-manager': 'Task Manager',
+  'tab-management': 'Tab Management',
   'deployed-apps': 'Deployed Apps',
+  credits: 'Credits',
 };
 
 export const categoryLabels: Record<SettingCategory, string> = {

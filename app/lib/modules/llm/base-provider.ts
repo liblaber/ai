@@ -3,6 +3,7 @@ import type { ProviderInfo, ProviderConfig, ModelInfo } from './types';
 import type { IProviderSetting } from '~/types/model';
 import { createOpenAI } from '@ai-sdk/openai';
 import { LLMManager } from './manager';
+import { env } from '~/lib/config/env';
 
 export abstract class BaseProvider implements ProviderInfo {
   abstract name: string;
@@ -37,6 +38,7 @@ export abstract class BaseProvider implements ProviderInfo {
       settingsBaseUrl ||
       serverEnv?.[baseUrlKey] ||
       process?.env?.[baseUrlKey] ||
+      env?.[baseUrlKey] ||
       manager.env?.[baseUrlKey] ||
       this.config.baseUrl;
 
@@ -46,7 +48,11 @@ export abstract class BaseProvider implements ProviderInfo {
 
     const apiTokenKey = this.config.apiTokenKey || defaultApiTokenKey;
     const apiKey =
-      apiKeys?.[this.name] || serverEnv?.[apiTokenKey] || process?.env?.[apiTokenKey] || manager.env?.[apiTokenKey];
+      apiKeys?.[this.name] ||
+      serverEnv?.[apiTokenKey] ||
+      process?.env?.[apiTokenKey] ||
+      env?.[apiTokenKey] ||
+      manager.env?.[apiTokenKey];
 
     return {
       baseUrl,

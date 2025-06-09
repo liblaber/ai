@@ -1,19 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
 import { BaseSelect } from '~/components/ui/Select';
-import {
-  DATASOURCES,
-  SAMPLE_DATABASE,
-  SelectDatabaseTypeOptions,
-  SingleValueWithTooltip,
-} from '~/components/database/SelectDatabaseTypeOptions';
+import { SelectDatabaseTypeOptions } from '~/components/database/SelectDatabaseTypeOptions';
 import { useDataSourceActions, useDataSourcesStore } from '~/lib/stores/dataSources';
-import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
+import { SSLMode } from '@prisma/client';
 import { useNavigate } from '@remix-run/react';
 import { Header } from '~/components/header/Header';
-import { parseDatabaseConnectionUrl } from '~/utils/parseDatabaseConnectionUrl';
+import { type LoaderFunction, type LoaderFunctionArgs, redirect } from '@remix-run/cloudflare';
+import { auth } from '~/lib/auth';
 
 interface ApiResponse {
   success: boolean;
@@ -30,7 +26,27 @@ type DataSourceOption = {
   available: boolean;
 };
 
+const DATASOURCES: DataSourceOption[] = [
+  { value: 'sample', label: 'Sample Database', available: true },
+  { value: 'postgres', label: 'PostgreSQL', available: true },
+  { value: 'mongo', label: 'Mongo', available: false },
+  { value: 'hubspot', label: 'Hubspot', available: false },
+  { value: 'salesforce', label: 'Salesfoirce', available: false },
+  { value: 'jira', label: 'Jira', available: false },
+  { value: 'github', label: 'Github', available: false },
+];
+
 export const DATA_SOURCE_CONNECTION_ROUTE = '/data-source-connection';
+
+export const loader: LoaderFunction = async ({ request }: LoaderFunctionArgs) => {
+  const session = await auth.api.getSession({ headers: request.headers });
+
+  if (!session?.user) {
+    return redirect('/');
+  }
+
+  return null;
+};
 
 export default function DataSourceConnectionPage() {
   const [dbType, setDbType] = useState<DataSourceOption>(DATASOURCES[0]);
@@ -42,13 +58,46 @@ export default function DataSourceConnectionPage() {
   const { setSelectedDataSourceId } = useDataSourcesStore();
   const { refetchDataSources } = useDataSourceActions();
   const navigate = useNavigate();
-  const { types: dataSourceTypes, fetchTypes } = useDataSourceTypesStore();
 
-  useEffect(() => {
-    fetchTypes();
-  }, [fetchTypes]);
+  const parseConnectionString = (connStr: string) => {
+    try {
+      const url = new URL(connStr);
 
-  const allDataSourceTypes = [...dataSourceTypes, ...DATASOURCES];
+      if (!url.protocol.startsWith('postgresql:')) {
+        throw new Error('Connection string must start with postgresql://');
+      }
+
+      if (!url.hostname) {
+        throw new Error('Host is required');
+      }
+
+      if (!url.pathname.slice(1)) {
+        throw new Error('Database name is required');
+      }
+
+      const sslMode = url.searchParams.get('sslmode')?.toUpperCase() || 'DISABLE';
+
+      if (!Object.values(SSLMode).includes(sslMode as SSLMode)) {
+        throw new Error(`Invalid SSL mode: ${sslMode}. Valid modes are: ${Object.values(SSLMode).join(', ')}`);
+      }
+
+      return {
+        host: url.hostname,
+        port: url.port || '5432',
+        username: url.username,
+        password: url.password,
+        database: url.pathname.slice(1),
+        type: 'postgres',
+        sslMode: sslMode as SSLMode,
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Invalid connection string: ${error.message}`);
+      }
+
+      throw new Error('Invalid connection string format');
+    }
+  };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,14 +105,14 @@ export default function DataSourceConnectionPage() {
     setError(null);
 
     try {
-      const connectionDetails = parseDatabaseConnectionUrl(connStr);
+      const connectionDetails = parseConnectionString(connStr);
 
       const formData = new FormData();
       Object.entries(connectionDetails).forEach(([key, value]) => {
         formData.append(key, value?.toString() || '');
       });
 
-      const response = await fetch('/api/data-sources/testing', {
+      const response = await fetch('/api/data-sources/test', {
         method: 'POST',
         body: formData,
       });
@@ -86,7 +135,7 @@ export default function DataSourceConnectionPage() {
     try {
       setError(null);
 
-      const connectionDetails = parseDatabaseConnectionUrl(connStr);
+      const connectionDetails = parseConnectionString(connStr);
       const formData = new FormData();
 
       formData.append('name', connectionDetails.database || '');
@@ -156,8 +205,8 @@ export default function DataSourceConnectionPage() {
           <h1 className="text-2xl text-liblab-elements-textPrimary mb-6 text-center">Let's connect your data source</h1>
           <div className="mb-6">
             <p className="text-center text-base font-light text-liblab-elements-textPrimary">
-              Continue with a sample database or connect your own database. More options, such as MongoDB and Github are
-              coming soon!
+              Continue with a sample database or connect your PostgreSQL database. More options, such as MongoDB and
+              Github are coming soon!
             </p>
           </div>
           <div className="flex gap-2 mb-6 items-end">
@@ -169,18 +218,15 @@ export default function DataSourceConnectionPage() {
                   setDbType(value as DataSourceOption);
                   setError(null);
                 }}
-                options={allDataSourceTypes.filter((opt) => opt.available)}
+                options={DATASOURCES.filter((opt) => opt.available)}
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}
-                components={{
-                  MenuList: SelectDatabaseTypeOptions,
-                  SingleValue: SingleValueWithTooltip,
-                }}
+                components={{ MenuList: SelectDatabaseTypeOptions }}
               />
             </div>
           </div>
-          {dbType.value !== 'sample' && (
+          {dbType.value === 'postgres' && (
             <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
               <div>
                 <Label htmlFor="conn-str" className="mb-3 block text-gray-300">
@@ -188,7 +234,7 @@ export default function DataSourceConnectionPage() {
                 </Label>
                 <Input id="conn-str" type="text" value={connStr} onChange={(e) => setConnStr(e.target.value)} />
                 <Label className="mb-3 block !text-[13px] text-gray-300 mt-2">
-                  e.g. {dbType.value}://username:password@host:port/database
+                  e.g. postgresql://username:password@host:port/database
                 </Label>
               </div>
               {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
@@ -224,7 +270,7 @@ export default function DataSourceConnectionPage() {
               </div>
             </form>
           )}
-          {dbType.value === SAMPLE_DATABASE && (
+          {dbType.value === 'sample' && (
             <>
               {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
               <Button

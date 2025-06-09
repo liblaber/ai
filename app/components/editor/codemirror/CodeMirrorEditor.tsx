@@ -17,6 +17,7 @@ import {
   type Tooltip,
 } from '@codemirror/view';
 import { memo, useEffect, useRef, useState, type MutableRefObject } from 'react';
+import type { Theme } from '~/types/theme';
 import { classNames } from '~/utils/classNames';
 import { debounce } from '~/utils/debounce';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
@@ -59,6 +60,7 @@ export type OnScrollCallback = (position: ScrollPosition) => void;
 export type OnSaveCallback = () => void;
 
 interface Props {
+  theme: Theme;
   id?: unknown;
   doc?: EditorDocument;
   editable?: boolean;
@@ -124,6 +126,7 @@ export const CodeMirrorEditor = memo(
     onScroll,
     onChange,
     onSave,
+    theme,
     settings,
     className = '',
   }: Props) => {
@@ -133,6 +136,7 @@ export const CodeMirrorEditor = memo(
 
     const containerRef = useRef<HTMLDivElement | null>(null);
     const viewRef = useRef<EditorView>();
+    const themeRef = useRef<Theme>();
     const docRef = useRef<EditorDocument>();
     const editorStatesRef = useRef<EditorStates>();
     const onScrollRef = useRef(onScroll);
@@ -148,6 +152,7 @@ export const CodeMirrorEditor = memo(
       onChangeRef.current = onChange;
       onSaveRef.current = onSave;
       docRef.current = doc;
+      themeRef.current = theme;
     });
 
     useEffect(() => {
@@ -193,9 +198,9 @@ export const CodeMirrorEditor = memo(
       }
 
       viewRef.current.dispatch({
-        effects: [reconfigureTheme()],
+        effects: [reconfigureTheme(theme)],
       });
-    }, []);
+    }, [theme]);
 
     useEffect(() => {
       editorStatesRef.current = new Map<string, EditorState>();
@@ -204,9 +209,10 @@ export const CodeMirrorEditor = memo(
     useEffect(() => {
       const editorStates = editorStatesRef.current!;
       const view = viewRef.current!;
+      const theme = themeRef.current!;
 
       if (!doc) {
-        const state = newEditorState('', settings, onScrollRef, debounceScroll, onSaveRef, [
+        const state = newEditorState('', theme, settings, onScrollRef, debounceScroll, onSaveRef, [
           languageCompartment.of([]),
         ]);
 
@@ -228,7 +234,7 @@ export const CodeMirrorEditor = memo(
       let state = editorStates.get(doc.filePath);
 
       if (!state) {
-        state = newEditorState(doc.value, settings, onScrollRef, debounceScroll, onSaveRef, [
+        state = newEditorState(doc.value, theme, settings, onScrollRef, debounceScroll, onSaveRef, [
           languageCompartment.of([]),
         ]);
 
@@ -237,7 +243,14 @@ export const CodeMirrorEditor = memo(
 
       view.setState(state);
 
-      setEditorDocument(view, editable, languageCompartment, autoFocusOnDocumentChange, doc as TextEditorDocument);
+      setEditorDocument(
+        view,
+        theme,
+        editable,
+        languageCompartment,
+        autoFocusOnDocumentChange,
+        doc as TextEditorDocument,
+      );
     }, [doc?.value, editable, doc?.filePath, autoFocusOnDocumentChange]);
 
     return (
@@ -255,6 +268,7 @@ CodeMirrorEditor.displayName = 'CodeMirrorEditor';
 
 function newEditorState(
   content: string,
+  theme: Theme,
   settings: EditorSettings | undefined,
   onScrollRef: MutableRefObject<OnScrollCallback | undefined>,
   debounceScroll: number,
@@ -284,7 +298,7 @@ function newEditorState(
           return false;
         },
       }),
-      getTheme(settings),
+      getTheme(theme, settings),
       history(),
       keymap.of([
         ...defaultKeymap,
@@ -362,6 +376,7 @@ function setNoDocument(view: EditorView) {
 
 function setEditorDocument(
   view: EditorView,
+  theme: Theme,
   editable: boolean,
   languageCompartment: Compartment,
   autoFocus: boolean,
@@ -388,7 +403,7 @@ function setEditorDocument(
     }
 
     view.dispatch({
-      effects: [languageCompartment.reconfigure([languageSupport]), reconfigureTheme()],
+      effects: [languageCompartment.reconfigure([languageSupport]), reconfigureTheme(theme)],
     });
 
     requestAnimationFrame(() => {
