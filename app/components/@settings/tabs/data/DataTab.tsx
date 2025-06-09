@@ -195,18 +195,6 @@ export default function DataTab() {
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Get started by adding your first data source.
               </p>
-              <motion.button
-                className={classNames(
-                  'inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-500 text-white text-sm hover:bg-accent-600',
-                  'transition-colors',
-                )}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleAdd}
-              >
-                <div className="i-ph:plus w-4 h-4" />
-                Add Data Source
-              </motion.button>
             </div>
           ) : (
             dataSources.map((dataSource) => (

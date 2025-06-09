@@ -95,8 +95,10 @@ export default function EditDataSourceForm({
   }, [typesError]);
 
   useEffect(() => {
-    setDbType(allDatabaseTypes.find((opt) => opt.value === selectedDataSource?.type) || allDatabaseTypes[0]);
-  }, [allDatabaseTypes]);
+    if (allDatabaseTypes.length > 0) {
+      setDbType(allDatabaseTypes.find((opt) => opt.value === selectedDataSource?.type) || allDatabaseTypes[0]);
+    }
+  }, [databaseTypes, selectedDataSource]);
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);

@@ -61,7 +61,10 @@ export function readDirectory(dirPath: string, basePath: string = ''): any[] {
         let hasChanges = false;
         sharedImports.forEach((pkg) => {
           if (!dependencies[pkg]) {
-            dependencies[pkg] = 'latest';
+            // Read the version from package.json
+            const rootPackageJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+            const version = rootPackageJson.dependencies?.[pkg] || rootPackageJson.devDependencies?.[pkg] || 'latest';
+            dependencies[pkg] = version;
             hasChanges = true;
           }
         });
