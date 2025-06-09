@@ -97,7 +97,6 @@ export const isDebugMode = atom(false);
 
 // Define keys for localStorage
 const SETTINGS_KEYS = {
-  LATEST_BRANCH: 'isLatestBranch',
   AUTO_SELECT_TEMPLATE: 'autoSelectTemplate',
   CONTEXT_OPTIMIZATION: 'contextOptimizationEnabled',
   PROMPT_ID: 'promptId',
@@ -125,7 +124,6 @@ const getInitialSettings = () => {
   };
 
   return {
-    latestBranch: getStoredBoolean(SETTINGS_KEYS.LATEST_BRANCH, false),
     autoSelectTemplate: getStoredBoolean(SETTINGS_KEYS.AUTO_SELECT_TEMPLATE, true),
     contextOptimization: getStoredBoolean(SETTINGS_KEYS.CONTEXT_OPTIMIZATION, true),
     promptId: isBrowser ? localStorage.getItem(SETTINGS_KEYS.PROMPT_ID) || 'default' : 'default',
@@ -135,16 +133,9 @@ const getInitialSettings = () => {
 // Initialize stores with persisted values
 const initialSettings = getInitialSettings();
 
-export const latestBranchStore = atom<boolean>(initialSettings.latestBranch);
 export const autoSelectStarterTemplate = atom<boolean>(initialSettings.autoSelectTemplate);
 export const enableContextOptimizationStore = atom<boolean>(initialSettings.contextOptimization);
 export const promptStore = atom<string>(initialSettings.promptId);
-
-// Helper functions to update settings with persistence
-export const updateLatestBranch = (enabled: boolean) => {
-  latestBranchStore.set(enabled);
-  localStorage.setItem(SETTINGS_KEYS.LATEST_BRANCH, JSON.stringify(enabled));
-};
 
 export const updateAutoSelectTemplate = (enabled: boolean) => {
   autoSelectStarterTemplate.set(enabled);

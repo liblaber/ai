@@ -20,17 +20,20 @@ interface GitCredentials {
 
 interface GitState {
   gitMetadataByChatId: Record<string, GitMetadata>;
+  remoteChangesPullIntervalSec: number;
   setGitMetadata: (chatId: string, metadata: GitMetadata) => void;
   getGitMetadata: (chatId: string) => GitMetadata | null;
   clearGitMetadata: (chatId: string) => void;
   updateCommitHistory: (chatId: string, hash: string) => void;
   getCredentials: () => GitCredentials | null;
+  setRemoteChangesPullInterval: (interval: number) => void;
 }
 
 export const useGitStore = create<GitState>()(
   persist(
     (set, get) => ({
       gitMetadataByChatId: {},
+      remoteChangesPullIntervalSec: 60,
       setGitMetadata: (chatId: string, metadata: GitMetadata) =>
         set((state) => ({
           gitMetadataByChatId: {
@@ -74,6 +77,7 @@ export const useGitStore = create<GitState>()(
           owner: githubConnection.user?.login,
         };
       },
+      setRemoteChangesPullInterval: (interval: number) => set({ remoteChangesPullIntervalSec: interval }),
     }),
     {
       name: 'git-metadata-storage',
@@ -263,9 +267,7 @@ export function useGitPullSync({ setMessages, messagesRef }: UseGitPullSyncOptio
         ...storedMetadata,
         commitHistory: [...storedMetadata.commitHistory, remoteChanges.latestCommitHash],
       });
-
-      // TODO @Lane save message to db
-    }, 5000);
+    }, useGitStore.getState().remoteChangesPullIntervalSec * 1000); // Convert seconds to milliseconds
 
     return () => clearInterval(interval);
   }, []);

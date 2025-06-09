@@ -1,23 +1,21 @@
 import { useStore } from '@nanostores/react';
 import {
-  promptStore,
-  providersStore,
-  latestBranchStore,
   autoSelectStarterTemplate,
   enableContextOptimizationStore,
-  tabConfigurationStore,
-  updateTabConfiguration as updateTabConfig,
+  promptStore,
+  providersStore,
   resetTabConfiguration as resetTabConfig,
-  updateProviderSettings as updateProviderSettingsStore,
-  updateLatestBranch,
+  tabConfigurationStore,
   updateAutoSelectTemplate,
   updateContextOptimization,
   updatePromptId,
+  updateProviderSettings as updateProviderSettingsStore,
+  updateTabConfiguration as updateTabConfig,
 } from '~/lib/stores/settings';
 import { useCallback, useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
-import type { IProviderSetting, ProviderInfo, IProviderConfig } from '~/types/model';
-import type { TabWindowConfig, TabVisibilityConfig } from '~/components/@settings/core/types';
+import type { IProviderConfig, IProviderSetting, ProviderInfo } from '~/types/model';
+import type { TabVisibilityConfig, TabWindowConfig } from '~/components/@settings/core/types';
 
 export interface UseSettingsReturn {
   // Provider settings
@@ -28,8 +26,6 @@ export interface UseSettingsReturn {
   // Debug and development settings
   promptId: string;
   setPromptId: (promptId: string) => void;
-  isLatestBranch: boolean;
-  enableLatestBranch: (enabled: boolean) => void;
   autoSelectTemplate: boolean;
   setAutoSelectTemplate: (enabled: boolean) => void;
   contextOptimizationEnabled: boolean;
@@ -49,7 +45,6 @@ interface ProviderSettingWithIndex extends IProviderSetting {
 export function useSettings(): UseSettingsReturn {
   const providers = useStore(providersStore);
   const promptId = useStore(promptStore);
-  const isLatestBranch = useStore(latestBranchStore);
   const autoSelectTemplate = useStore(autoSelectStarterTemplate);
   const [activeProviders, setActiveProviders] = useState<ProviderInfo[]>([]);
   const contextOptimizationEnabled = useStore(enableContextOptimizationStore);
@@ -69,10 +64,6 @@ export function useSettings(): UseSettingsReturn {
 
   const setPromptId = useCallback((id: string) => {
     updatePromptId(id);
-  }, []);
-
-  const enableLatestBranch = useCallback((enabled: boolean) => {
-    updateLatestBranch(enabled);
   }, []);
 
   const setAutoSelectTemplate = useCallback((enabled: boolean) => {
@@ -98,8 +89,6 @@ export function useSettings(): UseSettingsReturn {
     updateProviderSettings,
     promptId,
     setPromptId,
-    isLatestBranch,
-    enableLatestBranch,
     autoSelectTemplate,
     setAutoSelectTemplate,
     contextOptimizationEnabled,
