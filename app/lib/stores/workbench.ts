@@ -19,8 +19,7 @@ import Cookies from 'js-cookie';
 import { createSampler } from '~/utils/sampler';
 import type { ActionAlert } from '~/types/actions';
 import type { LiblabShell } from '~/utils/shell';
-import { toast } from 'sonner';
-import { useGitCommitStore } from './git';
+import { tempLog, useGitStore } from './git';
 
 const { saveAs } = fileSaver;
 
@@ -45,6 +44,7 @@ export class WorkbenchStore {
   #terminalStore = new TerminalStore(webcontainer);
 
   #reloadedMessages = new Set<string>();
+  #mostRecentCommitMessage: string | undefined;
 
   artifacts: Artifacts = import.meta.hot?.data.artifacts ?? map({});
   showWorkbench: WritableAtom<boolean> = import.meta.hot?.data.showWorkbench ?? atom(false);
@@ -55,6 +55,15 @@ export class WorkbenchStore {
   modifiedFiles = new Set<string>();
   artifactIdList: string[] = [];
   #globalExecutionQueue = Promise.resolve();
+
+  get mostRecentCommitMessage() {
+    return this.#mostRecentCommitMessage || 'liblab ai syncing files';
+  }
+
+  setMostRecentCommitMessage(message: string) {
+    tempLog('Setting most recent commit message', message);
+    this.#mostRecentCommitMessage = message;
+  }
 
   get previewsStore() {
     return this.#previewsStore;
@@ -451,13 +460,7 @@ export class WorkbenchStore {
     return syncedFiles;
   }
 
-  async pushToGitHub(
-    repoName: string,
-    commitMessage?: string,
-    githubUsername?: string,
-    ghToken?: string,
-    isPrivate?: boolean,
-  ) {
+  async pushToGitHub(repoName: string, githubUsername?: string, ghToken?: string, isPrivate?: boolean) {
     try {
       // Use cookies if username and token are not provided
       const githubToken = ghToken || Cookies.get('githubToken');
@@ -542,6 +545,8 @@ export class WorkbenchStore {
         })),
       });
 
+      const commitMessage = this.mostRecentCommitMessage;
+
       // Create a new commit
       const { data: newCommit } = await octokit.git.createCommit({
         owner: repo.owner.login,
@@ -563,14 +568,25 @@ export class WorkbenchStore {
       const currentChatId = chatId.get();
 
       if (currentChatId) {
-        useGitCommitStore.getState().setGitMetadata(currentChatId, {
+        // Get all commits for the repository
+        const { data: commits } = await octokit.repos.listCommits({
+          owner: repo.owner.login,
+          repo: repo.name,
+          per_page: 100, // Get up to 100 commits
+        });
+
+        const commitHistory = commits.map((commit) => commit.sha);
+
+        if (!commitHistory.includes(newCommit.sha)) {
+          commitHistory.push(newCommit.sha);
+        }
+
+        useGitStore.getState().setGitMetadata(currentChatId, {
           gitUrl: repo.html_url,
-          latestCommitHash: newCommit.sha,
+          commitHistory,
           gitBranch: repo.default_branch || 'main',
         });
       }
-
-      toast.success(`Repository created and code pushed: ${repo.html_url}`);
     } catch (error) {
       console.error('Error pushing to GitHub:', error);
       throw error; // Rethrow the error for further handling

@@ -30,7 +30,9 @@ const messageParser = new StreamingMessageParser({
     onActionClose: (data) => {
       logger.trace('onActionClose', data.action);
 
-      if (data.action.type !== 'file') {
+      if (data.action.type === 'commit-message') {
+        workbenchStore.setMostRecentCommitMessage(data.action.content);
+      } else if (data.action.type !== 'file') {
         workbenchStore.addAction(data);
       }
 
@@ -42,6 +44,7 @@ const messageParser = new StreamingMessageParser({
     },
   },
 });
+
 const extractTextContent = (message: Message) =>
   Array.isArray(message.content)
     ? (message.content.find((item) => item.type === 'text')?.text as string) || ''

@@ -451,10 +451,10 @@ export const Workbench = memo(
             onClose={() => setIsPushDialogOpen(false)}
             onPush={async (repoName, username, token, isPrivate) => {
               try {
-                const commitMessage = 'liblab ai syncing files';
-                await workbenchStore.pushToGitHub(repoName, commitMessage, username, token, isPrivate);
+                await workbenchStore.pushToGitHub(repoName, username, token, isPrivate);
 
                 const repoUrl = `https://github.com/${username}/${repoName}`;
+                toast.success(`Your code is pushed to: ${repoUrl}`);
 
                 if (updateChatMestaData && !metadata?.gitUrl) {
                   updateChatMestaData({

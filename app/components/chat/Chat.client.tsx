@@ -27,7 +27,7 @@ import { LLMManager } from '~/lib/modules/llm/manager';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { type Message, useChat } from '@ai-sdk/react';
 import { generateId } from 'ai';
-import { useGitPullSync } from '~/lib/stores/git';
+import { pushToRemote, useGitPullSync } from '~/lib/stores/git';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -162,7 +162,11 @@ export const ChatImpl = memo(
 
         logger.debug('Finished streaming');
 
-        await storeMessageHistory(messagesRef.current);
+        setTimeout(async () => {
+          await storeMessageHistory(messagesRef.current);
+
+          await pushToRemote();
+        }, 2000);
       },
       initialMessages,
       initialInput: Cookies.get(PROMPT_COOKIE_KEY) || '',
