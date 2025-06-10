@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { getLocalStorage } from '~/lib/persistence';
+import { chatId, getLocalStorage } from '~/lib/persistence';
 import { classNames } from '~/utils/classNames';
 import type { GitHubUserResponse } from '~/types/GitHub';
 import { workbenchStore } from '~/lib/stores/workbench';
@@ -12,6 +12,8 @@ import type { File, FileMap } from '~/lib/stores/files';
 import { Octokit } from '@octokit/rest';
 import { openSettingsPanel } from '~/lib/stores/settings';
 import { CloseCircle } from 'iconsax-reactjs';
+import { useGitStore } from '~/lib/stores/git';
+import { Button } from '~/components/ui/Button';
 
 interface PushToGitHubDialogProps {
   isOpen: boolean;
@@ -19,29 +21,16 @@ interface PushToGitHubDialogProps {
   onPush: (repoName: string, username?: string, token?: string, isPrivate?: boolean) => Promise<string>;
 }
 
-interface GitHubRepo {
-  name: string;
-  full_name: string;
-  html_url: string;
-  description: string;
-  stargazers_count: number;
-  forks_count: number;
-  default_branch: string;
-  updated_at: string;
-  language: string;
-  private: boolean;
-}
-
 export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDialogProps) {
   const [repoName, setRepoName] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<GitHubUserResponse | null>(null);
-  const [recentRepos, setRecentRepos] = useState<GitHubRepo[]>([]);
-  const [isFetchingRepos, setIsFetchingRepos] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [createdRepoUrl, setCreatedRepoUrl] = useState('');
   const [pushedFiles, setPushedFiles] = useState<{ path: string; size: number }[]>([]);
+  const currentChatId = chatId.get();
+  const gitMetadata = useGitStore((state) => (currentChatId ? state.getGitMetadata(currentChatId) : null));
 
   // Load GitHub connection on mount
   useEffect(() => {
@@ -50,58 +39,9 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
 
       if (connection?.user && connection?.token) {
         setUser(connection.user);
-
-        // Only fetch if we have both user and token
-        if (connection.token.trim()) {
-          fetchRecentRepos(connection.token);
-        }
       }
     }
   }, [isOpen]);
-
-  const fetchRecentRepos = async (token: string) => {
-    if (!token) {
-      toast.error('GitHub authentication required');
-
-      return;
-    }
-
-    try {
-      setIsFetchingRepos(true);
-
-      const response = await fetch('https://api.github.com/user/repos?sort=updated&per_page=5&type=all', {
-        headers: {
-          Accept: 'application/vnd.github.v3+json',
-          Authorization: `Bearer ${token.trim()}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          toast.error('GitHub token expired. Please reconnect your account.');
-
-          // Clear invalid token
-          const connection = getLocalStorage('github_connection');
-
-          if (connection) {
-            localStorage.removeItem('github_connection');
-            setUser(null);
-          }
-        } else {
-          toast.error(`Failed to fetch repositories: ${response.statusText}`);
-        }
-
-        return;
-      }
-
-      const repos = (await response.json()) as GitHubRepo[];
-      setRecentRepos(repos);
-    } catch {
-      toast.error('Failed to fetch recent repositories');
-    } finally {
-      setIsFetchingRepos(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,6 +126,29 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
     setRepoName(cleaned);
   };
 
+  const handleDisconnect = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!currentChatId) {
+      return;
+    }
+
+    useGitStore.getState().disconnectRepository(currentChatId);
+    toast.success('Repository disconnected');
+  };
+
+  const handleReconnect = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+
+    if (!currentChatId) {
+      return;
+    }
+
+    useGitStore.getState().reconnectRepository(currentChatId);
+    toast.success('Repository reconnected');
+  };
+
   // Success Dialog
   if (showSuccessDialog) {
     return (
@@ -255,9 +218,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       href={createdRepoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2 rounded-lg bg-accent-500 text-white hover:bg-accent-600 text-sm inline-flex items-center gap-2"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      className="px-4 py-2 rounded-lg bg-accent-500 text-primary hover:bg-accent-600 text-sm inline-flex items-center gap-2"
                     >
                       <div className="i-ph:github-logo w-4 h-4" />
                       View Repository
@@ -268,8 +229,6 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                         toast.success('URL copied to clipboard');
                       }}
                       className="px-4 py-2 rounded-lg bg-[#F5F5F5] dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-400 hover:bg-[#E5E5E5] dark:hover:bg-[#252525] text-sm inline-flex items-center gap-2"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
                     >
                       <div className="i-ph:copy w-4 h-4" />
                       Copy URL
@@ -277,8 +236,6 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     <motion.button
                       onClick={handleClose}
                       className="px-4 py-2 rounded-lg bg-[#F5F5F5] dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-400 hover:bg-[#E5E5E5] dark:hover:bg-[#252525] text-sm"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
                     >
                       Close
                     </motion.button>
@@ -351,6 +308,87 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
     );
   }
 
+  // If repository is already connected, show connected state
+  if (gitMetadata?.gitUrl && !gitMetadata.isDisconnected) {
+    return (
+      <Dialog.Root open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999]" />
+          <div className="fixed inset-0 flex items-center justify-center z-[9999]">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="w-[90vw] md:w-[500px]"
+            >
+              <Dialog.Content className="relative bg-white dark:bg-[#0A0A0A] rounded-lg border border-[#E5E5E5] dark:border-[#1A1A1A] shadow-xl">
+                <div className="p-6">
+                  <div className="flex items-center gap-4 mb-6">
+                    <motion.div
+                      initial={{ scale: 0.8 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.1 }}
+                      className="w-10 h-10 rounded-xl bg-liblab-elements-bg-depth-3 flex items-center justify-center text-accent-500"
+                    >
+                      <div className="i-ph:git-branch w-5 h-5" />
+                    </motion.div>
+                    <div>
+                      <Dialog.Title className="text-lg font-medium text-gray-900 dark:text-white">
+                        'Connected Repository'
+                      </Dialog.Title>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        'Your code is connected to a GitHub repository'
+                      </p>
+                    </div>
+                    <Dialog.Close asChild>
+                      <div className="absolute top-4 right-4 z-[99999]">
+                        <CloseCircle
+                          variant="Bold"
+                          className="w-6 h-6 text-gray-500 dark:text-white hover:text-gray-700 dark:hover:text-gray-400 transition-colors cursor-pointer"
+                          onClick={handleClose}
+                        />
+                      </div>
+                    </Dialog.Close>
+                  </div>
+
+                  <div className="flex items-center gap-3 mb-6 p-3 bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 rounded-lg">
+                    <img src={user?.avatar_url} alt={user?.login} className="w-10 h-10 rounded-full" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name || user?.login}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">@{user?.login}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <a
+                      href={gitMetadata.gitUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 rounded-lg p-4 hover:bg-liblab-elements-bg-depth-3 dark:hover:bg-liblab-elements-bg-depth-4 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="i-ph:github-logo w-4 h-4 text-accent-500" />
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            {gitMetadata.gitUrl.split('/').pop()?.replace('.git', '')}
+                          </h4>
+                        </div>
+                        <Button type="button" size="sm" variant="secondary" onClick={handleDisconnect}>
+                          Disconnect
+                        </Button>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              </Dialog.Content>
+            </motion.div>
+          </div>
+        </Dialog.Portal>
+      </Dialog.Root>
+    );
+  }
+
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <Dialog.Portal>
@@ -402,9 +440,49 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {gitMetadata?.gitUrl && (
+                    <div className="space-y-2">
+                      <label className="text-sm text-gray-600 dark:text-gray-400">
+                        Previously Connected Repository
+                      </label>
+                      <div className="space-y-2">
+                        <motion.button
+                          type="button"
+                          onClick={handleReconnect}
+                          className="w-full p-3 text-left rounded-lg bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 hover:bg-liblab-elements-bg-depth-3 dark:hover:bg-liblab-elements-bg-depth-4 transition-colors group"
+                        >
+                          <div className="flex items-center justify-between text-white hover:text-accent-500">
+                            <div className="flex items-center gap-2">
+                              <div className="i-ph:github-logo w-4 h-4" />
+                              <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-accent-500">
+                                {gitMetadata.gitUrl.split('/').pop()?.replace('.git', '')}
+                              </span>
+                            </div>
+                            <Button type="button" onClick={handleReconnect} variant="primary">
+                              Connect
+                            </Button>
+                          </div>
+                        </motion.button>
+                      </div>
+                    </div>
+                  )}
+
+                  {gitMetadata?.gitUrl && (
+                    <div className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-[#E5E5E5] dark:border-[#1A1A1A]"></div>
+                      </div>
+                      <div className="relative flex justify-center">
+                        <span className="px-4 text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-[#0A0A0A]">
+                          or
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <label htmlFor="repoName" className="text-sm text-gray-600 dark:text-gray-400">
-                      Repository Name
+                      Create new repository
                     </label>
                     <input
                       id="repoName"
@@ -415,117 +493,39 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       className="w-full px-4 py-2 rounded-lg bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 border border-[#E5E5E5] dark:border-[#1A1A1A] text-gray-900 dark:text-white placeholder-gray-400"
                       required
                     />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="private"
+                        checked={isPrivate}
+                        onChange={(e) => setIsPrivate(e.target.checked)}
+                        className="rounded border-[#E5E5E5] dark:border-[#1A1A1A] text-accent-500 focus:ring-accent-500 dark:bg-[#0A0A0A]"
+                      />
+                      <label htmlFor="private" className="text-sm text-gray-600 dark:text-gray-400">
+                        Make repository private
+                      </label>
+                    </div>
                   </div>
 
-                  {recentRepos.length > 0 && (
-                    <div className="space-y-2">
-                      <label className="text-sm text-gray-600 dark:text-gray-400">Recent Repositories</label>
-                      <div className="space-y-2">
-                        {recentRepos.map((repo) => (
-                          <motion.button
-                            key={repo.full_name}
-                            type="button"
-                            onClick={() => setRepoName(repo.name)}
-                            className="w-full p-3 text-left rounded-lg bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 hover:bg-liblab-elements-bg-depth-3 dark:hover:bg-liblab-elements-bg-depth-4 transition-colors group"
-                            whileHover={{ scale: 1.01 }}
-                            whileTap={{ scale: 0.99 }}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <div className="i-ph:git-repository w-4 h-4 text-accent-500" />
-                                <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-accent-500">
-                                  {repo.name}
-                                </span>
-                              </div>
-                              {repo.private && (
-                                <span className="text-xs px-2 py-1 rounded-full bg-accent-500/10 text-accent-500">
-                                  Private
-                                </span>
-                              )}
-                            </div>
-                            {repo.description && (
-                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
-                                {repo.description}
-                              </p>
-                            )}
-                            <div className="mt-2 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
-                              {repo.language && (
-                                <span className="flex items-center gap-1">
-                                  <div className="i-ph:code w-3 h-3" />
-                                  {repo.language}
-                                </span>
-                              )}
-                              <span className="flex items-center gap-1">
-                                <div className="i-ph:star w-3 h-3" />
-                                {repo.stargazers_count.toLocaleString()}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <div className="i-ph:git-fork w-3 h-3" />
-                                {repo.forks_count.toLocaleString()}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <div className="i-ph:clock w-3 h-3" />
-                                {new Date(repo.updated_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </motion.button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {isFetchingRepos && (
-                    <div className="flex items-center justify-center py-4 text-gray-500 dark:text-gray-400">
-                      <div className="i-ph:spinner-gap-bold animate-spin w-4 h-4 mr-2" />
-                      Loading repositories...
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="private"
-                      checked={isPrivate}
-                      onChange={(e) => setIsPrivate(e.target.checked)}
-                      className="rounded border-[#E5E5E5] dark:border-[#1A1A1A] text-accent-500 focus:ring-accent-500 dark:bg-[#0A0A0A]"
-                    />
-                    <label htmlFor="private" className="text-sm text-gray-600 dark:text-gray-400">
-                      Make repository private
-                    </label>
-                  </div>
-
-                  <div className="pt-4 flex gap-2">
-                    <motion.button
-                      type="button"
-                      onClick={handleClose}
-                      className="px-4 py-2 rounded-lg bg-[#F5F5F5] dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-400 hover:bg-[#E5E5E5] dark:hover:bg-[#252525] text-sm"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Cancel
-                    </motion.button>
-                    <motion.button
+                  <div className="pt-4">
+                    <Button
                       type="submit"
+                      variant="primary"
                       disabled={isLoading}
                       className={classNames(
-                        'flex-1 px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 text-sm inline-flex items-center justify-center gap-2',
+                        'w-full inline-flex items-center justify-center gap-2',
                         isLoading ? 'opacity-50 cursor-not-allowed' : '',
                       )}
-                      whileHover={!isLoading ? { scale: 1.02 } : {}}
-                      whileTap={!isLoading ? { scale: 0.98 } : {}}
                     >
                       {isLoading ? (
                         <>
-                          <div className="i-ph:spinner-gap-bold animate-spin w-4 h-4" />
-                          Pushing...
+                          <div className="i-ph:spinner-gap-bold animate-spin w-4" />
+                          Connecting...
                         </>
                       ) : (
-                        <>
-                          <div className="i-ph:git-branch w-4 h-4" />
-                          Push to GitHub
-                        </>
+                        <>Connect and Push to GitHub</>
                       )}
-                    </motion.button>
+                    </Button>
                   </div>
                 </form>
               </div>

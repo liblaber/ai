@@ -11,6 +11,7 @@ interface GitMetadata {
   gitUrl: string;
   commitHistory: string[];
   gitBranch: string;
+  isDisconnected: boolean;
 }
 
 interface GitCredentials {
@@ -27,6 +28,8 @@ interface GitState {
   updateCommitHistory: (chatId: string, hash: string) => void;
   getCredentials: () => GitCredentials | null;
   setRemoteChangesPullInterval: (interval: number) => void;
+  disconnectRepository: (chatId: string) => void;
+  reconnectRepository: (chatId: string) => void;
 }
 
 export const useGitStore = create<GitState>()(
@@ -78,6 +81,42 @@ export const useGitStore = create<GitState>()(
         };
       },
       setRemoteChangesPullInterval: (interval: number) => set({ remoteChangesPullIntervalSec: interval }),
+      disconnectRepository: (chatId: string) =>
+        set((state) => {
+          const existingMetadata = state.gitMetadataByChatId[chatId];
+
+          if (!existingMetadata) {
+            return state;
+          }
+
+          return {
+            gitMetadataByChatId: {
+              ...state.gitMetadataByChatId,
+              [chatId]: {
+                ...existingMetadata,
+                isDisconnected: true,
+              },
+            },
+          };
+        }),
+      reconnectRepository: (chatId: string) =>
+        set((state) => {
+          const existingMetadata = state.gitMetadataByChatId[chatId];
+
+          if (!existingMetadata) {
+            return state;
+          }
+
+          return {
+            gitMetadataByChatId: {
+              ...state.gitMetadataByChatId,
+              [chatId]: {
+                ...existingMetadata,
+                isDisconnected: false,
+              },
+            },
+          };
+        }),
     }),
     {
       name: 'git-metadata-storage',
@@ -108,7 +147,7 @@ export async function getRemoteChanges(): Promise<RemoteChanges | undefined> {
 
   const storedMetadata = useGitStore.getState().getGitMetadata(currentChatId);
 
-  if (!storedMetadata?.gitUrl) {
+  if (!storedMetadata?.gitUrl || storedMetadata.isDisconnected) {
     return undefined;
   }
 
@@ -137,70 +176,79 @@ export async function getRemoteChanges(): Promise<RemoteChanges | undefined> {
     const lastKnownCommit = storedMetadata.commitHistory.at(-1);
 
     if (lastKnownCommit && lastKnownCommit !== latestCommitHash) {
-      // Get all commits since our last known commit
       const { data: commits } = await octokit.repos.listCommits({
         owner: credentials.owner,
         repo: repoName,
-        per_page: 100, // Get up to 100 commits
+        per_page: 100,
       });
 
-      // Get the commit details to show changed files
-      const { data: commit } = await octokit.repos.getCommit({
-        owner: credentials.owner,
-        repo: repoName,
-        ref: latestCommitHash,
-      });
+      // Filter commits to only those after our last known commit
+      const relevantCommits = commits.filter((commit) => !storedMetadata.commitHistory.includes(commit.sha));
 
-      // Check if this commit is already in our history
-      if (storedMetadata.commitHistory.includes(latestCommitHash)) {
+      if (relevantCommits.length === 0) {
         return undefined;
       }
 
       const removedFiles: ChangedFile[] = [];
       const changedFiles: ChangedFile[] = [];
+      const processedFiles = new Set<string>();
 
-      await Promise.all(
-        (commit.files || []).map(async (file): Promise<void> => {
-          const fileInfo = {
-            filename: file.filename,
-            status: file.status,
-            additions: file.additions,
-            deletions: file.deletions,
-          };
+      for (const commit of relevantCommits.reverse()) {
+        const { data: commitDetails } = await octokit.repos.getCommit({
+          owner: credentials.owner,
+          repo: repoName,
+          ref: commit.sha,
+        });
 
-          if (file.status === 'removed') {
-            removedFiles.push(fileInfo);
-            return;
-          }
-
-          let content: string | undefined;
-
-          try {
-            const { data: fileData } = await octokit.repos.getContent({
-              owner: credentials.owner,
-              repo: repoName,
-              path: file.filename,
-              ref: latestCommitHash,
-            });
-
-            if ('content' in fileData) {
-              content = Buffer.from(fileData.content, 'base64').toString();
+        await Promise.all(
+          (commitDetails.files || []).map(async (file): Promise<void> => {
+            if (processedFiles.has(file.filename)) {
+              return;
             }
-          } catch (error) {
-            console.error(`Error fetching content for ${file.filename}:`, error);
-          }
 
-          changedFiles.push({
-            ...fileInfo,
-            content,
-          });
-        }),
-      );
+            processedFiles.add(file.filename);
 
-      // Update the stored metadata with the latest commit history
+            const fileInfo = {
+              filename: file.filename,
+              status: file.status,
+              additions: file.additions,
+              deletions: file.deletions,
+            };
+
+            if (file.status === 'removed') {
+              removedFiles.push(fileInfo);
+              return;
+            }
+
+            let content: string | undefined;
+
+            try {
+              const { data: fileData } = await octokit.repos.getContent({
+                owner: credentials.owner,
+                repo: repoName,
+                path: file.filename,
+                ref: commit.sha,
+              });
+
+              if ('content' in fileData) {
+                content = Buffer.from(fileData.content, 'base64').toString();
+              }
+            } catch (error) {
+              console.error(`Error fetching content for ${file.filename}:`, error);
+            }
+
+            changedFiles.push({
+              ...fileInfo,
+              content,
+            });
+          }),
+        );
+      }
+
+      // Update the stored metadata with all new commit hashes
       useGitStore.getState().setGitMetadata(currentChatId, {
         ...storedMetadata,
-        commitHistory: commits.map((commit) => commit.sha),
+        commitHistory: [...storedMetadata.commitHistory, ...relevantCommits.map((commit) => commit.sha)],
       });
 
       return {
@@ -223,6 +271,8 @@ interface UseGitPullSyncOptions {
 }
 
 export function useGitPullSync({ setMessages, messagesRef }: UseGitPullSyncOptions): void {
+  const pullIntervalMs = useGitStore((state) => state.remoteChangesPullIntervalSec * 1000);
+
   useEffect(() => {
     const interval = setInterval(async () => {
       const chatIdString = chatId.get();
@@ -256,10 +306,10 @@ export function useGitPullSync({ setMessages, messagesRef }: UseGitPullSyncOptio
         ...storedMetadata,
         commitHistory: [...storedMetadata.commitHistory, remoteChanges.latestCommitHash],
       });
-    }, useGitStore.getState().remoteChangesPullIntervalSec * 1000); // Convert seconds to milliseconds
+    }, pullIntervalMs); // Convert seconds to milliseconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [pullIntervalMs]);
 }
 
 export async function pushToRemote(): Promise<void> {
@@ -270,7 +320,7 @@ export async function pushToRemote(): Promise<void> {
   const storedMetadata = useGitStore.getState().getGitMetadata(chatId.get()!);
   const credentials = useGitStore.getState().getCredentials();
 
-  if (!storedMetadata || !credentials) {
+  if (!storedMetadata || !credentials || storedMetadata.isDisconnected) {
     return;
   }
 

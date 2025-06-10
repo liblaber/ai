@@ -584,6 +584,7 @@ export class WorkbenchStore {
           gitUrl: repo.html_url,
           commitHistory,
           gitBranch: repo.default_branch || 'main',
+          isDisconnected: false,
         });
       }
     } catch (error) {

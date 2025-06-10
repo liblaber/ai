@@ -91,13 +91,15 @@ export default function GitHubTab() {
   const setRemoteChangesPullInterval = useGitStore((state) => state.setRemoteChangesPullInterval);
 
   const handleIntervalChange = (value: string) => {
+    setRemoteChangesPullInterval(Number(value));
+  };
+
+  const handleIntervalBlur = (value: string) => {
     const numValue = Number(value);
 
     if (numValue < 5) {
       setRemoteChangesPullInterval(5);
       toast.error('Minimum interval is 5 seconds');
-    } else {
-      setRemoteChangesPullInterval(numValue);
     }
   };
 
@@ -638,6 +640,7 @@ export default function GitHubTab() {
                         step="1"
                         value={remoteChangesPullInterval}
                         onChange={(e) => handleIntervalChange(e.target.value)}
+                        onBlur={(e) => handleIntervalBlur(e.target.value)}
                         className={classNames(
                           'w-24 px-3 py-2 rounded-lg text-sm',
                           'bg-[#F8F8F8] dark:bg-[#1A1A1A]',
