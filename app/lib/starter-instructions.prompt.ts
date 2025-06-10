@@ -59,10 +59,10 @@ export function readDirectory(dirPath: string, basePath: string = ''): any[] {
 
         // Add missing dependencies
         let hasChanges = false;
+        const rootPackageJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
         sharedImports.forEach((pkg) => {
           if (!dependencies[pkg]) {
             // Read the version from package.json
-            const rootPackageJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
             const version = rootPackageJson.dependencies?.[pkg] || rootPackageJson.devDependencies?.[pkg] || 'latest';
             dependencies[pkg] = version;
             hasChanges = true;
