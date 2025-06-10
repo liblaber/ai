@@ -22,7 +22,8 @@ export class PostgresAccessor implements BaseAccessor {
       idleTimeoutMillis: 60000,
       max: 10,
       ssl: {
-        rejectUnauthorized: false,
+        rejectUnauthorized:
+          databaseUrl.toLowerCase().includes('sslmode=verify-full') || databaseUrl.includes('sslmode=verify-ca'),
       },
     });
 
@@ -169,7 +170,8 @@ export class PostgresAccessor implements BaseAccessor {
       idleTimeoutMillis: 60000,
       max: 10,
       ssl: {
-        rejectUnauthorized: false,
+        rejectUnauthorized:
+          databaseUrl.toLowerCase().includes('sslmode=verify-full') || databaseUrl.includes('sslmode=verify-ca'),
       },
     });
   }

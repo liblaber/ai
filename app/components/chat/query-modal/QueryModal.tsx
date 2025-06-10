@@ -44,7 +44,7 @@ export const QueryModal = memo(
 
     useEffect(() => {
       fetchDataSource();
-    }, []);
+    }, [dataSourceId]);
 
     useEffect(() => {
       if (isOpen) {
