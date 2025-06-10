@@ -482,7 +482,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
 
                   <div className="space-y-2">
                     <label htmlFor="repoName" className="text-sm text-gray-600 dark:text-gray-400">
-                      Create new repository
+                      Create new or existing repository
                     </label>
                     <input
                       id="repoName"
