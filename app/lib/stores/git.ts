@@ -193,7 +193,8 @@ export async function getRemoteChanges(): Promise<RemoteChanges | undefined> {
       const changedFiles: ChangedFile[] = [];
       const processedFiles = new Set<string>();
 
-      for (const commit of relevantCommits.reverse()) {
+      // Process commits in chronological order (newest first)
+      for (const commit of relevantCommits) {
         const { data: commitDetails } = await octokit.repos.getCommit({
           owner: credentials.owner,
           repo: repoName,
@@ -202,6 +203,7 @@ export async function getRemoteChanges(): Promise<RemoteChanges | undefined> {
 
         await Promise.all(
           (commitDetails.files || []).map(async (file): Promise<void> => {
+            // Skip if we've already processed this file in a newer commit
             if (processedFiles.has(file.filename)) {
               return;
             }
@@ -270,46 +272,52 @@ interface UseGitPullSyncOptions {
   messagesRef: MutableRefObject<Message[]>;
 }
 
-export function useGitPullSync({ setMessages, messagesRef }: UseGitPullSyncOptions): void {
+export function useGitPullSync({ setMessages, messagesRef }: UseGitPullSyncOptions) {
   const pullIntervalMs = useGitStore((state) => state.remoteChangesPullIntervalSec * 1000);
 
+  const syncLatestChanges = async () => {
+    const chatIdString = chatId.get();
+
+    if (!chatIdString) {
+      return;
+    }
+
+    const storedMetadata = useGitStore.getState().getGitMetadata(chatIdString);
+
+    if (!storedMetadata) {
+      return;
+    }
+
+    const remoteChanges = await getRemoteChanges();
+
+    if (!remoteChanges) {
+      return;
+    }
+
+    const remotelyChangedFilesArtifact = mapRemoteChangesToArtifact(remoteChanges);
+
+    if (!remotelyChangedFilesArtifact) {
+      return;
+    }
+
+    setMessages([...messagesRef.current, remotelyChangedFilesArtifact]);
+
+    // Update the stored metadata with the latest information
+    useGitStore.getState().setGitMetadata(chatIdString, {
+      ...storedMetadata,
+      commitHistory: [...storedMetadata.commitHistory, remoteChanges.latestCommitHash],
+    });
+  };
+
   useEffect(() => {
-    const interval = setInterval(async () => {
-      const chatIdString = chatId.get();
-
-      if (!chatIdString) {
-        return;
-      }
-
-      const storedMetadata = useGitStore.getState().getGitMetadata(chatIdString);
-
-      if (!storedMetadata) {
-        return;
-      }
-
-      const remoteChanges = await getRemoteChanges();
-
-      if (!remoteChanges) {
-        return;
-      }
-
-      const remotelyChangedFilesArtifact = mapRemoteChangesToArtifact(remoteChanges);
-
-      if (!remotelyChangedFilesArtifact) {
-        return;
-      }
-
-      setMessages([...messagesRef.current, remotelyChangedFilesArtifact]);
-
-      // Update the stored metadata with the latest information
-      useGitStore.getState().setGitMetadata(chatIdString, {
-        ...storedMetadata,
-        commitHistory: [...storedMetadata.commitHistory, remoteChanges.latestCommitHash],
-      });
-    }, pullIntervalMs); // Convert seconds to milliseconds
+    const interval = setInterval(syncLatestChanges, pullIntervalMs); // Convert seconds to milliseconds
 
     return () => clearInterval(interval);
   }, [pullIntervalMs]);
+
+  return {
+    syncLatestChanges,
+  };
 }
 
 export async function pushToRemote(): Promise<void> {

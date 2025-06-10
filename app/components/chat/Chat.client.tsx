@@ -178,7 +178,7 @@ export const ChatImpl = memo(
 
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
 
-    useGitPullSync({ setMessages, messagesRef });
+    const { syncLatestChanges } = useGitPullSync({ setMessages, messagesRef });
 
     useEffect(() => {
       messagesRef.current = messages;
@@ -572,6 +572,7 @@ export const ChatImpl = memo(
           actionAlert={actionAlert}
           clearAlert={() => workbenchStore.clearAlert()}
           data={chatData}
+          onSyncFiles={syncLatestChanges}
         />
         {selectedQueryId && (
           <QueryModal

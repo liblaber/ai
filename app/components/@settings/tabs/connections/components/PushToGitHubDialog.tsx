@@ -335,10 +335,10 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     </motion.div>
                     <div>
                       <Dialog.Title className="text-lg font-medium text-gray-900 dark:text-white">
-                        'Connected Repository'
+                        Connected Repository
                       </Dialog.Title>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        'Your code is connected to a GitHub repository'
+                        Your code is connected to a GitHub repository
                       </p>
                     </div>
                     <Dialog.Close asChild>

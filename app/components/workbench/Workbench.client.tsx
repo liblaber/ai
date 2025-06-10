@@ -31,7 +31,7 @@ interface WorkspaceProps {
   chatStarted?: boolean;
   isStreaming?: boolean;
   actionRunner: ActionRunner;
-  updateChatMestaData?: (metadata: any) => void;
+  onSyncFiles?: () => Promise<void>;
 }
 
 const viewTransition = { ease: cubicEasingFn };
@@ -274,7 +274,7 @@ const FileModifiedDropdown = memo(
   },
 );
 
-export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, updateChatMestaData }: WorkspaceProps) => {
+export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncFiles }: WorkspaceProps) => {
   renderLogger.trace('Workbench');
 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -282,6 +282,8 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, updateC
   const [fileHistory, setFileHistory] = useState<Record<string, FileHistory>>({});
   const currentChatId = chatId.get();
   const gitMetadata = useGitStore((state) => (currentChatId ? state.getGitMetadata(currentChatId) : null));
+
+  const isGitConnected = gitMetadata?.gitUrl && !gitMetadata.isDisconnected;
 
   // const modifiedFiles = Array.from(useStore(workbenchStore.unsavedFiles).keys());
 
@@ -332,11 +334,14 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, updateC
   }, []);
 
   const handleSyncFiles = useCallback(async () => {
+    if (!onSyncFiles) {
+      return;
+    }
+
     setIsSyncing(true);
 
     try {
-      const directoryHandle = await window.showDirectoryPicker();
-      await workbenchStore.syncFiles(directoryHandle);
+      await onSyncFiles();
       toast.success('Files synced successfully');
     } catch (error) {
       console.error('Error syncing files:', error);
@@ -395,14 +400,10 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, updateC
                       <div className="i-ph:code" />
                       Download Code
                     </PanelHeaderButton>
-                    <PanelHeaderButton className="mr-1 text-sm" onClick={handleSyncFiles} disabled={isSyncing}>
-                      {isSyncing ? <div className="i-ph:spinner" /> : <div className="i-ph:cloud-arrow-down" />}
-                      {isSyncing ? 'Syncing...' : 'Sync Files'}
-                    </PanelHeaderButton>
                     <PanelHeaderButton className="mr-1 text-sm" onClick={() => setIsPushDialogOpen(true)}>
                       <div className="i-ph:git-branch" />
                       {(() => {
-                        if (!gitMetadata?.gitUrl || gitMetadata.isDisconnected) {
+                        if (!isGitConnected) {
                           return 'Connect GitHub';
                         }
 
@@ -411,6 +412,12 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, updateC
                         return repoName || 'GitHub';
                       })()}
                     </PanelHeaderButton>
+                    {isGitConnected && (
+                      <PanelHeaderButton className="mr-1 text-sm" onClick={handleSyncFiles} disabled={isSyncing}>
+                        {isSyncing ? <div className="i-ph:spinner" /> : <div className="i-ph:github-logo" />}
+                        {isSyncing ? 'Syncing...' : 'Sync Files'}
+                      </PanelHeaderButton>
+                    )}
                   </div>
                 )}
                 {selectedView === 'diff' && (
@@ -463,12 +470,6 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, updateC
 
               const repoUrl = `https://github.com/${username}/${repoName}`;
               toast.success(`Your code is pushed to: ${repoUrl}`);
-
-              if (updateChatMestaData) {
-                updateChatMestaData({
-                  gitUrl: repoUrl,
-                });
-              }
 
               if (currentChatId) {
                 const existingMetadata = useGitStore.getState().getGitMetadata(currentChatId);
