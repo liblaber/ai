@@ -82,5 +82,10 @@ export async function getDatabaseUrl(datasourceId: string) {
 
   const { type, host, database, port, username, password, sslMode } = dataSource;
 
+  if (type === 'sqlite') {
+    return `${type}://${database}`;
+  }
+
+  // Regular connection string for other databases
   return `${type}://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode.toLowerCase()}`;
 }

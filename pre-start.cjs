@@ -163,6 +163,15 @@ const runApp = async () => {
   }
 
   if (process.env.VITE_ENV_NAME === 'local') {
+    console.log('⏳ Setting up example database...');
+
+    try {
+      execSync('node scripts/setup-db.js', { stdio: 'inherit' });
+    } catch (error) {
+      console.error('❌ Error setting up example database:', error);
+      process.exit(1);
+    }
+
     console.log('⏳  Setting up ngrok tunnel...');
 
     const ngrokUrl = await setupNgrokTunnel();
