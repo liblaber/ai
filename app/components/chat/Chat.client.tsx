@@ -27,6 +27,7 @@ import { LLMManager } from '~/lib/modules/llm/manager';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { type Message, useChat } from '@ai-sdk/react';
 import { generateId } from 'ai';
+import { pushToRemote, useGitPullSync } from '~/lib/stores/git';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -161,7 +162,11 @@ export const ChatImpl = memo(
 
         logger.debug('Finished streaming');
 
-        await storeMessageHistory(messagesRef.current);
+        setTimeout(async () => {
+          await storeMessageHistory(messagesRef.current);
+
+          await pushToRemote();
+        }, 2000);
       },
       initialMessages,
       initialInput: Cookies.get(PROMPT_COOKIE_KEY) || '',
@@ -172,6 +177,8 @@ export const ChatImpl = memo(
     const { parsedMessages, parseMessages } = useMessageParser();
 
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
+
+    const { syncLatestChanges } = useGitPullSync({ setMessages, messagesRef });
 
     useEffect(() => {
       messagesRef.current = messages;
@@ -565,6 +572,7 @@ export const ChatImpl = memo(
           actionAlert={actionAlert}
           clearAlert={() => workbenchStore.clearAlert()}
           data={chatData}
+          onSyncFiles={syncLatestChanges}
         />
         {selectedQueryId && (
           <QueryModal

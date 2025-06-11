@@ -69,6 +69,7 @@ interface BaseChatProps {
   clearAlert?: () => void;
   data?: JSONValue[] | undefined;
   actionRunner?: ActionRunner;
+  onSyncFiles?: () => Promise<void>;
 }
 
 export const BaseChat = ({
@@ -93,6 +94,7 @@ export const BaseChat = ({
   clearAlert,
   data,
   actionRunner,
+  onSyncFiles,
 }: BaseChatProps) => {
   const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
 
@@ -349,6 +351,7 @@ export const BaseChat = ({
               actionRunner={actionRunner ?? ({} as ActionRunner)}
               chatStarted={chatStarted}
               isStreaming={isStreaming}
+              onSyncFiles={onSyncFiles}
             />
           )}
         </ClientOnly>

@@ -24,15 +24,14 @@ import { EditorPanel } from './EditorPanel';
 import { Preview } from './Preview';
 import useViewport from '~/lib/hooks';
 import { PushToGitHubDialog } from '~/components/@settings/tabs/connections/components/PushToGitHubDialog';
+import { useGitStore } from '~/lib/stores/git';
+import { chatId } from '~/lib/persistence';
 
 interface WorkspaceProps {
   chatStarted?: boolean;
   isStreaming?: boolean;
   actionRunner: ActionRunner;
-  metadata?: {
-    gitUrl?: string;
-  };
-  updateChatMestaData?: (metadata: any) => void;
+  onSyncFiles?: () => Promise<void>;
 }
 
 const viewTransition = { ease: cubicEasingFn };
@@ -275,207 +274,223 @@ const FileModifiedDropdown = memo(
   },
 );
 
-export const Workbench = memo(
-  ({ chatStarted, isStreaming, actionRunner, metadata, updateChatMestaData }: WorkspaceProps) => {
-    renderLogger.trace('Workbench');
+export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncFiles }: WorkspaceProps) => {
+  renderLogger.trace('Workbench');
 
-    const [isSyncing, setIsSyncing] = useState(false);
-    const [isPushDialogOpen, setIsPushDialogOpen] = useState(false);
-    const [fileHistory, setFileHistory] = useState<Record<string, FileHistory>>({});
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isPushDialogOpen, setIsPushDialogOpen] = useState(false);
+  const [fileHistory, setFileHistory] = useState<Record<string, FileHistory>>({});
+  const currentChatId = chatId.get();
+  const gitMetadata = useGitStore((state) => (currentChatId ? state.getGitMetadata(currentChatId) : null));
 
-    // const modifiedFiles = Array.from(useStore(workbenchStore.unsavedFiles).keys());
+  const isGitConnected = gitMetadata?.gitUrl && !gitMetadata.isDisconnected;
 
-    const hasPreview = useStore(computed(workbenchStore.previews, (previews) => previews.length > 0));
-    const showWorkbench = useStore(workbenchStore.showWorkbench);
-    const selectedFile = useStore(workbenchStore.selectedFile);
-    const currentDocument = useStore(workbenchStore.currentDocument);
-    const unsavedFiles = useStore(workbenchStore.unsavedFiles);
-    const files = useStore(workbenchStore.files);
-    const selectedView = useStore(workbenchStore.currentView);
+  // const modifiedFiles = Array.from(useStore(workbenchStore.unsavedFiles).keys());
 
-    const isSmallViewport = useViewport(1024);
+  const hasPreview = useStore(computed(workbenchStore.previews, (previews) => previews.length > 0));
+  const showWorkbench = useStore(workbenchStore.showWorkbench);
+  const selectedFile = useStore(workbenchStore.selectedFile);
+  const currentDocument = useStore(workbenchStore.currentDocument);
+  const unsavedFiles = useStore(workbenchStore.unsavedFiles);
+  const files = useStore(workbenchStore.files);
+  const selectedView = useStore(workbenchStore.currentView);
 
-    const setSelectedView = (view: WorkbenchViewType) => {
-      workbenchStore.currentView.set(view);
-    };
+  const isSmallViewport = useViewport(1024);
 
-    useEffect(() => {
-      if (hasPreview) {
-        setSelectedView('preview');
-      }
-    }, [hasPreview]);
+  const setSelectedView = (view: WorkbenchViewType) => {
+    workbenchStore.currentView.set(view);
+  };
 
-    useEffect(() => {
-      workbenchStore.setDocuments(files);
-    }, [files]);
+  useEffect(() => {
+    if (hasPreview) {
+      setSelectedView('preview');
+    }
+  }, [hasPreview]);
 
-    const onEditorChange = useCallback<OnEditorChange>((update) => {
-      workbenchStore.setCurrentDocumentContent(update.content);
-    }, []);
+  useEffect(() => {
+    workbenchStore.setDocuments(files);
+  }, [files]);
 
-    const onEditorScroll = useCallback<OnEditorScroll>((position) => {
-      workbenchStore.setCurrentDocumentScrollPosition(position);
-    }, []);
+  const onEditorChange = useCallback<OnEditorChange>((update) => {
+    workbenchStore.setCurrentDocumentContent(update.content);
+  }, []);
 
-    const onFileSelect = useCallback((filePath: string | undefined) => {
-      workbenchStore.setSelectedFile(filePath);
-    }, []);
+  const onEditorScroll = useCallback<OnEditorScroll>((position) => {
+    workbenchStore.setCurrentDocumentScrollPosition(position);
+  }, []);
 
-    const onFileSave = useCallback(() => {
-      workbenchStore.saveCurrentDocument().catch(() => {
-        toast.error('Failed to update file content');
-      });
-    }, []);
+  const onFileSelect = useCallback((filePath: string | undefined) => {
+    workbenchStore.setSelectedFile(filePath);
+  }, []);
 
-    const onFileReset = useCallback(() => {
-      workbenchStore.resetCurrentDocument();
-    }, []);
+  const onFileSave = useCallback(() => {
+    workbenchStore.saveCurrentDocument().catch(() => {
+      toast.error('Failed to update file content');
+    });
+  }, []);
 
-    const handleSyncFiles = useCallback(async () => {
-      setIsSyncing(true);
+  const onFileReset = useCallback(() => {
+    workbenchStore.resetCurrentDocument();
+  }, []);
 
-      try {
-        const directoryHandle = await window.showDirectoryPicker();
-        await workbenchStore.syncFiles(directoryHandle);
-        toast.success('Files synced successfully');
-      } catch (error) {
-        console.error('Error syncing files:', error);
-        toast.error('Failed to sync files');
-      } finally {
-        setIsSyncing(false);
-      }
-    }, []);
+  const handleSyncFiles = useCallback(async () => {
+    if (!onSyncFiles) {
+      return;
+    }
 
-    const handleSelectFile = useCallback((filePath: string) => {
-      workbenchStore.setSelectedFile(filePath);
-      workbenchStore.currentView.set('diff');
-    }, []);
+    setIsSyncing(true);
 
-    return (
-      chatStarted && (
-        <motion.div
-          initial="closed"
-          animate={showWorkbench ? 'open' : 'closed'}
-          variants={workbenchVariants}
-          className="z-workbench"
+    try {
+      await onSyncFiles();
+      toast.success('Files synced successfully');
+    } catch (error) {
+      console.error('Error syncing files:', error);
+      toast.error('Failed to sync files');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
+
+  const handleSelectFile = useCallback((filePath: string) => {
+    workbenchStore.setSelectedFile(filePath);
+    workbenchStore.currentView.set('diff');
+  }, []);
+
+  return (
+    chatStarted && (
+      <motion.div
+        initial="closed"
+        animate={showWorkbench ? 'open' : 'closed'}
+        variants={workbenchVariants}
+        className="z-workbench"
+      >
+        <div
+          className={classNames(
+            'fixed top-[calc(var(--header-height)+1.5rem)] bottom-6 w-[var(--workbench-inner-width)] mr-4 z-0 transition-[left,width] duration-200 liblab-ease-cubic-bezier',
+            {
+              'w-full': isSmallViewport,
+              'left-0': showWorkbench && isSmallViewport,
+              'left-[var(--workbench-left)]': showWorkbench,
+              'left-[100%]': !showWorkbench,
+            },
+          )}
         >
-          <div
-            className={classNames(
-              'fixed top-[calc(var(--header-height)+1.5rem)] bottom-6 w-[var(--workbench-inner-width)] mr-4 z-0 transition-[left,width] duration-200 liblab-ease-cubic-bezier',
-              {
-                'w-full': isSmallViewport,
-                'left-0': showWorkbench && isSmallViewport,
-                'left-[var(--workbench-left)]': showWorkbench,
-                'left-[100%]': !showWorkbench,
-              },
-            )}
-          >
-            <div className="absolute inset-0 px-2 lg:px-6">
-              <div className="h-full flex flex-col bg-liblab-elements-bg-depth-2 border border-liblab-elements-borderColor shadow-sm rounded-xl overflow-hidden">
-                <div className="flex items-center px-3 py-1 h-12 border-b border-liblab-elements-borderColor">
-                  <Slider selected={selectedView} options={sliderOptions} setSelected={setSelectedView} />
-                  <div className="ml-auto" />
-                  {selectedView === 'code' && (
-                    <div className="flex overflow-y-auto">
-                      <PanelHeaderButton
-                        className="mr-1 text-sm"
-                        onClick={() => {
-                          workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
-                        }}
-                      >
-                        <div className="i-ph:terminal" />
-                        Toggle Terminal
-                      </PanelHeaderButton>
-                      <PanelHeaderButton
-                        className="mr-1 text-sm"
-                        onClick={() => {
-                          workbenchStore.downloadZip();
-                        }}
-                      >
-                        <div className="i-ph:code" />
-                        Download Code
-                      </PanelHeaderButton>
+          <div className="absolute inset-0 px-2 lg:px-6">
+            <div className="h-full flex flex-col bg-liblab-elements-bg-depth-2 border border-liblab-elements-borderColor shadow-sm rounded-xl overflow-hidden">
+              <div className="flex items-center px-3 py-1 h-12 border-b border-liblab-elements-borderColor">
+                <Slider selected={selectedView} options={sliderOptions} setSelected={setSelectedView} />
+                <div className="ml-auto" />
+                {selectedView === 'code' && (
+                  <div className="flex overflow-y-auto">
+                    <PanelHeaderButton
+                      className="mr-1 text-sm"
+                      onClick={() => {
+                        workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
+                      }}
+                    >
+                      <div className="i-ph:terminal" />
+                      Toggle Terminal
+                    </PanelHeaderButton>
+                    <PanelHeaderButton
+                      className="mr-1 text-sm"
+                      onClick={() => {
+                        workbenchStore.downloadZip();
+                      }}
+                    >
+                      <div className="i-ph:code" />
+                      Download Code
+                    </PanelHeaderButton>
+                    <PanelHeaderButton className="mr-1 text-sm" onClick={() => setIsPushDialogOpen(true)}>
+                      <div className="i-ph:git-branch" />
+                      {(() => {
+                        if (!isGitConnected) {
+                          return 'Connect GitHub';
+                        }
+
+                        const repoName = gitMetadata.gitUrl.split('/').pop()?.replace('.git', '');
+
+                        return repoName || 'GitHub';
+                      })()}
+                    </PanelHeaderButton>
+                    {isGitConnected && (
                       <PanelHeaderButton className="mr-1 text-sm" onClick={handleSyncFiles} disabled={isSyncing}>
-                        {isSyncing ? <div className="i-ph:spinner" /> : <div className="i-ph:cloud-arrow-down" />}
+                        {isSyncing ? <div className="i-ph:spinner" /> : <div className="i-ph:github-logo" />}
                         {isSyncing ? 'Syncing...' : 'Sync Files'}
                       </PanelHeaderButton>
-                      <PanelHeaderButton className="mr-1 text-sm" onClick={() => setIsPushDialogOpen(true)}>
-                        <div className="i-ph:git-branch" />
-                        Push to GitHub
-                      </PanelHeaderButton>
-                    </div>
-                  )}
-                  {selectedView === 'diff' && (
-                    <FileModifiedDropdown fileHistory={fileHistory} onSelectFile={handleSelectFile} />
-                  )}
-                  <IconButton
-                    icon="i-liblab:ic_close_cross"
-                    className="mr-1 opacity-50 hover:opacity-100"
-                    size="2xl"
-                    onClick={() => {
-                      workbenchStore.showWorkbench.set(false);
-                    }}
+                    )}
+                  </div>
+                )}
+                {selectedView === 'diff' && (
+                  <FileModifiedDropdown fileHistory={fileHistory} onSelectFile={handleSelectFile} />
+                )}
+                <IconButton
+                  icon="i-liblab:ic_close_cross"
+                  className="mr-1 opacity-50 hover:opacity-100"
+                  size="2xl"
+                  onClick={() => {
+                    workbenchStore.showWorkbench.set(false);
+                  }}
+                />
+              </div>
+              <div className="relative flex-1 overflow-hidden">
+                <View initial={{ x: '0%' }} animate={{ x: selectedView === 'code' ? '0%' : '-100%' }}>
+                  <EditorPanel
+                    editorDocument={currentDocument}
+                    isStreaming={isStreaming}
+                    selectedFile={selectedFile}
+                    files={files}
+                    unsavedFiles={unsavedFiles}
+                    fileHistory={fileHistory}
+                    onFileSelect={onFileSelect}
+                    onEditorScroll={onEditorScroll}
+                    onEditorChange={onEditorChange}
+                    onFileSave={onFileSave}
+                    onFileReset={onFileReset}
                   />
-                </div>
-                <div className="relative flex-1 overflow-hidden">
-                  <View initial={{ x: '0%' }} animate={{ x: selectedView === 'code' ? '0%' : '-100%' }}>
-                    <EditorPanel
-                      editorDocument={currentDocument}
-                      isStreaming={isStreaming}
-                      selectedFile={selectedFile}
-                      files={files}
-                      unsavedFiles={unsavedFiles}
-                      fileHistory={fileHistory}
-                      onFileSelect={onFileSelect}
-                      onEditorScroll={onEditorScroll}
-                      onEditorChange={onEditorChange}
-                      onFileSave={onFileSave}
-                      onFileReset={onFileReset}
-                    />
-                  </View>
-                  <View
-                    initial={{ x: '100%' }}
-                    animate={{ x: selectedView === 'diff' ? '0%' : selectedView === 'code' ? '100%' : '-100%' }}
-                  >
-                    <DiffView fileHistory={fileHistory} setFileHistory={setFileHistory} actionRunner={actionRunner} />
-                  </View>
-                  <View initial={{ x: '100%' }} animate={{ x: selectedView === 'preview' ? '0%' : '100%' }}>
-                    <Preview />
-                  </View>
-                </div>
+                </View>
+                <View
+                  initial={{ x: '100%' }}
+                  animate={{ x: selectedView === 'diff' ? '0%' : selectedView === 'code' ? '100%' : '-100%' }}
+                >
+                  <DiffView fileHistory={fileHistory} setFileHistory={setFileHistory} actionRunner={actionRunner} />
+                </View>
+                <View initial={{ x: '100%' }} animate={{ x: selectedView === 'preview' ? '0%' : '100%' }}>
+                  <Preview />
+                </View>
               </div>
             </div>
           </div>
-          <PushToGitHubDialog
-            isOpen={isPushDialogOpen}
-            onClose={() => setIsPushDialogOpen(false)}
-            onPush={async (repoName, username, token, isPrivate) => {
-              try {
-                const commitMessage = 'liblab ai syncing files';
-                await workbenchStore.pushToGitHub(repoName, commitMessage, username, token, isPrivate);
+        </div>
+        <PushToGitHubDialog
+          isOpen={isPushDialogOpen}
+          onClose={() => setIsPushDialogOpen(false)}
+          onPush={async (repoName, username, token, isPrivate) => {
+            try {
+              await workbenchStore.pushToGitHub(repoName, username, token, isPrivate);
 
-                const repoUrl = `https://github.com/${username}/${repoName}`;
+              const repoUrl = `https://github.com/${username}/${repoName}`;
+              toast.success(`Your code is pushed to: ${repoUrl}`);
 
-                if (updateChatMestaData && !metadata?.gitUrl) {
-                  updateChatMestaData({
-                    ...(metadata || {}),
-                    gitUrl: repoUrl,
-                  });
+              if (currentChatId) {
+                const existingMetadata = useGitStore.getState().getGitMetadata(currentChatId);
+
+                if (existingMetadata?.isDisconnected) {
+                  useGitStore.getState().reconnectRepository(currentChatId);
                 }
-
-                return repoUrl;
-              } catch (error) {
-                console.error('Error pushing to GitHub:', error);
-                toast.error('Failed to push to GitHub');
-                throw error;
               }
-            }}
-          />
-        </motion.div>
-      )
-    );
-  },
-);
+
+              return repoUrl;
+            } catch (error) {
+              console.error('Error pushing to GitHub:', error);
+              toast.error('Failed to push to GitHub');
+              throw error;
+            }
+          }}
+        />
+      </motion.div>
+    )
+  );
+});
 
 // View component for rendering content with motion transitions
 interface ViewProps extends HTMLMotionProps<'div'> {

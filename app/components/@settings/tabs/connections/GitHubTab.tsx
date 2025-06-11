@@ -1,11 +1,10 @@
 import { motion } from 'framer-motion';
 import React, { Suspense, useEffect, useState } from 'react';
-import { Switch } from '~/components/ui/Switch';
-import { useSettings } from '~/lib/hooks/useSettings';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 import { LockSlash } from 'iconsax-reactjs';
+import { useGitStore } from '~/lib/stores/git';
 
 interface GitHubUserResponse {
   login: string;
@@ -79,7 +78,6 @@ const LoadingFallback = () => (
 );
 
 export default function GitHubTab() {
-  const { isLatestBranch, enableLatestBranch } = useSettings();
   const [isLoading, setIsLoading] = useState(true);
   const [connection, setConnection] = useState<GitHubConnection>({
     user: null,
@@ -89,6 +87,26 @@ export default function GitHubTab() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isFetchingStats, setIsFetchingStats] = useState(false);
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
+  const remoteChangesPullInterval = useGitStore((state) => state.remoteChangesPullIntervalSec);
+  const setRemoteChangesPullInterval = useGitStore((state) => state.setRemoteChangesPullInterval);
+  const [pullChangesIntervalLocal, setPullChangesIntervalLocal] = useState(remoteChangesPullInterval);
+
+  const handleIntervalChange = (value: string) => {
+    setPullChangesIntervalLocal(Number(value));
+  };
+
+  const handleIntervalBlur = (value: string) => {
+    const numValue = Number(value);
+
+    if (numValue < 5) {
+      toast.error('Minimum interval is 5 seconds');
+      setPullChangesIntervalLocal(remoteChangesPullInterval);
+
+      return;
+    }
+
+    setRemoteChangesPullInterval(numValue);
+  };
 
   const fetchGithubUser = async (token: string) => {
     try {
@@ -212,14 +230,6 @@ export default function GitHubTab() {
     }
   };
 
-  // Enable features by default on first load
-  useEffect(() => {
-    // Only set defaults if values are undefined
-    if (isLatestBranch === undefined) {
-      enableLatestBranch(false); // Default: OFF - Don't auto-update from main branch
-    }
-  }, []);
-
   useEffect(() => {
     const savedConnection = localStorage.getItem('github_connection');
 
@@ -257,11 +267,6 @@ export default function GitHubTab() {
     }
   }, [connection]);
 
-  const handleToggleSync = (enabled: boolean) => {
-    enableLatestBranch(enabled);
-    toast.success(`Main branch updates ${enabled ? 'enabled' : 'disabled'}`);
-  };
-
   const handleConnect = async (event: React.FormEvent) => {
     event.preventDefault();
     await fetchGithubUser(connection.token);
@@ -295,32 +300,6 @@ export default function GitHubTab() {
 
       <div className="grid grid-cols-1 gap-4">
         <Suspense fallback={<LoadingFallback />}>
-          {/* Sync with Main Branch */}
-          <motion.div
-            className={classNames(
-              'p-4 rounded-lg',
-              'bg-liblab-elements-background-depth-2',
-              'hover:bg-liblab-elements-background-depth-3',
-              'transition-colors duration-200',
-            )}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="i-ph:git-branch w-5 h-5 text-liblab-elements-textSecondary" />
-                <div>
-                  <h4 className="font-medium text-liblab-elements-textPrimary">Main Branch Updates</h4>
-                  <p className="text-sm text-liblab-elements-textSecondary">
-                    Get the latest updates from the main branch
-                  </p>
-                </div>
-              </div>
-              <Switch checked={isLatestBranch} onCheckedChange={handleToggleSync} />
-            </div>
-          </motion.div>
-
           {/* GitHub Connection */}
           <motion.div
             className="bg-[#FFFFFF] dark:bg-[#0A0A0A] rounded-lg border border-[#E5E5E5] dark:border-[#1A1A1A]"
@@ -646,6 +625,43 @@ export default function GitHubTab() {
                   )}
                 </div>
               )}
+
+              {/* Remote Changes Pull Interval Settings */}
+              <div className="mt-6 border-t border-[#E5E5E5] dark:border-[#1A1A1A] pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="i-ph:clock w-5 h-5 text-liblab-elements-textPrimary" />
+                  <h3 className="text-base font-medium text-liblab-elements-textPrimary">Remote Changes Settings</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-liblab-elements-textSecondary mb-2">
+                      Pull Interval (seconds)
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number"
+                        min="5"
+                        step="1"
+                        value={pullChangesIntervalLocal}
+                        onChange={(e) => handleIntervalChange(e.target.value)}
+                        onBlur={(e) => handleIntervalBlur(e.target.value)}
+                        className={classNames(
+                          'w-24 px-3 py-2 rounded-lg text-sm',
+                          'bg-[#F8F8F8] dark:bg-[#1A1A1A]',
+                          'border border-[#E5E5E5] dark:border-[#333333]',
+                          'text-liblab-elements-textPrimary',
+                          'focus:outline-none focus:ring-1 focus:ring-accent-500',
+                        )}
+                      />
+                      <span className="text-sm text-liblab-elements-textSecondary">seconds</span>
+                    </div>
+                    <p className="mt-2 text-xs text-liblab-elements-textSecondary">
+                      How often to check for remote changes. Minimum 5 seconds.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         </Suspense>

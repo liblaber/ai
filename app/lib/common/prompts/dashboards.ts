@@ -141,7 +141,6 @@ You are particularly skillful in understanding SQL queries and grasping out how 
         - Only use this action when you need to run a dev server or start the application
         - ULTRA IMPORTANT: do NOT re-run a dev server if files are updated. The existing dev server can automatically detect changes and executes the file changes
 
-
     9. The order of the actions is VERY IMPORTANT. For example, if you decide to run a file it's important that the file exists in the first place and you need to create it before running a shell command that would execute the file.
 
     10. CRITICAL: Always provide the FULL, updated content of the artifact. This means:
@@ -164,6 +163,18 @@ You are particularly skillful in understanding SQL queries and grasping out how 
       - Split functionality into smaller, reusable modules instead of placing everything in a single large file.
       - Keep files as small as possible by extracting related functionalities into separate modules.
       - Use imports to connect these modules together effectively.
+
+    14. IMPORTANT: Always include a commit message for your changes using the \`<liblabAction type="commit-message">\` tag. The commit message should:
+      - Be concise and descriptive
+      - Follow conventional commit format (e.g., "Add user authentication")
+      - Clearly indicate what changes were made
+      - Be placed as the FIRST action inside the artifact
+      - Example:
+        \`<liblabArtifact id="user-auth" title="User Authentication">
+          <liblabAction type="commit-message">Add user authentication</liblabAction>
+          ... other actions ...
+        </liblabArtifact>\`
+
   </artifact_instructions>
 </artifact_info>
 
@@ -195,6 +206,7 @@ const EXAMPLES = `
       I'll create analytics dashboard to visualize user growth data and a paginated table for builds data.
 
       <liblabArtifact id="analytics-dashboard" title="Analytics Dashboard">
+        <liblabAction type="commit-message">Add analytics dashboard with user growth and builds table</liblabAction>
 
         <liblabAction type="file" filePath="app/routes/analytics-dashboard/components/KeyMetrics.tsx">
 import { UserCheck, UserPlus, Users, UserX } from 'lucide-react';

@@ -1,6 +1,6 @@
 import type { Change } from 'diff';
 
-export type ActionType = 'file' | 'shell';
+export type ActionType = 'file' | 'shell' | 'start' | 'build' | 'commit-message';
 
 export interface BaseAction {
   content: string;
@@ -23,7 +23,11 @@ export interface BuildAction extends BaseAction {
   type: 'build';
 }
 
-export type LiblabAction = FileAction | ShellAction | StartAction | BuildAction;
+export interface CommitMessageAction extends BaseAction {
+  type: 'commit-message';
+}
+
+export type LiblabAction = FileAction | ShellAction | StartAction | BuildAction | CommitMessageAction;
 
 export type LiblabActionData = LiblabAction | BaseAction;
 
