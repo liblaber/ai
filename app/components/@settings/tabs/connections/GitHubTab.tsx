@@ -89,18 +89,23 @@ export default function GitHubTab() {
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
   const remoteChangesPullInterval = useGitStore((state) => state.remoteChangesPullIntervalSec);
   const setRemoteChangesPullInterval = useGitStore((state) => state.setRemoteChangesPullInterval);
+  const [pullChangesIntervalLocal, setPullChangesIntervalLocal] = useState(remoteChangesPullInterval);
 
   const handleIntervalChange = (value: string) => {
-    setRemoteChangesPullInterval(Number(value));
+    setPullChangesIntervalLocal(Number(value));
   };
 
   const handleIntervalBlur = (value: string) => {
     const numValue = Number(value);
 
     if (numValue < 5) {
-      setRemoteChangesPullInterval(5);
       toast.error('Minimum interval is 5 seconds');
+      setPullChangesIntervalLocal(remoteChangesPullInterval);
+
+      return;
     }
+
+    setRemoteChangesPullInterval(numValue);
   };
 
   const fetchGithubUser = async (token: string) => {
@@ -638,7 +643,7 @@ export default function GitHubTab() {
                         type="number"
                         min="5"
                         step="1"
-                        value={remoteChangesPullInterval}
+                        value={pullChangesIntervalLocal}
                         onChange={(e) => handleIntervalChange(e.target.value)}
                         onBlur={(e) => handleIntervalBlur(e.target.value)}
                         className={classNames(
