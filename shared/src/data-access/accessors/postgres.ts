@@ -61,14 +61,7 @@ export class PostgresAccessor implements BaseAccessor {
 
     const normalizedQuery = query.trim().toUpperCase();
 
-    if (!normalizedQuery.startsWith('SELECT') && !normalizedQuery.startsWith('WITH')) {
-      throw new Error('SQL query must start with SELECT or WITH');
-    }
-
     const forbiddenKeywords = [
-      'INSERT ',
-      'UPDATE ',
-      'DELETE ',
       'DROP ',
       'TRUNCATE ',
       'ALTER ',
@@ -78,7 +71,7 @@ export class PostgresAccessor implements BaseAccessor {
     ];
 
     if (forbiddenKeywords.some((keyword) => normalizedQuery.includes(keyword))) {
-      throw new Error('SQL query contains forbidden keywords');
+      throw new Error('Query contains forbidden SQL keywords');
     }
   }
 

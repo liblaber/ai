@@ -68,9 +68,9 @@ ${existingQueries ? `Here are the existing SQL queries used by the app the user 
 To generate the SQL queries, follow these steps:
 1. Carefully analyze the user's request and the provided database schema.
 2. Create one or more SQL queries that accurately address the user's requirements.
-3. Only use SELECT statements — do not generate INSERT, UPDATE, DELETE, or other non-read queries.
-4. Ensure the queries are compatible with the specified database type.
-5. Prefer simple SQL syntax without relying heavily on database-specific functions.
+3. Ensure the queries are compatible with the specified database type.
+4. Prefer simple SQL syntax without relying heavily on database-specific functions.
+5. Do not use any DDL (Data Definition Language) statements such as CREATE, ALTER, or DROP. Only DML (Data Manipulation Language) queries like SELECT, INSERT, UPDATE, and DELETE are allowed.
 6. Use appropriate table joins if necessary.
 7. Optimize the queries for performance.
 8. Avoid using any tables or columns not present in the schema.
@@ -197,7 +197,7 @@ export async function shouldGenerateSqlQueries(
   logger.info(`Deciding should SQL be generated for prompt: ${userPrompt} using model: ${model.modelId}`);
 
   const systemPrompt = `You are an experienced software engineer and an SQL expert tasked with determining whether a user's request requires updating existing SQL queries or not.
-You will be provided with the current SQL queries and the user's prompt. Your goal is to analyze the user's intent and decide if the request necessitates changes to the SQL queries or if it's related to UI layout and appearance modifications.
+You will be provided with the current SQL queries and the user's prompt. Your goal is to analyze the user's intent and decide if the request requires changes to the SQL queries or if it's related to UI layout and appearance modifications.
 
 First, review the existing SQL queries:
 
