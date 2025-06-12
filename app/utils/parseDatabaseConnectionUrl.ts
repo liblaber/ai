@@ -23,13 +23,7 @@ export const parseDatabaseConnectionUrl = (connStr: string) => {
     }
 
     return {
-      host: url.hostname,
-      port: url.port || '5432',
-      username: url.username,
-      password: url.password,
-      database: url.pathname.slice(1),
-      type: url.protocol.replace(':', ''),
-      sslMode: sslMode as SSLMode,
+      name: url.pathname.slice(1),
     };
   } catch (error) {
     if (error instanceof Error) {

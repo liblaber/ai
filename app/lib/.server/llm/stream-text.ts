@@ -117,12 +117,15 @@ ${props.summary}
     const dataSource = await prisma.dataSource.findUniqueOrThrow({ where: { id: currentDataSourceId } });
     const schema = await getDatabaseSchema(currentDataSourceId);
 
+    const connectionDetails = new URL(dataSource.connectionString);
+    const type = connectionDetails.protocol.replace(':', '');
+
     const sqlQueries = await generateSqlQueries(
       schema,
       lastUserMessage,
       llm.instance,
       llm.maxTokens,
-      dataSource.type,
+      type,
       existingQueries,
     );
 

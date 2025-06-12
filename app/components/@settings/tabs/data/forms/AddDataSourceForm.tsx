@@ -1,8 +1,7 @@
 import { classNames } from '~/utils/classNames';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
-import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { BaseSelect } from '~/components/ui/Select';
 import {
   type DataSourceOption,
@@ -24,27 +23,22 @@ interface DataSourceResponse {
 
 interface AddDataSourceFormProps {
   isSubmitting: boolean;
+  databaseTypes: DataSourceOption[];
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
 }
 
-export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuccess }: AddDataSourceFormProps) {
+export default function AddDataSourceForm({
+  isSubmitting,
+  databaseTypes,
+  setIsSubmitting,
+  onSuccess,
+}: AddDataSourceFormProps) {
   const [dbType, setDbType] = useState<DataSourceOption>(DATASOURCES[0]);
   const [connStr, setConnStr] = useState('');
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { types: databaseTypes, fetchTypes, error: typesError } = useDataSourceTypesStore();
-
-  useEffect(() => {
-    fetchTypes();
-  }, [fetchTypes]);
-
-  useEffect(() => {
-    if (typesError) {
-      toast.error('Failed to load database types');
-    }
-  }, [typesError]);
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
@@ -58,12 +52,10 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
           return;
         }
 
-        const connectionDetails = parseDatabaseConnectionUrl(connStr);
+        parseDatabaseConnectionUrl(connStr);
 
         const formData = new FormData();
-        Object.entries(connectionDetails).forEach(([key, value]) => {
-          formData.append(key, value?.toString() || '');
-        });
+        formData.append('connectionString', connStr);
 
         const response = await fetch('/api/data-sources/testing', {
           method: 'POST',
@@ -139,14 +131,8 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
       const connectionDetails = parseDatabaseConnectionUrl(connStr);
 
       const formData = new FormData();
-      formData.append('name', connectionDetails.database || '');
-      formData.append('type', connectionDetails.type);
-      formData.append('host', connectionDetails.host || '');
-      formData.append('port', connectionDetails.port.toString());
-      formData.append('username', connectionDetails.username || '');
-      formData.append('password', connectionDetails.password || '');
-      formData.append('database', connectionDetails.database || '');
-      formData.append('sslMode', connectionDetails.sslMode);
+      formData.append('name', connectionDetails.name);
+      formData.append('connectionString', connStr);
 
       const response = await fetch('/api/data-sources', {
         method: 'POST',

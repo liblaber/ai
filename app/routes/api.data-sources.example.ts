@@ -17,12 +17,7 @@ export async function action({ request }: { request: Request }) {
       const dataSource = await prisma.dataSource.create({
         data: {
           name: 'Sample Database',
-          type: 'sqlite',
-          host: '',
-          port: 0,
-          username: '',
-          database: 'examples.db',
-          password: '',
+          connectionString: 'sqlite://examples.db',
         },
       });
 

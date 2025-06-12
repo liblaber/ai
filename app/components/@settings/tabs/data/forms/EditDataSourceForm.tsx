@@ -1,8 +1,7 @@
 import { classNames } from '~/utils/classNames';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { toast } from 'sonner';
-import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { BaseSelect } from '~/components/ui/Select';
 import {
   type DataSourceOption,
@@ -12,19 +11,7 @@ import {
   SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
 import { parseDatabaseConnectionUrl } from '~/utils/parseDatabaseConnectionUrl';
-
-interface DataSource {
-  id: string;
-  name: string;
-  type: string;
-  host: string;
-  port: number;
-  username: string;
-  database: string;
-  sslMode: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
 
 interface DataSourceResponse {
   success: boolean;
@@ -35,36 +22,31 @@ interface DataSourceResponse {
 interface EditDataSourceFormProps {
   selectedDataSource: DataSource | null;
   isSubmitting: boolean;
+  databaseTypes: DataSourceOption[];
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
   onDelete: () => void;
 }
 
-const generateConnectionString = (dataSource: DataSource): string => {
-  const sslMode = dataSource.sslMode?.toLowerCase() || 'disable';
-  return `${dataSource.type}://${dataSource.username}:HIDDEN_PASSWORD@${dataSource.host}:${dataSource.port}/${dataSource.database}?sslmode=${sslMode}`;
-};
-
 export default function EditDataSourceForm({
   selectedDataSource,
   isSubmitting,
+  databaseTypes,
   setIsSubmitting,
   onSuccess,
   onDelete,
 }: EditDataSourceFormProps) {
-  const { types: databaseTypes, fetchTypes, error: typesError } = useDataSourceTypesStore();
-  useEffect(() => {
-    fetchTypes();
-  }, [fetchTypes]);
-
-  const allDatabaseTypes = [
-    ...databaseTypes.map(({ value, label }) => ({
-      value,
-      label,
-      available: true,
-    })),
-    ...DATASOURCES,
-  ];
+  const allDatabaseTypes = useMemo(
+    () => [
+      ...databaseTypes.map(({ value, label }) => ({
+        value,
+        label,
+        available: true,
+      })),
+      ...DATASOURCES,
+    ],
+    [databaseTypes],
+  );
 
   const [dbType, setDbType] = useState<DataSourceOption>({} as DataSourceOption);
   const [connStr, setConnStr] = useState('');
@@ -74,31 +56,23 @@ export default function EditDataSourceForm({
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
 
   useEffect(() => {
-    if (selectedDataSource) {
-      if (selectedDataSource.name === 'Sample Database') {
-        setDbType(DATASOURCES[0]); // Sample Database
-        setConnStr('');
-      } else {
-        setDbType(DATASOURCES.find((opt) => opt.value === selectedDataSource.type) || DATASOURCES[0]);
-        setConnStr(generateConnectionString(selectedDataSource));
-      }
-
-      setError(null);
-      setTestResult(null);
+    if (!selectedDataSource) {
+      return;
     }
-  }, [selectedDataSource]);
 
-  useEffect(() => {
-    if (typesError) {
-      toast.error('Failed to load database types');
+    if (selectedDataSource.name === 'Sample Database') {
+      setDbType(DATASOURCES[0]);
+      setConnStr('');
+    } else {
+      const connectionDetails = new URL(selectedDataSource.connectionString);
+      const type = connectionDetails.protocol.replace(':', '');
+      setDbType(allDatabaseTypes.find((opt) => opt.value === type) || DATASOURCES[0]);
+      setConnStr(selectedDataSource.connectionString);
     }
-  }, [typesError]);
 
-  useEffect(() => {
-    if (allDatabaseTypes.length > 0) {
-      setDbType(allDatabaseTypes.find((opt) => opt.value === selectedDataSource?.type) || allDatabaseTypes[0]);
-    }
-  }, [databaseTypes, selectedDataSource]);
+    setError(null);
+    setTestResult(null);
+  }, [selectedDataSource?.id, selectedDataSource?.name]);
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
@@ -115,12 +89,8 @@ export default function EditDataSourceForm({
         const connectionDetails = parseDatabaseConnectionUrl(connStr);
 
         const formData = new FormData();
-        formData.append('id', selectedDataSource?.id || '');
-        Object.entries(connectionDetails)
-          .filter(([key, value]) => !(key === 'password' && value === 'HIDDEN_PASSWORD'))
-          .forEach(([key, value]) => {
-            formData.append(key, value?.toString() || '');
-          });
+        formData.append('name', connectionDetails.name);
+        formData.append('connectionString', connStr);
 
         const response = await fetch('/api/data-sources/edit/testing', {
           method: 'POST',
@@ -165,18 +135,8 @@ export default function EditDataSourceForm({
       const connectionDetails = parseDatabaseConnectionUrl(connStr);
 
       const formData = new FormData();
-      formData.append('name', connectionDetails.database || '');
-      formData.append('type', connectionDetails.type);
-      formData.append('host', connectionDetails.host || '');
-      formData.append('port', connectionDetails.port.toString());
-      formData.append('username', connectionDetails.username || '');
-      formData.append('database', connectionDetails.database || '');
-      formData.append('sslMode', connectionDetails.sslMode);
-
-      // Only include the password if it was actually changed
-      if (!connStr.includes('HIDDEN_PASSWORD')) {
-        formData.append('password', connectionDetails.password || '');
-      }
+      formData.append('name', connectionDetails.name);
+      formData.append('connectionString', connStr);
 
       const response = await fetch(`/api/data-sources/${selectedDataSource?.id}`, {
         method: 'PUT',
@@ -211,6 +171,8 @@ export default function EditDataSourceForm({
     return null;
   }
 
+  console.log(dbType);
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -230,6 +192,7 @@ export default function EditDataSourceForm({
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}
+                menuPlacement="bottom"
                 components={{
                   MenuList: SelectDatabaseTypeOptions,
                   SingleValue: SingleValueWithTooltip,
@@ -261,8 +224,7 @@ export default function EditDataSourceForm({
                 />
               </div>
               <label className="mb-3 block !text-[13px] text-liblab-elements-textSecondary mt-2">
-                e.g. {dbType.value}://username:password@host:port/database <br />
-                By changing the HIDDEN_PASSWORD placeholder, you actually change the password.
+                e.g. {dbType.value}://username:password@host:port/database
               </label>
             </div>
           )}

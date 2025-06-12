@@ -1,18 +1,25 @@
 import { prisma } from '~/lib/prisma';
-import { SSL_MODE, type SSLMode } from '~/types/database';
 import { DataAccessor } from '@liblab/data-access/dataAccessor';
 
 export interface DataSource {
   id: string;
   name: string;
-  type: string;
-  host: string;
-  database: string;
-  port: number;
-  username: string;
-  sslMode: string;
+  connectionString: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export async function getDataSource(id: string): Promise<DataSource | null> {
+  return prisma.dataSource.findFirst({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      connectionString: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
 }
 
 export async function getDataSources(): Promise<DataSource[]> {
@@ -20,59 +27,42 @@ export async function getDataSources(): Promise<DataSource[]> {
     select: {
       id: true,
       name: true,
-      type: true,
-      host: true,
-      database: true,
-      port: true,
-      username: true,
-      sslMode: true,
+      connectionString: true,
       createdAt: true,
       updatedAt: true,
     },
   });
 }
 
-export async function createDataSource(data: {
-  name: string;
-  type: string;
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  database: string;
-  sslMode: SSLMode;
-}) {
-  const availableDataSourceTypes = DataAccessor.getAvailableDatabaseTypes();
-
-  if (!availableDataSourceTypes.find(({ value }) => value === data.type)) {
-    throw new Error(`Unsupported data source type: ${data.type}`);
-  }
+export async function createDataSource(data: { name: string; connectionString: string }) {
+  validateDataSource(data.connectionString);
 
   return prisma.dataSource.create({
     data: {
       name: data.name,
-      type: data.type,
-      host: data.host,
-      port: data.port,
-      database: data.database,
-      username: data.username,
-      password: data.password,
-      sslMode: data.sslMode || SSL_MODE.DISABLE,
+      connectionString: data.connectionString,
     },
   });
+}
+
+export async function updateDataSource(data: { id: string; name: string; connectionString: string }) {
+  validateDataSource(data.connectionString);
+
+  return prisma.dataSource.update({
+    where: { id: data.id },
+    data: { name: data.name, connectionString: data.connectionString },
+  });
+}
+
+export async function deleteDataSource(id: string) {
+  return prisma.dataSource.delete({ where: { id } });
 }
 
 export async function getDatabaseUrl(datasourceId: string) {
   const dataSource = await prisma.dataSource.findUnique({
     where: { id: datasourceId },
     select: {
-      type: true,
-      host: true,
-      database: true,
-      port: true,
-      username: true,
-      password: true,
-      sslMode: true,
+      connectionString: true,
     },
   });
 
@@ -80,12 +70,15 @@ export async function getDatabaseUrl(datasourceId: string) {
     throw new Error('Data source not found');
   }
 
-  const { type, host, database, port, username, password, sslMode } = dataSource;
+  return dataSource.connectionString;
+}
 
-  if (type === 'sqlite') {
-    return `${type}://${database}`;
+function validateDataSource(connectionString: string) {
+  const availableDataSourceTypes = DataAccessor.getAvailableDatabaseTypes();
+  const connentionDetails = new URL(connectionString);
+  const type = connentionDetails.protocol.replace(':', '');
+
+  if (!availableDataSourceTypes.find(({ value }) => value === type)) {
+    throw new Error(`Unsupported data source type: ${type}`);
   }
-
-  // Regular connection string for other databases
-  return `${type}://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode.toLowerCase()}`;
 }

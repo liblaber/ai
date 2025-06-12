@@ -17,7 +17,7 @@ export class DataAccessor {
   }
 
   static getAvailableDatabaseTypes(): { value: string; label: string }[] {
-    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor];
+    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor];
     return allAccessors.map((acc) => {
       const instance = new acc();
       return {

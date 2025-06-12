@@ -63,9 +63,12 @@ export const QueryModal = memo(
         return sql;
       }
 
+      const connectionDetails = new URL(dataSource.connectionString);
+      const type = connectionDetails.protocol.replace(':', '');
+
       try {
         return format(sql, {
-          language: dataSource.type as
+          language: type as
             | 'bigquery'
             | 'db2'
             | 'db2i'

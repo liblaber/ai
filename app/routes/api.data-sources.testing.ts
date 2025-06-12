@@ -8,19 +8,11 @@ export async function action({ request }: { request: Request }) {
 
   try {
     const formData = await request.formData();
-    const host = formData.get('host') as string;
-    const port = parseInt(formData.get('port') as string);
-    const username = formData.get('username') as string;
-    const password = decodeURIComponent(formData.get('password') as string);
-    const type = formData.get('type') as string;
-    const database = formData.get('database') as string;
-    const sslMode = formData.get('sslMode') as string;
+    const databaseUrl = formData.get('connectionString') as string;
 
-    if (!host || !port || !username || !password || !type) {
+    if (!databaseUrl) {
       return json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
-
-    const databaseUrl = `${type}://${username}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=${sslMode ? sslMode.toLowerCase() : 'disable'}`;
 
     try {
       const accessor = DataAccessor.getAccessor(databaseUrl);
