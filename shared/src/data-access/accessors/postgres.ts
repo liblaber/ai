@@ -61,14 +61,7 @@ export class PostgresAccessor implements BaseAccessor {
 
     const normalizedQuery = query.trim().toUpperCase();
 
-    const forbiddenKeywords = [
-      'DROP ',
-      'TRUNCATE ',
-      'ALTER ',
-      'CREATE ',
-      'GRANT ',
-      'REVOKE ',
-    ];
+    const forbiddenKeywords = ['DROP ', 'TRUNCATE ', 'ALTER ', 'CREATE ', 'GRANT ', 'REVOKE '];
 
     if (forbiddenKeywords.some((keyword) => normalizedQuery.includes(keyword))) {
       throw new Error('Query contains forbidden SQL keywords');
