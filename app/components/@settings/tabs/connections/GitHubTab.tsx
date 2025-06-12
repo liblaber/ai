@@ -359,9 +359,7 @@ export default function GitHubTab() {
                   />
                   <div className="mt-2 text-sm text-liblab-elements-textSecondary">
                     <a
-                      href={`https://github.com/settings/tokens${
-                        connection.tokenType === 'fine-grained' ? '/beta' : '/new'
-                      }`}
+                      href={`https://github.com/settings/${connection.tokenType === 'classic' ? 'tokens/new' : 'personal-access-tokens/new'}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-accent-500 hover:underline inline-flex items-center gap-1"
