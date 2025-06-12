@@ -59,9 +59,7 @@
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2",
-    "mysql2": "latest",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7"
+    "mysql2": "latest"
   },
   "devDependencies": {
     "@netlify/functions": "^3.1.2",
