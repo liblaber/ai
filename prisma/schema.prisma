@@ -14,17 +14,11 @@ datasource db {
 }
 
 model DataSource {
-  id        String   @id @default(cuid())
-  name      String
-  type      String
-  host      String
-  port      Int
-  username  String
-  database  String
-  password  String
-  sslMode   String   @default("DISABLE") @map("ssl_mode")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id               String   @id @default(cuid())
+  name             String
+  connectionString String   @map("connection_string")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   @@map("data_source")
 }

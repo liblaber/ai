@@ -7,12 +7,7 @@ import { DATA_SOURCE_CONNECTION_ROUTE } from '~/routes/data-source-connection';
 interface DataSource {
   id: string;
   name: string;
-  type: string;
-  host: string;
-  port: number;
-  username: string;
-  database: string;
-  sslMode: string;
+  connectionString: string;
   createdAt: string;
   updatedAt: string;
 }

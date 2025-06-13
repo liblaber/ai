@@ -13,7 +13,7 @@ import { useDataSourceActions, useDataSourcesStore } from '~/lib/stores/dataSour
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useNavigate } from '@remix-run/react';
 import { Header } from '~/components/header/Header';
-import { parseDatabaseConnectionUrl } from '~/utils/parseDatabaseConnectionUrl';
+import { DatabaseConnectionParser } from '~/utils/databaseConnectionParser';
 
 interface ApiResponse {
   success: boolean;
@@ -56,12 +56,11 @@ export default function DataSourceConnectionPage() {
     setError(null);
 
     try {
-      const connectionDetails = parseDatabaseConnectionUrl(connStr);
+      const connectionDetails = DatabaseConnectionParser.parse(connStr);
 
       const formData = new FormData();
-      Object.entries(connectionDetails).forEach(([key, value]) => {
-        formData.append(key, value?.toString() || '');
-      });
+      formData.append('name', connectionDetails.database);
+      formData.append('connectionString', connStr);
 
       const response = await fetch('/api/data-sources/testing', {
         method: 'POST',
@@ -86,17 +85,11 @@ export default function DataSourceConnectionPage() {
     try {
       setError(null);
 
-      const connectionDetails = parseDatabaseConnectionUrl(connStr);
-      const formData = new FormData();
+      const connectionDetails = DatabaseConnectionParser.parse(connStr);
 
-      formData.append('name', connectionDetails.database || '');
-      formData.append('type', connectionDetails.type);
-      formData.append('host', connectionDetails.host || '');
-      formData.append('port', connectionDetails.port.toString());
-      formData.append('username', connectionDetails.username || '');
-      formData.append('password', connectionDetails.password || '');
-      formData.append('database', connectionDetails.database || '');
-      formData.append('sslMode', connectionDetails.sslMode);
+      const formData = new FormData();
+      formData.append('name', connectionDetails.database);
+      formData.append('connectionString', connStr);
 
       const response = await fetch('/api/data-sources', {
         method: 'POST',

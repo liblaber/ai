@@ -1,87 +1,87 @@
 -- Create tables
 CREATE TABLE organizations (
-    organization_id SERIAL PRIMARY KEY,
-    organization_name VARCHAR(100) NOT NULL,
-    industry VARCHAR(100),
+    organization_id INTEGER PRIMARY KEY,
+    organization_name TEXT NOT NULL,
+    industry TEXT,
     address TEXT,
-    phone VARCHAR(20),
-    email VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    subscription_tier VARCHAR(50) DEFAULT 'free',
-    last_payment_date TIMESTAMP,
-    next_payment_date TIMESTAMP
+    phone TEXT,
+    email TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    subscription_tier TEXT DEFAULT 'free',
+    last_payment_date DATETIME,
+    next_payment_date DATETIME
 );
 
 CREATE TABLE users (
-    user_id SERIAL PRIMARY KEY,
+    user_id INTEGER PRIMARY KEY,
     organization_id INTEGER REFERENCES organizations(organization_id),
-    username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    first_name VARCHAR(50),
-    last_name VARCHAR(50),
-    role VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login_at TIMESTAMP,
-    is_active BOOLEAN DEFAULT true
+    username TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    first_name TEXT,
+    last_name TEXT,
+    role TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_login_at DATETIME,
+    is_active INTEGER DEFAULT 1
 );
 
 CREATE TABLE subscriptions (
-    subscription_id SERIAL PRIMARY KEY,
+    subscription_id INTEGER PRIMARY KEY,
     organization_id INTEGER REFERENCES organizations(organization_id),
-    plan_name VARCHAR(50) NOT NULL,
-    start_date TIMESTAMP NOT NULL,
-    end_date TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'active',
-    monthly_price DECIMAL(10,2) NOT NULL,
-    features JSONB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    plan_name TEXT NOT NULL,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME,
+    status TEXT DEFAULT 'active',
+    monthly_price REAL NOT NULL,
+    features TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE products (
-    product_id SERIAL PRIMARY KEY,
+    product_id INTEGER PRIMARY KEY,
     organization_id INTEGER REFERENCES organizations(organization_id),
-    product_name VARCHAR(100) NOT NULL,
+    product_name TEXT NOT NULL,
     description TEXT,
-    price DECIMAL(10,2) NOT NULL,
-    cost DECIMAL(10,2) NOT NULL,
+    price REAL NOT NULL,
+    cost REAL NOT NULL,
     stock_quantity INTEGER NOT NULL,
-    category VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_restock_date TIMESTAMP
+    category TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_restock_date DATETIME
 );
 
 CREATE TABLE sales (
-    sale_id SERIAL PRIMARY KEY,
+    sale_id INTEGER PRIMARY KEY,
     organization_id INTEGER REFERENCES organizations(organization_id),
     user_id INTEGER REFERENCES users(user_id),
-    sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total_amount DECIMAL(10,2) NOT NULL,
-    payment_method VARCHAR(50),
-    status VARCHAR(20) DEFAULT 'completed',
-    discount_amount DECIMAL(10,2) DEFAULT 0,
-    tax_amount DECIMAL(10,2) DEFAULT 0
+    sale_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    total_amount REAL NOT NULL,
+    payment_method TEXT,
+    status TEXT DEFAULT 'completed',
+    discount_amount REAL DEFAULT 0,
+    tax_amount REAL DEFAULT 0
 );
 
 CREATE TABLE sale_items (
-    sale_item_id SERIAL PRIMARY KEY,
+    sale_item_id INTEGER PRIMARY KEY,
     sale_id INTEGER REFERENCES sales(sale_id),
     product_id INTEGER REFERENCES products(product_id),
     quantity INTEGER NOT NULL,
-    unit_price DECIMAL(10,2) NOT NULL,
-    total_price DECIMAL(10,2) NOT NULL,
-    discount_percentage DECIMAL(5,2) DEFAULT 0
+    unit_price REAL NOT NULL,
+    total_price REAL NOT NULL,
+    discount_percentage REAL DEFAULT 0
 );
 
 CREATE TABLE revenue (
-    revenue_id SERIAL PRIMARY KEY,
+    revenue_id INTEGER PRIMARY KEY,
     organization_id INTEGER REFERENCES organizations(organization_id),
     date DATE NOT NULL,
-    total_revenue DECIMAL(10,2) NOT NULL,
-    total_cost DECIMAL(10,2) NOT NULL,
-    gross_profit DECIMAL(10,2) NOT NULL,
-    net_profit DECIMAL(10,2) NOT NULL,
-    subscription_revenue DECIMAL(10,2) DEFAULT 0,
-    product_revenue DECIMAL(10,2) DEFAULT 0
+    total_revenue REAL NOT NULL,
+    total_cost REAL NOT NULL,
+    gross_profit REAL NOT NULL,
+    net_profit REAL NOT NULL,
+    subscription_revenue REAL DEFAULT 0,
+    product_revenue REAL DEFAULT 0
 );
 
 -- Insert organizations with temporal data
@@ -94,12 +94,12 @@ INSERT INTO organizations (organization_name, industry, address, phone, email, c
 
 -- Insert users with temporal data
 INSERT INTO users (organization_id, username, email, first_name, last_name, role, created_at, last_login_at, is_active) VALUES
-(1, 'jsmith', 'john.smith@techsolutions.com', 'John', 'Smith', 'Sales Manager', '2023-01-16 10:00:00', '2025-05-01 15:30:00', true),
-(1, 'mjohnson', 'mary.johnson@techsolutions.com', 'Mary', 'Johnson', 'Sales Representative', '2023-02-01 09:15:00', '2025-05-02 16:45:00', true),
-(2, 'dwilliams', 'david.williams@greenenergy.com', 'David', 'Williams', 'Account Manager', '2023-03-21 11:00:00', '2025-05-03 14:20:00', true),
-(3, 'sbrown', 'sarah.brown@globalretail.com', 'Sarah', 'Brown', 'Store Manager', '2023-06-11 15:30:00', '2025-05-04 10:15:00', true),
-(4, 'rlee', 'robert.lee@aiinnovations.com', 'Robert', 'Lee', 'Data Scientist', '2023-09-06 12:00:00', '2025-05-05 09:30:00', true),
-(5, 'lchen', 'lisa.chen@cloudservices.com', 'Lisa', 'Chen', 'Cloud Architect', '2023-11-26 17:00:00', '2025-05-06 16:00:00', true);
+(1, 'jsmith', 'john.smith@techsolutions.com', 'John', 'Smith', 'Sales Manager', '2023-01-16 10:00:00', '2025-05-01 15:30:00', 1),
+(1, 'mjohnson', 'mary.johnson@techsolutions.com', 'Mary', 'Johnson', 'Sales Representative', '2023-02-01 09:15:00', '2025-05-02 16:45:00', 1),
+(2, 'dwilliams', 'david.williams@greenenergy.com', 'David', 'Williams', 'Account Manager', '2023-03-21 11:00:00', '2025-05-03 14:20:00', 1),
+(3, 'sbrown', 'sarah.brown@globalretail.com', 'Sarah', 'Brown', 'Store Manager', '2023-06-11 15:30:00', '2025-05-04 10:15:00', 1),
+(4, 'rlee', 'robert.lee@aiinnovations.com', 'Robert', 'Lee', 'Data Scientist', '2023-09-06 12:00:00', '2025-05-05 09:30:00', 1),
+(5, 'lchen', 'lisa.chen@cloudservices.com', 'Lisa', 'Chen', 'Cloud Architect', '2023-11-26 17:00:00', '2025-05-06 16:00:00', 1);
 
 -- Insert subscriptions
 INSERT INTO subscriptions (organization_id, plan_name, start_date, end_date, status, monthly_price, features) VALUES
@@ -336,4 +336,4 @@ INSERT INTO revenue (organization_id, date, total_revenue, total_cost, gross_pro
 (2, '2025-05-06', 1999.99, 1000.00, 999.99, 849.99, 499.99, 1500.00),
 (3, '2025-05-06', 389.97, 155.00, 234.97, 194.97, 299.99, 89.98),
 (4, '2025-05-06', 0.00, 0.00, 0.00, 0.00, 999.99, -999.99),
-(5, '2025-05-06', 0.00, 0.00, 0.00, 0.00, 499.99, -499.99); 
+(5, '2025-05-06', 0.00, 0.00, 0.00, 0.00, 499.99, -499.99);

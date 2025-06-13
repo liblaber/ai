@@ -7,6 +7,7 @@ import { AiGeneration } from '~/components/chat/query-modal/AiGeneration';
 import { QueryResults } from '~/components/chat/query-modal/QueryResults';
 import { QueryEditor } from '~/components/chat/query-modal/QueryEditor';
 import type { DataSource } from '~/lib/services/datasourceService';
+import { DatabaseConnectionParser } from '~/utils/databaseConnectionParser';
 
 interface QueryModalProps {
   isOpen: boolean;
@@ -64,8 +65,10 @@ export const QueryModal = memo(
       }
 
       try {
+        const type = DatabaseConnectionParser.parse(dataSource.connectionString).type;
+
         return format(sql, {
-          language: dataSource.type as
+          language: type as
             | 'bigquery'
             | 'db2'
             | 'db2i'
