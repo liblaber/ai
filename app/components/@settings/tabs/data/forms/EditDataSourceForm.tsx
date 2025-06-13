@@ -12,6 +12,7 @@ import {
 } from '~/components/database/SelectDatabaseTypeOptions';
 import { parseDatabaseConnectionUrl } from '~/utils/parseDatabaseConnectionUrl';
 import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
+import { Eye, EyeSlash } from 'iconsax-reactjs';
 
 interface DataSourceResponse {
   success: boolean;
@@ -54,6 +55,7 @@ export default function EditDataSourceForm({
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
+  const [showConnStr, setShowConnStr] = useState(false);
 
   useEffect(() => {
     if (!selectedDataSource) {
@@ -206,7 +208,7 @@ export default function EditDataSourceForm({
               </label>
               <div className="relative">
                 <input
-                  type="text"
+                  type={showConnStr ? 'text' : 'password'}
                   value={connStr}
                   onChange={(e) => setConnStr(e.target.value)}
                   disabled={isSubmitting}
@@ -220,6 +222,16 @@ export default function EditDataSourceForm({
                   )}
                   placeholder={`${dbType.value}://username:password@host:port/database`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConnStr((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group"
+                  tabIndex={-1}
+                >
+                  <span className="text-gray-400 group-hover:text-white transition-colors">
+                    {showConnStr ? <EyeSlash variant="Bold" size={20} /> : <Eye variant="Bold" size={20} />}
+                  </span>
+                </button>
               </div>
               <label className="mb-3 block !text-[13px] text-liblab-elements-textSecondary mt-2">
                 e.g. {dbType.value}://username:password@host:port/database
