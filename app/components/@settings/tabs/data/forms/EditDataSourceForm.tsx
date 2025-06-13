@@ -171,8 +171,6 @@ export default function EditDataSourceForm({
     return null;
   }
 
-  console.log(dbType);
-
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -361,8 +359,7 @@ export default function EditDataSourceForm({
             </div>
             <p className="text-sm text-liblab-elements-textSecondary mb-6">
               Are you sure you want to save these changes to the data source? This action will update the connection
-              settings
-              {!connStr.includes('HIDDEN_PASSWORD') ? ' and the password' : ''}.
+              settings.
             </p>
             <div className="flex items-center justify-end gap-3">
               <button
