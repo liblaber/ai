@@ -13,13 +13,14 @@ import JSZip from 'jszip';
 import fileSaver from 'file-saver';
 import { Octokit, type RestEndpointMethodTypes } from '@octokit/rest';
 import { path } from '~/utils/path';
-import { extractRelativePath } from '~/utils/diff';
+import { extractRelativePath, toAbsoluteFilePath } from '~/utils/diff';
 import { chatId, description } from '~/lib/persistence';
 import Cookies from 'js-cookie';
 import { createSampler } from '~/utils/sampler';
 import type { ActionAlert } from '~/types/actions';
 import type { LiblabShell } from '~/utils/shell';
 import { useGitStore } from './git';
+import ignore from 'ignore';
 
 const { saveAs } = fileSaver;
 
@@ -500,20 +501,36 @@ export class WorkbenchStore {
         throw new Error('No files found to push');
       }
 
+      const gitignoreContent = this.#filesStore.getFile(toAbsoluteFilePath('.gitignore'))?.content;
+      const ignoredFiles = gitignoreContent?.split('\n') ?? [];
+
+      const ig = ignore();
+
+      if (ignoredFiles?.length) {
+        ig.add(ignoredFiles);
+      }
+
       // Create blobs for each file
       const blobs = await Promise.all(
         Object.entries(files).map(async ([filePath, dirent]) => {
-          if (dirent?.type === 'file' && dirent.content) {
-            const { data: blob } = await octokit.git.createBlob({
-              owner: repo.owner.login,
-              repo: repo.name,
-              content: Buffer.from(dirent.content).toString('base64'),
-              encoding: 'base64',
-            });
-            return { path: extractRelativePath(filePath), sha: blob.sha };
+          if (!(dirent?.type === 'file' && dirent.content)) {
+            return null;
           }
 
-          return null;
+          const relativePath = extractRelativePath(filePath);
+
+          if (ig.ignores(relativePath)) {
+            return null;
+          }
+
+          const { data: blob } = await octokit.git.createBlob({
+            owner: repo.owner.login,
+            repo: repo.name,
+            content: Buffer.from(dirent.content).toString('base64'),
+            encoding: 'base64',
+          });
+
+          return { path: relativePath, sha: blob.sha };
         }),
       );
 

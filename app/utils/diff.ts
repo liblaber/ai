@@ -85,6 +85,13 @@ export function extractRelativePath(filePath: string) {
 }
 
 /**
+ * Converts the relative path to an absolute path.
+ */
+export function toAbsoluteFilePath(filePath: string) {
+  return `${WORK_DIR}/${filePath}`;
+}
+
+/**
  * Converts the unified diff to HTML.
  *
  * Example:
