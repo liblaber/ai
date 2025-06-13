@@ -10,7 +10,7 @@ import {
   SelectDatabaseTypeOptions,
   SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
-import { parseDatabaseConnectionUrl } from '~/utils/parseDatabaseConnectionUrl';
+import { DatabaseConnectionParser } from '~/utils/databaseConnectionParser';
 import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
 import { Eye, EyeSlash } from 'iconsax-reactjs';
 
@@ -88,10 +88,10 @@ export default function EditDataSourceForm({
           return;
         }
 
-        const connectionDetails = parseDatabaseConnectionUrl(connStr);
+        const connectionDetails = DatabaseConnectionParser.parse(connStr);
 
         const formData = new FormData();
-        formData.append('name', connectionDetails.name);
+        formData.append('name', connectionDetails.database);
         formData.append('connectionString', connStr);
 
         const response = await fetch('/api/data-sources/edit/testing', {
@@ -134,10 +134,10 @@ export default function EditDataSourceForm({
     setShowSaveConfirmation(false);
 
     try {
-      const connectionDetails = parseDatabaseConnectionUrl(connStr);
+      const connectionDetails = DatabaseConnectionParser.parse(connStr);
 
       const formData = new FormData();
-      formData.append('name', connectionDetails.name);
+      formData.append('name', connectionDetails.database);
       formData.append('connectionString', connStr);
 
       const response = await fetch(`/api/data-sources/${selectedDataSource?.id}`, {

@@ -1,5 +1,6 @@
 import { prisma } from '~/lib/prisma';
 import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { DatabaseConnectionParser } from '~/utils/databaseConnectionParser';
 
 export interface DataSource {
   id: string;
@@ -75,8 +76,7 @@ export async function getDatabaseUrl(datasourceId: string) {
 
 function validateDataSource(connectionString: string) {
   const availableDataSourceTypes = DataAccessor.getAvailableDatabaseTypes();
-  const connentionDetails = new URL(connectionString);
-  const type = connentionDetails.protocol.replace(':', '');
+  const type = DatabaseConnectionParser.parse(connectionString).type;
 
   if (!availableDataSourceTypes.find(({ value }) => value === type)) {
     throw new Error(`Unsupported data source type: ${type}`);

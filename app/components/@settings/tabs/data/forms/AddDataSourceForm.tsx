@@ -10,7 +10,7 @@ import {
   SelectDatabaseTypeOptions,
   SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
-import { parseDatabaseConnectionUrl } from '~/utils/parseDatabaseConnectionUrl';
+import { DatabaseConnectionParser } from '~/utils/databaseConnectionParser';
 
 interface DataSourceResponse {
   success: boolean;
@@ -52,7 +52,7 @@ export default function AddDataSourceForm({
           return;
         }
 
-        parseDatabaseConnectionUrl(connStr);
+        DatabaseConnectionParser.validate(connStr);
 
         const formData = new FormData();
         formData.append('connectionString', connStr);
@@ -128,10 +128,10 @@ export default function AddDataSourceForm({
     setTestResult(null);
 
     try {
-      const connectionDetails = parseDatabaseConnectionUrl(connStr);
+      const connectionDetails = DatabaseConnectionParser.parse(connStr);
 
       const formData = new FormData();
-      formData.append('name', connectionDetails.name);
+      formData.append('name', connectionDetails.database);
       formData.append('connectionString', connStr);
 
       const response = await fetch('/api/data-sources', {

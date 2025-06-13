@@ -10,7 +10,7 @@ async function setupDatabase() {
   try {
     // Open database connection
     const db = await open({
-      filename: './examples.db',
+      filename: './example.db',
       driver: sqlite3.Database,
     });
 
