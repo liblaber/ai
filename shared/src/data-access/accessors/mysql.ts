@@ -47,24 +47,10 @@ export class MySQLAccessor implements BaseAccessor {
 
     const normalizedQuery = query.trim().toUpperCase();
 
-    if (!normalizedQuery.startsWith('SELECT') && !normalizedQuery.startsWith('WITH')) {
-      throw new Error('SQL query must start with SELECT or WITH');
-    }
-
-    const forbiddenKeywords = [
-      'INSERT ',
-      'UPDATE ',
-      'DELETE ',
-      'DROP ',
-      'TRUNCATE ',
-      'ALTER ',
-      'CREATE ',
-      'GRANT ',
-      'REVOKE ',
-    ];
+    const forbiddenKeywords = ['DROP ', 'TRUNCATE ', 'ALTER ', 'CREATE ', 'GRANT ', 'REVOKE '];
 
     if (forbiddenKeywords.some((keyword) => normalizedQuery.includes(keyword))) {
-      throw new Error('SQL query contains forbidden keywords');
+      throw new Error('Query contains forbidden SQL keywords');
     }
   }
 
@@ -120,7 +106,7 @@ export class MySQLAccessor implements BaseAccessor {
       });
 
       // Build the result
-      const result: MySqlTable[] = tables.map((table) => ({
+      return tables.map((table) => ({
         tableName: table.TABLE_NAME,
         tableComment: table.TABLE_COMMENT || '',
         columns: (columnsByTable.get(table.TABLE_NAME) || []).map((col) => {
@@ -142,16 +128,13 @@ export class MySQLAccessor implements BaseAccessor {
             if (enumMatch) {
               // Parse enum values, handling quoted strings properly
               const enumString = enumMatch[1];
-              const enumValues = enumString.split(',').map((val: string) => val.trim().replace(/^'|'$/g, ''));
-              column.enumValues = enumValues;
+              column.enumValues = enumString.split(',').map((val: string) => val.trim().replace(/^'|'$/g, ''));
             }
           }
 
           return column;
         }),
       }));
-
-      return result;
     } catch (error) {
       console.error('Error fetching database schema:', error);
       throw error;

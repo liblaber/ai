@@ -1,5 +1,4 @@
 import { executeQuery } from '@/db/execute-query';
-import { json } from '@remix-run/cloudflare';
 import {
   BuildCountData,
   BuildData,
@@ -10,7 +9,7 @@ import {
 
 export async function action({ request }: { request: Request }) {
   if (request.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, { status: 405 });
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
   }
 
   try {
@@ -21,7 +20,7 @@ export async function action({ request }: { request: Request }) {
     const offset = (page - 1) * limit;
 
     if (!status) {
-      return json({
+      return Response.json({
         isError: true,
         errorMessage: 'Status is required',
       });
@@ -30,16 +29,16 @@ export async function action({ request }: { request: Request }) {
     const buildsCount = await executeQuery<BuildCountData>(buildsCountQuery, [status]);
 
     if (buildsCount.isError) {
-      return json(buildsCount);
+      return Response.json(buildsCount);
     }
 
     const builds = await executeQuery<BuildData>(buildsQuery, [status, limit.toString(), offset.toString()]);
 
     if (builds.isError) {
-      return json(builds);
+      return Response.json(builds);
     }
 
-    return json({
+    return Response.json({
       data: {
         builds: builds.data,
         buildsCount: buildsCount.data[0].total,
@@ -48,6 +47,6 @@ export async function action({ request }: { request: Request }) {
     });
   } catch (error) {
     console.error('Error fetching builds:', error);
-    return json({ error: 'Failed to fetch builds' }, { status: 500 });
+    return Response.json({ error: 'Failed to fetch builds' }, { status: 500 });
   }
 }

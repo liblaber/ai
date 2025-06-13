@@ -46,6 +46,8 @@ Follow these steps to create components:
 4. Data Handling:
    - Write raw SQL queries based on already defined guidelines
    - Use executePostgresQuery from app/db/execute-query.ts to execute queries
+   - The executePostgresQuery can be called only from a loader function (never use executePostgresQuery inside a useEffect hook)
+   - If you need to create, update or delete an entity based on some user event, create a separate routes/resources.entity.ts file with action function and then call it from the client component using useFetcher hook
    - Always type your API responses
    - Transform data values appropriately (e.g., milliseconds to seconds, decimals to percentages)
    - IMPORTANT: If the query returns data that will be used for charts, limit result set to max 10 items to avoid large responses that are impossible to display in the charts. If the user is explicit enough, and wants more results, then do not limit the query.
