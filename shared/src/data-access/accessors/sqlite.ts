@@ -47,6 +47,18 @@ export class SQLiteAccessor implements BaseAccessor {
     }
   }
 
+  connectionStringFormat(): string {
+    return 'sqlite://path/to/database.db';
+  }
+
+  validate(connectionString: string): void {
+    const regex = /^sqlite:\/\/(.*)$/;
+
+    if (!regex.test(connectionString)) {
+      throw new Error('Invalid connection string');
+    }
+  }
+
   guardAgainstMaliciousQuery(query: string): void {
     if (!query) {
       throw new Error('No SQL query provided. Please provide a valid SQL query to execute.');

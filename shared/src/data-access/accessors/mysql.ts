@@ -21,7 +21,7 @@ export class MySQLAccessor implements BaseAccessor {
       await connection.end();
 
       return true;
-    } catch (error: any) {
+    } catch {
       return false;
     }
   }
@@ -37,6 +37,18 @@ export class MySQLAccessor implements BaseAccessor {
     } catch (error) {
       console.error('Error executing query:', error);
       throw new Error((error as Error)?.message);
+    }
+  }
+
+  connectionStringFormat(): string {
+    return 'mysql://username:password@host:port/database';
+  }
+
+  validate(connectionString: string): void {
+    const regex = /^mysql:\/\/([a-zA-Z0-9_-]+):(.+)@([a-zA-Z0-9.-]+):([0-9]+)\/([a-zA-Z0-9_-]+)$/;
+
+    if (!regex.test(connectionString)) {
+      throw new Error('Invalid connection string');
     }
   }
 

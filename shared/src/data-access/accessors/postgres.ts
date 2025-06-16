@@ -34,7 +34,7 @@ export class PostgresAccessor implements BaseAccessor {
       await pool.end();
 
       return true;
-    } catch (error: any) {
+    } catch {
       await pool.end();
       return false;
     }
@@ -51,6 +51,18 @@ export class PostgresAccessor implements BaseAccessor {
     } catch (error) {
       console.error('Error executing query:', error);
       throw new Error((error as Error)?.message);
+    }
+  }
+
+  connectionStringFormat(): string {
+    return 'postgresql://username:password@host:port/database';
+  }
+
+  validate(connectionString: string): void {
+    const regex = /^postgresql:\/\/([a-zA-Z0-9_-]+):(.+)@([a-zA-Z0-9.-]+):([0-9]+)\/([a-zA-Z0-9_-]+)$/;
+
+    if (!regex.test(connectionString)) {
+      throw new Error('Invalid connection string');
     }
   }
 

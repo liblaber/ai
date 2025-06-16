@@ -17,6 +17,19 @@ export interface BaseAccessor {
   guardAgainstMaliciousQuery: (query: string) => void;
 
   /**
+   * Returns the format of the connection string for this accessor
+   * @returns The format of the connection string
+   */
+  connectionStringFormat: () => string;
+
+  /**
+   * Validates a connection string for this accessor
+   * @param connectionString - The connection string to validate
+   * @throws Error if the connection string is invalid
+   */
+  validate: (connectionString: string) => void;
+
+  /**
    * Retrieves the database schema information
    * @returns Promise resolving to an array of Table objects describing the database structure
    */
@@ -47,6 +60,7 @@ export interface BaseAccessor {
 
 export interface BaseAccessorConstructor {
   new (): BaseAccessor;
+
   /**
    * Determines if this accessor type can handle the given database URL
    * @param databaseUrl - The connection URL to check

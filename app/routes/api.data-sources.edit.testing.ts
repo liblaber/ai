@@ -18,6 +18,8 @@ export async function action({ request }: { request: Request }) {
 
     try {
       const accessor = DataAccessor.getAccessor(databaseUrl);
+      accessor.validate(databaseUrl);
+
       const isConnected = await accessor.testConnection(databaseUrl);
 
       if (isConnected) {
