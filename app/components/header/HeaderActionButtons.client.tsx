@@ -16,6 +16,7 @@ import {
 import { webcontainer } from '~/lib/webcontainer';
 import { classNames } from '~/utils/classNames';
 import { path } from '~/utils/path';
+import type { MouseEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { chatId, description } from '~/lib/persistence/useChatHistory';
 import { PublishProgressModal } from '~/components/publish/PublishProgressModal.client';
@@ -90,16 +91,18 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   }, [currentChatId]);
 
   // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
+  const handleClickOutside = (event: globalThis.MouseEvent) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      setIsDropdownOpen(false);
     }
+  };
 
+  useEffect(() => {
     document.addEventListener('mousedown', handleClickOutside);
 
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const handleSettings = async () => {
@@ -178,15 +181,24 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
     }
   };
 
-  const startDeployment = async () => {
-    setModalMode('publish');
+  // Add cleanup when modal is closed
+  const handleModalClose = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    setIsModalOpen(false);
+  };
+
+  const handlePublishClick = async (pluginId: string) => {
+    if (!chatId) {
+      return;
+    }
 
     try {
+      setLoading(true);
       setDeploymentProgress(null);
       clearDeploymentLogs();
-      setIsModalOpen(true);
-      setLoading(true);
-      abortControllerRef.current = new AbortController();
 
       const artifact = workbenchStore.firstArtifact;
 
@@ -215,8 +227,6 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
 
           if (entry.isFile()) {
             const content = await container.fs.readFile(fullPath, 'utf-8');
-
-            // Remove /home/project prefix from the path
             const deployPath = fullPath.replace(projectPath, '');
             files[deployPath] = content;
           } else if (entry.isDirectory()) {
@@ -229,30 +239,25 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       }
 
       const fileContents = await getAllFiles('');
-
-      // Create a zip file
       const zip = new JSZip();
 
       for (const [filePath, content] of Object.entries(fileContents)) {
         zip.file(filePath, content);
       }
 
-      // Generate the zip file
       const zipBlob = await zip.generateAsync({ type: 'blob' });
-
-      // Create FormData to send the zip file
       const formData = new FormData();
       formData.append('siteId', website?.siteId || '');
       formData.append('websiteId', website?.id || '');
       formData.append('chatId', currentChatId || '');
       formData.append('description', chatDescription || '');
+      formData.append('pluginId', pluginId);
       formData.append('zipFile', zipBlob, 'project.zip');
 
-      // Deploy using the API route with zip file
       const response = await fetch('/api/deploy', {
         method: 'POST',
         body: formData,
-        signal: abortControllerRef.current.signal,
+        signal: abortControllerRef.current?.signal,
       });
 
       if (!response.ok) {
@@ -288,7 +293,6 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
               addDeploymentLog(data.message);
 
               if (data.status === 'success' && data.data?.deploy?.url) {
-                // Update the website store with the new deployment info
                 if (data.data.website) {
                   setWebsite(data.data.website);
                 }
@@ -303,13 +307,10 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
                   </div>,
                 );
 
-                // Close the reader when deployment is successful
                 await reader.cancel();
                 break;
               } else if (data.status === 'error') {
                 toast.error(data.message);
-
-                // Close the reader when there's an error
                 await reader.cancel();
                 break;
               }
@@ -317,7 +318,6 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           }
         }
       } finally {
-        // Ensure reader is closed
         await reader.cancel();
       }
     } catch (error) {
@@ -327,20 +327,6 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Add cleanup when modal is closed
-  const handleModalClose = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    setIsModalOpen(false);
-  };
-
-  const handlePublishClick = () => {
-    setModalMode('publish');
-    startDeployment();
   };
 
   const renderDropdownContent = () => {
@@ -360,11 +346,15 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
     return (
       <>
         <button
-          onClick={handlePublishClick}
+          onClick={(e: MouseEvent<HTMLButtonElement>) => {
+            e.preventDefault();
+            setModalMode('publish');
+            setIsModalOpen(true);
+          }}
           className="w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
         >
           <div className="i-ph:rocket-launch w-4 h-4" />
-          Publish New Version
+          Publish
         </button>
         <button
           onClick={handleSettings}

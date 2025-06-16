@@ -1,34 +1,74 @@
 import { useEffect, useRef, useState } from 'react';
-import { classNames } from '~/utils/classNames';
 import { motion } from 'framer-motion';
-import { CloseCircle } from 'iconsax-reactjs';
 import { useStore } from '@nanostores/react';
 import { websiteStore } from '~/lib/stores/websiteStore';
+
+interface PluginMetadata {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  theme: {
+    primary: string;
+    background: string;
+    hover: string;
+    dark: {
+      primary: string;
+      background: string;
+      hover: string;
+    };
+  };
+  isEnabled: boolean;
+}
 
 interface PublishProgressModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCancel: () => void;
   mode: 'publish' | 'settings';
-  onPublishClick: () => void;
+  onPublishClick: (pluginId: string) => void;
 }
 
 // Constants
 const PUBLISH_STEPS = [
   { title: 'Initializing', description: 'Preparing deployment environment' },
-  { title: 'Site Setup', description: 'Creating or updating Netlify site' },
+  { title: 'Site Setup', description: 'Creating or updating site' },
   { title: 'File Preparation', description: 'Preparing project files' },
   { title: 'Dependencies', description: 'Installing project dependencies' },
   { title: 'Configuration', description: 'Configuring deployment settings' },
-  { title: 'Deployment', description: 'Deploying to Netlify' },
+  { title: 'Deployment', description: 'Deploying your site' },
 ];
 
 // Main Component
 export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublishClick }: PublishProgressModalProps) {
   // State
-  const { website, isLoading, deploymentProgress, deploymentLogs } = useStore(websiteStore);
+  const { website, deploymentProgress, deploymentLogs } = useStore(websiteStore);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const [isCopying, setIsCopying] = useState(false);
+  const [plugins, setPlugins] = useState<PluginMetadata[]>([]);
+  const [selectedPlugin, setSelectedPlugin] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadPlugins = async () => {
+      try {
+        const response = await fetch('/api/deployment-plugins');
+
+        if (!response.ok) {
+          throw new Error('Failed to load plugins');
+        }
+
+        const pluginMetadata = (await response.json()) as PluginMetadata[];
+        setPlugins(pluginMetadata);
+
+        if (pluginMetadata.length > 0) {
+          setSelectedPlugin(pluginMetadata[0].id);
+        }
+      } catch (error) {
+        console.error('Error loading plugins:', error);
+      }
+    };
+    loadPlugins();
+  }, []);
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -72,171 +112,174 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
   }
 
   // Render Functions
-  const renderLoadingState = () => (
-    <div className="flex flex-col items-center justify-center h-full">
-      <div className="animate-spin rounded-full h-12 w-12 border-4 border-accent-500 border-t-transparent mb-4" />
-      <div className="text-gray-700 dark:text-gray-300">Creating site...</div>
-    </div>
-  );
+  const renderProgressSteps = () => {
+    return (
+      <div className="mt-6">
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Deployment Progress</div>
+        <div className="space-y-4">
+          {PUBLISH_STEPS.map((step, index) => {
+            const currentStep = deploymentProgress?.step || 0;
+            const isCompleted = currentStep > index;
+            const isCurrent = currentStep === index + 1;
 
-  const renderProgressSteps = () => (
-    <div className="grid grid-cols-6 gap-4 mb-8">
-      {PUBLISH_STEPS.map((step, index) => {
-        const isActive = deploymentProgress?.step === index + 1;
-        const isCompleted = deploymentProgress?.step ? deploymentProgress.step > index + 1 : false;
-        const isError = deploymentProgress?.status === 'error' && deploymentProgress.step === index + 1;
-
-        return (
-          <div
-            key={index}
-            className={classNames(
-              'flex flex-col items-center text-center',
-              isActive ? 'text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400',
-            )}
-          >
-            <div
-              className={classNames('w-8 h-8 rounded-full flex items-center justify-center mb-2', {
-                'bg-accent-500 text-white': isActive || isCompleted,
-                'bg-gray-100 dark:bg-gray-800': !isActive && !isCompleted,
-                'bg-red-500 text-white': isError,
-              })}
-            >
-              {isCompleted ? (
-                <div className="i-ph:check w-4 h-4" />
-              ) : isError ? (
-                <div className="i-ph:x w-4 h-4" />
-              ) : (
-                <span className="text-sm font-medium">{index + 1}</span>
-              )}
-            </div>
-            <div className="text-xs font-medium">{step.title}</div>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  const renderProgressBar = () => (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-gray-500 dark:text-gray-400">
-          {PUBLISH_STEPS[deploymentProgress!.step - 1]?.title}
-        </span>
-        <span className="text-sm text-gray-500 dark:text-gray-400">In Progress</span>
+            return (
+              <div
+                key={index}
+                className={`flex items-start ${
+                  isCompleted
+                    ? 'text-green-600 dark:text-green-500'
+                    : isCurrent
+                      ? 'text-blue-600 dark:text-blue-500'
+                      : 'text-gray-400 dark:text-gray-500'
+                }`}
+              >
+                <div className="flex-shrink-0">
+                  {isCompleted ? (
+                    <div className="i-ph:check-circle w-5 h-5" />
+                  ) : isCurrent ? (
+                    <div className="i-ph:circle-notch-bold animate-spin w-5 h-5" />
+                  ) : (
+                    <div className="i-ph:circle w-5 h-5" />
+                  )}
+                </div>
+                <div className="ml-3">
+                  <div className="text-sm font-medium">{step.title}</div>
+                  <div className="text-xs">{step.description}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-      <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 mb-2">
-        <div
-          className="bg-accent-500 h-2.5 rounded-full transition-all duration-300"
-          style={{
-            width: `${((deploymentProgress!.step - 1) / deploymentProgress!.totalSteps) * 100}%`,
-          }}
-        />
-      </div>
-    </div>
-  );
+    );
+  };
 
-  const renderSettingsView = () => {
-    if (!website) {
-      return null;
-    }
+  const renderProgressBar = () => {
+    const progress = deploymentProgress ? (deploymentProgress.step / deploymentProgress.totalSteps) * 100 : 0;
 
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            readOnly
-            value={website.siteUrl || ''}
-            className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-gray-700 dark:text-gray-300"
-          />
-          {website.siteUrl && (
-            <a
-              href={website.siteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
-            >
-              View
-              <div className="i-ph:arrow-square-out w-4 h-4" />
-            </a>
-          )}
+      <div className="mt-6">
+        <div className="relative pt-1">
+          <div className="flex mb-2 items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 dark:text-blue-500 bg-blue-200 dark:bg-blue-900">
+                Progress
+              </span>
+            </div>
+            <div className="text-right">
+              <span className="text-xs font-semibold inline-block text-blue-600 dark:text-blue-500">
+                {Math.round(progress)}%
+              </span>
+            </div>
+          </div>
+          <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200 dark:bg-blue-900">
+            <div
+              style={{ width: `${progress}%` }}
+              className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 dark:bg-blue-600 transition-all duration-500"
+            />
+          </div>
         </div>
+      </div>
+    );
+  };
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onPublishClick}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
-          >
-            <div className="i-ph:rocket-launch w-4 h-4" />
-            Publish New Version
-          </button>
-
-          {website.siteUrl && (
-            <button
-              onClick={handleCopyLink}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
-            >
-              {isCopying ? (
-                <>
-                  <div className="i-ph:check w-4 h-4" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <div className="i-ph:copy w-4 h-4" />
-                  Copy Link
-                </>
+  const renderSettingsView = () => {
+    return (
+      <div className="mt-6">
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Site Settings</div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Site Name</label>
+            <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">{website?.siteName || 'Not set'}</div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Site URL</label>
+            <div className="mt-1 flex items-center">
+              <div className="text-sm text-gray-500 dark:text-gray-400">{website?.siteUrl || 'Not set'}</div>
+              {website?.siteUrl && (
+                <button
+                  onClick={handleCopyLink}
+                  className="ml-2 text-blue-600 dark:text-blue-500 hover:text-blue-700 dark:hover:text-blue-400"
+                >
+                  {isCopying ? <div className="i-ph:check w-4 h-4" /> : <div className="i-ph:copy w-4 h-4" />}
+                </button>
               )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderPluginSelection = () => {
+    return (
+      <div className="mt-6">
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Select Deployment Target</div>
+        <div className="space-y-4">
+          {plugins.map((plugin) => (
+            <button
+              key={plugin.id}
+              onClick={() => {
+                setSelectedPlugin(plugin.id);
+                onPublishClick(plugin.id);
+              }}
+              className={`w-full p-4 rounded-lg border bg-transparent ${
+                selectedPlugin === plugin.id
+                  ? `border-${plugin.theme.primary} bg-${plugin.theme.background} dark:bg-${plugin.theme.dark.background}`
+                  : `border-gray-200 dark:border-gray-700 hover:border-${plugin.theme.hover} dark:hover:border-${plugin.theme.dark.hover}`
+              }`}
+            >
+              <div className="flex items-center">
+                <div
+                  className={`w-8 h-8 flex items-center justify-center ${
+                    selectedPlugin === plugin.id ? `text-${plugin.theme.primary}` : `text-${plugin.theme.primary}`
+                  }`}
+                >
+                  <div className={plugin.icon} />
+                </div>
+                <div className="ml-4 text-left">
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{plugin.name}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{plugin.description}</div>
+                </div>
+              </div>
             </button>
-          )}
+          ))}
         </div>
       </div>
     );
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-[100]">
-      <motion.div
-        className="absolute inset-0 bg-black/80 backdrop-blur-lg"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-      />
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" />
 
-      <motion.div
-        className={classNames(
-          'w-[900px] h-[644px]',
-          'bg-white dark:bg-[#111111]',
-          'rounded-2xl shadow-2xl',
-          'border border-[#E5E5E5] dark:border-[#2A2A2A]',
-          'flex flex-col overflow-hidden',
-          'relative',
-        )}
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 relative">
-          <div className="absolute top-4 right-4 z-10">
-            <CloseCircle
-              variant="Bold"
-              className="w-6 h-6 text-gray-500 dark:text-white hover:text-gray-700 dark:hover:text-gray-400 transition-colors cursor-pointer"
-              onClick={handleClose}
-            />
-          </div>
+        <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">
+          &#8203;
+        </span>
 
-          <div className="p-6 pt-16">
-            <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-6">
-              {mode === 'publish' ? 'Publishing Wizard' : 'Site Settings'}
-            </h3>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+          className="relative inline-block transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 px-4 pt-5 pb-4 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6 sm:align-middle"
+        >
+          <div>
+            <div className="mt-3 text-center sm:mt-5">
+              <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
+                {mode === 'publish' ? 'Publish Your Site' : 'Site Settings'}
+              </h3>
+              <div className="mt-2">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {mode === 'publish'
+                    ? 'Choose a deployment target and publish your site'
+                    : 'View and manage your site settings'}
+                </p>
+              </div>
+            </div>
 
             {(() => {
-              if (isLoading && mode === 'settings' && !website) {
-                return renderLoadingState();
-              }
-
               if (mode === 'publish') {
                 if (deploymentProgress?.status === 'in_progress') {
                   return (
@@ -270,16 +313,16 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
                 if (deploymentProgress?.status === 'success') {
                   return renderSettingsView();
                 }
+
+                return renderPluginSelection();
               } else {
                 // Settings mode
                 return renderSettingsView();
               }
-
-              return null;
             })()}
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }
