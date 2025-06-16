@@ -47,6 +47,7 @@ export interface BaseAccessor {
 
 export interface BaseAccessorConstructor {
   new (): BaseAccessor;
+
   /**
    * Determines if this accessor type can handle the given database URL
    * @param databaseUrl - The connection URL to check

@@ -54,21 +54,7 @@ export class SQLiteAccessor implements BaseAccessor {
 
     const normalizedQuery = query.trim().toUpperCase();
 
-    if (!normalizedQuery.startsWith('SELECT') && !normalizedQuery.startsWith('WITH')) {
-      throw new Error('SQL query must start with SELECT or WITH');
-    }
-
-    const forbiddenKeywords = [
-      'INSERT ',
-      'UPDATE ',
-      'DELETE ',
-      'DROP ',
-      'TRUNCATE ',
-      'ALTER ',
-      'CREATE ',
-      'GRANT ',
-      'REVOKE ',
-    ];
+    const forbiddenKeywords = ['DROP ', 'TRUNCATE ', 'ALTER ', 'CREATE ', 'GRANT ', 'REVOKE '];
 
     if (forbiddenKeywords.some((keyword) => normalizedQuery.includes(keyword))) {
       throw new Error('SQL query contains forbidden keywords');
@@ -83,9 +69,9 @@ export class SQLiteAccessor implements BaseAccessor {
     try {
       // Get all tables
       const tables: TableInfo[] = await this._db.all(
-        `SELECT name as table_name 
-         FROM sqlite_master 
-         WHERE type='table' 
+        `SELECT name as table_name
+         FROM sqlite_master
+         WHERE type='table'
          AND name NOT LIKE 'sqlite_%'
          ORDER BY name`,
       );

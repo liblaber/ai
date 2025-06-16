@@ -21,7 +21,7 @@ export class MySQLAccessor implements BaseAccessor {
       await connection.end();
 
       return true;
-    } catch (error: any) {
+    } catch {
       return false;
     }
   }

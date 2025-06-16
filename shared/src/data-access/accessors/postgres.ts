@@ -34,7 +34,7 @@ export class PostgresAccessor implements BaseAccessor {
       await pool.end();
 
       return true;
-    } catch (error: any) {
+    } catch {
       await pool.end();
       return false;
     }
