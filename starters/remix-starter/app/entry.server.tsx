@@ -17,18 +17,20 @@ export default async function handleRequest(
   responseStatusCode: number,
   responseHeaders: Headers,
   remixContext: EntryContext,
-  loadContext: AppLoadContext,
+  _loadContext: AppLoadContext,
 ) {
-  let prohibitOutOfOrderStreaming = isBotRequest(request.headers.get('user-agent')) || remixContext.isSpaMode;
+  const prohibitOutOfOrderStreaming = isBotRequest(request.headers.get('user-agent')) || remixContext.isSpaMode;
 
   return prohibitOutOfOrderStreaming
     ? handleBotRequest(request, responseStatusCode, responseHeaders, remixContext)
     : handleBrowserRequest(request, responseStatusCode, responseHeaders, remixContext);
 }
 
-// We have some Remix apps in the wild already running with isbot@3 so we need
-// to maintain backwards compatibility even though we want new apps to use
-// isbot@4.  That way, we can ship this as a minor Semver update to @remix-run/dev.
+/*
+ * We have some Remix apps in the wild already running with isbot@3 so we need
+ * to maintain backwards compatibility even though we want new apps to use
+ * isbot@4.  That way, we can ship this as a minor Semver update to @remix-run/dev.
+ */
 function isBotRequest(userAgent: string | null) {
   if (!userAgent) {
     return false;
@@ -55,6 +57,7 @@ function handleBotRequest(
       {
         onAllReady() {
           shellRendered = true;
+
           const body = new PassThrough();
           const stream = createReadableStreamFromReadable(body);
 
@@ -74,9 +77,12 @@ function handleBotRequest(
         },
         onError(error: unknown) {
           responseStatusCode = 500;
-          // Log streaming rendering errors from inside the shell.  Don't log
-          // errors encountered during initial shell rendering since they'll
-          // reject and get logged in handleDocumentRequest.
+
+          /*
+           * Log streaming rendering errors from inside the shell.  Don't log
+           * errors encountered during initial shell rendering since they'll
+           * reject and get logged in handleDocumentRequest.
+           */
           if (shellRendered) {
             console.error(error);
           }
@@ -101,6 +107,7 @@ function handleBrowserRequest(
       {
         onShellReady() {
           shellRendered = true;
+
           const body = new PassThrough();
           const stream = createReadableStreamFromReadable(body);
 
@@ -120,9 +127,12 @@ function handleBrowserRequest(
         },
         onError(error: unknown) {
           responseStatusCode = 500;
-          // Log streaming rendering errors from inside the shell.  Don't log
-          // errors encountered during initial shell rendering since they'll
-          // reject and get logged in handleDocumentRequest.
+
+          /*
+           * Log streaming rendering errors from inside the shell.  Don't log
+           * errors encountered during initial shell rendering since they'll
+           * reject and get logged in handleDocumentRequest.
+           */
           if (shellRendered) {
             console.error(error);
           }
