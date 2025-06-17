@@ -28,16 +28,8 @@ export class LocalSystemStorage implements StorageService {
   }
 
   async get(key: string): Promise<Buffer> {
-    try {
-      const filePath = this._getFilePath(key);
-      return await fs.readFile(filePath);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return Buffer.from('');
-      }
-
-      throw error;
-    }
+    const filePath = this._getFilePath(key);
+    return await fs.readFile(filePath);
   }
 
   async delete(key: string): Promise<void> {
