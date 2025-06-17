@@ -9,6 +9,7 @@ import {
   SQL_MODEL_REGEX,
   SQL_PROVIDER_REGEX,
   ASK_LIBLAB_REGEX,
+  FILES_REGEX,
 } from '~/utils/constants';
 import { type FileMap, IGNORE_PATTERNS } from './constants';
 import ignore from 'ignore';
@@ -66,7 +67,8 @@ export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
               .replace(SQL_PROVIDER_REGEX, '')
               .replace(FIRST_USER_MESSAGE_REGEX, '')
               .replace(DATA_SOURCE_ID_REGEX, '')
-              .replace(ASK_LIBLAB_REGEX, ''),
+              .replace(ASK_LIBLAB_REGEX, '')
+              .replace(FILES_REGEX, ''),
           };
         }
 
@@ -79,7 +81,8 @@ export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
         .replace(SQL_PROVIDER_REGEX, '')
         .replace(FIRST_USER_MESSAGE_REGEX, '')
         .replace(DATA_SOURCE_ID_REGEX, '')
-        .replace(ASK_LIBLAB_REGEX, '');
+        .replace(ASK_LIBLAB_REGEX, '')
+        .replace(FILES_REGEX, '');
 
   return {
     model,

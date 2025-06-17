@@ -1,4 +1,4 @@
-import { type ChangeEvent, forwardRef, type KeyboardEvent, useState } from 'react';
+import { type ChangeEvent, forwardRef, type KeyboardEvent } from 'react';
 import { classNames } from '~/utils/classNames';
 import { DataSourcePicker } from './DataSourcePicker';
 import FilePreview from './FilePreview';
@@ -15,13 +15,30 @@ interface HomepageTextareaProps {
   onSend: (e: React.UIEvent) => void;
   isStreaming?: boolean;
   handleStop?: () => void;
+  uploadedFiles: File[];
+  setUploadedFiles: (files: File[]) => void;
+  imageDataList: string[];
+  setImageDataList: (dataList: string[]) => void;
 }
 
 export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextareaProps>(
-  ({ value, onChange, onKeyDown, onPaste, onSend, isStreaming = false, handleStop }, ref) => {
+  (
+    {
+      value,
+      onChange,
+      onKeyDown,
+      onPaste,
+      onSend,
+      isStreaming = false,
+      handleStop,
+      uploadedFiles,
+      setUploadedFiles,
+      imageDataList,
+      setImageDataList,
+    },
+    ref,
+  ) => {
     const { dataSources } = useDataSourcesStore();
-    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-    const [imageDataList, setImageDataList] = useState<string[]>([]);
 
     const handleConnectDataSource = () => {
       openSettingsPanel('data', true, true);
@@ -47,8 +64,8 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
               files={uploadedFiles}
               imageDataList={imageDataList}
               onRemove={(index) => {
-                setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
-                setImageDataList((prev) => prev.filter((_, i) => i !== index));
+                setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+                setImageDataList(imageDataList.filter((_, i) => i !== index));
               }}
             />
           </div>
@@ -71,8 +88,8 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
 
             reader.onload = (e) => {
               const base64Image = e.target?.result as string;
-              setUploadedFiles((prev) => [...prev, file]);
-              setImageDataList((prev) => [...prev, base64Image]);
+              setUploadedFiles([...uploadedFiles, file]);
+              setImageDataList([...imageDataList, base64Image]);
             };
             reader.readAsDataURL(file);
           });
@@ -139,8 +156,8 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
           files={uploadedFiles}
           imageDataList={imageDataList}
           onRemove={(index) => {
-            setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
-            setImageDataList((prev) => prev.filter((_, i) => i !== index));
+            setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+            setImageDataList(imageDataList.filter((_, i) => i !== index));
           }}
         />
         <ClientOnly>

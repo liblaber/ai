@@ -99,6 +99,10 @@ export default function Index() {
             }}
             onSend={handleSendMessage}
             isStreaming={false}
+            uploadedFiles={uploadedFiles}
+            setUploadedFiles={setUploadedFiles}
+            imageDataList={imageDataList}
+            setImageDataList={setImageDataList}
           />
         </div>
       </div>

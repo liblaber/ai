@@ -11,6 +11,7 @@ export const FIRST_USER_MESSAGE_REGEX = /\[FirstUserMessage: (.*?)\]\n\n/;
 export const ASK_LIBLAB_REGEX = /\[AskLiblab: (.*?)\]\n\n/;
 export const PROMPT_COOKIE_KEY = 'cachedPrompt';
 export const DATA_SOURCE_ID_REGEX = /\[DataSourceId: (.*?)\]\n\n/;
+export const FILES_REGEX = /\[Files: (.*?)\]\n\n/;
 
 export enum MessageRole {
   User = 'user',

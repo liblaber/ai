@@ -1,4 +1,4 @@
-import { type ChangeEvent, forwardRef, type KeyboardEvent, useState } from 'react';
+import { type ChangeEvent, forwardRef, type KeyboardEvent } from 'react';
 import { classNames } from '~/utils/classNames';
 import { DataSourcePicker } from './DataSourcePicker';
 import { IconButton } from '~/components/ui/IconButton';
@@ -21,6 +21,10 @@ interface ChatTextareaProps {
   onDrop: (e: React.DragEvent) => void;
   minHeight: number;
   maxHeight: number;
+  uploadedFiles?: File[];
+  setUploadedFiles?: (files: File[]) => void;
+  imageDataList?: string[];
+  setImageDataList?: (dataList: string[]) => void;
   onSend: (e: React.UIEvent) => void;
   isStreaming?: boolean;
   handleStop?: () => void;
@@ -39,6 +43,10 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
       onDrop,
       minHeight,
       maxHeight,
+      uploadedFiles = [],
+      setUploadedFiles,
+      imageDataList = [],
+      setImageDataList,
       onSend,
       isStreaming = false,
       handleStop,
@@ -46,8 +54,6 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
     ref,
   ) => {
     const { dataSources } = useDataSourcesStore();
-    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-    const [imageDataList, setImageDataList] = useState<string[]>([]);
 
     const handleConnectDataSource = () => {
       openSettingsPanel('data', true);
@@ -74,8 +80,8 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
 
           reader.onload = (e) => {
             const base64Image = e.target?.result as string;
-            setUploadedFiles((prev) => [...prev, file]);
-            setImageDataList((prev) => [...prev, base64Image]);
+            setUploadedFiles?.([...uploadedFiles, file]);
+            setImageDataList?.([...imageDataList, base64Image]);
           };
           reader.readAsDataURL(file);
         }
@@ -89,8 +95,8 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
           files={uploadedFiles}
           imageDataList={imageDataList}
           onRemove={(index) => {
-            setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
-            setImageDataList((prev) => prev.filter((_, i) => i !== index));
+            setUploadedFiles?.(uploadedFiles.filter((_, i) => i !== index));
+            setImageDataList?.(imageDataList.filter((_, i) => i !== index));
           }}
         />
         <ClientOnly>
