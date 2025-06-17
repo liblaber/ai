@@ -115,7 +115,7 @@ export default function AddDataSourceForm({
     }
 
     if (!dbName) {
-      setError('Please enter a database name');
+      setError('Please enter a datasource name');
       setTestResult(null);
 
       return;

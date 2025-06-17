@@ -10,6 +10,8 @@ export class MySQLAccessor implements BaseAccessor {
   readonly label = 'MySQL';
   private _connection: Connection | null = null;
 
+  readonly connectionStringFormat = 'mysql://username:password@host:port/database';
+
   static isAccessor(databaseUrl: string): boolean {
     return databaseUrl.startsWith('mysql://');
   }
@@ -38,10 +40,6 @@ export class MySQLAccessor implements BaseAccessor {
       console.error('Error executing query:', error);
       throw new Error((error as Error)?.message);
     }
-  }
-
-  connectionStringFormat(): string {
-    return 'mysql://username:password@host:port/database';
   }
 
   validate(connectionString: string): void {

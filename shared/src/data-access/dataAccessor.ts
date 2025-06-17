@@ -23,7 +23,7 @@ export class DataAccessor {
       return {
         value: instance.label.toLowerCase(),
         label: instance.label,
-        connectionStringFormat: instance.connectionStringFormat(),
+        connectionStringFormat: instance.connectionStringFormat,
       };
     });
   }

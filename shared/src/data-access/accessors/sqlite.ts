@@ -18,6 +18,8 @@ export class SQLiteAccessor implements BaseAccessor {
   readonly label = 'SQLite';
   private _db: SQLiteDatabase | null = null;
 
+  readonly connectionStringFormat = 'sqlite://path/to/database.db';
+
   static isAccessor(databaseUrl: string): boolean {
     return databaseUrl.startsWith('sqlite://');
   }
@@ -45,10 +47,6 @@ export class SQLiteAccessor implements BaseAccessor {
       console.error('Error executing query:', error);
       throw new Error((error as Error)?.message);
     }
-  }
-
-  connectionStringFormat(): string {
-    return 'sqlite://path/to/database.db';
   }
 
   validate(connectionString: string): void {
