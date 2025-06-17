@@ -42,7 +42,7 @@ export const loader: LoaderFunction = async ({ params: { conversationId, id } })
       },
     });
   } catch (error) {
-    console.error('Failed to fetch snapshot:', error);
+    logger.error('Failed to fetch snapshot:', error);
     return Response.json({ error: 'Failed to fetch snapshot' }, { status: 500 });
   }
 };

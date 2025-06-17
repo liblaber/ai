@@ -38,7 +38,7 @@ export const loader: LoaderFunction = async ({ params: { conversationId } }) => 
       },
     });
   } catch (error) {
-    console.error('Failed to fetch latest snapshot:', error);
+    logger.error('Failed to fetch latest snapshot:', error);
     return Response.json({ error: 'Failed to fetch latest snapshot' }, { status: 500 });
   }
 };

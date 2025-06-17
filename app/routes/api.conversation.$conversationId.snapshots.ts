@@ -4,6 +4,7 @@ import { StorageServiceFactory } from '~/lib/services/storage/storage-service-fa
 import type { FileMap } from '~/lib/stores/files';
 import { createId } from '@paralleldrive/cuid2';
 import { snapshotService } from '~/lib/services/snapshotService';
+import { logger } from '~/utils/logger';
 
 export const action: ActionFunction = async ({ request, params: { conversationId } }) => {
   if (request.method !== 'POST') {
@@ -30,7 +31,9 @@ export const action: ActionFunction = async ({ request, params: { conversationId
     const snapshotId = createId();
     const storageKey = getSnapshotKey(conversationId, snapshotId);
 
-    await prisma?.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx) => {
+      logger.info(`Creating snapshot entry in db ${snapshotId} for conversation ${conversationId}`);
+
       await snapshotService.createSnapshot(
         {
           id: snapshotId,
@@ -42,13 +45,15 @@ export const action: ActionFunction = async ({ request, params: { conversationId
         tx,
       );
 
+      logger.info(`Saving snapshot files to storage ${storageKey}`);
+
       const serializedData = Buffer.from(JSON.stringify(body.fileMap, null, 2));
       await storageService.save(storageKey, serializedData);
     });
 
     return Response.json({ id: snapshotId });
   } catch (error) {
-    console.error('Failed to store snapshot:', error);
+    logger.error('Failed to store snapshot:', error);
     return Response.json({ error: 'Failed to store snapshot' }, { status: 500 });
   }
 };
