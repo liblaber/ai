@@ -57,15 +57,34 @@ model Message {
   finishReason   String
   role           String       @default("USER") @map("role")
   createdAt      DateTime     @default(now())
+  Snapshot       Snapshot?
 
   @@map("message")
 }
 
 model Conversation {
-  id        String    @id @default(cuid())
+  id        String     @id @default(cuid())
   messages  Message[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  Snapshot  Snapshot[]
 
   @@map("conversation")
+}
+
+enum StorageType {
+  FILE_SYSTEM
+}
+
+model Snapshot {
+  id             String       @id @default(cuid())
+  storageType    StorageType
+  storageKey     String
+  createdAt      DateTime     @default(now()) @map("created_at")
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  messageId      String?      @unique
+  message        Message?     @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@map("snapshot")
 }
