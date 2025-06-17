@@ -1,6 +1,6 @@
 import { StorageType } from '@prisma/client';
 import type { StorageService } from './storage-service';
-import { LocalSystemStorage } from './file-system-storage-service';
+import { LocalSystemStorageService } from './file-system-storage-service';
 
 export class StorageServiceFactory {
   private static _instances: Map<StorageType, StorageService> = new Map();
@@ -11,7 +11,7 @@ export class StorageServiceFactory {
     if (!this._instances.has(this._storageType)) {
       switch (this._storageType) {
         case StorageType.FILE_SYSTEM:
-          this._instances.set(this._storageType, new LocalSystemStorage());
+          this._instances.set(this._storageType, new LocalSystemStorageService());
           break;
         default:
           throw new Error(`Unsupported storage type: ${this._storageType}`);

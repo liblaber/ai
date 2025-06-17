@@ -3,7 +3,7 @@ import { StorageType } from '@prisma/client';
 import fs from 'fs/promises';
 import path from 'path';
 
-export class LocalSystemStorage implements StorageService {
+export class LocalSystemStorageService implements StorageService {
   private readonly _baseDir: string;
 
   constructor(baseDir: string = process.cwd()) {
