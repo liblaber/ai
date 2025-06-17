@@ -267,11 +267,7 @@ export const ChatImpl = memo(
               askLiblab,
               dataList,
             }),
-            experimental_attachments: dataList.map((imageData, index) => ({
-              name: files[index].name,
-              contentType: files[index].type,
-              url: imageData,
-            })),
+            experimental_attachments: createExperimentalAttachments(dataList, files),
           },
           {
             body: {
@@ -296,11 +292,7 @@ export const ChatImpl = memo(
               askLiblab,
               dataList,
             }),
-            experimental_attachments: dataList.map((imageData, index) => ({
-              name: files[index].name,
-              contentType: files[index].type,
-              url: imageData,
-            })),
+            experimental_attachments: createExperimentalAttachments(dataList, files),
           },
           {
             body: {
@@ -433,11 +425,7 @@ export const ChatImpl = memo(
               dataSourceId: selectedDataSourceId!,
               dataList,
             }),
-            experimental_attachments: dataList.map((imageData, index) => ({
-              name: files[index].name,
-              contentType: files[index].type,
-              url: imageData,
-            })),
+            experimental_attachments: createExperimentalAttachments(dataList, files),
           },
         ]);
         reload({
@@ -630,6 +618,13 @@ interface MessageWithModelInfo {
   askLiblab?: boolean;
   dataList?: string[];
 }
+
+const createExperimentalAttachments = (dataList: string[], files: File[]) =>
+  dataList.map((imageData, index) => ({
+    name: files[index]?.name || `image-${index}`,
+    contentType: files[index]?.type || 'image/png',
+    url: imageData,
+  }));
 
 const formatMessageWithModelInfo = ({
   model,
