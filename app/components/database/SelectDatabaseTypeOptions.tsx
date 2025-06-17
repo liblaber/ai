@@ -6,18 +6,19 @@ import { useEffect } from 'react';
 export type DataSourceOption = {
   value: string;
   label: string;
+  connectionStringFormat: string;
   available: boolean;
 };
 
 export const SAMPLE_DATABASE = 'sample';
 
 export const DATASOURCES: DataSourceOption[] = [
-  { value: SAMPLE_DATABASE, label: 'Sample Database', available: true },
-  { value: 'mongo', label: 'Mongo', available: false },
-  { value: 'hubspot', label: 'Hubspot', available: false },
-  { value: 'salesforce', label: 'Salesforce', available: false },
-  { value: 'jira', label: 'Jira', available: false },
-  { value: 'github', label: 'Github', available: false },
+  { value: SAMPLE_DATABASE, label: 'Sample Database', available: true, connectionStringFormat: '' },
+  { value: 'mongo', label: 'Mongo', available: false, connectionStringFormat: '' },
+  { value: 'hubspot', label: 'Hubspot', available: false, connectionStringFormat: '' },
+  { value: 'salesforce', label: 'Salesforce', available: false, connectionStringFormat: '' },
+  { value: 'jira', label: 'Jira', available: false, connectionStringFormat: '' },
+  { value: 'github', label: 'Github', available: false, connectionStringFormat: '' },
 ];
 
 export const SingleValueWithTooltip = (props: any) => {
@@ -42,6 +43,7 @@ export function SelectDatabaseTypeOptions(props: any) {
     ...(types || []).map((type) => ({
       value: type.value,
       label: type.label,
+      connectionStringFormat: type.connectionStringFormat,
       available: true,
     })),
     ...DATASOURCES,

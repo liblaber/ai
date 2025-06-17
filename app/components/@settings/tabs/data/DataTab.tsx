@@ -95,6 +95,7 @@ export default function DataTab() {
   const handleEdit = (dataSource: DataSource) => {
     setSelectedDataSource(dataSource);
     setShowEditForm(true);
+    setShowAddFormLocal(false);
   };
 
   const handleBack = () => {
@@ -105,6 +106,8 @@ export default function DataTab() {
 
   const handleAdd = () => {
     setShowAddFormLocal(true);
+    setShowEditForm(false);
+    setSelectedDataSource(null);
   };
 
   return (

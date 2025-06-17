@@ -10,7 +10,6 @@ import {
   SelectDatabaseTypeOptions,
   SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
-import { DatabaseConnectionParser } from '~/utils/databaseConnectionParser';
 
 interface DataSourceResponse {
   success: boolean;
@@ -35,6 +34,7 @@ export default function AddDataSourceForm({
   onSuccess,
 }: AddDataSourceFormProps) {
   const [dbType, setDbType] = useState<DataSourceOption>(DATASOURCES[0]);
+  const [dbName, setDbName] = useState('');
   const [connStr, setConnStr] = useState('');
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
@@ -51,8 +51,6 @@ export default function AddDataSourceForm({
           setError('Please enter a connection string');
           return;
         }
-
-        DatabaseConnectionParser.validate(connStr);
 
         const formData = new FormData();
         formData.append('connectionString', connStr);
@@ -116,6 +114,13 @@ export default function AddDataSourceForm({
       return;
     }
 
+    if (!dbName) {
+      setError('Please enter a datasource name');
+      setTestResult(null);
+
+      return;
+    }
+
     if (!connStr) {
       setError('Please enter a connection string');
       setTestResult(null);
@@ -128,10 +133,8 @@ export default function AddDataSourceForm({
     setTestResult(null);
 
     try {
-      const connectionDetails = DatabaseConnectionParser.parse(connStr);
-
       const formData = new FormData();
-      formData.append('name', connectionDetails.database);
+      formData.append('name', dbName);
       formData.append('connectionString', connStr);
 
       const response = await fetch('/api/data-sources', {
@@ -145,7 +148,7 @@ export default function AddDataSourceForm({
         toast.success('Data source added successfully');
         onSuccess();
       } else {
-        const message = data.message || 'Failed to add data source';
+        const message = data.error || 'Failed to add data source';
         toast.error(message);
       }
     } catch (error) {
@@ -171,6 +174,7 @@ export default function AddDataSourceForm({
                   setDbType(value as DataSourceOption);
                   setError(null);
                   setTestResult(null);
+                  setDbName('');
                   setConnStr('');
                 }}
                 options={databaseTypes}
@@ -187,29 +191,51 @@ export default function AddDataSourceForm({
           </div>
 
           {dbType.value !== SAMPLE_DATABASE && (
-            <div>
-              <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
-                Connection String
-              </label>
-              <input
-                type="text"
-                value={connStr}
-                onChange={(e) => setConnStr(e.target.value)}
-                disabled={isSubmitting}
-                className={classNames(
-                  'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                  'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary text-base',
-                  'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
-                  'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
-                  'transition-all duration-200',
-                  'disabled:opacity-50 disabled:cursor-not-allowed',
-                )}
-                placeholder={`${dbType.value}://username:password@host:port/database`}
-              />
-              <label className="mb-3 block !text-[13px] text-liblab-elements-textSecondary mt-2">
-                e.g. {dbType.value}://username:password@host:port/database
-              </label>
-            </div>
+            <>
+              <div>
+                <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
+                  Database Name
+                </label>
+                <input
+                  type="text"
+                  value={dbName}
+                  onChange={(e) => setDbName(e.target.value)}
+                  disabled={isSubmitting}
+                  className={classNames(
+                    'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                    'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary text-base',
+                    'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                    'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                    'transition-all duration-200',
+                    'disabled:opacity-50 disabled:cursor-not-allowed',
+                  )}
+                  placeholder="Enter database name"
+                />
+              </div>
+              <div>
+                <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
+                  Connection String
+                </label>
+                <input
+                  type="text"
+                  value={connStr}
+                  onChange={(e) => setConnStr(e.target.value)}
+                  disabled={isSubmitting}
+                  className={classNames(
+                    'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                    'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary text-base',
+                    'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                    'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                    'transition-all duration-200',
+                    'disabled:opacity-50 disabled:cursor-not-allowed',
+                  )}
+                  placeholder={`${dbType.connectionStringFormat}`}
+                />
+                <label className="mb-3 block !text-[13px] text-liblab-elements-textSecondary mt-2">
+                  e.g. {dbType.connectionStringFormat}
+                </label>
+              </div>
+            </>
           )}
 
           {error && !testResult && (

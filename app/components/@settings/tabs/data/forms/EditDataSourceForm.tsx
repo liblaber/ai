@@ -10,7 +10,6 @@ import {
   SelectDatabaseTypeOptions,
   SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
-import { DatabaseConnectionParser } from '~/utils/databaseConnectionParser';
 import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
 import { Eye, EyeSlash } from 'iconsax-reactjs';
 
@@ -39,9 +38,10 @@ export default function EditDataSourceForm({
 }: EditDataSourceFormProps) {
   const allDatabaseTypes = useMemo(
     () => [
-      ...databaseTypes.map(({ value, label }) => ({
+      ...databaseTypes.map(({ value, label, connectionStringFormat }) => ({
         value,
         label,
+        connectionStringFormat,
         available: true,
       })),
       ...DATASOURCES,
@@ -50,6 +50,7 @@ export default function EditDataSourceForm({
   );
 
   const [dbType, setDbType] = useState<DataSourceOption>({} as DataSourceOption);
+  const [dbName, setDbName] = useState('');
   const [connStr, setConnStr] = useState('');
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
@@ -64,11 +65,13 @@ export default function EditDataSourceForm({
 
     if (selectedDataSource.name === 'Sample Database') {
       setDbType(DATASOURCES[0]);
+      setDbName('');
       setConnStr('');
     } else {
       const connectionDetails = new URL(selectedDataSource.connectionString);
       const type = connectionDetails.protocol.replace(':', '');
       setDbType(allDatabaseTypes.find((opt) => opt.value === type) || DATASOURCES[0]);
+      setDbName(selectedDataSource.name);
       setConnStr(selectedDataSource.connectionString);
     }
 
@@ -88,10 +91,8 @@ export default function EditDataSourceForm({
           return;
         }
 
-        const connectionDetails = DatabaseConnectionParser.parse(connStr);
-
         const formData = new FormData();
-        formData.append('name', connectionDetails.database);
+        formData.append('name', dbName);
         formData.append('connectionString', connStr);
 
         const response = await fetch('/api/data-sources/edit/testing', {
@@ -121,6 +122,13 @@ export default function EditDataSourceForm({
       return;
     }
 
+    if (!dbName) {
+      setError('Please enter a datasource name');
+      setTestResult(null);
+
+      return;
+    }
+
     if (!connStr) {
       setError('Please enter a connection string');
       setTestResult(null);
@@ -134,10 +142,8 @@ export default function EditDataSourceForm({
     setShowSaveConfirmation(false);
 
     try {
-      const connectionDetails = DatabaseConnectionParser.parse(connStr);
-
       const formData = new FormData();
-      formData.append('name', connectionDetails.database);
+      formData.append('name', dbName);
       formData.append('connectionString', connStr);
 
       const response = await fetch(`/api/data-sources/${selectedDataSource?.id}`, {
@@ -151,7 +157,7 @@ export default function EditDataSourceForm({
         toast.success('Data source updated successfully');
         onSuccess();
       } else {
-        const message = data.message || 'Failed to update data source';
+        const message = data.error || 'Failed to update data source';
         toast.error(message);
       }
     } catch (error) {
@@ -202,41 +208,63 @@ export default function EditDataSourceForm({
           </div>
 
           {dbType.value !== SAMPLE_DATABASE && (
-            <div>
-              <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
-                Connection String
-              </label>
-              <div className="relative">
+            <>
+              <div>
+                <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
+                  Database Name
+                </label>
                 <input
-                  type={showConnStr ? 'text' : 'password'}
-                  value={connStr}
-                  onChange={(e) => setConnStr(e.target.value)}
+                  type="text"
+                  value={dbName}
+                  onChange={(e) => setDbName(e.target.value)}
                   disabled={isSubmitting}
                   className={classNames(
-                    'w-full px-4 py-2.5 pr-12 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                    'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
                     'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary text-base',
                     'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
                     'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
                     'transition-all duration-200',
                     'disabled:opacity-50 disabled:cursor-not-allowed',
                   )}
-                  placeholder={`${dbType.value}://username:password@host:port/database`}
+                  placeholder="Enter database name"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowConnStr((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group"
-                  tabIndex={-1}
-                >
-                  <span className="text-gray-400 group-hover:text-white transition-colors">
-                    {showConnStr ? <EyeSlash variant="Bold" size={20} /> : <Eye variant="Bold" size={20} />}
-                  </span>
-                </button>
               </div>
-              <label className="mb-3 block !text-[13px] text-liblab-elements-textSecondary mt-2">
-                e.g. {dbType.value}://username:password@host:port/database
-              </label>
-            </div>
+              <div>
+                <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
+                  Connection String
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConnStr ? 'text' : 'password'}
+                    value={connStr}
+                    onChange={(e) => setConnStr(e.target.value)}
+                    disabled={isSubmitting}
+                    className={classNames(
+                      'w-full px-4 py-2.5 pr-12 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                      'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary text-base',
+                      'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                      'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                      'transition-all duration-200',
+                      'disabled:opacity-50 disabled:cursor-not-allowed',
+                    )}
+                    placeholder={`${dbType.connectionStringFormat}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConnStr((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group"
+                    tabIndex={-1}
+                  >
+                    <span className="text-gray-400 group-hover:text-white transition-colors">
+                      {showConnStr ? <EyeSlash variant="Bold" size={20} /> : <Eye variant="Bold" size={20} />}
+                    </span>
+                  </button>
+                </div>
+                <label className="mb-3 block !text-[13px] text-liblab-elements-textSecondary mt-2">
+                  e.g. {dbType.connectionStringFormat}
+                </label>
+              </div>
+            </>
           )}
 
           {dbType.value === SAMPLE_DATABASE && (
@@ -336,7 +364,7 @@ export default function EditDataSourceForm({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isSubmitting || dbType.value === SAMPLE_DATABASE || !connStr}
+                disabled={isSubmitting || dbType.value === SAMPLE_DATABASE || !dbName || !connStr}
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',

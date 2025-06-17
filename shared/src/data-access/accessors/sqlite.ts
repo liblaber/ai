@@ -18,6 +18,8 @@ export class SQLiteAccessor implements BaseAccessor {
   readonly label = 'SQLite';
   private _db: SQLiteDatabase | null = null;
 
+  readonly connectionStringFormat = 'sqlite://path/to/database.db';
+
   static isAccessor(databaseUrl: string): boolean {
     return databaseUrl.startsWith('sqlite://');
   }
@@ -44,6 +46,14 @@ export class SQLiteAccessor implements BaseAccessor {
     } catch (error) {
       console.error('Error executing query:', error);
       throw new Error((error as Error)?.message);
+    }
+  }
+
+  validate(connectionString: string): void {
+    const regex = /^sqlite:\/\/(.*)$/;
+
+    if (!regex.test(connectionString)) {
+      throw new Error('Invalid connection string');
     }
   }
 

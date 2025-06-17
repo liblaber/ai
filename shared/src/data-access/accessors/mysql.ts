@@ -10,6 +10,8 @@ export class MySQLAccessor implements BaseAccessor {
   readonly label = 'MySQL';
   private _connection: Connection | null = null;
 
+  readonly connectionStringFormat = 'mysql://username:password@host:port/database';
+
   static isAccessor(databaseUrl: string): boolean {
     return databaseUrl.startsWith('mysql://');
   }
@@ -37,6 +39,14 @@ export class MySQLAccessor implements BaseAccessor {
     } catch (error) {
       console.error('Error executing query:', error);
       throw new Error((error as Error)?.message);
+    }
+  }
+
+  validate(connectionString: string): void {
+    const regex = /^mysql:\/\/([a-zA-Z0-9_-]+):(.+)@([a-zA-Z0-9.-]+):([0-9]+)\/([a-zA-Z0-9_-]+)$/;
+
+    if (!regex.test(connectionString)) {
+      throw new Error('Invalid connection string');
     }
   }
 

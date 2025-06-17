@@ -11,6 +11,8 @@ export class PostgresAccessor implements BaseAccessor {
   readonly label = 'PostgreSQL';
   private _pool: Pool | null = null;
 
+  readonly connectionStringFormat = 'postgres(ql)://username:password@host:port/database';
+
   static isAccessor(databaseUrl: string): boolean {
     return databaseUrl.startsWith('postgres://') || databaseUrl.startsWith('postgresql://');
   }
@@ -51,6 +53,14 @@ export class PostgresAccessor implements BaseAccessor {
     } catch (error) {
       console.error('Error executing query:', error);
       throw new Error((error as Error)?.message);
+    }
+  }
+
+  validate(connectionString: string): void {
+    const regex = /^postgres(?:ql)?:\/\/([a-zA-Z0-9_-]+):(.+)@([a-zA-Z0-9.-]+):([0-9]+)\/([a-zA-Z0-9_-]+)(\?.*)?$/;
+
+    if (!regex.test(connectionString)) {
+      throw new Error('Invalid connection string');
     }
   }
 

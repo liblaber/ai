@@ -3,6 +3,7 @@ import { create } from 'zustand';
 export interface DataSourceType {
   value: string;
   label: string;
+  connectionStringFormat: string;
   available: boolean;
 }
 

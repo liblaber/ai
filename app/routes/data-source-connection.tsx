@@ -13,7 +13,6 @@ import { useDataSourceActions, useDataSourcesStore } from '~/lib/stores/dataSour
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useNavigate } from '@remix-run/react';
 import { Header } from '~/components/header/Header';
-import { DatabaseConnectionParser } from '~/utils/databaseConnectionParser';
 
 interface ApiResponse {
   success: boolean;
@@ -34,6 +33,7 @@ export const DATA_SOURCE_CONNECTION_ROUTE = '/data-source-connection';
 
 export default function DataSourceConnectionPage() {
   const [dbType, setDbType] = useState<DataSourceOption>(DATASOURCES[0]);
+  const [dbName, setDbName] = useState('');
   const [connStr, setConnStr] = useState('');
   const [isTesting, setIsTesting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -55,11 +55,19 @@ export default function DataSourceConnectionPage() {
     setIsTesting(true);
     setError(null);
 
-    try {
-      const connectionDetails = DatabaseConnectionParser.parse(connStr);
+    if (!dbName) {
+      setError('Please enter a database name');
+      return;
+    }
 
+    if (!connStr) {
+      setError('Please enter a connection string');
+      return;
+    }
+
+    try {
       const formData = new FormData();
-      formData.append('name', connectionDetails.database);
+      formData.append('name', dbName);
       formData.append('connectionString', connStr);
 
       const response = await fetch('/api/data-sources/testing', {
@@ -85,10 +93,8 @@ export default function DataSourceConnectionPage() {
     try {
       setError(null);
 
-      const connectionDetails = DatabaseConnectionParser.parse(connStr);
-
       const formData = new FormData();
-      formData.append('name', connectionDetails.database);
+      formData.append('name', dbName);
       formData.append('connectionString', connStr);
 
       const response = await fetch('/api/data-sources', {
@@ -160,6 +166,8 @@ export default function DataSourceConnectionPage() {
                 value={dbType}
                 onChange={(value) => {
                   setDbType(value as DataSourceOption);
+                  setDbName('');
+                  setConnStr('');
                   setError(null);
                 }}
                 options={allDataSourceTypes.filter((opt) => opt.available)}
@@ -176,6 +184,12 @@ export default function DataSourceConnectionPage() {
           {dbType.value !== 'sample' && (
             <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
               <div>
+                <Label htmlFor="db-name" className="mb-3 block text-gray-300">
+                  Database Name
+                </Label>
+                <Input id="db-name" type="text" value={dbName} onChange={(e) => setDbName(e.target.value)} />
+              </div>
+              <div>
                 <Label htmlFor="conn-str" className="mb-3 block text-gray-300">
                   Connection String
                 </Label>
@@ -189,7 +203,7 @@ export default function DataSourceConnectionPage() {
                 type="submit"
                 variant="primary"
                 className={`min-w-[150px] max-w-[220px] transition-all duration-300 ${isSuccess ? 'bg-green-500 hover:bg-green-500 !disabled:opacity-100' : ''}`}
-                disabled={!connStr || isTesting || isSuccess}
+                disabled={!dbName || !connStr || isTesting || isSuccess}
               >
                 {isSuccess ? (
                   <div className="flex items-center gap-2">

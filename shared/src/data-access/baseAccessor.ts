@@ -2,6 +2,12 @@ import type { Table } from '../types';
 
 export interface BaseAccessor {
   /**
+   * Returns the format of the connection string for this accessor
+   * @returns The format of the connection string
+   */
+  readonly connectionStringFormat: string;
+
+  /**
    * Executes a SQL query against the database
    * @param query - The SQL query string to execute
    * @param params - Optional array of parameters to safely substitute into the query
@@ -15,6 +21,13 @@ export interface BaseAccessor {
    * @throws Error if the query contains potentially malicious content
    */
   guardAgainstMaliciousQuery: (query: string) => void;
+
+  /**
+   * Validates a connection string for this accessor
+   * @param connectionString - The connection string to validate
+   * @throws Error if the connection string is invalid
+   */
+  validate: (connectionString: string) => void;
 
   /**
    * Retrieves the database schema information
