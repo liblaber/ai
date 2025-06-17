@@ -1,6 +1,7 @@
 import type { Message } from 'ai';
 import { createScopedLogger } from '~/utils/logger';
 import type { ChatHistoryItem } from './useChatHistory';
+import { getConversation } from '~/lib/persistence/conversations';
 
 export interface IChatMetadata {
   gitUrl?: string;
@@ -83,7 +84,9 @@ export async function setMessages(
 }
 
 export async function getMessages(db: IDBDatabase, id: string): Promise<ChatHistoryItem> {
-  return getMessagesById(db, id);
+  return getConversation(id);
+
+  // return getMessagesById(db, id);
 }
 
 export async function getMessagesById(db: IDBDatabase, id: string): Promise<ChatHistoryItem> {
@@ -108,13 +111,16 @@ export async function deleteById(db: IDBDatabase, id: string): Promise<void> {
   });
 }
 
-export async function getNextId(): Promise<string> {
+export async function createConversation(dataSourceId: string): Promise<string> {
   try {
-    const response = await fetch('/api/conversation', {
+    const response = await fetch('/api/conversations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        dataSourceId,
+      }),
     });
 
     if (!response.ok) {
@@ -170,7 +176,7 @@ export async function createChatFromMessages(
   messages: Message[],
   metadata?: IChatMetadata,
 ): Promise<string> {
-  const newId = await getNextId();
+  const newId = await createConversation('todo@Lane');
 
   await setMessages(
     db,

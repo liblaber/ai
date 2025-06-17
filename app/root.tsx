@@ -133,3 +133,5 @@ export default function App() {
     </Layout>
   );
 }
+
+export const tempLog = console.log;

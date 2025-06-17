@@ -12,6 +12,7 @@ import { createSummary } from '~/lib/.server/llm/create-summary';
 import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
 import { messageService } from '~/lib/services/messageService';
 import { MESSAGE_ROLE } from '~/types/database';
+import { createId } from '@paralleldrive/cuid2';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
@@ -186,9 +187,12 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
         // Stream the text
         const options: StreamingOptions = {
+          experimental_generateMessageId: createId,
           toolChoice: 'none',
-          onFinish: async ({ text: content, finishReason, usage }) => {
+          onFinish: async ({ text: content, finishReason, usage, response: { messages } }) => {
             logger.debug('usage', JSON.stringify(usage));
+
+            const assistantMessage = messages.find((m) => m.role === 'assistant');
 
             if (usage) {
               try {
@@ -200,6 +204,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
                   usage.completionTokens,
                   finishReason,
                   MESSAGE_ROLE.AGENT,
+                  assistantMessage?.id,
                 );
 
                 logger.debug('Prompt saved');

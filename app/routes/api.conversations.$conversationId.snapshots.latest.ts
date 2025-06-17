@@ -32,10 +32,8 @@ export const loader: LoaderFunction = async ({ params: { conversationId } }) => 
     }
 
     return Response.json({
-      snapshot: {
-        ...snapshot,
-        fileMap,
-      },
+      ...snapshot,
+      fileMap,
     });
   } catch (error) {
     logger.error('Failed to fetch latest snapshot:', error);

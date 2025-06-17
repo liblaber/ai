@@ -7,7 +7,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useMessageParser, usePromptEnhancer, useShortcuts, useSnapScroll } from '~/lib/hooks';
 import { chatId, description, navigateChat, useChatHistory } from '~/lib/persistence';
-import { getNextId } from '~/lib/persistence/db';
+import { createConversation } from '~/lib/persistence/db';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { MessageRole, PROMPT_COOKIE_KEY } from '~/utils/constants';
@@ -28,6 +28,8 @@ import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { type Message, useChat } from '@ai-sdk/react';
 import { generateId } from 'ai';
 import { pushToRemote, useGitPullSync } from '~/lib/stores/git';
+import { saveSnapshot } from '~/lib/persistence/snapshots';
+import { tempLog } from '~/root';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -157,13 +159,16 @@ export const ChatImpl = memo(
           'There was an error processing your request: ' + (e.message ? e.message : 'No details were returned'),
         );
       },
-      onFinish: async () => {
+      onFinish: async ({ id }) => {
         setData(undefined);
 
         logger.debug('Finished streaming');
 
         setTimeout(async () => {
           await storeMessageHistory(messagesRef.current);
+
+          tempLog('Saving snap for message id', id);
+          await saveSnapshot(chatId.get()!, id);
 
           await pushToRemote();
         }, 2000);
@@ -379,7 +384,7 @@ export const ChatImpl = memo(
 
       // Generate a new chat ID right away to use in the request
       if (!chatId.get()) {
-        const nextId = await getNextId();
+        const nextId = await createConversation(datasourceId);
         chatId.set(nextId);
         navigateChat(nextId);
       }

@@ -11,9 +11,11 @@ export const messageService = {
     outputTokens: number = 0,
     finishReason: string = '-',
     role: MessageRole = MESSAGE_ROLE.USER,
+    id?: string,
   ): Promise<Message> {
     return await prisma.message.create({
       data: {
+        id,
         conversationId,
         content,
         model,
