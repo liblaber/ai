@@ -8,8 +8,6 @@ export class StorageServiceFactory {
   private static _storageType: StorageType = (process.env.STORAGE_TYPE as StorageType) || StorageType.FILE_SYSTEM;
 
   static get(): StorageService {
-    console.log('ENV', process.env.STORAGE_TYPE);
-
     if (!this._instances.has(this._storageType)) {
       switch (this._storageType) {
         case StorageType.FILE_SYSTEM:
