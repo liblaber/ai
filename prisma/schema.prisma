@@ -75,3 +75,19 @@ model Conversation {
 
   @@map("conversation")
 }
+
+model Plugin {
+  id          String   @id
+  name        String
+  description String
+  icon        String
+  version     String
+  author      String
+  code        String
+  metadata    String
+  isEnabled   Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("plugin")
+}

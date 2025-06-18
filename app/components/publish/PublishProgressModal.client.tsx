@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useStore } from '@nanostores/react';
+import { useFetcher } from '@remix-run/react';
 import { websiteStore } from '~/lib/stores/websiteStore';
 
 interface PluginMetadata {
@@ -19,6 +20,18 @@ interface PluginMetadata {
     };
   };
   isEnabled: boolean;
+  isDeletable: boolean;
+}
+
+interface UploadResponse {
+  success?: boolean;
+  plugin?: PluginMetadata;
+  error?: string;
+}
+
+interface DeleteResponse {
+  success?: boolean;
+  error?: string;
 }
 
 interface PublishProgressModalProps {
@@ -47,6 +60,10 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
   const [isCopying, setIsCopying] = useState(false);
   const [plugins, setPlugins] = useState<PluginMetadata[]>([]);
   const [selectedPlugin, setSelectedPlugin] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const uploadFetcher = useFetcher<UploadResponse>();
+  const deleteFetcher = useFetcher<DeleteResponse>();
+  const pluginsFetcher = useFetcher<{ plugins: PluginMetadata[] }>();
 
   useEffect(() => {
     const loadPlugins = async () => {
@@ -57,11 +74,11 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
           throw new Error('Failed to load plugins');
         }
 
-        const pluginMetadata = (await response.json()) as PluginMetadata[];
-        setPlugins(pluginMetadata);
+        const data = (await response.json()) as { plugins: PluginMetadata[] };
+        setPlugins(data.plugins);
 
-        if (pluginMetadata.length > 0) {
-          setSelectedPlugin(pluginMetadata[0].id);
+        if (data.plugins.length > 0) {
+          setSelectedPlugin(data.plugins[0].id);
         }
       } catch (error) {
         console.error('Error loading plugins:', error);
@@ -69,6 +86,25 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
     };
     loadPlugins();
   }, []);
+
+  // Reload plugins when deletion is successful
+  useEffect(() => {
+    if (deleteFetcher.state === 'idle' && deleteFetcher.data?.success) {
+      pluginsFetcher.load('/api/deployment-plugins');
+    }
+  }, [deleteFetcher.state, deleteFetcher.data]);
+
+  // Update plugins when pluginsFetcher data changes
+  useEffect(() => {
+    if (pluginsFetcher.data?.plugins) {
+      setPlugins(pluginsFetcher.data.plugins);
+
+      // If the currently selected plugin was deleted, select the first available one
+      if (!pluginsFetcher.data.plugins.find((p) => p.id === selectedPlugin)) {
+        setSelectedPlugin(pluginsFetcher.data.plugins[0]?.id || null);
+      }
+    }
+  }, [pluginsFetcher.data]);
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -90,6 +126,18 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [deploymentLogs]);
 
+  useEffect(() => {
+    if (uploadFetcher.data) {
+      if (uploadFetcher.data.success && uploadFetcher.data.plugin) {
+        const newPlugin: PluginMetadata = uploadFetcher.data.plugin;
+        setPlugins((prev) => [...prev, newPlugin]);
+        setUploadError(null);
+      } else if (uploadFetcher.data.error) {
+        setUploadError(uploadFetcher.data.error);
+      }
+    }
+  }, [uploadFetcher.data]);
+
   // Handlers
   const handleClose = () => {
     setTimeout(() => {
@@ -104,6 +152,41 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
       setTimeout(() => {
         setIsCopying(false);
       }, 2000);
+    }
+  };
+
+  const handlePluginUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.name.endsWith('.zip')) {
+      setUploadError('Please upload a .zip file');
+      return;
+    }
+
+    setUploadError(null);
+
+    const formData = new FormData();
+    formData.append('plugin', file);
+
+    uploadFetcher.submit(formData, {
+      method: 'POST',
+      action: '/api/plugins/upload',
+      encType: 'multipart/form-data',
+    });
+  };
+
+  const handleDeletePlugin = (pluginId: string) => {
+    if (window.confirm('Are you sure you want to delete this plugin?')) {
+      const formData = new FormData();
+      formData.append('pluginId', pluginId);
+      deleteFetcher.submit(formData, {
+        method: 'DELETE',
+        action: '/api/deployment-plugins',
+      });
     }
   };
 
@@ -217,33 +300,69 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
         <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Select Deployment Target</div>
         <div className="space-y-4">
           {plugins.map((plugin) => (
-            <button
+            <div
               key={plugin.id}
-              onClick={() => {
-                setSelectedPlugin(plugin.id);
-                onPublishClick(plugin.id);
-              }}
               className={`w-full p-4 rounded-lg border bg-transparent ${
                 selectedPlugin === plugin.id
                   ? `border-${plugin.theme.primary} bg-${plugin.theme.background} dark:bg-${plugin.theme.dark.background}`
                   : `border-gray-200 dark:border-gray-700 hover:border-${plugin.theme.hover} dark:hover:border-${plugin.theme.dark.hover}`
               }`}
             >
-              <div className="flex items-center">
-                <div
-                  className={`w-8 h-8 flex items-center justify-center ${
-                    selectedPlugin === plugin.id ? `text-${plugin.theme.primary}` : `text-${plugin.theme.primary}`
-                  }`}
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => {
+                    setSelectedPlugin(plugin.id);
+                    onPublishClick(plugin.id);
+                  }}
+                  className="bg-transparent flex-1 flex items-center"
                 >
-                  <div className={plugin.icon} />
-                </div>
-                <div className="ml-4 text-left">
-                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{plugin.name}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">{plugin.description}</div>
-                </div>
+                  <div
+                    className={`w-8 h-8 flex items-center justify-center ${
+                      selectedPlugin === plugin.id ? `text-${plugin.theme.primary}` : `text-${plugin.theme.primary}`
+                    }`}
+                  >
+                    <div className={plugin.icon} />
+                  </div>
+                  <div className="ml-4 text-left">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{plugin.name}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{plugin.description}</div>
+                  </div>
+                </button>
+                {plugin.isDeletable && (
+                  <button
+                    onClick={() => handleDeletePlugin(plugin.id)}
+                    className="bg-transparent ml-4 p-2 text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400"
+                    title="Delete plugin"
+                  >
+                    <div className="i-ph:trash w-5 h-5" />
+                  </button>
+                )}
               </div>
-            </button>
+            </div>
           ))}
+
+          {/* Plugin Upload Section */}
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Install Custom Plugin</div>
+            <div className="flex items-center space-x-4">
+              <label className="flex-1">
+                <div className="w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <div className="flex items-center justify-center">
+                    <div className="i-ph:upload w-5 h-5 mr-2" />
+                    {uploadFetcher.state === 'submitting' ? 'Installing...' : 'Upload Plugin (.zip)'}
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  accept=".zip"
+                  className="hidden"
+                  onChange={handlePluginUpload}
+                  disabled={uploadFetcher.state === 'submitting'}
+                />
+              </label>
+            </div>
+            {uploadError && <div className="mt-2 text-sm text-red-600 dark:text-red-400">{uploadError}</div>}
+          </div>
         </div>
       </div>
     );

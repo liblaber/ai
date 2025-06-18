@@ -61,6 +61,10 @@ async function handleWebsiteUpdate(siteInfo: SiteInfo, websiteId?: string): Prom
 }
 
 export const action: ActionFunction = async ({ request }) => {
+  if (request.method !== 'POST') {
+    return json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
   try {
     const formData = await request.formData();
     const pluginId = formData.get('pluginId') as string;
@@ -79,7 +83,7 @@ export const action: ActionFunction = async ({ request }) => {
     }
 
     // Get the plugin implementation
-    const plugin = getPluginById(pluginId);
+    const plugin = await getPluginById(pluginId);
 
     if (!plugin) {
       return json({ error: 'Plugin not found' }, { status: 404 });
