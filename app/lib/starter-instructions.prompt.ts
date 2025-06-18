@@ -1,7 +1,8 @@
 import path from 'path';
 import fs from 'fs';
 import { logger } from '~/utils/logger';
-import type { RepoFile } from '~/utils/selectStarterTemplate';
+import { getEncoding } from 'istextorbinary';
+import type { FileMap } from '~/lib/.server/llm/constants';
 
 const DIRECTORIES_TO_SKIP = ['.git', 'node_modules', 'build', '.idea', '.vscode', '.cache', 'analytics-dashboard'];
 const FILES_TO_SKIP = [
@@ -18,9 +19,9 @@ const SHARED_IMPORTS_TO_SKIP = ['crypto'];
 
 export const STARTER_DIRECTORY = process.env.STARTER_PATH!;
 
-export function readDirectory(dirPath: string, basePath: string = ''): any[] {
+export function readDirectory(dirPath: string, basePath: string = ''): FileMap {
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-  const files: any[] = [];
+  let fileMap: FileMap = {};
   const sharedFiles = getSharedFiles();
 
   for (const entry of entries) {
@@ -32,7 +33,10 @@ export function readDirectory(dirPath: string, basePath: string = ''): any[] {
         continue;
       }
 
-      files.push(...readDirectory(fullPath, relativePath));
+      fileMap[relativePath] = { type: 'folder' };
+
+      const subDirMap = readDirectory(fullPath, relativePath);
+      fileMap = { ...fileMap, ...subDirMap };
     } else {
       if (FILES_TO_SKIP.includes(entry.name)) {
         continue;
@@ -44,20 +48,22 @@ export function readDirectory(dirPath: string, basePath: string = ''): any[] {
 
         // Extract all imports from shared files
         const sharedImports = new Set<string>();
-        sharedFiles.forEach((file) => {
-          const importMatches = file.content.match(/from ['"]([^'"]+)['"]/g) || [];
-          importMatches.forEach((match) => {
-            const importPath = match.match(/from ['"]([^'"]+)['"]/)?.[1];
+        Object.values(sharedFiles).forEach((file) => {
+          if (file?.type === 'file') {
+            const importMatches = file.content.match(/from ['"]([^'"]+)['"]/g) || [];
+            importMatches.forEach((match) => {
+              const importPath = match.match(/from ['"]([^'"]+)['"]/)?.[1];
 
-            if (importPath && !importPath.startsWith('.') && !importPath.startsWith('@/')) {
-              // Extract the package name from the import
-              const packageName = importPath.split('/')[0];
+              if (importPath && !importPath.startsWith('.') && !importPath.startsWith('@/')) {
+                // Extract the package name from the import
+                const packageName = importPath.split('/')[0];
 
-              if (packageName && !SHARED_IMPORTS_TO_SKIP.includes(packageName)) {
-                sharedImports.add(packageName);
+                if (packageName && !SHARED_IMPORTS_TO_SKIP.includes(packageName)) {
+                  sharedImports.add(packageName);
+                }
               }
-            }
-          });
+            });
+          }
         });
 
         // Add missing dependencies
@@ -65,34 +71,42 @@ export function readDirectory(dirPath: string, basePath: string = ''): any[] {
         const rootPackageJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
         sharedImports.forEach((pkg) => {
           if (!dependencies[pkg]) {
-            // Read the version from package.json
             dependencies[pkg] =
               rootPackageJson.dependencies?.[pkg] || rootPackageJson.devDependencies?.[pkg] || 'latest';
             hasChanges = true;
           }
         });
 
-        // Update package.json if there were changes
         if (hasChanges) {
           packageJson.dependencies = dependencies;
-          fs.writeFileSync(fullPath, JSON.stringify(packageJson, null, 2));
+          fileMap[relativePath] = {
+            type: 'file',
+            content: JSON.stringify(packageJson, null, 2),
+            isBinary: false,
+          };
+          continue; // Skip the rest of the file handling for this file
         }
       }
 
-      files.push({
-        name: entry.name,
-        path: relativePath,
-        content: fs.readFileSync(fullPath, 'utf8'),
-      });
+      const buffer = fs.readFileSync(fullPath);
+      const encoding = getEncoding(buffer);
+      const isBinary = encoding === 'binary';
+      fileMap[relativePath] = {
+        type: 'file',
+        content: isBinary ? '' : buffer.toString('utf8'),
+        isBinary,
+      };
     }
   }
 
-  return [...files, ...sharedFiles];
+  fileMap = { ...fileMap, ...sharedFiles };
+
+  return fileMap;
 }
 
-function getSharedFiles(): RepoFile[] {
+function getSharedFiles(): FileMap {
   const sharedDir = path.join(process.cwd(), 'shared/src');
-  const files: RepoFile[] = [];
+  const fileMap: FileMap = {};
 
   function processDirectory(dir: string, relativePath: string = '') {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -102,6 +116,7 @@ function getSharedFiles(): RepoFile[] {
       const relPath = path.join(relativePath, entry.name);
 
       if (entry.isDirectory()) {
+        fileMap[`app/lib/${relPath}`] = { type: 'folder' };
         processDirectory(fullPath, relPath);
       } else if (entry.isFile() && /\.(ts|tsx|js|jsx)$/.test(entry.name)) {
         const content = fs.readFileSync(fullPath, 'utf-8');
@@ -111,18 +126,20 @@ function getSharedFiles(): RepoFile[] {
           /from ['"]@liblab\/shared\/(.*?)['"]/g,
           (_, importPath) => `from '@/lib/${importPath}'`,
         );
-        files.push({
-          name: entry.name,
-          path: `app/lib/${relPath}`,
+        fileMap[`app/lib/${relPath}`] = {
+          type: 'file',
           content: modifiedContent,
-        });
+          isBinary: false,
+        };
       }
     }
   }
 
-  processDirectory(sharedDir);
+  if (fs.existsSync(sharedDir)) {
+    processDirectory(sharedDir);
+  }
 
-  return files;
+  return fileMap;
 }
 
 let starterInstructionsPrompt: string | null;

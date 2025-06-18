@@ -408,6 +408,9 @@ export const ChatImpl = memo(
         return null;
       });
 
+      // wait for 1.5 second to let the terminal shell be ready
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       if (starterTemplateMessages) {
         setMessages([
           ...starterTemplateMessages,
@@ -428,6 +431,7 @@ export const ChatImpl = memo(
             experimental_attachments: createExperimentalAttachments(dataList, files),
           },
         ]);
+
         reload({
           body: {
             conversationId: chatId.get(),
