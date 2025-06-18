@@ -55,7 +55,13 @@ interface BaseChatProps {
   useDifferentSqlModel?: boolean;
   setUseDifferentSqlModel?: (useDifferent: boolean) => void;
   handleStop?: () => void;
-  sendMessage?: (event: React.UIEvent, messageInput?: string, askLiblab?: boolean) => Promise<void>;
+  sendMessage?: (
+    event: React.UIEvent,
+    messageInput?: string,
+    askLiblab?: boolean,
+    pendingUploadedFiles?: File[],
+    pendingImageDataList?: string[],
+  ) => Promise<void>;
   sendAutofixMessage?: (message: string) => Promise<void>;
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   enhancePrompt?: () => void;
@@ -114,11 +120,16 @@ export const BaseChat = ({
     onStreamingChange?.(isStreaming);
   }, [isStreaming, onStreamingChange]);
 
-  const handleSendMessage = async (event: React.UIEvent, messageInput?: string) => {
+  const handleSendMessage = async (
+    event: React.UIEvent,
+    messageInput?: string,
+    pendingUploadedFiles?: File[],
+    pendingImageDataList?: string[],
+  ) => {
     if (sendMessage) {
       const message = messageInput || input;
 
-      await sendMessage(event, message);
+      await sendMessage(event, message, false, pendingUploadedFiles, pendingImageDataList);
     }
   };
 
@@ -200,9 +211,11 @@ export const BaseChat = ({
 
         setUploadedFiles?.(files);
         setImageDataList?.(pendingPrompt.images);
-      }
 
-      void handleSendMessage({} as React.UIEvent, pendingPrompt.input);
+        void handleSendMessage({} as React.UIEvent, pendingPrompt.input, files, pendingPrompt.images);
+      } else {
+        void handleSendMessage({} as React.UIEvent, pendingPrompt.input);
+      }
     } catch (e) {
       console.error('Failed to parse pending prompt:', e);
     } finally {
@@ -279,6 +292,10 @@ export const BaseChat = ({
               {progressAnnotations && <ProgressCompilation data={progressAnnotations} />}
               {chatStarted && (
                 <ChatTextarea
+                  uploadedFiles={uploadedFiles}
+                  setUploadedFiles={setUploadedFiles}
+                  imageDataList={imageDataList}
+                  setImageDataList={setImageDataList}
                   ref={textareaRef}
                   value={input}
                   onChange={(e) => handleInputChange?.(e)}

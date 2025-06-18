@@ -216,8 +216,16 @@ export const ChatImpl = memo(
       }
     }, [input, textareaRef]);
 
-    const sendMessage = async (_event: React.UIEvent, messageInput?: string, askLiblab: boolean = false) => {
+    const sendMessage = async (
+      _event: React.UIEvent,
+      messageInput?: string,
+      askLiblab: boolean = false,
+      pendingUploadedFiles?: File[],
+      pendingImageDataList?: string[],
+    ) => {
       const messageContent = messageInput || input;
+      const files = pendingUploadedFiles || uploadedFiles;
+      const dataList = pendingImageDataList || imageDataList;
 
       if (!messageContent?.trim()) {
         return;
@@ -230,7 +238,7 @@ export const ChatImpl = memo(
 
       if (!chatStarted) {
         setChatStarted(true);
-        await startChatWithInitialMessage(messageContent, selectedDataSourceId!);
+        await startChatWithInitialMessage(messageContent, selectedDataSourceId!, files, dataList);
 
         return;
       }
@@ -257,7 +265,9 @@ export const ChatImpl = memo(
               sqlLlmProvider,
               dataSourceId: selectedDataSourceId!,
               askLiblab,
+              dataList,
             }),
+            experimental_attachments: createExperimentalAttachments(dataList, files),
           },
           {
             body: {
@@ -280,7 +290,9 @@ export const ChatImpl = memo(
               sqlLlmProvider,
               dataSourceId: selectedDataSourceId!,
               askLiblab,
+              dataList,
             }),
+            experimental_attachments: createExperimentalAttachments(dataList, files),
           },
           {
             body: {
@@ -357,7 +369,12 @@ export const ChatImpl = memo(
       textareaRef.current?.blur();
     };
 
-    async function startChatWithInitialMessage(messageContent: string, datasourceId: string) {
+    async function startChatWithInitialMessage(
+      messageContent: string,
+      datasourceId: string,
+      files: File[],
+      dataList: string[],
+    ) {
       setFakeLoading(true);
 
       // Generate a new chat ID right away to use in the request
@@ -406,7 +423,9 @@ export const ChatImpl = memo(
               sqlLlmProvider,
               firstUserMessage: true,
               dataSourceId: selectedDataSourceId!,
+              dataList,
             }),
+            experimental_attachments: createExperimentalAttachments(dataList, files),
           },
         ]);
         reload({
@@ -597,7 +616,15 @@ interface MessageWithModelInfo {
   sqlLlmProvider?: ProviderInfo;
   firstUserMessage?: boolean;
   askLiblab?: boolean;
+  dataList?: string[];
 }
+
+const createExperimentalAttachments = (dataList: string[], files: File[]) =>
+  dataList.map((imageData, index) => ({
+    name: files[index]?.name || `image-${index}`,
+    contentType: files[index]?.type || 'image/png',
+    url: imageData,
+  }));
 
 const formatMessageWithModelInfo = ({
   model,
@@ -609,6 +636,7 @@ const formatMessageWithModelInfo = ({
   sqlLlmProvider,
   firstUserMessage,
   askLiblab,
+  dataList,
 }: MessageWithModelInfo) => {
   let formattedMessage = `[Model: ${model}]\n\n[Provider: ${provider.name}]`;
 
@@ -625,6 +653,10 @@ const formatMessageWithModelInfo = ({
   }
 
   formattedMessage += `\n\n[DataSourceId: ${dataSourceId}]`;
+
+  if (dataList) {
+    formattedMessage += `\n\n[Files: ${dataList.join('## ')}]`;
+  }
 
   formattedMessage += `\n\n${messageContent}`;
 
