@@ -12,6 +12,7 @@ const FILES_TO_SKIP = [
   'resources.builds.ts',
   'analytics-dashboard.tsx',
 ];
+const SHARED_IMPORTS_TO_SKIP = ['crypto'];
 
 export const STARTER_DIRECTORY = process.env.STARTER_PATH!;
 
@@ -50,7 +51,8 @@ export function readDirectory(dirPath: string, basePath: string = ''): any[] {
               // Extract the package name from the import
               const packageName = importPath.split('/')[0];
 
-              if (packageName) {
+              if (packageName && !SHARED_IMPORTS_TO_SKIP.includes(packageName)) {
+                console.log('Adding shared import', packageName);
                 sharedImports.add(packageName);
               }
             }

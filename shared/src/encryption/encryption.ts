@@ -3,26 +3,18 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 const AES_ALGORITHM = 'aes-256-gcm';
 const IV_SIZE = 12; // 96 bits for GCM
 
-export function encryptData(data: any): string {
-  // Create cipher
-
-  const encryptionKey = process.env.ENCRYPTION_KEY;
-
+export function encryptData(encryptionKey: string, data: Buffer): string {
   if (!encryptionKey) {
-    throw new Error('ENCRYPTION_KEY must be set and must be a base64-encoded 32-byte key.');
+    throw new Error('Encryption key must be set and must be a base64-encoded 32-byte key.');
   }
 
   const iv = randomBytes(IV_SIZE);
   const cipher = createCipheriv(AES_ALGORITHM, Buffer.from(encryptionKey, 'base64'), iv);
 
-  // Encrypt the data
-  const dataBuffer = Buffer.from(JSON.stringify(data));
-  const encryptedData = Buffer.concat([cipher.update(dataBuffer), cipher.final()]);
+  const encryptedData = Buffer.concat([cipher.update(data), cipher.final()]);
 
-  // Get the auth tag
   const authTag = cipher.getAuthTag();
 
-  // Combine all components
   const result = {
     iv: iv.toString('base64'),
     authTag: authTag.toString('base64'),
@@ -32,10 +24,8 @@ export function encryptData(data: any): string {
   return JSON.stringify(result);
 }
 
-export function decryptData(encryptedData: string): any {
+export function decryptData(encryptionKey: string, encryptedData: string): any {
   const { iv, authTag, encryptedData: data } = JSON.parse(encryptedData);
-
-  const encryptionKey = process.env.ENCRYPTION_KEY;
 
   if (!encryptionKey) {
     throw new Error('ENCRYPTION_KEY must be set and must be a base64-encoded 32-byte key.');
