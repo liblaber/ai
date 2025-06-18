@@ -220,12 +220,12 @@ export const ChatImpl = memo(
       _event: React.UIEvent,
       messageInput?: string,
       askLiblab: boolean = false,
-      passedFiles?: File[],
-      passedDataList?: string[],
+      pendingUploadedFiles?: File[],
+      pendingImageDataList?: string[],
     ) => {
       const messageContent = messageInput || input;
-      const files = passedFiles || uploadedFiles;
-      const dataList = passedDataList || imageDataList;
+      const files = pendingUploadedFiles || uploadedFiles;
+      const dataList = pendingImageDataList || imageDataList;
 
       if (!messageContent?.trim()) {
         return;

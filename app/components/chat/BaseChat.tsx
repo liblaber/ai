@@ -59,8 +59,8 @@ interface BaseChatProps {
     event: React.UIEvent,
     messageInput?: string,
     askLiblab?: boolean,
-    passedFiles?: File[],
-    passedDataList?: string[],
+    pendingUploadedFiles?: File[],
+    pendingImageDataList?: string[],
   ) => Promise<void>;
   sendAutofixMessage?: (message: string) => Promise<void>;
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
@@ -123,13 +123,13 @@ export const BaseChat = ({
   const handleSendMessage = async (
     event: React.UIEvent,
     messageInput?: string,
-    passedFiles?: File[],
-    passedDataList?: string[],
+    pendingUploadedFiles?: File[],
+    pendingImageDataList?: string[],
   ) => {
     if (sendMessage) {
       const message = messageInput || input;
 
-      await sendMessage(event, message, false, passedFiles, passedDataList);
+      await sendMessage(event, message, false, pendingUploadedFiles, pendingImageDataList);
     }
   };
 
