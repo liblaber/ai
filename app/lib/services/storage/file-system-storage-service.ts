@@ -2,6 +2,7 @@ import type { StorageService } from './storage-service';
 import { StorageType } from '@prisma/client';
 import fs from 'fs/promises';
 import path from 'path';
+import { decryptData, encryptData } from '@liblab/encryption/encryption';
 
 export class LocalSystemStorageService implements StorageService {
   private readonly _baseDir: string;
@@ -24,12 +25,17 @@ export class LocalSystemStorageService implements StorageService {
 
     await fs.mkdir(dirPath, { recursive: true });
 
-    await fs.writeFile(filePath, data);
+    const encryptedData = encryptData(process.env.ENCRYPTION_KEY as string, data);
+
+    await fs.writeFile(filePath, encryptedData);
   }
 
   async get(key: string): Promise<Buffer> {
     const filePath = this._getFilePath(key);
-    return await fs.readFile(filePath);
+    const encryptedData = await fs.readFile(filePath);
+    const decryptedData = decryptData(process.env.ENCRYPTION_KEY as string, encryptedData.toString());
+
+    return Buffer.from(decryptedData);
   }
 
   async delete(key: string): Promise<void> {
