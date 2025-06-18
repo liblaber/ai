@@ -74,10 +74,14 @@ export function readDirectory(dirPath: string, basePath: string = ''): FileMap {
           }
         });
 
-        // Update package.json if there were changes
         if (hasChanges) {
           packageJson.dependencies = dependencies;
-          fs.writeFileSync(fullPath, JSON.stringify(packageJson, null, 2));
+          fileMap[relativePath] = {
+            type: 'file',
+            content: JSON.stringify(packageJson, null, 2),
+            isBinary: false,
+          };
+          continue; // Skip the rest of the file handling for this file
         }
       }
 
