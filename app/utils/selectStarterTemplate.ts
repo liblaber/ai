@@ -75,9 +75,6 @@ export async function getStarterTemplateMessages(title: string, databaseUrl: str
 
   await loadFileMapIntoContainer(updatedFiles);
 
-  // wait for 1 second
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
   return [
     {
       id: `1-${new Date().getTime()}`,
