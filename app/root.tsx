@@ -77,16 +77,10 @@ export const links: LinksFunction = () => [
 ];
 
 const inlineThemeCode = stripIndents`
-  setTutorialKitTheme();
+  setLiblabTheme();
 
-  function setTutorialKitTheme() {
-    let theme = localStorage.getItem('liblab_theme');
-
-    if (!theme) {
-      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-
-    document.querySelector('html')?.setAttribute('data-theme', theme);
+  function setLiblabTheme() {
+    document.querySelector('html')?.setAttribute('data-theme', 'dark');
   }
 `;
 
