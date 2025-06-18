@@ -12,6 +12,8 @@ const FILES_TO_SKIP = [
   'resources.builds.ts',
   'analytics-dashboard.tsx',
 ];
+
+// We don't want to add crypto as an explicit dependency in the built app because it's already included through node (it will break the project if we add it)
 const SHARED_IMPORTS_TO_SKIP = ['crypto'];
 
 export const STARTER_DIRECTORY = process.env.STARTER_PATH!;
