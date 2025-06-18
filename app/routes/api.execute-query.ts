@@ -1,6 +1,6 @@
+import { decryptData, encryptData } from '@liblab/encryption/encryption';
 import type { ActionFunctionArgs } from '@remix-run/cloudflare';
 import { json } from '@remix-run/cloudflare';
-import { decryptData, encryptData } from '~/lib/encryption';
 import { executeQuery } from '~/lib/database';
 
 interface EncryptedRequestBody {
@@ -21,7 +21,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return json({ error: 'Encryption key not found' }, { status: 500 });
     }
 
-    const decryptedBody = decryptData(body.encryptedData);
+    const decryptedBody = decryptData(process.env.ENCRYPTION_KEY as string, body.encryptedData);
     const { query, databaseUrl, params } = decryptedBody;
 
     if (!databaseUrl) {
@@ -34,7 +34,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     const resultData = await executeQuery(databaseUrl, query, params);
 
-    const encryptedResponse = encryptData(resultData);
+    const dataBuffer = Buffer.from(JSON.stringify(resultData));
+
+    const encryptedResponse = encryptData(process.env.ENCRYPTION_KEY as string, dataBuffer);
 
     return json({ encryptedData: encryptedResponse }, { headers: { 'Content-Type': 'application/json' } });
   } catch (error: any) {

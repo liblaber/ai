@@ -13,6 +13,9 @@ const FILES_TO_SKIP = [
   'analytics-dashboard.tsx',
 ];
 
+// We don't want to add crypto as an explicit dependency in the built app because it's already included through node (it will break the project if we add it)
+const SHARED_IMPORTS_TO_SKIP = ['crypto'];
+
 export const STARTER_DIRECTORY = process.env.STARTER_PATH!;
 
 export function readDirectory(dirPath: string, basePath: string = ''): any[] {
@@ -50,7 +53,7 @@ export function readDirectory(dirPath: string, basePath: string = ''): any[] {
               // Extract the package name from the import
               const packageName = importPath.split('/')[0];
 
-              if (packageName) {
+              if (packageName && !SHARED_IMPORTS_TO_SKIP.includes(packageName)) {
                 sharedImports.add(packageName);
               }
             }
