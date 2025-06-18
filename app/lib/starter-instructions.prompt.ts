@@ -52,7 +52,6 @@ export function readDirectory(dirPath: string, basePath: string = ''): any[] {
               const packageName = importPath.split('/')[0];
 
               if (packageName && !SHARED_IMPORTS_TO_SKIP.includes(packageName)) {
-                console.log('Adding shared import', packageName);
                 sharedImports.add(packageName);
               }
             }
