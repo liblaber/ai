@@ -7,7 +7,7 @@ import SwitchableStream from '~/lib/.server/llm/switchable-stream';
 import { createScopedLogger } from '~/utils/logger';
 import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
 import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
-import { WORK_DIR } from '~/utils/constants';
+import { DEFAULT_MODEL, DEFAULT_PROVIDER, WORK_DIR } from '~/utils/constants';
 import { createSummary } from '~/lib/.server/llm/create-summary';
 import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
 import { messageService } from '~/lib/services/messageService';
@@ -65,7 +65,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   await messageService.saveMessage({
     conversationId,
     content,
-    model: messageProperties.model,
+    model: DEFAULT_MODEL,
     annotations: message.annotations,
   });
 
@@ -213,7 +213,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
                 await messageService.saveMessage({
                   conversationId,
                   content,
-                  model: messageProperties.model,
+                  model: DEFAULT_MODEL,
                   inputTokens: usage.promptTokens,
                   outputTokens: usage.completionTokens,
                   finishReason,
@@ -260,21 +260,17 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
             logger.info(`Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
 
-            // @ts-ignore Fix this with: https://linear.app/liblab/issue/ENG-373/incorrect-llm-model-set-for-message-when-saved-to-the-db
-            const lastUserMessage = messages.filter((x) => x.role == 'user').slice(-1)[0];
-            const { model, provider } = extractPropertiesFromMessage(lastUserMessage);
-            messages.push({ id: generateId(), role: 'assistant', content });
-            messages.push({
-              id: generateId(),
-
-              // @ts-ignore Fix this with https://linear.app/liblab/issue/ENG-373/incorrect-llm-model-set-for-message-when-saved-to-the-db
-              role: 'user',
-              content: `[Model: ${model}]\n\n[Provider: ${provider}]\n\n${CONTINUE_PROMPT}`,
-            });
-
+            const continueMessages = [
+              ...messages,
+              { id: generateId(), role: 'assistant', content },
+              {
+                id: generateId(),
+                role: 'user',
+                content: `[Model: ${DEFAULT_MODEL}]\n\n[Provider: ${DEFAULT_PROVIDER}]\n\n${CONTINUE_PROMPT}`,
+              },
+            ];
             const result = await streamText({
-              // @ts-ignore Fix this with https://linear.app/liblab/issue/ENG-373/incorrect-llm-model-set-for-message-when-saved-to-the-db
-              messages,
+              messages: continueMessages as any[],
               options,
               files,
               promptId,
