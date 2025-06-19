@@ -1,9 +1,10 @@
 // DataSourcePluginManager: manages data source plugin access
-import PluginManager, { type PluginAccessMap, type PluginType } from '~/lib/plugins/plugin-manager';
+import PluginManager, { type PluginType } from '~/lib/plugins/plugin-manager';
 import type { DataSourceType } from '~/lib/stores/dataSourceTypes';
+import { DATA_ACCESS } from '~/lib/plugins/plugin-store';
 
 export class DataSourcePluginManager {
-  static pluginType: PluginType = 'data-access';
+  static pluginType: PluginType = DATA_ACCESS;
 
   dataSourceTypes: DataSourceType[] = [];
 
@@ -11,15 +12,6 @@ export class DataSourcePluginManager {
     // Normalize type (e.g., 'postgresql' -> 'postgres')
     const normalized = type.replace('postgresql', 'postgres');
     return PluginManager.getInstance().isPluginAvailable(DataSourcePluginManager.pluginType, normalized);
-  }
-
-  static getAvailableTypes(): string[] {
-    const accessMap = PluginManager.getInstance().getAccessMap();
-    return Object.keys(accessMap).filter((key) => accessMap[DataSourcePluginManager.pluginType][key]);
-  }
-
-  static getAccessMap(): PluginAccessMap {
-    return PluginManager.getInstance().getAccessMap();
   }
 
   async initialize(dataSourceTypes: DataSourceType[]): Promise<void> {

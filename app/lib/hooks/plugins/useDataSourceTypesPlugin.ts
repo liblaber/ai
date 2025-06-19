@@ -19,17 +19,17 @@ export const DEFAULT_DATA_SOURCES: DataSourceOption[] = [
 ];
 
 type DataSourceTypesHook = () => {
-  allDatabaseTypes: DataSourceOption[];
-  available: DataSourceOption[];
-  locked: DataSourceOption[];
-  comingSoon: DataSourceOption[];
+  allDataSourceOptions: DataSourceOption[];
+  availableDataSourceOptions: DataSourceOption[];
+  lockedDataSourceOptions: DataSourceOption[];
+  comingSoonDataSourceOptions: DataSourceOption[];
 };
 
 export const useDataSourceTypesPlugin: DataSourceTypesHook = () => {
   const { pluginAccess } = usePluginStore();
   const { dataSourceTypes } = useDataSourceTypesStore();
 
-  const allDatabaseTypes = useMemo(
+  const allDataSourceTypes = useMemo(
     () => [
       ...dataSourceTypes.map(({ value, label, connectionStringFormat }) => ({
         value,
@@ -39,17 +39,17 @@ export const useDataSourceTypesPlugin: DataSourceTypesHook = () => {
       })),
       ...DEFAULT_DATA_SOURCES,
     ],
-    [dataSourceTypes],
+    [dataSourceTypes, pluginAccess],
   ) as DataSourceOption[];
 
-  const available = allDatabaseTypes.filter((opt) => opt.status === 'available');
-  const locked = allDatabaseTypes.filter((opt) => opt.status === 'locked');
-  const comingSoon = allDatabaseTypes.filter((opt) => opt.status === 'coming-soon');
+  const available = allDataSourceTypes.filter((opt) => opt.status === 'available');
+  const locked = allDataSourceTypes.filter((opt) => opt.status === 'locked');
+  const comingSoon = allDataSourceTypes.filter((opt) => opt.status === 'coming-soon');
 
   return {
-    allDatabaseTypes,
-    available,
-    locked,
-    comingSoon,
+    allDataSourceOptions: allDataSourceTypes,
+    availableDataSourceOptions: available,
+    lockedDataSourceOptions: locked,
+    comingSoonDataSourceOptions: comingSoon,
   };
 };

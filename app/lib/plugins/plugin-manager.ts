@@ -1,4 +1,5 @@
 import { env } from '~/lib/config/env';
+import { DATA_ACCESS } from '~/lib/plugins/plugin-store';
 
 // Centralized PluginManager
 export type PluginType = 'data-access';
@@ -8,7 +9,7 @@ export type PluginAccessMap = Record<PluginType, Record<string, boolean>>;
 class PluginManager {
   private static _instance: PluginManager;
   private _pluginAccess: PluginAccessMap = {
-    'data-access': {},
+    [DATA_ACCESS]: {},
   };
   private _initialized = false;
 
@@ -47,7 +48,7 @@ class PluginManager {
 
     if (!license || license !== 'premium') {
       return {
-        'data-access': {
+        [DATA_ACCESS]: {
           postgres: true,
           mysql: false,
           sqlite: true,
@@ -56,7 +57,7 @@ class PluginManager {
     }
 
     return {
-      'data-access': {
+      [DATA_ACCESS]: {
         postgres: true,
         mysql: true,
         sqlite: true,

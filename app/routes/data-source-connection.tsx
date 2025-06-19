@@ -37,7 +37,7 @@ export default function DataSourceConnectionPage() {
   const { refetchDataSources } = useDataSourceActions();
   const navigate = useNavigate();
 
-  const { available } = useDataSourceTypesPlugin();
+  const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,7 +163,7 @@ export default function DataSourceConnectionPage() {
                   setConnStr('');
                   setError(null);
                 }}
-                options={available}
+                options={availableDataSourceOptions}
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}

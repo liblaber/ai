@@ -3,6 +3,8 @@ import { create } from 'zustand';
 export type PluginType = 'data-access'; // Extend as needed
 export type PluginAccessMap = { [type in PluginType]: Record<string, boolean> };
 
+export const DATA_ACCESS = 'data-access';
+
 export interface DataSourceType {
   value: string;
   label: string;
@@ -12,16 +14,12 @@ export interface DataSourceType {
 
 interface PluginStoreState {
   pluginAccess: PluginAccessMap;
-  dataSourceTypes: DataSourceType[];
   setPluginAccess: (map: PluginAccessMap) => void;
-  setDataSourceTypes: (types: DataSourceType[]) => void;
   isPluginEnabled: (pluginType: PluginType, pluginId: string) => boolean;
 }
 
 export const usePluginStore = create<PluginStoreState>()((set, get) => ({
-  pluginAccess: { 'data-access': {} },
-  dataSourceTypes: [],
+  pluginAccess: { [DATA_ACCESS]: {} },
   setPluginAccess: (map) => set({ pluginAccess: map }),
-  setDataSourceTypes: (dataSourceTypes) => set({ dataSourceTypes }),
   isPluginEnabled: (pluginType, pluginId) => !!get().pluginAccess[pluginType][pluginId],
 }));

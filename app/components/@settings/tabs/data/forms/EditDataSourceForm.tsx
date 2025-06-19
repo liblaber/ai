@@ -34,7 +34,7 @@ export default function EditDataSourceForm({
   onSuccess,
   onDelete,
 }: EditDataSourceFormProps) {
-  const { available } = useDataSourceTypesPlugin();
+  const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
   const [dbType, setDbType] = useState<DataSourceOption>({} as DataSourceOption);
   const [dbName, setDbName] = useState('');
@@ -57,7 +57,7 @@ export default function EditDataSourceForm({
     } else {
       const connectionDetails = new URL(selectedDataSource.connectionString);
       const type = connectionDetails.protocol.replace(':', '');
-      setDbType(available.find((opt) => opt.value === type) || DEFAULT_DATA_SOURCES[0]);
+      setDbType(availableDataSourceOptions.find((opt) => opt.value === type) || DEFAULT_DATA_SOURCES[0]);
       setDbName(selectedDataSource.name);
       setConnStr(selectedDataSource.connectionString);
     }
@@ -185,7 +185,7 @@ export default function EditDataSourceForm({
                   setError(null);
                   setTestResult(null);
                 }}
-                options={available}
+                options={availableDataSourceOptions}
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}
