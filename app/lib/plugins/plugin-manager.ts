@@ -41,6 +41,7 @@ class PluginManager {
     return { ...this._pluginAccess };
   }
 
+  // mock api call until we implement the backend
   private async _fetchPluginAccess() {
     const license = env.LICENSE_KEY;
 
