@@ -20,11 +20,12 @@ export const SingleValueWithTooltip = (props: any) => {
 };
 
 export function SelectDatabaseTypeOptions(props: any) {
-  const { available, locked, comingSoon } = useDataSourceTypesPlugin();
+  const { availableDataSourceOptions, lockedDataSourceOptions, comingSoonDataSourceOptions } =
+    useDataSourceTypesPlugin();
 
   return (
     <components.MenuList {...props} className="bg-elements-depth-2">
-      {available.map((opt) => (
+      {availableDataSourceOptions.map((opt) => (
         <components.Option
           key={opt.value}
           {...props}
@@ -48,12 +49,12 @@ export function SelectDatabaseTypeOptions(props: any) {
           </div>
         </components.Option>
       ))}
-      {locked.length > 0 && (
+      {lockedDataSourceOptions.length > 0 && (
         <div className="text-liblab-elements-textPrimary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
           Premium (requires license)
         </div>
       )}
-      {locked.map((opt) => (
+      {lockedDataSourceOptions.map((opt) => (
         <div
           key={opt.value}
           className="flex hover:cursor-not-allowed items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-60 cursor-default"
@@ -64,12 +65,12 @@ export function SelectDatabaseTypeOptions(props: any) {
           </span>
         </div>
       ))}
-      {comingSoon.length > 0 && (
+      {comingSoonDataSourceOptions.length > 0 && (
         <div className="text-liblab-elements-textPrimary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
           Coming soon
         </div>
       )}
-      {comingSoon.map((opt) => (
+      {comingSoonDataSourceOptions.map((opt) => (
         <div
           key={opt.value}
           className="hover:cursor-not-allowed flex items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-60 cursor-default"

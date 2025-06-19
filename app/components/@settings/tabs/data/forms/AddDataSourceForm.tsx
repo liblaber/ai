@@ -33,7 +33,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { available } = useDataSourceTypesPlugin();
+  const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
@@ -172,7 +172,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   setDbName('');
                   setConnStr('');
                 }}
-                options={available}
+                options={availableDataSourceOptions}
                 width="100%"
                 menuPlacement={'bottom'}
                 minWidth="100%"
