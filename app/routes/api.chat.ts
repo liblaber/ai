@@ -7,7 +7,7 @@ import SwitchableStream from '~/lib/.server/llm/switchable-stream';
 import { createScopedLogger } from '~/utils/logger';
 import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
 import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
-import { WORK_DIR } from '~/utils/constants';
+import { DEFAULT_MODEL, DEFAULT_PROVIDER, WORK_DIR } from '~/utils/constants';
 import { createSummary } from '~/lib/.server/llm/create-summary';
 import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
 import { messageService } from '~/lib/services/messageService';
@@ -52,7 +52,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
     ? messageProperties.content.find((item) => item.type === 'text')?.text || ''
     : messageProperties.content;
 
-  await messageService.saveMessage(conversationId, textContent, messageProperties.model);
+  await messageService.saveMessage(conversationId, textContent, DEFAULT_MODEL);
 
   const cookieHeader = request.headers.get('Cookie');
   const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
@@ -195,7 +195,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
                 await messageService.saveMessage(
                   conversationId,
                   content,
-                  messageProperties.model,
+                  DEFAULT_MODEL,
                   usage.promptTokens,
                   usage.completionTokens,
                   finishReason,
@@ -242,13 +242,11 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
             logger.info(`Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
 
-            const lastUserMessage = messages.filter((x) => x.role == 'user').slice(-1)[0];
-            const { model, provider } = extractPropertiesFromMessage(lastUserMessage);
             messages.push({ id: generateId(), role: 'assistant', content });
             messages.push({
               id: generateId(),
               role: 'user',
-              content: `[Model: ${model}]\n\n[Provider: ${provider}]\n\n${CONTINUE_PROMPT}`,
+              content: `[Model: ${DEFAULT_MODEL}]\n\n[Provider: ${DEFAULT_PROVIDER}]\n\n${CONTINUE_PROMPT}`,
             });
 
             const result = await streamText({

@@ -12,7 +12,6 @@ import { Messages } from './Messages.client';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 
-import type { ProviderInfo } from '~/types/model';
 import type { ActionAlert } from '~/types/actions';
 import ChatAlert from './ChatAlert';
 import ProgressCompilation from './ProgressCompilation';
@@ -40,20 +39,7 @@ interface BaseChatProps {
   onStreamingChange?: (streaming: boolean) => void;
   messages?: Message[];
   description?: string;
-  enhancingPrompt?: boolean;
-  promptEnhanced?: boolean;
   input?: string;
-  model?: string;
-  setModel?: (model: string) => void;
-  provider?: ProviderInfo;
-  setProvider?: (provider: ProviderInfo) => void;
-  providerList?: ProviderInfo[];
-  sqlLlmModel?: string;
-  setSqlLlmModel?: (model: string) => void;
-  sqlLlmProvider?: ProviderInfo;
-  setSqlLlmProvider?: (provider: ProviderInfo) => void;
-  useDifferentSqlModel?: boolean;
-  setUseDifferentSqlModel?: (useDifferent: boolean) => void;
   handleStop?: () => void;
   sendMessage?: (
     event: React.UIEvent,
@@ -64,7 +50,6 @@ interface BaseChatProps {
   ) => Promise<void>;
   sendAutofixMessage?: (message: string) => Promise<void>;
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  enhancePrompt?: () => void;
   importChat?: (description: string, messages: Message[]) => Promise<void>;
   exportChat?: () => void;
   uploadedFiles?: File[];
