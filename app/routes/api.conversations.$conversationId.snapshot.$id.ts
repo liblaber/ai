@@ -28,7 +28,7 @@ export const loader: LoaderFunction = async ({ params: { conversationId, id } })
 
     const storageService = StorageServiceFactory.get();
     const data = await storageService.get(snapshot.storageKey);
-    const fileMap = JSON.parse(data.toString());
+    const fileMap = JSON.parse(data.toString()).value;
 
     if (!fileMap) {
       logger.error(`No snapshot files found for snapshot ${snapshot.id}`);

@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { type IChatMetadata, openDatabase } from './db';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { saveSnapshot, type SnapshotResponse } from '~/lib/persistence/snapshots';
-import { tempLog } from '~/root';
 import { createCommandsMessage, detectProjectCommands } from '~/utils/projectCommands';
 import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import { getConversation, updateConversation } from '~/lib/persistence/conversations';
@@ -66,8 +65,6 @@ export function useConversationHistory() {
           setCommandMessage(projectCommandsMessage);
         }
 
-        tempLog(conversation);
-
         setInitialMessages(conversation.messages);
 
         if (conversation.dataSourceId && conversation.dataSourceId !== selectedDataSourceId) {
@@ -78,7 +75,6 @@ export function useConversationHistory() {
 
         chatId.set(conversation.id);
 
-        tempLog('Setting ready..');
         setReady(true);
       })
       .catch((error) => {

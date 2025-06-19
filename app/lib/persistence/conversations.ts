@@ -1,7 +1,6 @@
 import type { Message } from '@ai-sdk/react';
 import { getLatestSnapshot, type SnapshotResponse } from '~/lib/persistence/snapshots';
 import { NO_EXECUTE_ACTION_ANNOTATION } from '~/lib/runtime/message-parser';
-import { tempLog } from '~/root';
 
 const CONVERSATIONS_API = '/api/conversations';
 
@@ -55,7 +54,6 @@ export async function getConversation(id: string): Promise<UIConversation> {
 
   const messages: Message[] =
     conversation?.messages.map((message) => {
-      tempLog(message.annotations);
       return {
         id: message.id,
         role: message.role.toLowerCase() as Message['role'],

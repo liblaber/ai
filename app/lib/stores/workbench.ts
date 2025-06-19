@@ -21,7 +21,6 @@ import type { ActionAlert } from '~/types/actions';
 import type { LiblabShell } from '~/utils/shell';
 import { useGitStore } from './git';
 import ignore from 'ignore';
-import { tempLog } from '~/root';
 
 const { saveAs } = fileSaver;
 
@@ -342,7 +341,6 @@ export class WorkbenchStore {
 
   runAction(data: ActionCallbackData, isStreaming: boolean = false) {
     if (!data.shouldExecute) {
-      tempLog('Skipping run action', data);
       return;
     }
 
