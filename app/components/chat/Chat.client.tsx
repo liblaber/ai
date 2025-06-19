@@ -7,7 +7,6 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useMessageParser, useShortcuts, useSnapScroll } from '~/lib/hooks';
 import { chatId, description, navigateChat, useConversationHistory } from '~/lib/persistence';
-import { createConversation } from '~/lib/persistence/db';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { MessageRole, PROMPT_COOKIE_KEY } from '~/utils/constants';
@@ -26,6 +25,7 @@ import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { type Message, useChat } from '@ai-sdk/react';
 import { generateId } from 'ai';
 import { useGitPullSync } from '~/lib/stores/git';
+import { createConversation } from '~/lib/persistence/conversations';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -35,7 +35,6 @@ interface ChatProps {
   initialMessages: Message[];
   commandMessage?: Message;
   storeConversationHistory: (latestMessageId: string) => Promise<void>;
-  importChat: (description: string, messages: Message[]) => Promise<void>;
   exportChat: () => void;
   description?: string;
 }
@@ -45,8 +44,7 @@ const logger = createScopedLogger('Chat');
 export function Chat() {
   renderLogger.trace('Chat');
 
-  const { ready, initialMessages, commandMessage, storeConversationHistory, importChat, exportChat } =
-    useConversationHistory();
+  const { ready, initialMessages, commandMessage, storeConversationHistory, exportChat } = useConversationHistory();
   const title = useStore(description);
   useEffect(() => {
     workbenchStore.setReloadedMessages(initialMessages.map((m) => m.id));
@@ -61,7 +59,6 @@ export function Chat() {
           commandMessage={commandMessage}
           exportChat={exportChat}
           storeConversationHistory={storeConversationHistory}
-          importChat={importChat}
         />
       )}
     </>
@@ -81,7 +78,7 @@ const processSampledMessages = createSampler(
 );
 
 export const ChatImpl = memo(
-  ({ description, initialMessages, commandMessage, storeConversationHistory, importChat, exportChat }: ChatProps) => {
+  ({ description, initialMessages, commandMessage, storeConversationHistory, exportChat }: ChatProps) => {
     useShortcuts();
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -335,9 +332,9 @@ export const ChatImpl = memo(
 
       // Generate a new chat ID right away to use in the request
       if (!chatId.get()) {
-        const nextId = await createConversation(datasourceId);
-        chatId.set(nextId);
-        navigateChat(nextId);
+        const conversationId = await createConversation(datasourceId);
+        chatId.set(conversationId);
+        navigateChat(conversationId);
       }
 
       const dataSourceUrlResponse = await fetch(`/api/data-sources/${datasourceId}/url`);
@@ -501,7 +498,6 @@ export const ChatImpl = memo(
           }}
           handleStop={abort}
           description={description}
-          importChat={importChat}
           exportChat={exportChat}
           messages={messages.map((message, i) => {
             if (message.role === MessageRole.User) {

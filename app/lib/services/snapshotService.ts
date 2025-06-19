@@ -4,7 +4,26 @@ import { prisma } from '~/lib/prisma';
 export const snapshotService = {
   async createSnapshot(snapshot: Omit<Snapshot, 'createdAt'>, tx?: Prisma.TransactionClient) {
     return (tx ?? prisma).snapshot.create({
-      data: snapshot,
+      data: {
+        ...snapshot,
+        id: undefined,
+        conversationId: undefined,
+        messageId: undefined,
+        conversation: {
+          connect: {
+            id: snapshot.conversationId,
+          },
+        },
+        ...(snapshot.messageId
+          ? {
+              message: {
+                connect: {
+                  id: snapshot.messageId,
+                },
+              },
+            }
+          : {}),
+      },
     });
   },
 
@@ -12,6 +31,17 @@ export const snapshotService = {
     return prisma.snapshot.findFirst({
       where: {
         conversationId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  },
+
+  async getLatestSnapshotForMessages(messageIds: string[]) {
+    return prisma.snapshot.findFirst({
+      where: {
+        messageId: { in: messageIds },
       },
       orderBy: {
         createdAt: 'desc',

@@ -12,7 +12,7 @@ interface ErrorResponse {
 }
 
 export const saveSnapshot = async (chatId: string, messageId?: string): Promise<void> => {
-  const fileMap = workbenchStore.files.get();
+  const fileMap = workbenchStore.getFileMap();
 
   try {
     const response = await fetch(`/api/conversations/${chatId}/snapshots`, {
@@ -32,8 +32,6 @@ export const saveSnapshot = async (chatId: string, messageId?: string): Promise<
     }
   } catch (error) {
     console.error('Error saving snapshot', error);
-
-    // TODO @lane implement retry perhaps?
     toast.error('Failed to save snapshot');
   }
 };

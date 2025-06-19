@@ -50,7 +50,6 @@ interface BaseChatProps {
   ) => Promise<void>;
   sendAutofixMessage?: (message: string) => Promise<void>;
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  importChat?: (description: string, messages: Message[]) => Promise<void>;
   exportChat?: () => void;
   uploadedFiles?: File[];
   setUploadedFiles?: (files: File[]) => void;

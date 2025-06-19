@@ -1,5 +1,5 @@
 import { prisma } from '~/lib/prisma';
-import type { Conversation } from '@prisma/client';
+import type { Conversation, Prisma } from '@prisma/client';
 
 export const conversationService = {
   async getConversation(conversationId: string): Promise<Conversation | null> {
@@ -8,9 +8,14 @@ export const conversationService = {
     });
   },
 
-  async createConversation(dataSourceId: string): Promise<Conversation> {
-    return await prisma.conversation.create({
+  async createConversation(
+    dataSourceId: string,
+    description?: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Conversation> {
+    return await (tx ?? prisma).conversation.create({
       data: {
+        description,
         dataSource: {
           connect: { id: dataSourceId },
         },

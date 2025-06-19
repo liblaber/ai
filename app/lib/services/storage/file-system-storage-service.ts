@@ -33,9 +33,8 @@ export class LocalSystemStorageService implements StorageService {
   async get(key: string): Promise<Buffer> {
     const filePath = this._getFilePath(key);
     const encryptedData = await fs.readFile(filePath);
-    const decryptedData = decryptData(process.env.ENCRYPTION_KEY as string, encryptedData.toString());
 
-    return Buffer.from(decryptedData);
+    return decryptData(process.env.ENCRYPTION_KEY as string, encryptedData.toString());
   }
 
   async delete(key: string): Promise<void> {

@@ -159,6 +159,16 @@ export class WorkbenchStore {
     this.showWorkbench.set(show);
   }
 
+  /**
+   * Get the file map from the workbench, without the workdir prefix
+   * @returns The file map
+   */
+  getFileMap(): FileMap {
+    return Object.fromEntries(
+      Object.entries(this.#filesStore.files).map(([path, dirent]) => [extractRelativePath(path), dirent]),
+    );
+  }
+
   setCurrentDocumentContent(newContent: string) {
     const filePath = this.currentDocument.get()?.filePath;
 

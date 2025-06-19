@@ -3,13 +3,21 @@ import { getLatestSnapshot, type SnapshotResponse } from '~/lib/persistence/snap
 import { NO_EXECUTE_ACTION_ANNOTATION } from '~/lib/runtime/message-parser';
 import { tempLog } from '~/root';
 
+const CONVERSATIONS_API = '/api/conversations';
+
 type MessageResponse = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  model: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  finishReason?: string;
   createdAt: number;
   annotations: string[];
 };
+
+type MessageRequest = MessageResponse;
 
 type ConversationResponse = {
   id: string;
@@ -29,10 +37,11 @@ export type UpdateConversationRequest = {
 type UIConversation = Omit<ConversationResponse, 'messages'> & {
   messages: Message[];
   snapshot: SnapshotResponse;
+  messagesResponse: MessageResponse[];
 };
 
 export async function getConversation(id: string): Promise<UIConversation> {
-  const response = await fetch(`/api/conversations/${id}`);
+  const response = await fetch(`${CONVERSATIONS_API}/${id}`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch conversation: ${response.statusText}`);
@@ -62,14 +71,36 @@ export async function getConversation(id: string): Promise<UIConversation> {
     ...conversation,
     messages,
     snapshot,
+    messagesResponse: conversation.messages,
   };
+}
+
+export async function createConversation(dataSourceId: string, messages?: MessageRequest[]): Promise<string> {
+  const response = await fetch(CONVERSATIONS_API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      dataSourceId,
+      messages,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create conversation: ${response.statusText}`);
+  }
+
+  const data = (await response.json()) as { id: string };
+
+  return data.id;
 }
 
 export async function updateConversation(
   id: string,
   conversation: UpdateConversationRequest,
 ): Promise<ConversationResponse> {
-  const response = await fetch(`/api/conversations/${id}`, {
+  const response = await fetch(`${CONVERSATIONS_API}/${id}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -85,11 +116,30 @@ export async function updateConversation(
 }
 
 export async function getConversations(): Promise<SimpleConversationResponse[]> {
-  const response = await fetch('/api/conversations');
+  const response = await fetch(CONVERSATIONS_API);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch conversations: ${response.statusText}`);
   }
 
   return response.json();
+}
+
+export async function forkConversation(conversationId: string, messageId: string): Promise<string> {
+  const conversation = await getConversation(conversationId);
+
+  if (!conversation) {
+    throw new Error('Chat not found');
+  }
+
+  // Find the index of the message to fork at
+  const messageIndex = conversation.messagesResponse.findIndex((message) => message.id === messageId);
+
+  if (messageIndex === -1) {
+    throw new Error('Message not found');
+  }
+
+  const messages = conversation.messagesResponse.slice(0, messageIndex + 1);
+
+  return createConversation(conversation.dataSourceId, messages);
 }

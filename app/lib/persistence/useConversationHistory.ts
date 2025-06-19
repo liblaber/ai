@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { atom } from 'nanostores';
 import { type Message } from 'ai';
 import { toast } from 'sonner';
-import { createChatFromMessages, duplicateChat, getMessages, type IChatMetadata, openDatabase } from './db';
+import { type IChatMetadata, openDatabase } from './db';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { saveSnapshot, type SnapshotResponse } from '~/lib/persistence/snapshots';
 import { tempLog } from '~/root';
@@ -111,50 +111,14 @@ export function useConversationHistory() {
 
       await pushToRemote();
     },
-    duplicateCurrentChat: async (listItemId: string) => {
-      if (!db || (!id && !listItemId)) {
-        return;
-      }
-
-      try {
-        const newId = await duplicateChat(db, id || listItemId);
-        navigate(`/chat/${newId}`);
-        toast.success('Chat duplicated successfully');
-      } catch (error) {
-        toast.error('Failed to duplicate chat');
-        console.log(error);
-      }
-    },
-    importChat: async (description: string, messages: Message[], metadata?: IChatMetadata) => {
-      if (!db) {
-        return;
-      }
-
-      try {
-        const newId = await createChatFromMessages(db, description, messages, metadata);
-        window.location.href = `/chat/${newId}`;
-        toast.success('Chat imported successfully');
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error('Failed to import chat: ' + error.message);
-        } else {
-          toast.error('Failed to import chat');
-        }
-      }
-    },
     exportChat: async (id = chatId.get()) => {
       if (!db || !id) {
         return;
       }
 
-      const chat = await getMessages(db, id);
-      const chatData = {
-        messages: chat.messages,
-        description: chat.description,
-        exportDate: new Date().toISOString(),
-      };
+      const chat = await getConversation(id);
 
-      const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(chat, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

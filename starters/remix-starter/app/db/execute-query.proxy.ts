@@ -20,7 +20,7 @@ export async function executeQueryThroughProxy<T>(query: string, params?: string
 
   const decryptedData = decryptData(process.env.ENCRYPTION_KEY as string, response.data.encryptedData);
 
-  return { data: decryptedData };
+  return { data: JSON.parse(decryptedData.toString()) };
 }
 
 async function fetchProxyApi<T>(endpoint: string, options: RequestInit = {}): Promise<{ data: T }> {

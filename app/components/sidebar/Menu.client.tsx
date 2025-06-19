@@ -61,7 +61,7 @@ function CurrentDateTime() {
 }
 
 export const Menu = () => {
-  const { duplicateCurrentChat, exportChat } = useConversationHistory();
+  const { exportChat } = useConversationHistory();
   const menuRef = useRef<HTMLDivElement>(null);
   const [conversations, setConversations] = useState<SimpleConversationResponse[]>([]);
   const [open, setOpen] = useState(false);
@@ -141,11 +141,6 @@ export const Menu = () => {
     setDialogContent({ type: 'delete', item });
   };
 
-  const handleDuplicate = async (id: string) => {
-    await duplicateCurrentChat(id);
-    loadEntries(); // Reload the list after duplication
-  };
-
   const handleSettingsClick = () => {
     openSettingsPanel();
   };
@@ -207,7 +202,6 @@ export const Menu = () => {
                         item={item}
                         exportChat={exportChat}
                         onDelete={(event) => handleDeleteClick(event, item)}
-                        onDuplicate={() => handleDuplicate(item.id)}
                       />
                     ))}
                   </div>
