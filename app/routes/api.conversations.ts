@@ -31,3 +31,22 @@ export async function action({ request }: LoaderFunctionArgs) {
     );
   }
 }
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  if (request.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
+  try {
+    const conversations = await conversationService.getAllConversations();
+    return Response.json(conversations);
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
+    return Response.json(
+      {
+        error: 'Failed to fetch conversations',
+      },
+      { status: 500 },
+    );
+  }
+}

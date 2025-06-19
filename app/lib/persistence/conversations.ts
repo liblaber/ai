@@ -15,8 +15,12 @@ type ConversationResponse = {
   id: string;
   description?: string;
   messages: MessageResponse[];
+  createdAt: number;
+  updatedAt: number;
   dataSourceId: string;
 };
+
+export type SimpleConversationResponse = Omit<ConversationResponse, 'messages'>;
 
 export type UpdateConversationRequest = {
   description?: string;
@@ -75,6 +79,16 @@ export async function updateConversation(
 
   if (!response.ok) {
     throw new Error(`Failed to update conversation: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function getConversations(): Promise<SimpleConversationResponse[]> {
+  const response = await fetch('/api/conversations');
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch conversations: ${response.statusText}`);
   }
 
   return response.json();

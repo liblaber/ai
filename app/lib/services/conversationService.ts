@@ -27,4 +27,19 @@ export const conversationService = {
       data,
     });
   },
+
+  async getAllConversations(): Promise<Conversation[]> {
+    return await prisma.conversation.findMany({
+      select: {
+        id: true,
+        description: true,
+        dataSourceId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  },
 };
