@@ -11,7 +11,7 @@ export class DataAccessor {
     // Only allow accessors that are enabled by the plugin manager
     const enabledAccessors = allAccessors.filter((acc: BaseAccessorConstructor) => {
       // Use static pluginId if present, otherwise infer from label
-      const pluginId = (acc as any).pluginId || new acc().label.toLowerCase().replace(/\s.*/, '');
+      const pluginId = acc.pluginId || new acc().label.toLowerCase().replace(/\s.*/, '');
       return DataSourcePluginManager.isAvailable(pluginId);
     });
 
@@ -33,7 +33,7 @@ export class DataAccessor {
     const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor];
     return allAccessors.map((acc) => {
       const instance = new acc();
-      const pluginId = (acc as any).pluginId || instance.label.toLowerCase().replace(/\s.*/, '');
+      const pluginId = acc.pluginId || instance.label.toLowerCase().replace(/\s.*/, '');
 
       return {
         value: pluginId,

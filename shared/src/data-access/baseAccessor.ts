@@ -58,7 +58,11 @@ export interface BaseAccessor {
   readonly label: string;
 }
 
-export interface BaseAccessorConstructor {
+interface Plugin {
+  pluginId: string;
+}
+
+export interface BaseAccessorConstructor extends Plugin {
   new (): BaseAccessor;
 
   /**
