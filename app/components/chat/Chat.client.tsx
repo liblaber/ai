@@ -5,7 +5,7 @@
 import { useStore } from '@nanostores/react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { useMessageParser, usePromptEnhancer, useShortcuts, useSnapScroll } from '~/lib/hooks';
+import { useMessageParser, useShortcuts, useSnapScroll } from '~/lib/hooks';
 import { chatId, description, navigateChat, useChatHistory } from '~/lib/persistence';
 import { getNextId } from '~/lib/persistence/db';
 import { chatStore } from '~/lib/stores/chat';
@@ -16,14 +16,12 @@ import { BaseChat } from './BaseChat';
 import Cookies from 'js-cookie';
 import { debounce } from '~/utils/debounce';
 import { useSettings } from '~/lib/hooks/useSettings';
-import type { ProviderInfo } from '~/types/model';
 import { createSampler } from '~/utils/sampler';
 import { getStarterTemplateMessages } from '~/utils/selectStarterTemplate';
 import { streamingState } from '~/lib/stores/streaming';
 import { filesToArtifacts } from '~/utils/fileUtils';
 import { type OutputAppEvent, OutputAppEventType } from '~/utils/output-app';
 import { QueryModal } from '~/components/chat/query-modal/QueryModal';
-import { LLMManager } from '~/lib/modules/llm/manager';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { type Message, useChat } from '@ai-sdk/react';
 import { generateId } from 'ai';
@@ -98,32 +96,6 @@ export const ChatImpl = memo(
 
     const { selectedDataSourceId } = useDataSourcesStore();
 
-    const llmManager = LLMManager.getInstance();
-    const [model] = useState(() => llmManager.defaultModel);
-    const [provider] = useState(() => {
-      const provider = llmManager.getProvider();
-      return {
-        name: provider.name,
-        staticModels: provider.staticModels,
-        getApiKeyLink: provider.getApiKeyLink,
-        labelForGetApiKey: provider.labelForGetApiKey,
-        icon: provider.icon,
-      } as ProviderInfo;
-    });
-
-    const [sqlLlmModel] = useState(() => llmManager.defaultModel);
-    const [sqlLlmProvider] = useState(() => {
-      const provider = llmManager.getProvider();
-      return {
-        name: provider.name,
-        staticModels: provider.staticModels,
-        getApiKeyLink: provider.getApiKeyLink,
-        labelForGetApiKey: provider.labelForGetApiKey,
-        icon: provider.icon,
-      } as ProviderInfo;
-    });
-    const [useDifferentSqlModel] = useState(false);
-
     const { showChat } = useStore(chatStore);
 
     const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
@@ -173,7 +145,6 @@ export const ChatImpl = memo(
     });
     const isLoading = status === 'streaming';
 
-    const { enhancingPrompt, promptEnhanced, enhancePrompt, resetEnhancer } = usePromptEnhancer();
     const { parsedMessages, parseMessages } = useMessageParser();
 
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
@@ -189,14 +160,6 @@ export const ChatImpl = memo(
         parseMessages,
       });
     }, [messages, isLoading, parseMessages]);
-
-    const scrollTextArea = () => {
-      const textarea = textareaRef.current;
-
-      if (textarea) {
-        textarea.scrollTop = textarea.scrollHeight;
-      }
-    };
 
     const abort = () => {
       stop();
@@ -257,12 +220,7 @@ export const ChatImpl = memo(
           {
             role: 'user',
             content: formatMessageWithModelInfo({
-              model,
-              provider,
               messageContent: userUpdateArtifact + messageContent,
-              useDifferentSqlModel,
-              sqlLlmModel,
-              sqlLlmProvider,
               dataSourceId: selectedDataSourceId!,
               askLiblab,
               dataList,
@@ -282,12 +240,7 @@ export const ChatImpl = memo(
           {
             role: 'user',
             content: formatMessageWithModelInfo({
-              model,
-              provider,
               messageContent,
-              useDifferentSqlModel,
-              sqlLlmModel,
-              sqlLlmProvider,
               dataSourceId: selectedDataSourceId!,
               askLiblab,
               dataList,
@@ -307,8 +260,6 @@ export const ChatImpl = memo(
 
       setUploadedFiles([]);
       setImageDataList([]);
-
-      resetEnhancer();
 
       workbenchStore.previewsStore.makingChanges();
 
@@ -338,12 +289,7 @@ export const ChatImpl = memo(
           role: 'user',
           annotations: ['hidden'],
           content: formatMessageWithModelInfo({
-            model,
-            provider,
             messageContent: `${userUpdateArtifact}${message}`,
-            useDifferentSqlModel,
-            sqlLlmModel,
-            sqlLlmProvider,
             dataSourceId: selectedDataSourceId!,
             askLiblab: true,
           }),
@@ -363,8 +309,6 @@ export const ChatImpl = memo(
 
       setUploadedFiles([]);
       setImageDataList([]);
-
-      resetEnhancer();
 
       textareaRef.current?.blur();
     };
@@ -418,12 +362,7 @@ export const ChatImpl = memo(
             id: `3-${new Date().getTime()}`,
             role: 'user',
             content: formatMessageWithModelInfo({
-              model,
-              provider,
               messageContent,
-              useDifferentSqlModel,
-              sqlLlmModel,
-              sqlLlmProvider,
               firstUserMessage: true,
               dataSourceId: selectedDataSourceId!,
               dataList,
@@ -443,8 +382,6 @@ export const ChatImpl = memo(
         setUploadedFiles([]);
         setImageDataList([]);
 
-        resetEnhancer();
-
         textareaRef.current?.blur();
         setFakeLoading(false);
 
@@ -457,12 +394,7 @@ export const ChatImpl = memo(
           id: `${new Date().getTime()}`,
           role: 'user',
           content: formatMessageWithModelInfo({
-            model,
-            provider,
             messageContent,
-            useDifferentSqlModel,
-            sqlLlmModel,
-            sqlLlmProvider,
             dataSourceId: selectedDataSourceId!,
           }),
         },
@@ -478,8 +410,6 @@ export const ChatImpl = memo(
 
       setUploadedFiles([]);
       setImageDataList([]);
-
-      resetEnhancer();
 
       textareaRef.current?.blur();
 
@@ -549,13 +479,8 @@ export const ChatImpl = memo(
           onStreamingChange={(streaming) => {
             streamingState.set(streaming);
           }}
-          enhancingPrompt={enhancingPrompt}
-          promptEnhanced={promptEnhanced}
           sendMessage={sendMessage}
           sendAutofixMessage={sendAutofixMessage}
-          model={model}
-          provider={provider}
-          providerList={[provider]}
           messageRef={messageRef}
           scrollRef={scrollRef}
           handleInputChange={(e) => {
@@ -576,18 +501,6 @@ export const ChatImpl = memo(
               content: parsedMessages[i] || '',
             };
           })}
-          enhancePrompt={() => {
-            enhancePrompt(
-              input,
-              (input) => {
-                setInput(input);
-                scrollTextArea();
-              },
-              model,
-              provider,
-              apiKeys,
-            );
-          }}
           uploadedFiles={uploadedFiles}
           setUploadedFiles={setUploadedFiles}
           imageDataList={imageDataList}
@@ -611,13 +524,8 @@ export const ChatImpl = memo(
 );
 
 interface MessageWithModelInfo {
-  model: string;
-  provider: ProviderInfo;
   messageContent: string;
   dataSourceId: string;
-  useDifferentSqlModel?: boolean;
-  sqlLlmModel?: string;
-  sqlLlmProvider?: ProviderInfo;
   firstUserMessage?: boolean;
   askLiblab?: boolean;
   dataList?: string[];
@@ -631,22 +539,13 @@ const createExperimentalAttachments = (dataList: string[], files: File[]) =>
   }));
 
 const formatMessageWithModelInfo = ({
-  model,
-  provider,
   messageContent,
   dataSourceId,
-  useDifferentSqlModel,
-  sqlLlmModel,
-  sqlLlmProvider,
   firstUserMessage,
   askLiblab,
   dataList,
 }: MessageWithModelInfo) => {
-  let formattedMessage = `[Model: ${model}]\n\n[Provider: ${provider.name}]`;
-
-  if (useDifferentSqlModel && sqlLlmModel && sqlLlmProvider) {
-    formattedMessage += `\n\n[SqlModel: ${sqlLlmModel}]\n\n[SqlProvider: ${sqlLlmProvider.name}]`;
-  }
+  let formattedMessage = '';
 
   if (firstUserMessage) {
     formattedMessage += `\n\n[FirstUserMessage: true]`;

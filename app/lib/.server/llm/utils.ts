@@ -1,25 +1,10 @@
 import { type Message } from 'ai';
-import {
-  DATA_SOURCE_ID_REGEX,
-  DEFAULT_MODEL,
-  DEFAULT_PROVIDER,
-  FIRST_USER_MESSAGE_REGEX,
-  MODEL_REGEX,
-  PROVIDER_REGEX,
-  SQL_MODEL_REGEX,
-  SQL_PROVIDER_REGEX,
-  ASK_LIBLAB_REGEX,
-  FILES_REGEX,
-} from '~/utils/constants';
+import { DATA_SOURCE_ID_REGEX, FIRST_USER_MESSAGE_REGEX, ASK_LIBLAB_REGEX, FILES_REGEX } from '~/utils/constants';
 import { type FileMap, IGNORE_PATTERNS } from './constants';
 import ignore from 'ignore';
 import type { ContextAnnotation } from '~/types/context';
 
 export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
-  model: string;
-  provider: string;
-  sqlModel?: string;
-  sqlProvider?: string;
   isFirstUserMessage?: boolean;
   dataSourceId?: string;
   content: string;
@@ -29,28 +14,9 @@ export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
     ? message.content.find((item) => item.type === 'text')?.text || ''
     : message.content;
 
-  const modelMatch = textContent.match(MODEL_REGEX);
-  const providerMatch = textContent.match(PROVIDER_REGEX);
-  const sqlModelMatch = textContent.match(SQL_MODEL_REGEX);
-  const sqlProviderMatch = textContent.match(SQL_PROVIDER_REGEX);
   const isFirstUserMessageMatch = textContent.match(FIRST_USER_MESSAGE_REGEX);
   const dataSourceIdMatch = textContent.match(DATA_SOURCE_ID_REGEX);
   const askLiblabMatch = textContent.match(ASK_LIBLAB_REGEX);
-
-  /*
-   * Extract model
-   * const modelMatch = message.content.match(MODEL_REGEX);
-   */
-  const model = modelMatch ? modelMatch[1] : DEFAULT_MODEL;
-
-  /*
-   * Extract provider
-   * const providerMatch = message.content.match(PROVIDER_REGEX);
-   */
-  const provider = providerMatch ? providerMatch[1] : DEFAULT_PROVIDER.name;
-
-  const sqlModel = sqlModelMatch ? sqlModelMatch[1] : undefined;
-  const sqlProvider = sqlProviderMatch ? sqlProviderMatch[1] : undefined;
 
   const isFirstUserMessage = isFirstUserMessageMatch ? isFirstUserMessageMatch[1] === 'true' : false;
   const dataSourceId = dataSourceIdMatch ? dataSourceIdMatch[1] : undefined;
@@ -61,11 +27,7 @@ export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
           return {
             type: 'text',
             text: item.text
-              ?.replace(MODEL_REGEX, '')
-              .replace(PROVIDER_REGEX, '')
-              .replace(SQL_MODEL_REGEX, '')
-              .replace(SQL_PROVIDER_REGEX, '')
-              .replace(FIRST_USER_MESSAGE_REGEX, '')
+              ?.replace(FIRST_USER_MESSAGE_REGEX, '')
               .replace(DATA_SOURCE_ID_REGEX, '')
               .replace(ASK_LIBLAB_REGEX, '')
               .replace(FILES_REGEX, ''),
@@ -75,20 +37,12 @@ export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
         return item; // Preserve image_url and other types as is
       })
     : textContent
-        .replace(MODEL_REGEX, '')
-        .replace(PROVIDER_REGEX, '')
-        .replace(SQL_MODEL_REGEX, '')
-        .replace(SQL_PROVIDER_REGEX, '')
         .replace(FIRST_USER_MESSAGE_REGEX, '')
         .replace(DATA_SOURCE_ID_REGEX, '')
         .replace(ASK_LIBLAB_REGEX, '')
         .replace(FILES_REGEX, '');
 
   return {
-    model,
-    provider,
-    sqlModel,
-    sqlProvider,
     content: cleanedContent,
     isFirstUserMessage,
     dataSourceId,
