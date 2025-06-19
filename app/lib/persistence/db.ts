@@ -1,7 +1,6 @@
 import type { Message } from 'ai';
 import { createScopedLogger } from '~/utils/logger';
-import type { ChatHistoryItem } from './useChatHistory';
-import { getConversation } from '~/lib/persistence/conversations';
+import type { ChatHistoryItem } from './useConversationHistory';
 
 export interface IChatMetadata {
   gitUrl?: string;
@@ -84,9 +83,7 @@ export async function setMessages(
 }
 
 export async function getMessages(db: IDBDatabase, id: string): Promise<ChatHistoryItem> {
-  return getConversation(id);
-
-  // return getMessagesById(db, id);
+  return getMessagesById(db, id);
 }
 
 export async function getMessagesById(db: IDBDatabase, id: string): Promise<ChatHistoryItem> {

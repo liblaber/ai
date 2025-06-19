@@ -1,6 +1,6 @@
 import type { Message } from '@ai-sdk/react';
 import { useCallback, useState } from 'react';
-import { StreamingMessageParser } from '~/lib/runtime/message-parser';
+import { NO_EXECUTE_ACTION_ANNOTATION, StreamingMessageParser } from '~/lib/runtime/message-parser';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { createScopedLogger } from '~/utils/logger';
 
@@ -22,7 +22,7 @@ const messageParser = new StreamingMessageParser({
     onActionOpen: (data) => {
       logger.trace('onActionOpen', data.action);
 
-      // we only add shell actions when when the close tag got parsed because only then we have the content
+      // we only add shell actions when the close tag got parsed because only then we have the content
       if (data.action.type === 'file') {
         workbenchStore.addAction(data);
       }
@@ -63,7 +63,10 @@ export function useMessageParser() {
 
     for (const [index, message] of messages.entries()) {
       if (message.role === 'assistant' || message.role === 'user') {
-        const newParsedContent = messageParser.parse(message.id, extractTextContent(message));
+        const shouldExecuteActions = !message.annotations?.some(
+          (annotation) => annotation === NO_EXECUTE_ACTION_ANNOTATION,
+        );
+        const newParsedContent = messageParser.parse(message.id, extractTextContent(message), shouldExecuteActions);
         setParsedMessages((prevParsed) => ({
           ...prevParsed,
           [index]: !reset ? (prevParsed[index] || '') + newParsedContent : newParsedContent,

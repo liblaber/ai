@@ -6,7 +6,7 @@ import { useStore } from '@nanostores/react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useMessageParser, usePromptEnhancer, useShortcuts, useSnapScroll } from '~/lib/hooks';
-import { chatId, description, navigateChat, useChatHistory } from '~/lib/persistence';
+import { chatId, description, navigateChat, useConversationHistory } from '~/lib/persistence';
 import { createConversation } from '~/lib/persistence/db';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
@@ -27,9 +27,7 @@ import { LLMManager } from '~/lib/modules/llm/manager';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { type Message, useChat } from '@ai-sdk/react';
 import { generateId } from 'ai';
-import { pushToRemote, useGitPullSync } from '~/lib/stores/git';
-import { saveSnapshot } from '~/lib/persistence/snapshots';
-import { tempLog } from '~/root';
+import { useGitPullSync } from '~/lib/stores/git';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -37,7 +35,8 @@ type DatabaseUrlResponse = {
 
 interface ChatProps {
   initialMessages: Message[];
-  storeMessageHistory: (messages: Message[]) => Promise<void>;
+  commandMessage?: Message;
+  storeConversationHistory: (latestMessageId: string) => Promise<void>;
   importChat: (description: string, messages: Message[]) => Promise<void>;
   exportChat: () => void;
   description?: string;
@@ -48,7 +47,8 @@ const logger = createScopedLogger('Chat');
 export function Chat() {
   renderLogger.trace('Chat');
 
-  const { ready, initialMessages, storeMessageHistory, importChat, exportChat } = useChatHistory();
+  const { ready, initialMessages, commandMessage, storeConversationHistory, importChat, exportChat } =
+    useConversationHistory();
   const title = useStore(description);
   useEffect(() => {
     workbenchStore.setReloadedMessages(initialMessages.map((m) => m.id));
@@ -60,8 +60,9 @@ export function Chat() {
         <ChatImpl
           description={title}
           initialMessages={initialMessages}
+          commandMessage={commandMessage}
           exportChat={exportChat}
-          storeMessageHistory={storeMessageHistory}
+          storeConversationHistory={storeConversationHistory}
           importChat={importChat}
         />
       )}
@@ -82,7 +83,7 @@ const processSampledMessages = createSampler(
 );
 
 export const ChatImpl = memo(
-  ({ description, initialMessages, storeMessageHistory, importChat, exportChat }: ChatProps) => {
+  ({ description, initialMessages, commandMessage, storeConversationHistory, importChat, exportChat }: ChatProps) => {
     useShortcuts();
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -165,17 +166,23 @@ export const ChatImpl = memo(
         logger.debug('Finished streaming');
 
         setTimeout(async () => {
-          await storeMessageHistory(messagesRef.current);
-
-          tempLog('Saving snap for message id', id);
-          await saveSnapshot(chatId.get()!, id);
-
-          await pushToRemote();
+          await storeConversationHistory(id);
         }, 2000);
       },
       initialMessages,
       initialInput: Cookies.get(PROMPT_COOKIE_KEY) || '',
     });
+
+    useEffect(() => {
+      if (!commandMessage) {
+        return;
+      }
+
+      setTimeout(() => {
+        setMessages([...messagesRef.current, commandMessage]);
+      }, 2000);
+    }, [commandMessage]);
+
     const isLoading = status === 'streaming';
 
     const { enhancingPrompt, promptEnhanced, enhancePrompt, resetEnhancer } = usePromptEnhancer();

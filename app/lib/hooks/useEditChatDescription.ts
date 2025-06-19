@@ -1,13 +1,8 @@
 import { useStore } from '@nanostores/react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import {
-  chatId as chatIdStore,
-  db,
-  description as descriptionStore,
-  getMessages,
-  updateChatDescription,
-} from '~/lib/persistence';
+import { chatId as chatIdStore, db, description as descriptionStore, getMessages } from '~/lib/persistence';
+import { updateConversation } from '~/lib/persistence/conversations';
 
 interface EditChatDescriptionOptions {
   initialDescription?: string;
@@ -128,7 +123,7 @@ export function useEditChatDescription({
           return;
         }
 
-        await updateChatDescription(db, chatId, currentDescription);
+        await updateConversation(chatId, { description: currentDescription });
 
         if (syncWithGlobalStore) {
           descriptionStore.set(currentDescription);

@@ -1,10 +1,10 @@
 import { toast } from 'sonner';
 import { workbenchStore } from '~/lib/stores/workbench';
-import type { FileMap } from '../stores/files';
+import type { FileMap } from '~/lib/stores/files';
 
 export interface SnapshotResponse {
   id: string;
-  fileMap: FileMap,
+  fileMap: FileMap;
 }
 
 interface ErrorResponse {
@@ -41,11 +41,13 @@ export const saveSnapshot = async (chatId: string, messageId?: string): Promise<
 export const getLatestSnapshot = async (conversationId: string): Promise<SnapshotResponse> => {
   try {
     const response = await fetch(`/api/conversations/${conversationId}/snapshots/latest`);
+
     if (!response.ok) {
       const error: any = await response.json();
       throw new Error(error.error || 'Failed to fetch latest snapshot');
     }
-    return await (response.json()) as SnapshotResponse;
+
+    return (await response.json()) as SnapshotResponse;
   } catch (error: any) {
     console.error('Error fetching latest snapshot', error);
     toast.error('Failed to fetch latest snapshot');

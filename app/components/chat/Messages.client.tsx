@@ -5,7 +5,7 @@ import { classNames } from '~/utils/classNames';
 import { AssistantMessage } from './AssistantMessage';
 import { UserMessage } from './UserMessage';
 import { useLocation } from '@remix-run/react';
-import { chatId, db } from '~/lib/persistence/useChatHistory';
+import { chatId, db } from '~/lib/persistence/useConversationHistory';
 import { forkChat } from '~/lib/persistence/db';
 import { toast } from 'sonner';
 import WithTooltip from '~/components/ui/Tooltip';

@@ -1,40 +1,81 @@
-import type { ChatHistoryItem } from '~/lib/persistence/useChatHistory';
 import type { Message } from '@ai-sdk/react';
 import { getLatestSnapshot, type SnapshotResponse } from '~/lib/persistence/snapshots';
+import { NO_EXECUTE_ACTION_ANNOTATION } from '~/lib/runtime/message-parser';
+import { tempLog } from '~/root';
 
-export async function getConversation(id: string): Promise<ChatHistoryItem> {
+type MessageResponse = {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: number;
+  annotations: string[];
+};
+
+type ConversationResponse = {
+  id: string;
+  description?: string;
+  messages: MessageResponse[];
+  dataSourceId: string;
+};
+
+export type UpdateConversationRequest = {
+  description?: string;
+};
+
+type UIConversation = Omit<ConversationResponse, 'messages'> & {
+  messages: Message[];
+  snapshot: SnapshotResponse;
+};
+
+export async function getConversation(id: string): Promise<UIConversation> {
   const response = await fetch(`/api/conversations/${id}`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch conversation: ${response.statusText}`);
   }
 
-  const data = (await response.json()) as any;
-  const conversation = data.conversation;
+  const conversation: ConversationResponse = await response.json();
 
   if (!conversation) {
     throw new Error('Conversation not found');
   }
 
-  // Map DB messages to Message type
-  const messages: Message[] = (conversation.messages || []).map((msg: any) => {
-    const roleString = msg.role?.toLowerCase();
-    return {
-      id: msg.id,
-      role: roleString === 'agent' ? 'assistant' : (roleString ?? 'user'), // ensure lowercase for compatibility
-      content: msg.content,
-      createdAt: msg.createdAt ? new Date(msg.createdAt) : undefined,
-    };
-  });
+  const messages: Message[] =
+    conversation?.messages.map((message) => {
+      tempLog(message.annotations);
+      return {
+        id: message.id,
+        role: message.role.toLowerCase() as Message['role'],
+        content: message.content,
+        createdAt: message.createdAt ? new Date(message.createdAt) : undefined,
+        annotations: [...(message.annotations ?? []), NO_EXECUTE_ACTION_ANNOTATION],
+      };
+    }) ?? [];
 
   const snapshot: SnapshotResponse = await getLatestSnapshot(id);
 
   return {
-    id: conversation.id,
-    description: conversation.description || 'Create MILE',
+    ...conversation,
     messages,
-    timestamp: conversation.createdAt || conversation.updatedAt || new Date().toISOString(),
-    metadata: conversation.dataSourceId ? { dataSourceId: conversation.dataSourceId } : undefined,
     snapshot,
   };
+}
+
+export async function updateConversation(
+  id: string,
+  conversation: UpdateConversationRequest,
+): Promise<ConversationResponse> {
+  const response = await fetch(`/api/conversations/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(conversation),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update conversation: ${response.statusText}`);
+  }
+
+  return response.json();
 }

@@ -48,12 +48,26 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   }>();
   const { messages, files, conversationId, promptId, contextOptimization } = body;
 
-  const messageProperties = extractPropertiesFromMessage(messages[messages.length - 1]);
-  const textContent = Array.isArray(messageProperties.content)
+  const message = messages.at(-1);
+
+  if (!message) {
+    throw new Response('Message not specified', {
+      status: 400,
+      statusText: 'Bad Request',
+    });
+  }
+
+  const messageProperties = extractPropertiesFromMessage(message);
+  const content = Array.isArray(messageProperties.content)
     ? messageProperties.content.find((item) => item.type === 'text')?.text || ''
     : messageProperties.content;
 
-  await messageService.saveMessage(conversationId, textContent, messageProperties.model);
+  await messageService.saveMessage({
+    conversationId,
+    content,
+    model: messageProperties.model,
+    annotations: message.annotations,
+  });
 
   const cookieHeader = request.headers.get('Cookie');
   const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
@@ -138,7 +152,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           } satisfies ProgressAnnotation);
 
           // Select context files
-          console.log(`Messages count: ${messages.length}`);
+          logger.debug(`Messages count: ${messages.length}`);
           filteredFiles = await selectContext({
             messages: [...messages],
             env: context.cloudflare?.env,
@@ -196,16 +210,16 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
             if (usage) {
               try {
-                await messageService.saveMessage(
+                await messageService.saveMessage({
                   conversationId,
                   content,
-                  messageProperties.model,
-                  usage.promptTokens,
-                  usage.completionTokens,
+                  model: messageProperties.model,
+                  inputTokens: usage.promptTokens,
+                  outputTokens: usage.completionTokens,
                   finishReason,
-                  MESSAGE_ROLE.AGENT,
-                  assistantMessage?.id,
-                );
+                  role: MESSAGE_ROLE.ASSISTANT,
+                  id: assistantMessage?.id,
+                });
 
                 logger.debug('Prompt saved');
               } catch (error) {
@@ -235,7 +249,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
               } satisfies ProgressAnnotation);
               await new Promise((resolve) => setTimeout(resolve, 0));
 
-              // stream.close();
               return;
             }
 
@@ -247,16 +260,20 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
             logger.info(`Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
 
+            // @ts-ignore Fix this with: https://linear.app/liblab/issue/ENG-373/incorrect-llm-model-set-for-message-when-saved-to-the-db
             const lastUserMessage = messages.filter((x) => x.role == 'user').slice(-1)[0];
             const { model, provider } = extractPropertiesFromMessage(lastUserMessage);
             messages.push({ id: generateId(), role: 'assistant', content });
             messages.push({
               id: generateId(),
+
+              // @ts-ignore Fix this with https://linear.app/liblab/issue/ENG-373/incorrect-llm-model-set-for-message-when-saved-to-the-db
               role: 'user',
               content: `[Model: ${model}]\n\n[Provider: ${provider}]\n\n${CONTINUE_PROMPT}`,
             });
 
             const result = await streamText({
+              // @ts-ignore Fix this with https://linear.app/liblab/issue/ENG-373/incorrect-llm-model-set-for-message-when-saved-to-the-db
               messages,
               options,
               files,

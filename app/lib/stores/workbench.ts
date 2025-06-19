@@ -21,6 +21,7 @@ import type { ActionAlert } from '~/types/actions';
 import type { LiblabShell } from '~/utils/shell';
 import { useGitStore } from './git';
 import ignore from 'ignore';
+import { tempLog } from '~/root';
 
 const { saveAs } = fileSaver;
 
@@ -315,8 +316,6 @@ export class WorkbenchStore {
     this.artifacts.setKey(messageId, { ...artifact, ...state });
   }
   addAction(data: ActionCallbackData) {
-    // this._addAction(data);
-
     this.addToExecutionQueue(() => this._addAction(data));
   }
   async _addAction(data: ActionCallbackData) {
@@ -332,6 +331,11 @@ export class WorkbenchStore {
   }
 
   runAction(data: ActionCallbackData, isStreaming: boolean = false) {
+    if (!data.shouldExecute) {
+      tempLog('Skipping run action', data);
+      return;
+    }
+
     if (isStreaming) {
       this.actionStreamSampler(data, isStreaming);
     } else {

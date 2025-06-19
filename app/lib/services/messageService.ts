@@ -1,18 +1,25 @@
 import { prisma } from '~/lib/prisma';
 import type { Message } from '@prisma/client';
-import { MESSAGE_ROLE, type MessageRole } from '~/types/database';
+import { MESSAGE_ROLE } from '~/types/database';
+
+type SaveMessageModel = Partial<Message> & {
+  conversationId: string;
+  content: string;
+  model: string;
+};
 
 export const messageService = {
-  async saveMessage(
-    conversationId: string,
-    content: string,
-    model: string,
-    inputTokens: number = 0,
-    outputTokens: number = 0,
-    finishReason: string = '-',
-    role: MessageRole = MESSAGE_ROLE.USER,
-    id?: string,
-  ): Promise<Message> {
+  async saveMessage({
+    conversationId,
+    content,
+    model,
+    inputTokens = 0,
+    outputTokens = 0,
+    finishReason = '-',
+    role = MESSAGE_ROLE.USER,
+    id,
+    annotations,
+  }: SaveMessageModel): Promise<Message> {
     return await prisma.message.create({
       data: {
         id,
@@ -23,6 +30,9 @@ export const messageService = {
         outputTokens,
         finishReason,
         role,
+
+        // fallback needed because of Prisma TS issue (null not allowed)
+        annotations: annotations || undefined,
       },
     });
   },

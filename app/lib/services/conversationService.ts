@@ -17,4 +17,14 @@ export const conversationService = {
       },
     });
   },
+
+  async updateConversationDescription(
+    conversationId: string,
+    data: Partial<Conversation>,
+  ): Promise<Conversation | null> {
+    return await prisma.conversation.update({
+      where: { id: conversationId },
+      data,
+    });
+  },
 };
