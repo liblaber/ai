@@ -1,19 +1,17 @@
 import { classNames } from '~/utils/classNames';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
 import { toast } from 'sonner';
 import { BaseSelect } from '~/components/ui/Select';
+import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/database/SelectDatabaseTypeOptions';
+import { Eye, EyeSlash } from 'iconsax-reactjs';
 import {
   type DataSourceOption,
-  DATASOURCES,
+  DEFAULT_DATA_SOURCES,
   SAMPLE_DATABASE,
-  SelectDatabaseTypeOptions,
-  SingleValueWithTooltip,
-} from '~/components/database/SelectDatabaseTypeOptions';
-import { Eye, EyeSlash } from 'iconsax-reactjs';
-import { usePluginStore } from '~/lib/plugins/plugin-store';
-import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
+  useDataSourceTypesPlugin,
+} from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
 
 interface DataSourceResponse {
   success: boolean;
@@ -36,27 +34,7 @@ export default function EditDataSourceForm({
   onSuccess,
   onDelete,
 }: EditDataSourceFormProps) {
-  const { types } = useDataSourceTypesStore();
-
-  const allDatabaseTypes = useMemo(
-    () => [
-      ...types.map(({ value, label, connectionStringFormat }) => ({
-        value,
-        label,
-        connectionStringFormat,
-        available: true,
-      })),
-      ...DATASOURCES,
-    ],
-    [types],
-  );
-
-  const { pluginAccess } = usePluginStore();
-
-  const availableDatabaseTypes = useMemo(
-    () => allDatabaseTypes.filter((type) => pluginAccess['data-access'][type.value]),
-    [allDatabaseTypes, pluginAccess],
-  );
+  const { available } = useDataSourceTypesPlugin();
 
   const [dbType, setDbType] = useState<DataSourceOption>({} as DataSourceOption);
   const [dbName, setDbName] = useState('');
@@ -73,13 +51,13 @@ export default function EditDataSourceForm({
     }
 
     if (selectedDataSource.name === 'Sample Database') {
-      setDbType(DATASOURCES[0]);
+      setDbType(DEFAULT_DATA_SOURCES[0]);
       setDbName('');
       setConnStr('');
     } else {
       const connectionDetails = new URL(selectedDataSource.connectionString);
       const type = connectionDetails.protocol.replace(':', '');
-      setDbType(allDatabaseTypes.find((opt) => opt.value === type) || DATASOURCES[0]);
+      setDbType(available.find((opt) => opt.value === type) || DEFAULT_DATA_SOURCES[0]);
       setDbName(selectedDataSource.name);
       setConnStr(selectedDataSource.connectionString);
     }
@@ -198,7 +176,7 @@ export default function EditDataSourceForm({
               <BaseSelect
                 value={dbType}
                 onChange={(value) => {
-                  if (!(value as DataSourceOption).available) {
+                  if ((value as DataSourceOption).status !== 'available') {
                     return;
                   }
 
@@ -207,7 +185,7 @@ export default function EditDataSourceForm({
                   setError(null);
                   setTestResult(null);
                 }}
-                options={availableDatabaseTypes}
+                options={available}
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}

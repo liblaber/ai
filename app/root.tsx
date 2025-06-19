@@ -121,7 +121,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const { setDataSources } = useDataSourcesStore();
   const { setPluginAccess } = usePluginStore();
-  const { setTypes } = useDataSourceTypesStore();
+  const { setDataSourceTypes } = useDataSourceTypesStore();
 
   useEffect(() => {
     if (loaderData?.dataSources) {
@@ -137,7 +137,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (loaderData?.dataSourceTypes) {
-      setTypes(loaderData?.dataSourceTypes);
+      setDataSourceTypes(loaderData?.dataSourceTypes);
     }
   }, [loaderData?.dataSourceTypes]);
 
