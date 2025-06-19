@@ -15,6 +15,7 @@ interface TableInfo {
 }
 
 export class SQLiteAccessor implements BaseAccessor {
+  static pluginId = 'sqlite';
   readonly label = 'SQLite';
   private _db: SQLiteDatabase | null = null;
 

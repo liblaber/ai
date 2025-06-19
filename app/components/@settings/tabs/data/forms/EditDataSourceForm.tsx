@@ -1,6 +1,7 @@
 import { classNames } from '~/utils/classNames';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
+import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
 import { toast } from 'sonner';
 import { BaseSelect } from '~/components/ui/Select';
 import {
@@ -10,8 +11,9 @@ import {
   SelectDatabaseTypeOptions,
   SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
-import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
 import { Eye, EyeSlash } from 'iconsax-reactjs';
+import { usePluginStore } from '~/lib/plugins/plugin-store';
+import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 
 interface DataSourceResponse {
   success: boolean;
@@ -22,7 +24,6 @@ interface DataSourceResponse {
 interface EditDataSourceFormProps {
   selectedDataSource: DataSource | null;
   isSubmitting: boolean;
-  databaseTypes: DataSourceOption[];
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
   onDelete: () => void;
@@ -31,14 +32,15 @@ interface EditDataSourceFormProps {
 export default function EditDataSourceForm({
   selectedDataSource,
   isSubmitting,
-  databaseTypes,
   setIsSubmitting,
   onSuccess,
   onDelete,
 }: EditDataSourceFormProps) {
+  const { types } = useDataSourceTypesStore();
+
   const allDatabaseTypes = useMemo(
     () => [
-      ...databaseTypes.map(({ value, label, connectionStringFormat }) => ({
+      ...types.map(({ value, label, connectionStringFormat }) => ({
         value,
         label,
         connectionStringFormat,
@@ -46,7 +48,14 @@ export default function EditDataSourceForm({
       })),
       ...DATASOURCES,
     ],
-    [databaseTypes],
+    [types],
+  );
+
+  const { pluginAccess } = usePluginStore();
+
+  const availableDatabaseTypes = useMemo(
+    () => allDatabaseTypes.filter((type) => pluginAccess['data-access'][type.value]),
+    [allDatabaseTypes, pluginAccess],
   );
 
   const [dbType, setDbType] = useState<DataSourceOption>({} as DataSourceOption);
@@ -189,12 +198,16 @@ export default function EditDataSourceForm({
               <BaseSelect
                 value={dbType}
                 onChange={(value) => {
+                  if (!(value as DataSourceOption).available) {
+                    return;
+                  }
+
                   const newDbType = value as DataSourceOption;
                   setDbType(newDbType);
                   setError(null);
                   setTestResult(null);
                 }}
-                options={databaseTypes}
+                options={availableDatabaseTypes}
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}

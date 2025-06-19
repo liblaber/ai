@@ -1,7 +1,9 @@
 import { components } from 'react-select';
 import { SampleDatabaseTooltip } from './SampleDatabaseTooltip';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
-import { useEffect } from 'react';
+import { useMemo } from 'react';
+import { Lock } from 'iconsax-reactjs';
+import { usePluginStore } from '~/lib/plugins/plugin-store';
 
 export type DataSourceOption = {
   value: string;
@@ -27,30 +29,43 @@ export const SingleValueWithTooltip = (props: any) => {
       <div className="flex items-center">
         <span>{props.data.label}</span>
         {props.data.value === SAMPLE_DATABASE && <SampleDatabaseTooltip />}
+        {!props.data.available && (
+          <span className="ml-2 text-red-500 flex items-center">
+            <Lock size={16} variant="Bold" />
+          </span>
+        )}
       </div>
     </components.SingleValue>
   );
 };
 
 export function SelectDatabaseTypeOptions(props: any) {
-  useEffect(() => {
-    fetchTypes();
-  }, []);
+  const { types } = useDataSourceTypesStore();
 
-  const { types, fetchTypes } = useDataSourceTypesStore();
+  const allDatabaseTypes = useMemo(
+    () => [
+      ...types.map(({ value, label, connectionStringFormat }) => ({
+        value,
+        label,
+        connectionStringFormat,
+        available: true,
+      })),
+      ...DATASOURCES,
+    ],
+    [types],
+  );
 
-  const allDataSources = [
-    ...(types || []).map((type) => ({
-      value: type.value,
-      label: type.label,
-      connectionStringFormat: type.connectionStringFormat,
-      available: true,
-    })),
-    ...DATASOURCES,
-  ];
+  const { pluginAccess } = usePluginStore();
 
-  const available = allDataSources.filter((opt) => opt.available);
-  const comingSoon = allDataSources.filter((opt) => !opt.available);
+  const availableDatabaseTypes = useMemo(
+    () => allDatabaseTypes.filter((type) => pluginAccess['data-access'][type.value]),
+    [allDatabaseTypes, pluginAccess],
+  );
+
+  const available = availableDatabaseTypes.filter((opt) => opt.available);
+  const locked = availableDatabaseTypes.filter((opt) => !opt.available);
+
+  console.log({ available, locked, availableDatabaseTypes, allDatabaseTypes, pluginAccess });
 
   return (
     <components.MenuList {...props} className="bg-elements-depth-2">
@@ -78,15 +93,20 @@ export function SelectDatabaseTypeOptions(props: any) {
           </div>
         </components.Option>
       ))}
-      <div className="text-liblab-elements-textPrimary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
-        Coming soon
-      </div>
-      {comingSoon.map((opt) => (
+      {locked.length > 0 && (
+        <div className="text-liblab-elements-textPrimary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
+          Premium (requires license)
+        </div>
+      )}
+      {locked.map((opt) => (
         <div
           key={opt.value}
-          className="flex hover:cursor-not-allowed items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-90 cursor-default"
+          className="flex hover:cursor-not-allowed items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-60 cursor-default"
         >
-          <span>{opt.label}</span>
+          <span className="flex items-center gap-2">
+            {opt.label}
+            <Lock size={16} variant="Bold" className="text-red-500" />
+          </span>
         </div>
       ))}
     </components.MenuList>
