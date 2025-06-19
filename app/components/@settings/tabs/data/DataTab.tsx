@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { settingsPanelStore, useSettingsStore } from '~/lib/stores/settings';
 import { useStore } from '@nanostores/react';
-import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 
 export interface DataSource {
   id: string;
@@ -39,17 +38,6 @@ export default function DataTab() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { dataSources, setDataSources } = useDataSourcesStore();
   const { selectedTab } = useSettingsStore();
-  const { types: databaseTypes, fetchTypes, error: typesError } = useDataSourceTypesStore();
-
-  useEffect(() => {
-    fetchTypes();
-  }, [fetchTypes]);
-
-  useEffect(() => {
-    if (typesError) {
-      toast.error('Failed to load database types');
-    }
-  }, [typesError]);
 
   // Update local state when store changes
   useEffect(() => {
@@ -154,7 +142,6 @@ export default function DataTab() {
           </div>
           <AddDataSourceForm
             isSubmitting={isSubmitting}
-            databaseTypes={databaseTypes}
             setIsSubmitting={setIsSubmitting}
             onSuccess={() => {
               fetcher.load('/api/data-sources');
@@ -187,7 +174,6 @@ export default function DataTab() {
           <EditDataSourceForm
             selectedDataSource={selectedDataSource}
             isSubmitting={isSubmitting}
-            databaseTypes={databaseTypes}
             setIsSubmitting={setIsSubmitting}
             onSuccess={() => {
               fetcher.load('/api/data-sources');

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
@@ -42,13 +42,13 @@ export default function DataSourceConnectionPage() {
   const { setSelectedDataSourceId } = useDataSourcesStore();
   const { refetchDataSources } = useDataSourceActions();
   const navigate = useNavigate();
-  const { types: dataSourceTypes, fetchTypes } = useDataSourceTypesStore();
+  const { types } = useDataSourceTypesStore();
 
-  useEffect(() => {
-    fetchTypes();
-  }, [fetchTypes]);
+  const allDataSourceTypes = [...types, ...DATASOURCES];
 
-  const allDataSourceTypes = [...dataSourceTypes, ...DATASOURCES];
+  // const { pluginAccess } = usePluginStore();
+
+  const availableDatabaseTypes = allDataSourceTypes;
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,12 +165,16 @@ export default function DataSourceConnectionPage() {
               <BaseSelect
                 value={dbType}
                 onChange={(value) => {
+                  if (!(value as DataSourceOption).available) {
+                    return;
+                  }
+
                   setDbType(value as DataSourceOption);
                   setDbName('');
                   setConnStr('');
                   setError(null);
                 }}
-                options={allDataSourceTypes.filter((opt) => opt.available)}
+                options={availableDatabaseTypes}
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}

@@ -1,5 +1,5 @@
 import { classNames } from '~/utils/classNames';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { BaseSelect } from '~/components/ui/Select';
@@ -10,6 +10,8 @@ import {
   SelectDatabaseTypeOptions,
   SingleValueWithTooltip,
 } from '~/components/database/SelectDatabaseTypeOptions';
+import { usePluginStore } from '~/lib/plugins/plugin-store';
+import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 
 interface DataSourceResponse {
   success: boolean;
@@ -29,16 +31,36 @@ interface AddDataSourceFormProps {
 
 export default function AddDataSourceForm({
   isSubmitting,
-  databaseTypes,
   setIsSubmitting,
   onSuccess,
-}: AddDataSourceFormProps) {
+}: Omit<AddDataSourceFormProps, 'databaseTypes'>) {
   const [dbType, setDbType] = useState<DataSourceOption>(DATASOURCES[0]);
   const [dbName, setDbName] = useState('');
   const [connStr, setConnStr] = useState('');
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { types } = useDataSourceTypesStore();
+
+  const allDatabaseTypes = useMemo(
+    () => [
+      ...types.map(({ value, label, connectionStringFormat }) => ({
+        value,
+        label,
+        connectionStringFormat,
+        available: true,
+      })),
+      ...DATASOURCES,
+    ],
+    [types],
+  );
+
+  const { pluginAccess } = usePluginStore();
+
+  const availableDatabaseTypes = useMemo(
+    () => allDatabaseTypes.filter((type) => pluginAccess['data-access'][type.value]),
+    [allDatabaseTypes, pluginAccess],
+  );
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
@@ -177,7 +199,7 @@ export default function AddDataSourceForm({
                   setDbName('');
                   setConnStr('');
                 }}
-                options={databaseTypes}
+                options={availableDatabaseTypes}
                 width="100%"
                 menuPlacement={'bottom'}
                 minWidth="100%"
