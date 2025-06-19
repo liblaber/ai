@@ -21,8 +21,6 @@ export class LLMManager {
     this._env = _env;
     this._defaultModel = _env.DEFAULT_LLM_MODEL || 'claude-3-5-sonnet-latest';
     this._defaultProvider = _env.DEFAULT_LLM_PROVIDER || 'Anthropic';
-    console.log('defaultModel', this._defaultModel);
-    console.log('defaultProvider', this._defaultProvider);
     this._initializeProvider();
   }
 
