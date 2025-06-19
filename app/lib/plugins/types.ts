@@ -1,8 +1,6 @@
-export type PluginAccessMap = { [pluginId: string]: boolean };
-
-export interface PluginMeta {
-  id: string;
+export interface Plugin {
+  pluginId: string;
   name: string;
-  version: string;
   license: 'free' | 'premium';
+  isEnabled: boolean;
 }

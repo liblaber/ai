@@ -8,11 +8,11 @@ export type PluginAccessMap = Record<PluginType, Record<string, boolean>>;
 class PluginManager {
   private static _instance: PluginManager;
   private _pluginAccess: PluginAccessMap = {
-    // TODO: initialize all to false?
     'data-access': {},
   };
   private _initialized = false;
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor() {}
 
   static getInstance(): PluginManager {
@@ -64,32 +64,4 @@ class PluginManager {
   }
 }
 
-// DataSourcePluginManager: manages data source plugin access
-export class DataSourcePluginManager {
-  static pluginType: PluginType = 'data-access';
-
-  static async initialize() {
-    await PluginManager.getInstance().initialize();
-  }
-
-  static isAvailable(type: string): boolean {
-    // Normalize type (e.g., 'postgresql' -> 'postgres')
-    const normalized = type.replace('postgresql', 'postgres');
-    return PluginManager.getInstance().isPluginAvailable(DataSourcePluginManager.pluginType, normalized);
-  }
-
-  static getAvailableTypes(): string[] {
-    const accessMap = PluginManager.getInstance().getAccessMap();
-    return Object.keys(accessMap).filter((k) => accessMap[DataSourcePluginManager.pluginType][k]);
-  }
-
-  static getAccessMap(): PluginAccessMap {
-    return PluginManager.getInstance().getAccessMap();
-  }
-}
-
 export default PluginManager;
-
-export async function initializeAllPluginManagers() {
-  await DataSourcePluginManager.initialize();
-}

@@ -22,6 +22,6 @@ export const usePluginStore = create<PluginStoreState>()((set, get) => ({
   pluginAccess: { 'data-access': {} },
   dataSourceTypes: [],
   setPluginAccess: (map) => set({ pluginAccess: map }),
-  setDataSourceTypes: (types) => set({ dataSourceTypes: types }),
+  setDataSourceTypes: (dataSourceTypes) => set({ dataSourceTypes }),
   isPluginEnabled: (pluginType, pluginId) => !!get().pluginAccess[pluginType][pluginId],
 }));
