@@ -59,6 +59,7 @@ model Message {
   role           String       @default("USER") @map("role")
   createdAt      DateTime     @default(now())
   Snapshot       Snapshot?
+  annotations    Json?
 
   @@map("message")
 }
