@@ -35,7 +35,7 @@ class PluginManager {
   }
 
   isPluginAvailable(pluginType: PluginType, pluginId: string): boolean {
-    return !!this._pluginAccess[pluginType][pluginId];
+    return this._pluginAccess[pluginType][pluginId];
   }
 
   getAccessMap(): PluginAccessMap {
