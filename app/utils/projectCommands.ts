@@ -1,5 +1,7 @@
 import type { Message } from 'ai';
 import { generateId } from './fileUtils';
+import type { File, FileMap } from '~/lib/stores/files';
+import { extractRelativePath } from '~/utils/diff';
 
 export interface ProjectCommands {
   type: string;
@@ -8,59 +10,43 @@ export interface ProjectCommands {
   followupMessage: string;
 }
 
-interface FileContent {
-  content: string;
-  path: string;
-}
+export async function detectProjectCommands(fileMap: FileMap): Promise<ProjectCommands | null> {
+  const packageJsonFileKey: string | undefined = Object.keys(fileMap).find(
+    (path) => extractRelativePath(path) === 'package.json',
+  );
 
-export async function detectProjectCommands(files: FileContent[]): Promise<ProjectCommands> {
-  const hasFile = (name: string) => files.some((f) => f.path.endsWith(name));
+  if (!packageJsonFileKey) {
+    return null;
+  }
 
-  if (hasFile('package.json')) {
-    const packageJsonFile = files.find((f) => f.path.endsWith('package.json'));
+  const packageJsonFile = fileMap[packageJsonFileKey] as File;
 
-    if (!packageJsonFile) {
-      return { type: '', setupCommand: '', followupMessage: '' };
-    }
+  try {
+    const packageJson = JSON.parse(packageJsonFile.content);
+    const scripts = packageJson?.scripts || {};
 
-    try {
-      const packageJson = JSON.parse(packageJsonFile.content);
-      const scripts = packageJson?.scripts || {};
+    const preferredCommands = ['dev', 'start', 'preview'];
+    const availableCommand = preferredCommands.find((cmd) => scripts[cmd]);
 
-      // Check for preferred commands in priority order
-      const preferredCommands = ['dev', 'start', 'preview'];
-      const availableCommand = preferredCommands.find((cmd) => scripts[cmd]);
-
-      if (availableCommand) {
-        return {
-          type: 'Node.js',
-          setupCommand: `pnpm install`,
-          startCommand: `npm run ${availableCommand}`,
-          followupMessage: `Found "${availableCommand}" script in package.json. Running "npm run ${availableCommand}" after installation.`,
-        };
-      }
-
+    if (availableCommand) {
       return {
         type: 'Node.js',
-        setupCommand: 'pnpm install',
-        followupMessage:
-          'Would you like me to inspect package.json to determine the available scripts for running this project?',
+        setupCommand: `pnpm install`,
+        startCommand: `npm run ${availableCommand}`,
+        followupMessage: `Found "${availableCommand}" script in package.json. Running "npm run ${availableCommand}" after installation.`,
       };
-    } catch (error) {
-      console.error('Error parsing package.json:', error);
-      return { type: '', setupCommand: '', followupMessage: '' };
     }
-  }
 
-  if (hasFile('index.html')) {
     return {
-      type: 'Static',
-      startCommand: 'npx --yes serve',
-      followupMessage: '',
+      type: 'Node.js',
+      setupCommand: 'pnpm install',
+      followupMessage:
+        'Would you like me to inspect package.json to determine the available scripts for running this project?',
     };
+  } catch (error) {
+    console.error('Error parsing package.json:', error);
+    return { type: '', setupCommand: '', followupMessage: '' };
   }
-
-  return { type: '', setupCommand: '', followupMessage: '' };
 }
 
 export function createCommandsMessage(commands: ProjectCommands): Message | null {

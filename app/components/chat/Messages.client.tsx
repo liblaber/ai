@@ -5,10 +5,10 @@ import { classNames } from '~/utils/classNames';
 import { AssistantMessage } from './AssistantMessage';
 import { UserMessage } from './UserMessage';
 import { useLocation } from '@remix-run/react';
-import { chatId, db } from '~/lib/persistence/useChatHistory';
-import { forkChat } from '~/lib/persistence/db';
+import { chatId, db } from '~/lib/persistence/useConversationHistory';
 import { toast } from 'sonner';
 import WithTooltip from '~/components/ui/Tooltip';
+import { forkConversation } from '~/lib/persistence/conversations';
 
 interface MessagesProps {
   id?: string;
@@ -35,7 +35,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
           return;
         }
 
-        const forkedChatId = await forkChat(db, chatId.get()!, messageId);
+        const forkedChatId = await forkConversation(chatId.get()!, messageId);
         window.location.href = `/chat/${forkedChatId}`;
       } catch (error) {
         toast.error('Failed to fork chat: ' + (error as Error).message);

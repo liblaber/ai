@@ -12,6 +12,7 @@ import { createSummary } from '~/lib/.server/llm/create-summary';
 import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
 import { messageService } from '~/lib/services/messageService';
 import { MESSAGE_ROLE } from '~/types/database';
+import { createId } from '@paralleldrive/cuid2';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
@@ -47,12 +48,26 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   }>();
   const { messages, files, conversationId, promptId, contextOptimization } = body;
 
-  const messageProperties = extractPropertiesFromMessage(messages[messages.length - 1]);
-  const textContent = Array.isArray(messageProperties.content)
+  const message = messages.at(-1);
+
+  if (!message) {
+    throw new Response('Message not specified', {
+      status: 400,
+      statusText: 'Bad Request',
+    });
+  }
+
+  const messageProperties = extractPropertiesFromMessage(message);
+  const content = Array.isArray(messageProperties.content)
     ? messageProperties.content.find((item) => item.type === 'text')?.text || ''
     : messageProperties.content;
 
-  await messageService.saveMessage(conversationId, textContent, DEFAULT_MODEL);
+  await messageService.saveMessage({
+    conversationId,
+    content,
+    model: DEFAULT_MODEL,
+    annotations: message.annotations,
+  });
 
   const cookieHeader = request.headers.get('Cookie');
   const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
@@ -137,7 +152,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           } satisfies ProgressAnnotation);
 
           // Select context files
-          console.log(`Messages count: ${messages.length}`);
+          logger.debug(`Messages count: ${messages.length}`);
           filteredFiles = await selectContext({
             messages: [...messages],
             env: context.cloudflare?.env,
@@ -186,21 +201,25 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
         // Stream the text
         const options: StreamingOptions = {
+          experimental_generateMessageId: createId,
           toolChoice: 'none',
-          onFinish: async ({ text: content, finishReason, usage }) => {
+          onFinish: async ({ text: content, finishReason, usage, response: { messages } }) => {
             logger.debug('usage', JSON.stringify(usage));
+
+            const assistantMessage = messages.find((m) => m.role === 'assistant');
 
             if (usage) {
               try {
-                await messageService.saveMessage(
+                await messageService.saveMessage({
                   conversationId,
                   content,
-                  DEFAULT_MODEL,
-                  usage.promptTokens,
-                  usage.completionTokens,
+                  model: DEFAULT_MODEL,
+                  inputTokens: usage.promptTokens,
+                  outputTokens: usage.completionTokens,
                   finishReason,
-                  MESSAGE_ROLE.AGENT,
-                );
+                  role: MESSAGE_ROLE.ASSISTANT,
+                  id: assistantMessage?.id,
+                });
 
                 logger.debug('Prompt saved');
               } catch (error) {
@@ -230,7 +249,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
               } satisfies ProgressAnnotation);
               await new Promise((resolve) => setTimeout(resolve, 0));
 
-              // stream.close();
               return;
             }
 
@@ -242,15 +260,17 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
             logger.info(`Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
 
-            messages.push({ id: generateId(), role: 'assistant', content });
-            messages.push({
-              id: generateId(),
-              role: 'user',
-              content: `[Model: ${DEFAULT_MODEL}]\n\n[Provider: ${DEFAULT_PROVIDER}]\n\n${CONTINUE_PROMPT}`,
-            });
-
+            const continueMessages = [
+              ...messages,
+              { id: generateId(), role: 'assistant', content },
+              {
+                id: generateId(),
+                role: 'user',
+                content: `[Model: ${DEFAULT_MODEL}]\n\n[Provider: ${DEFAULT_PROVIDER}]\n\n${CONTINUE_PROMPT}`,
+              },
+            ];
             const result = await streamText({
-              messages,
+              messages: continueMessages as any[],
               options,
               files,
               promptId,

@@ -17,7 +17,7 @@ import { webcontainer } from '~/lib/webcontainer';
 import { classNames } from '~/utils/classNames';
 import { path } from '~/utils/path';
 import { useEffect, useRef, useState } from 'react';
-import { chatId, description } from '~/lib/persistence/useChatHistory';
+import { chatId, description } from '~/lib/persistence/useConversationHistory';
 import { PublishProgressModal } from '~/components/publish/PublishProgressModal.client';
 import JSZip from 'jszip';
 import type { NetlifySiteInfo } from '~/types/netlify';

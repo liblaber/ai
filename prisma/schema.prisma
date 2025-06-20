@@ -14,11 +14,12 @@ datasource db {
 }
 
 model DataSource {
-  id               String   @id @default(cuid())
+  id               String         @id @default(cuid())
   name             String
-  connectionString String   @map("connection_string")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  connectionString String         @map("connection_string")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+  conversations    Conversation[]
 
   @@map("data_source")
 }
@@ -58,16 +59,20 @@ model Message {
   role           String       @default("USER") @map("role")
   createdAt      DateTime     @default(now())
   Snapshot       Snapshot?
+  annotations    Json?
 
   @@map("message")
 }
 
 model Conversation {
-  id        String     @id @default(cuid())
-  messages  Message[]
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-  Snapshot  Snapshot[]
+  id           String     @id @default(cuid())
+  description  String?
+  messages     Message[]
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  Snapshot     Snapshot[]
+  dataSourceId String
+  dataSource   DataSource @relation(fields: [dataSourceId], references: [id])
 
   @@map("conversation")
 }

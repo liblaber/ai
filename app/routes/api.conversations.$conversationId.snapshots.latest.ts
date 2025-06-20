@@ -4,9 +4,9 @@ import { StorageServiceFactory } from '~/lib/services/storage/storage-service-fa
 import { snapshotService } from '~/lib/services/snapshotService';
 import { logger } from '~/utils/logger';
 
-export const loader: LoaderFunction = async ({ params: { conversationId, id } }) => {
-  if (!conversationId || !id) {
-    return Response.json({ error: 'Conversation ID and Snapshot ID are required' }, { status: 400 });
+export const loader: LoaderFunction = async ({ params: { conversationId } }) => {
+  if (!conversationId) {
+    return Response.json({ error: 'Conversation ID is required' }, { status: 400 });
   }
 
   const conversation = await conversationService.getConversation(conversationId);
@@ -16,19 +16,15 @@ export const loader: LoaderFunction = async ({ params: { conversationId, id } })
   }
 
   try {
-    const snapshot = await snapshotService.getSnapshotById(id);
+    const snapshot = await snapshotService.getLatestSnapshot(conversationId);
 
     if (!snapshot) {
-      return Response.json({ error: 'Snapshot not found' }, { status: 404 });
-    }
-
-    if (snapshot.conversationId !== conversationId) {
-      return Response.json({ error: 'Snapshot does not belong to this conversation' }, { status: 403 });
+      return Response.json({ error: 'No snapshots found' }, { status: 404 });
     }
 
     const storageService = StorageServiceFactory.get();
     const data = await storageService.get(snapshot.storageKey);
-    const fileMap = JSON.parse(data.toString());
+    const fileMap = data ? JSON.parse(data.toString()).value : null;
 
     if (!fileMap) {
       logger.error(`No snapshot files found for snapshot ${snapshot.id}`);
@@ -36,13 +32,11 @@ export const loader: LoaderFunction = async ({ params: { conversationId, id } })
     }
 
     return Response.json({
-      snapshot: {
-        ...snapshot,
-        fileMap,
-      },
+      ...snapshot,
+      fileMap,
     });
   } catch (error) {
-    logger.error('Failed to fetch snapshot:', error);
-    return Response.json({ error: 'Failed to fetch snapshot' }, { status: 500 });
+    logger.error('Failed to fetch latest snapshot:', error);
+    return Response.json({ error: 'Failed to fetch latest snapshot' }, { status: 500 });
   }
 };
