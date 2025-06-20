@@ -19,8 +19,8 @@ import { DATA_SOURCE_CONNECTION_ROUTE } from '~/routes/data-source-connection';
 import { Toaster } from 'sonner';
 import PluginManager, { type PluginAccessMap } from '~/lib/plugins/plugin-manager';
 import { usePluginStore } from '~/lib/plugins/plugin-store';
-import { DataAccessor } from '@liblab/data-access/dataAccessor';
 import { type DataSourceType, useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 
 declare global {
   interface Window {
@@ -52,7 +52,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const pluginAccess = PluginManager.getInstance().getAccessMap();
 
-  const dataSourceTypes = DataAccessor.getAvailableDatabaseTypes();
+  const dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
 
   return Response.json({
     dataSources,
