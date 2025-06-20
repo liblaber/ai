@@ -5,6 +5,7 @@ import { classNames } from '~/utils/classNames';
 import { HeaderActionButtons } from './HeaderActionButtons.client';
 import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
 import { Logo } from '~/components/Logo';
+import { UserMenu } from '~/components/auth/UserMenu';
 
 interface Props {
   showMenuIcon?: boolean;
@@ -42,6 +43,10 @@ export function Header({ showMenuIcon = true }: Props) {
           </ClientOnly>
         </>
       )}
+
+      <div className="ml-auto pl-8">
+        <ClientOnly>{() => <UserMenu />}</ClientOnly>
+      </div>
     </header>
   );
 }

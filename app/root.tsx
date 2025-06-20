@@ -17,6 +17,9 @@ import 'virtual:uno.css';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/routes/data-source-connection';
 import { Toaster } from 'sonner';
+import { AuthProvider } from './components/auth/AuthContext';
+import { getSession } from './auth/session';
+import { type UserProfile, userService } from '~/lib/services/userService';
 
 declare global {
   interface Window {
@@ -29,18 +32,24 @@ declare global {
 type LoaderData = {
   ENV: Record<string, string | undefined>;
   dataSources: DataSource[];
+  user: UserProfile;
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  let dataSources: DataSource[] = [];
-
-  dataSources = await getDataSources();
+  const session = await getSession(request);
+  let user = null;
+  const dataSources = await getDataSources();
 
   if (!dataSources.length && !request.url.includes(DATA_SOURCE_CONNECTION_ROUTE)) {
     return redirect(DATA_SOURCE_CONNECTION_ROUTE);
   }
 
+  if (session?.user) {
+    user = userService.getUser(session.user.id);
+  }
+
   return Response.json({
+    user,
     dataSources,
     ENV: {
       VITE_BASE_URL: env.VITE_BASE_URL,
@@ -128,8 +137,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <Layout>
-      <Outlet />
-    </Layout>
+    <AuthProvider>
+      <Layout>
+        <Outlet />
+      </Layout>
+    </AuthProvider>
   );
 }

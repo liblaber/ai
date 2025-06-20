@@ -9,6 +9,8 @@ import { chatId, db } from '~/lib/persistence/useChatHistory';
 import { forkChat } from '~/lib/persistence/db';
 import { toast } from 'sonner';
 import WithTooltip from '~/components/ui/Tooltip';
+import { ProfilePicture } from '~/components/auth/ProfilePicture';
+import { useSession } from '~/auth/auth-client';
 
 interface MessagesProps {
   id?: string;
@@ -21,6 +23,8 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
   (props: MessagesProps, ref: ForwardedRef<HTMLDivElement> | undefined) => {
     const { id, isStreaming = false, messages = [] } = props;
     const location = useLocation();
+    const { data } = useSession();
+    const user = data?.user;
 
     const handleRewind = (messageId: string) => {
       const searchParams = new URLSearchParams(location.search);
@@ -66,11 +70,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                     'mt-4': !isFirst,
                   })}
                 >
-                  {isUserMessage && (
-                    <div className="w-8 h-8 rounded-full bg-liblab-elements-bg-depth-2 flex items-center justify-center text-liblab-elements-textSecondary">
-                      <div className="i-ph:user w-5 h-5" />
-                    </div>
-                  )}
+                  {isUserMessage && <ProfilePicture user={user} />}
                   <div className="grid grid-col-1 w-full">
                     {isUserMessage ? (
                       <UserMessage content={content} />

@@ -193,7 +193,8 @@
     "vite-plugin-copy": "^0.1.6",
     "vite-plugin-optimize-css-modules": "^1.1.0",
     "vite-tsconfig-paths": "^4.3.2",
-    "vitest": "^2.1.7"
+    "vitest": "^2.1.7",
+    "better-auth": "^1.2.5"
   },
   "pnpm": {
     "overrides": {
