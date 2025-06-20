@@ -1,18 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
 import { BaseSelect } from '~/components/ui/Select';
-import {
-  DATASOURCES,
-  SAMPLE_DATABASE,
-  SelectDatabaseTypeOptions,
-  SingleValueWithTooltip,
-} from '~/components/database/SelectDatabaseTypeOptions';
+import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/database/SelectDatabaseTypeOptions';
 import { useDataSourceActions, useDataSourcesStore } from '~/lib/stores/dataSources';
-import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useNavigate } from '@remix-run/react';
 import { Header } from '~/components/header/Header';
+import {
+  type DataSourceOption,
+  DEFAULT_DATA_SOURCES,
+  SAMPLE_DATABASE,
+  useDataSourceTypesPlugin,
+} from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
 
 interface ApiResponse {
   success: boolean;
@@ -23,16 +23,10 @@ interface ApiResponse {
   };
 }
 
-type DataSourceOption = {
-  value: string;
-  label: string;
-  available: boolean;
-};
-
 export const DATA_SOURCE_CONNECTION_ROUTE = '/data-source-connection';
 
 export default function DataSourceConnectionPage() {
-  const [dbType, setDbType] = useState<DataSourceOption>(DATASOURCES[0]);
+  const [dbType, setDbType] = useState<DataSourceOption>(DEFAULT_DATA_SOURCES[0]);
   const [dbName, setDbName] = useState('');
   const [connStr, setConnStr] = useState('');
   const [isTesting, setIsTesting] = useState(false);
@@ -42,13 +36,8 @@ export default function DataSourceConnectionPage() {
   const { setSelectedDataSourceId } = useDataSourcesStore();
   const { refetchDataSources } = useDataSourceActions();
   const navigate = useNavigate();
-  const { types: dataSourceTypes, fetchTypes } = useDataSourceTypesStore();
 
-  useEffect(() => {
-    fetchTypes();
-  }, [fetchTypes]);
-
-  const allDataSourceTypes = [...dataSourceTypes, ...DATASOURCES];
+  const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,12 +154,16 @@ export default function DataSourceConnectionPage() {
               <BaseSelect
                 value={dbType}
                 onChange={(value) => {
+                  if ((value as DataSourceOption).status !== 'available') {
+                    return;
+                  }
+
                   setDbType(value as DataSourceOption);
                   setDbName('');
                   setConnStr('');
                   setError(null);
                 }}
-                options={allDataSourceTypes.filter((opt) => opt.available)}
+                options={availableDataSourceOptions}
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}

@@ -1,17 +1,17 @@
 import { classNames } from '~/utils/classNames';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
+import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
 import { toast } from 'sonner';
 import { BaseSelect } from '~/components/ui/Select';
+import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/database/SelectDatabaseTypeOptions';
+import { Eye, EyeSlash } from 'iconsax-reactjs';
 import {
   type DataSourceOption,
-  DATASOURCES,
+  DEFAULT_DATA_SOURCES,
   SAMPLE_DATABASE,
-  SelectDatabaseTypeOptions,
-  SingleValueWithTooltip,
-} from '~/components/database/SelectDatabaseTypeOptions';
-import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
-import { Eye, EyeSlash } from 'iconsax-reactjs';
+  useDataSourceTypesPlugin,
+} from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
 
 interface DataSourceResponse {
   success: boolean;
@@ -22,7 +22,6 @@ interface DataSourceResponse {
 interface EditDataSourceFormProps {
   selectedDataSource: DataSource | null;
   isSubmitting: boolean;
-  databaseTypes: DataSourceOption[];
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
   onDelete: () => void;
@@ -31,23 +30,11 @@ interface EditDataSourceFormProps {
 export default function EditDataSourceForm({
   selectedDataSource,
   isSubmitting,
-  databaseTypes,
   setIsSubmitting,
   onSuccess,
   onDelete,
 }: EditDataSourceFormProps) {
-  const allDatabaseTypes = useMemo(
-    () => [
-      ...databaseTypes.map(({ value, label, connectionStringFormat }) => ({
-        value,
-        label,
-        connectionStringFormat,
-        available: true,
-      })),
-      ...DATASOURCES,
-    ],
-    [databaseTypes],
-  );
+  const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
   const [dbType, setDbType] = useState<DataSourceOption>({} as DataSourceOption);
   const [dbName, setDbName] = useState('');
@@ -64,13 +51,13 @@ export default function EditDataSourceForm({
     }
 
     if (selectedDataSource.name === 'Sample Database') {
-      setDbType(DATASOURCES[0]);
+      setDbType(DEFAULT_DATA_SOURCES[0]);
       setDbName('');
       setConnStr('');
     } else {
       const connectionDetails = new URL(selectedDataSource.connectionString);
       const type = connectionDetails.protocol.replace(':', '');
-      setDbType(allDatabaseTypes.find((opt) => opt.value === type) || DATASOURCES[0]);
+      setDbType(availableDataSourceOptions.find((opt) => opt.value === type) || DEFAULT_DATA_SOURCES[0]);
       setDbName(selectedDataSource.name);
       setConnStr(selectedDataSource.connectionString);
     }
@@ -189,12 +176,16 @@ export default function EditDataSourceForm({
               <BaseSelect
                 value={dbType}
                 onChange={(value) => {
+                  if ((value as DataSourceOption).status !== 'available') {
+                    return;
+                  }
+
                   const newDbType = value as DataSourceOption;
                   setDbType(newDbType);
                   setError(null);
                   setTestResult(null);
                 }}
-                options={databaseTypes}
+                options={availableDataSourceOptions}
                 width="100%"
                 minWidth="100%"
                 isSearchable={false}

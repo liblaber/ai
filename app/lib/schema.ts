@@ -4,7 +4,7 @@ import { prisma } from '~/lib/prisma';
 import crypto from 'crypto';
 
 import { getDatabaseUrl } from '~/lib/services/datasourceService';
-import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 
 // Cache duration in seconds (31 days)
 const SCHEMA_CACHE_TTL = 60 * 60 * 24 * 31;
@@ -18,7 +18,7 @@ export const getDatabaseSchema = async (dataSourceId: string): Promise<Table[]> 
     throw new Error('Missing required connection parameters');
   }
 
-  const dataAccessor = DataAccessor.getAccessor(connectionUrl);
+  const dataAccessor = DataSourcePluginManager.getAccessor(connectionUrl);
   await dataAccessor.initialize(connectionUrl);
 
   try {
