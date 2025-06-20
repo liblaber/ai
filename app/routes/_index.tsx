@@ -11,6 +11,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import type { PendingPrompt } from '~/components/chat/BaseChat';
 import { HomepageHeadings } from '~/components/homepage/HomepageHeadings';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/routes/data-source-connection';
+import { useAuth } from '~/components/auth/AuthContext';
+import { useSession } from '~/auth/auth-client';
 
 export const meta: MetaFunction = () => {
   return [{ title: 'liblab ai' }, { name: 'description', content: 'Build internal apps using AI' }];
@@ -22,6 +24,8 @@ export default function Index() {
   const [input, setInput] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [imageDataList, setImageDataList] = useState<string[]>([]);
+  const { data: session } = useSession();
+  const { toggleLoginModal } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
@@ -42,6 +46,12 @@ export default function Index() {
     };
 
     sessionStorage.setItem('pendingPrompt', JSON.stringify(pendingPrompt));
+
+    if (!session) {
+      toggleLoginModal(true, 'Log in to continue');
+
+      return;
+    }
 
     if (dataSources.length === 0 || !selectedDataSourceId) {
       navigate(DATA_SOURCE_CONNECTION_ROUTE);
