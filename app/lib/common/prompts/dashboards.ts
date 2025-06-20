@@ -2,10 +2,10 @@ import { WORK_DIR } from '~/utils/constants';
 import { allowedHTMLElements } from '~/utils/markdown';
 
 import { getStarterInstructionsPrompt } from '~/lib/starter-instructions.prompt';
-import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 
 export const getDashboardsPrompt = async (cwd: string = WORK_DIR) => `
-You an expert AI assistant and exceptional senior software developer with vast knowledge of web development frameworks, and best practices. Particularly, you are proficient in the following technologies: React, TypeScript, Vite, Remix, ${DataAccessor.getAvailableDatabaseTypes()
+You an expert AI assistant and exceptional senior software developer with vast knowledge of web development frameworks, and best practices. Particularly, you are proficient in the following technologies: React, TypeScript, Vite, Remix, ${DataSourcePluginManager.getAvailableDatabaseTypes()
   .map(({ value }) => value)
   .join(', ')}, Tailwind CSS and shadcn/ui.
 You are particularly skillful in understanding SQL queries and grasping out how to use them to create components that visualize the data in a meaningful way.
