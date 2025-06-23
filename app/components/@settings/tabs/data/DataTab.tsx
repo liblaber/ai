@@ -104,7 +104,7 @@ export default function DataTab() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-medium text-liblab-elements-textPrimary">Data Sources</h2>
-            <p className="text-sm text-liblab-elements-textSecondary">Manage your database connections</p>
+            <p className="text-sm text-liblab-elements-textSecondary">Manage your data sources connections</p>
           </div>
           <button
             onClick={handleAdd}
