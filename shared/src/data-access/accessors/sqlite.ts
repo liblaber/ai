@@ -44,8 +44,8 @@ export class SQLiteAccessor implements BaseAccessor {
     try {
       return await this._db.all(query, params);
     } catch (error) {
-      console.error('Error executing query:', error);
-      throw new Error((error as Error)?.message);
+      console.error('Error executing SQLite query:', error);
+      throw new Error((error as Error)?.message || 'Failed to execute SQLite query');
     }
   }
 
