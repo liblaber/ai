@@ -71,9 +71,8 @@ export function useConversationHistory() {
           setSelectedDataSourceId(conversation.dataSourceId);
         }
 
-        description.set(conversation.description);
-
         chatId.set(conversation.id);
+        description.set(conversation.description);
 
         setReady(true);
       })

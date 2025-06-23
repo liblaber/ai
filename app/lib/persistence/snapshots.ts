@@ -1,6 +1,9 @@
 import { toast } from 'sonner';
 import { workbenchStore } from '~/lib/stores/workbench';
 import type { FileMap } from '~/lib/stores/files';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('Snapshots');
 
 export interface SnapshotResponse {
   id: string;
@@ -50,5 +53,38 @@ export const getLatestSnapshot = async (conversationId: string): Promise<Snapsho
     console.error('Error fetching latest snapshot', error);
     toast.error('Failed to fetch latest snapshot');
     throw error;
+  }
+};
+
+/**
+ * Updates the latest snapshot for a conversation.
+ *
+ * Currently, we only support updating the latest snapshot.
+ * Should be discussed if we need to support updating history snapshots.
+ */
+export const updateLatestSnapshot = async (
+  conversationId: string,
+  filePath: string,
+  fileContent: string,
+): Promise<void> => {
+  try {
+    const response = await fetch(`/api/conversations/${conversationId}/snapshots/latest`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        filePath,
+        fileContent,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update snapshot: ${response.statusText}`);
+    }
+
+    logger.info(`Updated file ${filePath} in snapshot for conversation ${conversationId}`);
+  } catch (error) {
+    logger.error('Failed to update file in snapshot:', error);
   }
 };
