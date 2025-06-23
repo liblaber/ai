@@ -6,7 +6,6 @@ import { chatId, getLocalStorage } from '~/lib/persistence';
 import { classNames } from '~/utils/classNames';
 import type { GitHubUserResponse } from '~/types/GitHub';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { extractRelativePath } from '~/utils/diff';
 import { formatSize } from '~/utils/formatSize';
 import type { File, FileMap } from '~/lib/stores/files';
 import { Octokit } from '@octokit/rest';
@@ -90,11 +89,11 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
       setCreatedRepoUrl(repoUrl);
 
       // Get list of pushed files
-      const files = workbenchStore.files.get();
+      const files = workbenchStore.getFileMap();
       const filesList = Object.entries(files as FileMap)
         .filter(([, dirent]) => dirent?.type === 'file' && !dirent.isBinary)
         .map(([path, dirent]) => ({
-          path: extractRelativePath(path),
+          path,
           size: new TextEncoder().encode((dirent as File).content || '').length,
         }));
 

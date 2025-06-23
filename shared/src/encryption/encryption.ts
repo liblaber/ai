@@ -24,7 +24,7 @@ export function encryptData(encryptionKey: string, data: Buffer): string {
   return JSON.stringify(result);
 }
 
-export function decryptData(encryptionKey: string, encryptedData: string): any {
+export function decryptData(encryptionKey: string, encryptedData: string) {
   const { iv, authTag, encryptedData: data } = JSON.parse(encryptedData);
 
   if (!encryptionKey) {
@@ -38,7 +38,5 @@ export function decryptData(encryptionKey: string, encryptedData: string): any {
   decipher.setAuthTag(Buffer.from(authTag, 'base64'));
 
   // Decrypt the data
-  const decrypted = Buffer.concat([decipher.update(Buffer.from(data, 'base64')), decipher.final()]);
-
-  return JSON.parse(decrypted.toString());
+  return Buffer.concat([decipher.update(Buffer.from(data, 'base64')), decipher.final()]);
 }

@@ -21,7 +21,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return json({ error: 'Encryption key not found' }, { status: 500 });
     }
 
-    const decryptedBody = decryptData(process.env.ENCRYPTION_KEY as string, body.encryptedData);
+    const decryptedData = decryptData(process.env.ENCRYPTION_KEY as string, body.encryptedData);
+    const decryptedBody = JSON.parse(decryptedData.toString());
     const { query, databaseUrl, params } = decryptedBody;
 
     if (!databaseUrl) {

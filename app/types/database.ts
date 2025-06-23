@@ -2,10 +2,8 @@
 
 export const MESSAGE_ROLE = {
   USER: 'USER',
-  AGENT: 'AGENT',
+  ASSISTANT: 'ASSISTANT',
 } as const;
-
-export type MessageRole = (typeof MESSAGE_ROLE)[keyof typeof MESSAGE_ROLE];
 
 export const SSL_MODE = {
   DISABLE: 'DISABLE',

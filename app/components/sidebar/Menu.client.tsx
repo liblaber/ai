@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { ControlPanel } from '~/components/@settings/core/ControlPanel';
 import { SettingsButton } from '~/components/ui/SettingsButton';
-import { type ChatHistoryItem, chatId, db, deleteById, getAll, useChatHistory } from '~/lib/persistence';
+import { chatId, db, deleteById, useConversationHistory } from '~/lib/persistence';
 import { cubicEasingFn } from '~/utils/easings';
 import { logger } from '~/utils/logger';
 import { HistoryItem } from './HistoryItem';
@@ -13,6 +13,7 @@ import { useSearchFilter } from '~/lib/hooks/useSearchFilter';
 import { classNames } from '~/utils/classNames';
 import { useStore } from '@nanostores/react';
 import { openSettingsPanel, settingsPanelStore } from '~/lib/stores/settings';
+import { getConversations, type SimpleConversationResponse } from '~/lib/persistence/conversations';
 
 const menuVariants = {
   closed: {
@@ -35,7 +36,7 @@ const menuVariants = {
   },
 } satisfies Variants;
 
-type DialogContent = { type: 'delete'; item: ChatHistoryItem } | null;
+type DialogContent = { type: 'delete'; item: SimpleConversationResponse } | null;
 
 function CurrentDateTime() {
   const [dateTime, setDateTime] = useState(new Date());
@@ -60,28 +61,27 @@ function CurrentDateTime() {
 }
 
 export const Menu = () => {
-  const { duplicateCurrentChat, exportChat } = useChatHistory();
+  const { exportChat } = useConversationHistory();
   const menuRef = useRef<HTMLDivElement>(null);
-  const [list, setList] = useState<ChatHistoryItem[]>([]);
+  const [conversations, setConversations] = useState<SimpleConversationResponse[]>([]);
   const [open, setOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState<DialogContent>(null);
   const { isOpen } = useStore(settingsPanelStore);
 
   const { filteredItems: filteredList, handleSearchChange } = useSearchFilter({
-    items: list,
+    items: conversations,
     searchFields: ['description'],
   });
 
-  const loadEntries = useCallback(() => {
+  const loadEntries = () => {
     if (db) {
-      getAll(db)
-        .then((list) => list.filter((item) => item.id && item.description))
-        .then(setList)
+      getConversations()
+        .then(setConversations)
         .catch((error) => toast.error(error.message));
     }
-  }, []);
+  };
 
-  const deleteItem = useCallback((event: React.UIEvent, item: ChatHistoryItem) => {
+  const deleteItem = useCallback((event: React.UIEvent, item: SimpleConversationResponse) => {
     event.preventDefault();
 
     if (db) {
@@ -136,14 +136,9 @@ export const Menu = () => {
     };
   }, [isOpen]);
 
-  const handleDeleteClick = (event: React.UIEvent, item: ChatHistoryItem) => {
+  const handleDeleteClick = (event: React.UIEvent, item: SimpleConversationResponse) => {
     event.preventDefault();
     setDialogContent({ type: 'delete', item });
-  };
-
-  const handleDuplicate = async (id: string) => {
-    await duplicateCurrentChat(id);
-    loadEntries(); // Reload the list after duplication
   };
 
   const handleSettingsClick = () => {
@@ -172,12 +167,11 @@ export const Menu = () => {
               href="/"
               className="flex gap-2 items-center bg-accent-50 dark:bg-accent-500/10 text-accent-700 dark:text-accent-300 hover:bg-accent-100 dark:hover:bg-accent-500/20 rounded-lg px-4 py-2 transition-colors"
             >
-              <span className="inline-block i-lucide:message-square h-4 w-4" />
               <span className="text-sm font-medium">Start new chat</span>
             </a>
             <div className="relative w-full">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                <span className="i-lucide:search h-4 w-4 text-gray-400 dark:text-gray-500" />
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 z-100">
+                <div className="i-ph:magnifying-glass h-4 w-4 text-gray-400 dark:text-gray-500" />
               </div>
               <input
                 className="w-full bg-gray-100  dark:bg-gray-900 relative pl-9 pr-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-accent-500/50 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-800"
@@ -192,7 +186,7 @@ export const Menu = () => {
           <div className="flex-1 overflow-auto px-3 pb-3">
             {filteredList.length === 0 && (
               <div className="px-4 text-gray-500 dark:text-gray-400 text-sm">
-                {list.length === 0 ? 'No previous conversations' : 'No matches found'}
+                {conversations.length === 0 ? 'No previous conversations' : 'No matches found'}
               </div>
             )}
             <DialogRoot open={dialogContent !== null}>
@@ -208,7 +202,6 @@ export const Menu = () => {
                         item={item}
                         exportChat={exportChat}
                         onDelete={(event) => handleDeleteClick(event, item)}
-                        onDuplicate={() => handleDuplicate(item.id)}
                       />
                     ))}
                   </div>
@@ -223,7 +216,7 @@ export const Menu = () => {
                         <p>
                           You are about to delete{' '}
                           <span className="font-medium text-gray-900 dark:text-white">
-                            {dialogContent.item.description}
+                            {dialogContent.item.description || 'Untitled conversation'}
                           </span>
                         </p>
                         <p className="mt-2">Are you sure you want to delete this chat?</p>

@@ -8,7 +8,8 @@ import { WORK_DIR } from '~/utils/constants';
 import { computeFileModifications } from '~/utils/diff';
 import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
-import { chatId } from '~/lib/persistence/useChatHistory';
+import { chatId } from '~/lib/persistence/useConversationHistory';
+import { updateLatestSnapshot } from '~/lib/persistence/snapshots';
 
 const logger = createScopedLogger('FilesStore');
 
@@ -129,7 +130,7 @@ export class FilesStore {
       // we immediately update the file and don't rely on the `change` event coming from the watcher
       this.files.setKey(filePath, { type: 'file', content, isBinary: false });
 
-      this.#updateFileInSnapshot(filePath, { type: 'file', content, isBinary: false });
+      await this.#updateFileInSnapshot(filePath, { type: 'file', content, isBinary: false });
 
       logger.info('File updated');
     } catch (error) {
@@ -139,35 +140,15 @@ export class FilesStore {
     }
   }
 
-  #updateFileInSnapshot(filePath: string, fileData: File) {
-    const urlId = chatId.get();
+  async #updateFileInSnapshot(filePath: string, fileData: File) {
+    const conversationId = chatId.get();
 
-    logger.info(`Updating file ${filePath} in snapshot for urlId ${urlId}`);
-
-    if (!urlId) {
-      logger.info('No active urlId found, skipping snapshot update');
+    if (!conversationId) {
+      logger.error('No conversation ID found, skipping snapshot update');
       return;
     }
 
-    const snapshotKey = Object.keys(localStorage).find((key) => key.startsWith(`snapshot:${urlId}`)) || '';
-    const snapshotStr = localStorage.getItem(snapshotKey);
-
-    if (snapshotStr) {
-      try {
-        const snapshot = JSON.parse(snapshotStr);
-
-        if (snapshot && snapshot.files) {
-          snapshot.files[filePath] = fileData;
-
-          localStorage.setItem(snapshotKey, JSON.stringify(snapshot));
-          logger.info(`Updated file ${filePath} in snapshot for urlId ${urlId}`);
-        }
-      } catch (error) {
-        logger.error('Failed to update file in snapshot', error);
-      }
-    } else {
-      logger.info(`No snapshot found for urlId ${urlId}`);
-    }
+    await updateLatestSnapshot(conversationId, filePath, fileData.content);
   }
 
   async #init() {

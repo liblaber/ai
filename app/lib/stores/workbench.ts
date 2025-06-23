@@ -158,6 +158,16 @@ export class WorkbenchStore {
     this.showWorkbench.set(show);
   }
 
+  /**
+   * Get the file map from the workbench, without the workdir prefix
+   * @returns The file map
+   */
+  getFileMap(): FileMap {
+    return Object.fromEntries(
+      Object.entries(this.#filesStore.files).map(([path, dirent]) => [extractRelativePath(path), dirent]),
+    );
+  }
+
   setCurrentDocumentContent(newContent: string) {
     const filePath = this.currentDocument.get()?.filePath;
 
@@ -315,8 +325,6 @@ export class WorkbenchStore {
     this.artifacts.setKey(messageId, { ...artifact, ...state });
   }
   addAction(data: ActionCallbackData) {
-    // this._addAction(data);
-
     this.addToExecutionQueue(() => this._addAction(data));
   }
   async _addAction(data: ActionCallbackData) {
@@ -332,6 +340,10 @@ export class WorkbenchStore {
   }
 
   runAction(data: ActionCallbackData, isStreaming: boolean = false) {
+    if (!data.shouldExecute) {
+      return;
+    }
+
     if (isStreaming) {
       this.actionStreamSampler(data, isStreaming);
     } else {

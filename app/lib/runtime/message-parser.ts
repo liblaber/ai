@@ -1,4 +1,4 @@
-import type { ActionType, LiblabAction, LiblabActionData, FileAction, ShellAction } from '~/types/actions';
+import type { ActionType, FileAction, LiblabAction, LiblabActionData, ShellAction } from '~/types/actions';
 import type { LiblabArtifactData } from '~/types/artifact';
 import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
@@ -7,6 +7,7 @@ const ARTIFACT_TAG_OPEN = '<liblabArtifact';
 const ARTIFACT_TAG_CLOSE = '</liblabArtifact>';
 const ARTIFACT_ACTION_TAG_OPEN = '<liblabAction';
 const ARTIFACT_ACTION_TAG_CLOSE = '</liblabAction>';
+export const NO_EXECUTE_ACTION_ANNOTATION = 'no-execute';
 
 const logger = createScopedLogger('MessageParser');
 
@@ -19,6 +20,7 @@ export interface ActionCallbackData {
   messageId: string;
   actionId: string;
   action: LiblabAction;
+  shouldExecute: boolean;
 }
 
 export type ArtifactCallback = (data: ArtifactCallbackData) => void;
@@ -73,7 +75,7 @@ export class StreamingMessageParser {
 
   constructor(private _options: StreamingMessageParserOptions = {}) {}
 
-  parse(messageId: string, input: string) {
+  parse(messageId: string, input: string, shouldExecuteActions: boolean = true) {
     let state = this.#messages.get(messageId);
 
     if (!state) {
@@ -134,6 +136,7 @@ export class StreamingMessageParser {
               actionId: String(state.actionId - 1),
 
               action: currentAction as LiblabAction,
+              shouldExecute: shouldExecuteActions,
             });
 
             state.insideAction = false;
@@ -158,6 +161,7 @@ export class StreamingMessageParser {
                   content,
                   filePath: currentAction.filePath,
                 },
+                shouldExecute: shouldExecuteActions,
               });
             }
 
@@ -180,6 +184,7 @@ export class StreamingMessageParser {
                 messageId,
                 actionId: String(state.actionId++),
                 action: state.currentAction as LiblabAction,
+                shouldExecute: shouldExecuteActions,
               });
 
               i = actionEndIndex + 1;
@@ -301,7 +306,7 @@ export class StreamingMessageParser {
       }
 
       (actionAttributes as FileAction).filePath = filePath;
-    } else if (!['shell', 'start'].includes(actionType)) {
+    } else if (!['shell', 'start', 'commit-message'].includes(actionType)) {
       logger.warn(`Unknown action type '${actionType}'`);
     }
 

@@ -6,8 +6,7 @@ import { useStore } from '@nanostores/react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useMessageParser, useShortcuts, useSnapScroll } from '~/lib/hooks';
-import { chatId, description, navigateChat, useChatHistory } from '~/lib/persistence';
-import { getNextId } from '~/lib/persistence/db';
+import { chatId, description, navigateChat, useConversationHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { MessageRole, PROMPT_COOKIE_KEY } from '~/utils/constants';
@@ -25,7 +24,8 @@ import { QueryModal } from '~/components/chat/query-modal/QueryModal';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { type Message, useChat } from '@ai-sdk/react';
 import { generateId } from 'ai';
-import { pushToRemote, useGitPullSync } from '~/lib/stores/git';
+import { useGitPullSync } from '~/lib/stores/git';
+import { createConversation } from '~/lib/persistence/conversations';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -33,8 +33,8 @@ type DatabaseUrlResponse = {
 
 interface ChatProps {
   initialMessages: Message[];
-  storeMessageHistory: (messages: Message[]) => Promise<void>;
-  importChat: (description: string, messages: Message[]) => Promise<void>;
+  commandMessage?: Message;
+  storeConversationHistory: (latestMessageId: string) => Promise<void>;
   exportChat: () => void;
   description?: string;
 }
@@ -44,7 +44,7 @@ const logger = createScopedLogger('Chat');
 export function Chat() {
   renderLogger.trace('Chat');
 
-  const { ready, initialMessages, storeMessageHistory, importChat, exportChat } = useChatHistory();
+  const { ready, initialMessages, commandMessage, storeConversationHistory, exportChat } = useConversationHistory();
   const title = useStore(description);
   useEffect(() => {
     workbenchStore.setReloadedMessages(initialMessages.map((m) => m.id));
@@ -56,9 +56,9 @@ export function Chat() {
         <ChatImpl
           description={title}
           initialMessages={initialMessages}
+          commandMessage={commandMessage}
           exportChat={exportChat}
-          storeMessageHistory={storeMessageHistory}
-          importChat={importChat}
+          storeConversationHistory={storeConversationHistory}
         />
       )}
     </>
@@ -78,7 +78,7 @@ const processSampledMessages = createSampler(
 );
 
 export const ChatImpl = memo(
-  ({ description, initialMessages, storeMessageHistory, importChat, exportChat }: ChatProps) => {
+  ({ description, initialMessages, commandMessage, storeConversationHistory, exportChat }: ChatProps) => {
     useShortcuts();
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -129,20 +129,29 @@ export const ChatImpl = memo(
           'There was an error processing your request: ' + (e.message ? e.message : 'No details were returned'),
         );
       },
-      onFinish: async () => {
+      onFinish: async ({ id }) => {
         setData(undefined);
 
         logger.debug('Finished streaming');
 
         setTimeout(async () => {
-          await storeMessageHistory(messagesRef.current);
-
-          await pushToRemote();
+          await storeConversationHistory(id);
         }, 2000);
       },
       initialMessages,
       initialInput: Cookies.get(PROMPT_COOKIE_KEY) || '',
     });
+
+    useEffect(() => {
+      if (!commandMessage) {
+        return;
+      }
+
+      setTimeout(() => {
+        setMessages([...messagesRef.current, commandMessage]);
+      }, 2000);
+    }, [commandMessage]);
+
     const isLoading = status === 'streaming';
 
     const { parsedMessages, parseMessages } = useMessageParser();
@@ -323,9 +332,9 @@ export const ChatImpl = memo(
 
       // Generate a new chat ID right away to use in the request
       if (!chatId.get()) {
-        const nextId = await getNextId();
-        chatId.set(nextId);
-        navigateChat(nextId);
+        const conversationId = await createConversation(datasourceId);
+        chatId.set(conversationId);
+        navigateChat(conversationId);
       }
 
       const dataSourceUrlResponse = await fetch(`/api/data-sources/${datasourceId}/url`);
@@ -489,7 +498,6 @@ export const ChatImpl = memo(
           }}
           handleStop={abort}
           description={description}
-          importChat={importChat}
           exportChat={exportChat}
           messages={messages.map((message, i) => {
             if (message.role === MessageRole.User) {

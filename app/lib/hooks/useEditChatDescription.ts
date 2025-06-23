@@ -1,13 +1,8 @@
 import { useStore } from '@nanostores/react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import {
-  chatId as chatIdStore,
-  db,
-  description as descriptionStore,
-  getMessages,
-  updateChatDescription,
-} from '~/lib/persistence';
+import { chatId as chatIdStore, description as descriptionStore } from '~/lib/persistence';
+import { updateConversation } from '~/lib/persistence/conversations';
 
 interface EditChatDescriptionOptions {
   initialDescription?: string;
@@ -63,25 +58,9 @@ export function useEditChatDescription({
     setCurrentDescription(e.target.value);
   }, []);
 
-  const fetchLatestDescription = useCallback(async () => {
-    if (!db || !chatId) {
-      return initialDescription;
-    }
-
-    try {
-      const chat = await getMessages(db, chatId);
-      return chat?.description || initialDescription;
-    } catch (error) {
-      console.error('Failed to fetch latest description:', error);
-      return initialDescription;
-    }
-  }, [db, chatId, initialDescription]);
-
   const handleBlur = useCallback(async () => {
-    const latestDescription = await fetchLatestDescription();
-    setCurrentDescription(latestDescription);
     toggleEditMode();
-  }, [fetchLatestDescription, toggleEditMode]);
+  }, [toggleEditMode]);
 
   const isValidDescription = useCallback((desc: string): boolean => {
     const trimmedDesc = desc.trim();
@@ -118,17 +97,12 @@ export function useEditChatDescription({
       }
 
       try {
-        if (!db) {
-          toast.error('Chat persistence is not available');
-          return;
-        }
-
         if (!chatId) {
           toast.error('Chat Id is not available');
           return;
         }
 
-        await updateChatDescription(db, chatId, currentDescription);
+        await updateConversation(chatId, { description: currentDescription });
 
         if (syncWithGlobalStore) {
           descriptionStore.set(currentDescription);
@@ -141,7 +115,7 @@ export function useEditChatDescription({
 
       toggleEditMode();
     },
-    [currentDescription, db, chatId, initialDescription, customChatId],
+    [currentDescription, chatId, initialDescription, customChatId],
   );
 
   const handleKeyDown = useCallback(

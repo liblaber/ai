@@ -1,7 +1,7 @@
 import type { WebContainer } from '@webcontainer/api';
 import { path as nodePath } from '~/utils/path';
 import { atom, map, type MapStore } from 'nanostores';
-import type { ActionAlert, LiblabAction, FileHistory } from '~/types/actions';
+import type { ActionAlert, FileHistory, LiblabAction } from '~/types/actions';
 import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
 import type { ActionCallbackData } from './message-parser';
@@ -129,8 +129,8 @@ export class ActionRunner {
 
     this.actions.setKey(actionId, {
       ...data.action,
-      status: 'pending',
-      executed: false,
+      status: data.shouldExecute ? 'pending' : 'complete',
+      executed: !data.shouldExecute,
       abort: () => {
         abortController.abort();
         this.#updateAction(actionId, { status: 'aborted' });
@@ -138,9 +138,11 @@ export class ActionRunner {
       abortSignal: abortController.signal,
     });
 
-    this.#currentExecutionPromise.then(() => {
-      this.#updateAction(actionId, { status: 'running' });
-    });
+    if (data.shouldExecute) {
+      this.#currentExecutionPromise.then(() => {
+        this.#updateAction(actionId, { status: 'running' });
+      });
+    }
   }
 
   async runAction(data: ActionCallbackData, isStreaming: boolean = false) {

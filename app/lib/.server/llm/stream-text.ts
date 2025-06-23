@@ -1,4 +1,4 @@
-import { convertToCoreMessages, type Message, streamText as _streamText } from 'ai';
+import { convertToCoreMessages, generateId, type Message, streamText as _streamText } from 'ai';
 import { type FileMap } from './constants';
 import { getSystemPrompt } from '~/lib/common/prompts/prompts';
 import { DEFAULT_PROVIDER, MessageRole, MODIFICATIONS_TAG_NAME, WORK_DIR } from '~/utils/constants';
@@ -20,7 +20,7 @@ export type StreamingOptions = Omit<Parameters<typeof _streamText>[0], 'model'>;
 const logger = createScopedLogger('stream-text');
 
 export async function streamText(props: {
-  messages: Omit<Message, 'id'>[];
+  messages: Message[];
   options?: StreamingOptions;
   files?: FileMap;
   promptId?: string;
@@ -132,6 +132,7 @@ ${props.summary}
     if (sqlQueries?.length) {
       logger.debug(`Adding SQL queries as the hidden user message`);
       processedMessages.push({
+        id: generateId(),
         role: 'user',
         content: mapSqlQueriesToPrompt(sqlQueries),
         annotations: ['hidden'],
