@@ -70,8 +70,12 @@ async function handleDelete(conversationId: string) {
 
     const storageService = StorageServiceFactory.get();
 
+    logger.info(`Deleting conversation ${conversationId}`);
+
     await conversationService.deleteConversation(conversationId);
     await storageService.deleteAll(`snapshots/${conversationId}`);
+
+    logger.info(`Deleted conversation ${conversationId}`);
 
     return Response.json({ success: true });
   } catch (error) {
