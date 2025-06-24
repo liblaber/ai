@@ -47,4 +47,10 @@ export const conversationService = {
       },
     });
   },
+
+  async deleteConversation(conversationId: string): Promise<void> {
+    await prisma.conversation.delete({
+      where: { id: conversationId },
+    });
+  },
 };

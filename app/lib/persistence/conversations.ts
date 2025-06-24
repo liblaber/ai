@@ -123,6 +123,16 @@ export async function getConversations(): Promise<SimpleConversationResponse[]> 
   return response.json();
 }
 
+export async function deleteConversation(id: string): Promise<void> {
+  const response = await fetch(`${CONVERSATIONS_API}/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to delete conversation: ${response.statusText}`);
+  }
+}
+
 export async function forkConversation(conversationId: string, messageId: string): Promise<string> {
   const conversation = await getConversation(conversationId);
 

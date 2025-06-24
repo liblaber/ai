@@ -28,4 +28,11 @@ export interface StorageService {
    * @returns {Promise<void>} The deleted data.
    */
   delete(key: string): Promise<void>;
+
+  /**
+   * Deletes all the data from the storage service.
+   * @param {string} parentKey - The parent key to delete the data from.
+   * @returns {Promise<void>} The deleted data.
+   */
+  deleteAll(parentKey: string): Promise<void>;
 }

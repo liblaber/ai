@@ -96,14 +96,3 @@ export async function getMessagesById(db: IDBDatabase, id: string): Promise<Chat
     request.onerror = () => reject(request.error);
   });
 }
-
-export async function deleteById(db: IDBDatabase, id: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction('chats', 'readwrite');
-    const store = transaction.objectStore('chats');
-    const request = store.delete(id);
-
-    request.onsuccess = () => resolve(undefined);
-    request.onerror = () => reject(request.error);
-  });
-}

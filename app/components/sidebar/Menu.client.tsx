@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { ControlPanel } from '~/components/@settings/core/ControlPanel';
 import { SettingsButton } from '~/components/ui/SettingsButton';
-import { chatId, db, deleteById, useConversationHistory } from '~/lib/persistence';
+import { chatId, useConversationHistory } from '~/lib/persistence';
 import { cubicEasingFn } from '~/utils/easings';
 import { logger } from '~/utils/logger';
 import { HistoryItem } from './HistoryItem';
@@ -13,7 +13,7 @@ import { useSearchFilter } from '~/lib/hooks/useSearchFilter';
 import { classNames } from '~/utils/classNames';
 import { useStore } from '@nanostores/react';
 import { openSettingsPanel, settingsPanelStore } from '~/lib/stores/settings';
-import { getConversations, type SimpleConversationResponse } from '~/lib/persistence/conversations';
+import { deleteConversation, getConversations, type SimpleConversationResponse } from '~/lib/persistence/conversations';
 
 const menuVariants = {
   closed: {
@@ -74,31 +74,27 @@ export const Menu = () => {
   });
 
   const loadEntries = () => {
-    if (db) {
-      getConversations()
-        .then(setConversations)
-        .catch((error) => toast.error(error.message));
-    }
+    getConversations()
+      .then(setConversations)
+      .catch((error) => toast.error(error.message));
   };
 
   const deleteItem = useCallback((event: React.UIEvent, item: SimpleConversationResponse) => {
     event.preventDefault();
 
-    if (db) {
-      deleteById(db, item.id)
-        .then(() => {
-          loadEntries();
+    deleteConversation(item.id)
+      .then(() => {
+        loadEntries();
 
-          if (chatId.get() === item.id) {
-            // hard page navigation to clear the stores
-            window.location.pathname = '/';
-          }
-        })
-        .catch((error) => {
-          toast.error('Failed to delete conversation');
-          logger.error(error);
-        });
-    }
+        if (chatId.get() === item.id) {
+          // hard page navigation to clear the stores
+          window.location.pathname = '/';
+        }
+      })
+      .catch((error) => {
+        toast.error('Failed to delete conversation');
+        logger.error(error);
+      });
   }, []);
 
   const closeDialog = () => {
