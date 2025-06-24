@@ -38,17 +38,6 @@ export const snapshotService = {
     });
   },
 
-  async getAllByConversationId(conversationId: string) {
-    return prisma.snapshot.findMany({
-      where: {
-        conversationId,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-  },
-
   async getLatestSnapshotForMessages(messageIds: string[]) {
     return prisma.snapshot.findFirst({
       where: {

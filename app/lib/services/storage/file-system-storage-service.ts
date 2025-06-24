@@ -47,4 +47,9 @@ export class LocalSystemStorageService implements StorageService {
       }
     }
   }
+
+  async deleteAll(parentKey: string): Promise<void> {
+    const filePath = this._getFilePath(parentKey);
+    await fs.rm(filePath, { recursive: true });
+  }
 }

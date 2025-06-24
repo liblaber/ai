@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { conversationService } from '~/lib/services/conversationService';
 import { logger } from '~/utils/logger';
 import { StorageServiceFactory } from '~/lib/services/storage/storage-service-factory';
-import { snapshotService } from '~/lib/services/snapshotService';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const conversationId = params.id;
@@ -62,20 +61,17 @@ async function handleDelete(conversationId: string) {
   try {
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
+      select: { id: true },
     });
 
     if (!conversation) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }
 
-    const snapshots = await snapshotService.getAllByConversationId(conversationId);
-
     const storageService = StorageServiceFactory.get();
-    await Promise.all(snapshots.map((snapshot) => storageService.delete(snapshot.storageKey)));
 
-    await prisma.conversation.delete({
-      where: { id: conversationId },
-    });
+    await conversationService.deleteConversation(conversationId);
+    await storageService.deleteAll(`snapshots/${conversationId}`);
 
     return Response.json({ success: true });
   } catch (error) {
