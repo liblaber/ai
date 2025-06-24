@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { BaseSelect } from '~/components/ui/Select';
+import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/database/SelectDatabaseTypeOptions';
 import {
   type DataSourceOption,
-  DATASOURCES,
+  DEFAULT_DATA_SOURCES,
   SAMPLE_DATABASE,
-  SelectDatabaseTypeOptions,
-  SingleValueWithTooltip,
-} from '~/components/database/SelectDatabaseTypeOptions';
+  useDataSourceTypesPlugin,
+} from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
 
 interface DataSourceResponse {
   success: boolean;
@@ -22,23 +22,18 @@ interface DataSourceResponse {
 
 interface AddDataSourceFormProps {
   isSubmitting: boolean;
-  databaseTypes: DataSourceOption[];
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
 }
 
-export default function AddDataSourceForm({
-  isSubmitting,
-  databaseTypes,
-  setIsSubmitting,
-  onSuccess,
-}: AddDataSourceFormProps) {
-  const [dbType, setDbType] = useState<DataSourceOption>(DATASOURCES[0]);
+export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuccess }: AddDataSourceFormProps) {
+  const [dbType, setDbType] = useState<DataSourceOption>(DEFAULT_DATA_SOURCES[0]);
   const [dbName, setDbName] = useState('');
   const [connStr, setConnStr] = useState('');
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
@@ -177,7 +172,7 @@ export default function AddDataSourceForm({
                   setDbName('');
                   setConnStr('');
                 }}
-                options={databaseTypes}
+                options={availableDataSourceOptions}
                 width="100%"
                 menuPlacement={'bottom'}
                 minWidth="100%"

@@ -197,4 +197,5 @@ const ADDITIONAL_DEPS_ROUTES_TO_OPTIMIZE = [
   'vite-plugin-node-polyfills/shims/process',
   'zustand/middleware',
   '@prisma/client',
+  'mysql2/promise',
 ];

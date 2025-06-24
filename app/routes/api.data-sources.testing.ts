@@ -1,5 +1,5 @@
 import { json } from '@remix-run/cloudflare';
-import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 
 export async function action({ request }: { request: Request }) {
   if (request.method !== 'POST') {
@@ -15,7 +15,7 @@ export async function action({ request }: { request: Request }) {
     }
 
     try {
-      const accessor = DataAccessor.getAccessor(databaseUrl);
+      const accessor = DataSourcePluginManager.getAccessor(databaseUrl);
       accessor.validate(databaseUrl);
 
       const isConnected = await accessor.testConnection(databaseUrl);

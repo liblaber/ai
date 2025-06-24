@@ -1,7 +1,7 @@
 import { json } from '@remix-run/cloudflare';
-import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 
 export async function loader() {
-  const databaseTypes = DataAccessor.getAvailableDatabaseTypes();
+  const databaseTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
   return json(databaseTypes);
 }

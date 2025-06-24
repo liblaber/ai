@@ -1,25 +1,7 @@
 import { components } from 'react-select';
 import { SampleDatabaseTooltip } from './SampleDatabaseTooltip';
-import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
-import { useEffect } from 'react';
-
-export type DataSourceOption = {
-  value: string;
-  label: string;
-  connectionStringFormat: string;
-  available: boolean;
-};
-
-export const SAMPLE_DATABASE = 'sample';
-
-export const DATASOURCES: DataSourceOption[] = [
-  { value: SAMPLE_DATABASE, label: 'Sample Database', available: true, connectionStringFormat: '' },
-  { value: 'mongo', label: 'Mongo', available: false, connectionStringFormat: '' },
-  { value: 'hubspot', label: 'Hubspot', available: false, connectionStringFormat: '' },
-  { value: 'salesforce', label: 'Salesforce', available: false, connectionStringFormat: '' },
-  { value: 'jira', label: 'Jira', available: false, connectionStringFormat: '' },
-  { value: 'github', label: 'Github', available: false, connectionStringFormat: '' },
-];
+import { Lock } from 'iconsax-reactjs';
+import { SAMPLE_DATABASE, useDataSourceTypesPlugin } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
 
 export const SingleValueWithTooltip = (props: any) => {
   return (
@@ -27,34 +9,23 @@ export const SingleValueWithTooltip = (props: any) => {
       <div className="flex items-center">
         <span>{props.data.label}</span>
         {props.data.value === SAMPLE_DATABASE && <SampleDatabaseTooltip />}
+        {props.data.status !== 'available' && (
+          <span className="ml-2 text-red-500 flex items-center">
+            <Lock size={16} variant="Bold" />
+          </span>
+        )}
       </div>
     </components.SingleValue>
   );
 };
 
 export function SelectDatabaseTypeOptions(props: any) {
-  useEffect(() => {
-    fetchTypes();
-  }, []);
-
-  const { types, fetchTypes } = useDataSourceTypesStore();
-
-  const allDataSources = [
-    ...(types || []).map((type) => ({
-      value: type.value,
-      label: type.label,
-      connectionStringFormat: type.connectionStringFormat,
-      available: true,
-    })),
-    ...DATASOURCES,
-  ];
-
-  const available = allDataSources.filter((opt) => opt.available);
-  const comingSoon = allDataSources.filter((opt) => !opt.available);
+  const { availableDataSourceOptions, lockedDataSourceOptions, comingSoonDataSourceOptions } =
+    useDataSourceTypesPlugin();
 
   return (
     <components.MenuList {...props} className="bg-elements-depth-2">
-      {available.map((opt) => (
+      {availableDataSourceOptions.map((opt) => (
         <components.Option
           key={opt.value}
           {...props}
@@ -78,15 +49,36 @@ export function SelectDatabaseTypeOptions(props: any) {
           </div>
         </components.Option>
       ))}
-      <div className="text-liblab-elements-textPrimary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
-        Coming soon
-      </div>
-      {comingSoon.map((opt) => (
+      {lockedDataSourceOptions.length > 0 && (
+        <div className="text-liblab-elements-textPrimary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
+          Premium (requires license)
+        </div>
+      )}
+      {lockedDataSourceOptions.map((opt) => (
         <div
           key={opt.value}
-          className="flex hover:cursor-not-allowed items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-90 cursor-default"
+          className="flex hover:cursor-not-allowed items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-60 cursor-default"
         >
-          <span>{opt.label}</span>
+          <span className="flex items-center gap-2">
+            {opt.label}
+            <Lock size={16} variant="Bold" className="text-red-500" />
+          </span>
+        </div>
+      ))}
+      {comingSoonDataSourceOptions.length > 0 && (
+        <div className="text-liblab-elements-textPrimary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
+          Coming soon
+        </div>
+      )}
+      {comingSoonDataSourceOptions.map((opt) => (
+        <div
+          key={opt.value}
+          className="hover:cursor-not-allowed flex items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-60 cursor-default"
+        >
+          <span className="flex items-center gap-2">
+            {opt.label}
+            <Lock size={16} variant="Bold" className="text-red-500" />
+          </span>
         </div>
       ))}
     </components.MenuList>

@@ -17,6 +17,10 @@ import 'virtual:uno.css';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/routes/data-source-connection';
 import { Toaster } from 'sonner';
+import PluginManager, { type PluginAccessMap } from '~/lib/plugins/plugin-manager';
+import { usePluginStore } from '~/lib/plugins/plugin-store';
+import { type DataSourceType, useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 
 declare global {
   interface Window {
@@ -29,6 +33,8 @@ declare global {
 type LoaderData = {
   ENV: Record<string, string | undefined>;
   dataSources: DataSource[];
+  pluginAccess: PluginAccessMap;
+  dataSourceTypes: DataSourceType[];
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -40,8 +46,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return redirect(DATA_SOURCE_CONNECTION_ROUTE);
   }
 
+  await PluginManager.getInstance().initialize();
+
+  const pluginAccess = PluginManager.getInstance().getAccessMap();
+
+  const dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
+
   return Response.json({
     dataSources,
+    pluginAccess,
+    dataSourceTypes,
     ENV: {
       VITE_BASE_URL: env.VITE_BASE_URL,
     },
@@ -98,12 +112,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const loaderData = useRouteLoaderData<LoaderData>('root');
 
   const { setDataSources } = useDataSourcesStore();
+  const { setPluginAccess } = usePluginStore();
+  const { setDataSourceTypes } = useDataSourceTypesStore();
 
   useEffect(() => {
     if (loaderData?.dataSources) {
       setDataSources(loaderData?.dataSources);
     }
   }, [loaderData?.dataSources]);
+
+  useEffect(() => {
+    if (loaderData?.pluginAccess) {
+      setPluginAccess(loaderData?.pluginAccess);
+    }
+  }, [loaderData?.pluginAccess]);
+
+  useEffect(() => {
+    if (loaderData?.dataSourceTypes) {
+      setDataSourceTypes(loaderData?.dataSourceTypes);
+    }
+  }, [loaderData?.dataSourceTypes]);
 
   useEffect(() => {
     if (loaderData && loaderData.ENV) {

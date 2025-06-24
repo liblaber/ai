@@ -1,5 +1,5 @@
 import { prisma } from '~/lib/prisma';
-import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 
 export interface DataSource {
   id: string;
@@ -74,6 +74,6 @@ export async function getDatabaseUrl(datasourceId: string) {
 }
 
 function validateDataSource(connectionString: string) {
-  const accessor = DataAccessor.getAccessor(connectionString);
+  const accessor = DataSourcePluginManager.getAccessor(connectionString);
   accessor.validate(connectionString);
 }

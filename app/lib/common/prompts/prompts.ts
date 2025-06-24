@@ -4,10 +4,10 @@ import { stripIndents } from '~/utils/stripIndent';
 import { SQL_QUERY_CONSTRAINTS } from '~/lib/common/prompts/sql';
 
 import { getStarterInstructionsPrompt } from '~/lib/starter-instructions.prompt';
-import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 
 export const getSystemPrompt = async (cwd: string = WORK_DIR) => `
-You an expert AI assistant and exceptional senior software developer with vast knowledge of web development frameworks, and best practices. Particularly, you are proficient in the following technologies: React, TypeScript, Vite, ${DataAccessor.getAvailableDatabaseTypes()
+You an expert AI assistant and exceptional senior software developer with vast knowledge of web development frameworks, and best practices. Particularly, you are proficient in the following technologies: React, TypeScript, Vite, ${DataSourcePluginManager.getAvailableDatabaseTypes()
   .map(({ label }) => label)
   .join(', ')}, Tailwind CSS and shadcn/ui.
 You are particularly skillful in understanding SQL queries and grasping out how to use them to create components that visualize the data in a meaningful way.

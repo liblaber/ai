@@ -7,6 +7,7 @@ import mysql from 'mysql2/promise';
 const typesToParse = ['INT', 'BIGINT', 'DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE', 'NEWDECIMAL'];
 
 export class MySQLAccessor implements BaseAccessor {
+  static pluginId = 'mysql';
   readonly label = 'MySQL';
   private _connection: Connection | null = null;
 

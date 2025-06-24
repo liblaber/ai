@@ -15,16 +15,4 @@ export class DataAccessor {
 
     return new accessorClass();
   }
-
-  static getAvailableDatabaseTypes(): { value: string; label: string }[] {
-    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor];
-    return allAccessors.map((acc) => {
-      const instance = new acc();
-      return {
-        value: instance.label.toLowerCase(),
-        label: instance.label,
-        connectionStringFormat: instance.connectionStringFormat,
-      };
-    });
-  }
 }
