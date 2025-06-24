@@ -11,7 +11,7 @@ import { getConversation, updateConversation } from '~/lib/persistence/conversat
 import { pushToRemote } from '~/lib/stores/git';
 import { workbenchStore } from '~/lib/stores/workbench';
 
-interface IChatMetadata {
+export interface IChatMetadata {
   gitUrl?: string;
   gitBranch?: string;
   netlifySiteId?: string;
