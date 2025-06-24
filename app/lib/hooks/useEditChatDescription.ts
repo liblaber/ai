@@ -26,7 +26,7 @@ type EditChatDescriptionHook = {
  * Offers functions to:
  * - Switch between edit and view modes.
  * - Manage input changes, blur, and form submission events.
- * - Save updates to IndexedDB and optionally to the global application state.
+ * - Save updates
  *
  * @param {Object} options
  * @param {string} options.initialDescription - The current chat description.

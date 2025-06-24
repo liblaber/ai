@@ -5,7 +5,7 @@ import { classNames } from '~/utils/classNames';
 import { AssistantMessage } from './AssistantMessage';
 import { UserMessage } from './UserMessage';
 import { useLocation } from '@remix-run/react';
-import { chatId, db } from '~/lib/persistence/useConversationHistory';
+import { chatId } from '~/lib/persistence/useConversationHistory';
 import { toast } from 'sonner';
 import WithTooltip from '~/components/ui/Tooltip';
 import { forkConversation } from '~/lib/persistence/conversations';
@@ -30,8 +30,8 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
 
     const handleFork = async (messageId: string) => {
       try {
-        if (!db || !chatId.get()) {
-          toast.error('Chat persistence is not available');
+        if (!chatId.get()) {
+          toast.error('Invalid chat id');
           return;
         }
 
