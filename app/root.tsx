@@ -34,8 +34,6 @@ type LoaderData = {
   ENV: Record<string, string | undefined>;
   dataSources: DataSource[];
   pluginAccess: PluginAccessMap;
-
-  // TODO: type this properly
   dataSourceTypes: DataSourceType[];
 };
 

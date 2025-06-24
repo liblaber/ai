@@ -1,8 +1,8 @@
 import { env } from '~/lib/config/env';
-import { DATA_ACCESS } from '~/lib/plugins/plugin-store';
 
-// Centralized PluginManager
-export type PluginType = 'data-access';
+export const DATA_ACCESS = 'data-access';
+
+export type PluginType = typeof DATA_ACCESS;
 
 export type PluginAccessMap = Record<PluginType, Record<string, boolean>>;
 

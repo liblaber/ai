@@ -1,16 +1,8 @@
 import { create } from 'zustand';
+import { DATA_ACCESS } from '~/lib/plugins/plugin-manager';
 
-export type PluginType = 'data-access'; // Extend as needed
+export type PluginType = typeof DATA_ACCESS;
 export type PluginAccessMap = { [type in PluginType]: Record<string, boolean> };
-
-export const DATA_ACCESS = 'data-access';
-
-export interface DataSourceType {
-  value: string;
-  label: string;
-  connectionStringFormat: string;
-  available: boolean;
-}
 
 interface PluginStoreState {
   pluginAccess: PluginAccessMap;

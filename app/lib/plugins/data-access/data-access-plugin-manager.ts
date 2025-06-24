@@ -1,6 +1,4 @@
-// DataSourcePluginManager: manages data source plugin access
-import PluginManager, { type PluginType } from '~/lib/plugins/plugin-manager';
-import { DATA_ACCESS } from '~/lib/plugins/plugin-store';
+import PluginManager, { DATA_ACCESS, type PluginType } from '~/lib/plugins/plugin-manager';
 import type { BaseAccessor, BaseAccessorConstructor } from '@liblab/data-access/baseAccessor';
 import { PostgresAccessor } from '@liblab/data-access/accessors/postgres';
 import { MySQLAccessor } from '@liblab/data-access/accessors/mysql';
@@ -52,9 +50,5 @@ export class DataSourcePluginManager {
         available: DataSourcePluginManager.isAvailable(pluginId),
       };
     });
-  }
-
-  async initialize(): Promise<void> {
-    await PluginManager.getInstance().initialize();
   }
 }
