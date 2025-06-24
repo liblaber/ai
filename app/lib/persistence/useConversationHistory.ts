@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { atom } from 'nanostores';
 import { type Message } from 'ai';
 import { toast } from 'sonner';
-import { type IChatMetadata, openDatabase } from './db';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { saveSnapshot, type SnapshotResponse } from '~/lib/persistence/snapshots';
 import { createCommandsMessage, detectProjectCommands } from '~/utils/projectCommands';
@@ -11,6 +10,13 @@ import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import { getConversation, updateConversation } from '~/lib/persistence/conversations';
 import { pushToRemote } from '~/lib/stores/git';
 import { workbenchStore } from '~/lib/stores/workbench';
+
+export interface IChatMetadata {
+  gitUrl?: string;
+  gitBranch?: string;
+  netlifySiteId?: string;
+  dataSourceId?: string | null;
+}
 
 export interface ChatHistoryItem {
   id: string;
@@ -20,10 +26,6 @@ export interface ChatHistoryItem {
   metadata?: IChatMetadata;
   snapshot?: SnapshotResponse;
 }
-
-const persistenceEnabled = !import.meta.env.VITE_DISABLE_PERSISTENCE;
-
-export const db = persistenceEnabled ? await openDatabase() : undefined;
 
 export const chatId = atom<string | undefined>(undefined);
 export const description = atom<string | undefined>(undefined);
@@ -107,7 +109,7 @@ export function useConversationHistory() {
       await pushToRemote();
     },
     exportChat: async (id = chatId.get()) => {
-      if (!db || !id) {
+      if (!id) {
         return;
       }
 
