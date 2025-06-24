@@ -8,7 +8,6 @@ export async function executeQuery(connectionUrl: string, query: string, params?
     await dataAccessor.initialize(connectionUrl);
     dataAccessor.guardAgainstMaliciousQuery(query);
 
-  try {
     return await dataAccessor.executeQuery(query, params);
   } catch (e) {
     logger.error('Error executing query:', { error: e, query });
