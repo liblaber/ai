@@ -164,7 +164,9 @@ export class WorkbenchStore {
    */
   getFileMap(): FileMap {
     return Object.fromEntries(
-      Object.entries(this.#filesStore.files.get()).map(([path, dirent]) => [extractRelativePath(path), dirent]),
+      Object.entries(this.#filesStore.files.get())
+        .filter(([path]) => !path.includes('.next'))
+        .map(([path, dirent]) => [extractRelativePath(path), dirent]),
     );
   }
 

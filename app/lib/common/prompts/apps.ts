@@ -31,7 +31,6 @@ You are particularly skillful in understanding SQL queries and grasping out how 
 
   Available shell commands:
     - cp: Copy files/directories
-    - mkdir: Create directory
     - mv: Move/rename files
     - rm: Remove files
     - rmdir: Remove empty directories
