@@ -90,7 +90,9 @@ export default defineConfig((config) => {
       __PKG_PEER_DEPENDENCIES: JSON.stringify(pkg.peerDependencies),
       __PKG_OPTIONAL_DEPENDENCIES: JSON.stringify(pkg.optionalDependencies),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-      'process.env.STARTER_PATH': JSON.stringify(path.resolve(process.cwd(), 'starters', 'remix-starter')),
+      'process.env.STARTER_PATH': JSON.stringify(path.resolve(process.cwd(), 'starters', 'next-starter')),
+
+      // 'process.env.STARTER_PATH': JSON.stringify(path.resolve(process.cwd(), 'starters', 'remix-starter')),
       'process.env.ENCRYPTION_KEY': JSON.stringify(process.env.ENCRYPTION_KEY),
     },
     build: {

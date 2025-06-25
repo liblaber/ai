@@ -47,7 +47,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "isbot": "^4.1.0",
-    "lucide-react": "^0.488.0",
+    "lucide-react": "^0.523.0",
     "pg": "^8.2.2",
     "prettier": "^3.5.3",
     "react": "^18.2.0",
