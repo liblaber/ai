@@ -46,12 +46,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   let user = null;
   const dataSources = await getDataSources();
 
-  if (!dataSources.length && !request.url.includes(DATA_SOURCE_CONNECTION_ROUTE)) {
-    return redirect(DATA_SOURCE_CONNECTION_ROUTE);
-  }
-
   if (session?.user) {
     user = userService.getUser(session.user.id);
+
+    // TODO: @skos will pull user's data sources here
+
+    if (!dataSources.length && !request.url.includes(DATA_SOURCE_CONNECTION_ROUTE)) {
+      return redirect(DATA_SOURCE_CONNECTION_ROUTE);
+    }
   }
 
   await PluginManager.getInstance().initialize();

@@ -1,15 +1,18 @@
 import { env } from '~/lib/config/env';
 
 export const DATA_ACCESS = 'data-access';
+export const AUTH = 'auth';
 
-export type PluginType = typeof DATA_ACCESS;
+export type PluginType = typeof DATA_ACCESS | typeof AUTH;
 
+// TODO: @skos update this type right side
 export type PluginAccessMap = Record<PluginType, Record<string, boolean>>;
 
 class PluginManager {
   private static _instance: PluginManager;
   private _pluginAccess: PluginAccessMap = {
     [DATA_ACCESS]: {},
+    [AUTH]: {},
   };
   private _initialized = false;
 
@@ -43,7 +46,7 @@ class PluginManager {
   }
 
   // mock api call until we implement the backend
-  private async _fetchPluginAccess() {
+  private async _fetchPluginAccess(): Promise<PluginAccessMap> {
     const license = env.LICENSE_KEY;
 
     if (!license || license !== 'premium') {
@@ -53,6 +56,10 @@ class PluginManager {
           mysql: false,
           sqlite: true,
         },
+        [AUTH]: {
+          anonymous: true,
+          google: false,
+        },
       };
     }
 
@@ -61,6 +68,10 @@ class PluginManager {
         postgres: true,
         mysql: true,
         sqlite: true,
+      },
+      [AUTH]: {
+        anonymous: true,
+        google: true,
       },
     };
   }

@@ -1,9 +1,9 @@
 import type { TabType, TabVisibilityConfig } from './types';
-import { CopySuccess, type IconProps } from 'iconsax-reactjs';
+import { CopySuccess, Data, type IconProps } from 'iconsax-reactjs';
 import type { ComponentType } from 'react';
 
 export const TAB_ICONS: Record<TabType, string | ComponentType<IconProps>> = {
-  data: 'i-ph:database',
+  data: Data,
   github: 'i-ph:github-logo',
   'deployed-apps': CopySuccess,
 };

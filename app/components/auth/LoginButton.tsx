@@ -1,14 +1,16 @@
 import React from 'react';
 import { signIn } from '~/auth/auth-client';
 import {
-  Root as DialogRoot,
-  Trigger as DialogTrigger,
-  Title as DialogTitle,
   Description as DialogDescription,
+  Root as DialogRoot,
+  Title as DialogTitle,
+  Trigger as DialogTrigger,
 } from '@radix-ui/react-dialog';
 import { Dialog } from '~/components/ui/Dialog';
 import { useAuth } from '~/components/auth/AuthContext';
 import { LuCircleUserRound } from 'react-icons/lu';
+import { usePluginStore } from '~/lib/plugins/plugin-store';
+import { Button } from '~/components/ui/Button';
 
 interface AuthProvider {
   id: string;
@@ -17,6 +19,7 @@ interface AuthProvider {
 
 export function LoginButton() {
   const { isLoginModalOpen, toggleLoginModal, loginModalTitle } = useAuth();
+  const { pluginAccess } = usePluginStore();
 
   const handleProviderLogin = async (provider: string) => {
     toggleLoginModal(false);
@@ -42,52 +45,30 @@ export function LoginButton() {
     {
       id: 'google',
       renderLoginButton: () => (
-        <button className="gsi-material-button w-full" onClick={() => handleProviderLogin('google')}>
-          <div className="gsi-material-button-state"></div>
-          <div className="gsi-material-button-content-wrapper">
-            <div className="gsi-material-button-icon">
-              <svg
-                version="1.1"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 48 48"
-                xmlnsXlink="http://www.w3.org/1999/xlink"
-                style={{ display: 'block' }}
-              >
-                <path
-                  fill="#EA4335"
-                  d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-                ></path>
-                <path
-                  fill="#4285F4"
-                  d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-                ></path>
-                <path
-                  fill="#FBBC05"
-                  d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-                ></path>
-                <path
-                  fill="#34A853"
-                  d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-                ></path>
-                <path fill="none" d="M0 0h48v48H0z"></path>
-              </svg>
-            </div>
-            <span className="gsi-material-button-contents">Continue with Google</span>
-            <span style={{ display: 'none' }}>Continue with Google</span>
-          </div>
-        </button>
+        <Button variant="outline" onClick={() => handleProviderLogin('google')}>
+          <svg
+            stroke="currentColor"
+            fill="currentColor"
+            strokeWidth="0"
+            viewBox="0 0 488 512"
+            height="1em"
+            width="1em"
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+          >
+            <path d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+          </svg>
+          Sign up with Google
+        </Button>
       ),
     },
     {
       id: 'anonymous',
       renderLoginButton: () => (
-        <button
-          className="w-full px-4 py-2 rounded-md font-medium text-sm bg-gray-100 border border-gray-300 hover:bg-gray-200 transition-all flex items-center justify-center gap-3"
-          onClick={handleAnonymousLogin}
-        >
+        <Button variant="outline" onClick={handleAnonymousLogin}>
           <LuCircleUserRound className="size-6" />
           Continue as Guest
-        </button>
+        </Button>
       ),
     },
   ];
@@ -101,7 +82,7 @@ export function LoginButton() {
       </DialogTrigger>
 
       <Dialog
-        className="sm:max-w-[450px] w-[400px] rounded-lg shadow-xs bg-gray-500 bg-opacity-70 border border-liblab-elements-borderColor backdrop-blur-[2px] flex flex-col items-center justify-center min-h-[300px]"
+        className="sm:max-w-[450px] w-[500px] rounded-lg shadow-xs bg-gray-500 bg-opacity-70 border border-liblab-elements-borderColor backdrop-blur-[2px] flex flex-col items-center justify-center min-h-[400px]"
         onClose={() => toggleLoginModal(false)}
         onBackdrop={() => toggleLoginModal(false)}
       >
@@ -114,10 +95,12 @@ export function LoginButton() {
           <DialogDescription className="text-center text-sm mb-8 text-liblab-elements-textSecondary">
             Please log in to continue.
           </DialogDescription>
-          <div className="px-6 w-full space-y-3">
-            {authProviders.map((provider) => (
-              <div key={provider.id}>{provider.renderLoginButton()}</div>
-            ))}
+          <div className="flex flex-col gap-2 max-w-60 w-full">
+            {authProviders
+              .filter(({ id }) => pluginAccess.auth[id])
+              .map((provider) => (
+                <div key={provider.id}>{provider.renderLoginButton()}</div>
+              ))}
           </div>
         </div>
       </Dialog>
