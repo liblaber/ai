@@ -10,9 +10,8 @@ import { Dialog } from '~/components/ui/Dialog';
 import { useAuth } from '~/components/auth/AuthContext';
 import { LuCircleUserRound } from 'react-icons/lu';
 import { usePluginStore } from '~/lib/plugins/plugin-store';
-import type { AuthPluginId } from '~/lib/plugins/plugin-manager';
 import { Button } from '~/components/ui/Button';
-import type { Plugin } from '~/lib/plugins/types';
+import type { AuthPluginId, Plugin } from '~/lib/plugins/types';
 
 interface AuthProvider extends Plugin {
   renderLoginButton: () => React.ReactNode;

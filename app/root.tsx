@@ -20,10 +20,11 @@ import { Toaster } from 'sonner';
 import { AuthProvider } from './components/auth/AuthContext';
 import { getSession } from './auth/session';
 import { type UserProfile, userService } from '~/lib/services/userService';
-import PluginManager, { type PluginAccessMap } from '~/lib/plugins/plugin-manager';
+import PluginManager from '~/lib/plugins/plugin-manager';
 import { usePluginStore } from '~/lib/plugins/plugin-store';
 import { type DataSourceType, useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import type { PluginAccessMap } from '~/lib/plugins/types';
 
 declare global {
   interface Window {

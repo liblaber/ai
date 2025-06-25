@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { FREE_PLUGIN_ACCESS, type PluginAccessMap, type PluginType } from '~/lib/plugins/plugin-manager';
+import { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager';
+import type { PluginAccessMap, PluginType } from '~/lib/plugins/types';
 
 interface PluginStoreState {
   pluginAccess: PluginAccessMap;
