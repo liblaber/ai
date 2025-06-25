@@ -1,4 +1,4 @@
-import type { LoaderFunction, ActionFunction } from '@remix-run/node';
+import type { ActionFunction, LoaderFunction } from '@remix-run/node';
 import { conversationService } from '~/lib/services/conversationService';
 import { StorageServiceFactory } from '~/lib/services/storage/storage-service-factory';
 import { snapshotService } from '~/lib/services/snapshotService';
@@ -24,7 +24,7 @@ export const loader: LoaderFunction = async ({ params: { conversationId } }) => 
 
     const storageService = StorageServiceFactory.get();
     const data = await storageService.get(snapshot.storageKey);
-    const fileMap = data ? JSON.parse(data.toString()).value : null;
+    const fileMap = data ? JSON.parse(data.toString()) : null;
 
     if (!fileMap) {
       logger.error(`No snapshot files found for snapshot ${snapshot.id}`);
@@ -64,7 +64,7 @@ export const action: ActionFunction = async ({ request, params: { conversationId
 
     const storageService = StorageServiceFactory.get();
     const data = await storageService.get(snapshot.storageKey);
-    const fileMap = JSON.parse(data.toString()).value;
+    const fileMap = JSON.parse(data.toString());
 
     if (!fileMap[filePath]) {
       logger.error(`File ${filePath} not found in snapshot ${snapshot.id}`);
@@ -77,7 +77,7 @@ export const action: ActionFunction = async ({ request, params: { conversationId
       isBinary: false,
     };
 
-    const serializedData = Buffer.from(JSON.stringify({ value: fileMap }, null, 2));
+    const serializedData = Buffer.from(JSON.stringify(fileMap, null, 2));
     await storageService.save(snapshot.storageKey, serializedData);
 
     return Response.json({

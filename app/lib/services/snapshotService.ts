@@ -1,12 +1,15 @@
 import type { Prisma, Snapshot } from '@prisma/client';
 import { prisma } from '~/lib/prisma';
 
+type CreateSnapshotModel = Omit<Snapshot, 'createdAt' | 'id'> & {
+  id?: string;
+};
+
 export const snapshotService = {
-  async createSnapshot(snapshot: Omit<Snapshot, 'createdAt'>, tx?: Prisma.TransactionClient) {
+  async createSnapshot(snapshot: CreateSnapshotModel, tx?: Prisma.TransactionClient) {
     return (tx ?? prisma).snapshot.create({
       data: {
         ...snapshot,
-        id: undefined,
         conversationId: undefined,
         messageId: undefined,
         conversation: {
