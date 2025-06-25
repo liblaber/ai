@@ -1,6 +1,5 @@
+import type { PluginId } from '~/lib/plugins/plugin-manager';
+
 export interface Plugin {
-  pluginId: string;
-  name: string;
-  license: 'free' | 'premium';
-  isEnabled: boolean;
+  pluginId: PluginId;
 }

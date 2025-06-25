@@ -1,7 +1,7 @@
 import { usePluginStore } from '~/lib/plugins/plugin-store';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useMemo } from 'react';
-import { DATA_ACCESS } from '~/lib/plugins/plugin-manager';
+import { DATA_ACCESS, type DataAccessPluginId } from '~/lib/plugins/plugin-manager';
 
 export type DataSourceOption = {
   value: string;
@@ -36,7 +36,12 @@ export const useDataSourceTypesPlugin: DataSourceTypesHook = () => {
         value,
         label,
         connectionStringFormat,
-        status: value === SAMPLE_DATABASE ? 'available' : pluginAccess[DATA_ACCESS][value] ? 'available' : 'locked',
+        status:
+          value === SAMPLE_DATABASE
+            ? 'available'
+            : pluginAccess[DATA_ACCESS][value as DataAccessPluginId]
+              ? 'available'
+              : 'locked',
       })),
       ...DEFAULT_DATA_SOURCES,
     ],

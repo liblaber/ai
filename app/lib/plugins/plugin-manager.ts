@@ -5,15 +5,47 @@ export const AUTH = 'auth';
 
 export type PluginType = typeof DATA_ACCESS | typeof AUTH;
 
-// TODO: @skos update this type right side
-export type PluginAccessMap = Record<PluginType, Record<string, boolean>>;
+export type PluginId = DataAccessPluginId | AuthPluginId;
+
+export type DataAccessPluginId = 'postgres' | 'mysql' | 'sqlite';
+export type AuthPluginId = 'anonymous' | 'google' | 'twitch' | 'x';
+
+export type PluginAccessMap = {
+  [DATA_ACCESS]: Record<DataAccessPluginId, boolean>;
+  [AUTH]: Record<AuthPluginId, boolean>;
+};
+
+export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
+  [DATA_ACCESS]: {
+    postgres: true,
+    mysql: false,
+    sqlite: true,
+  },
+  [AUTH]: {
+    anonymous: true,
+    google: false,
+    twitch: false,
+    x: false,
+  },
+};
+
+export const PREMIUM_PLUGIN_ACCESS = {
+  [DATA_ACCESS]: {
+    postgres: true,
+    mysql: true,
+    sqlite: true,
+  },
+  [AUTH]: {
+    anonymous: true,
+    google: true,
+    twitch: true,
+    x: true,
+  },
+};
 
 class PluginManager {
   private static _instance: PluginManager;
-  private _pluginAccess: PluginAccessMap = {
-    [DATA_ACCESS]: {},
-    [AUTH]: {},
-  };
+  private _pluginAccess: PluginAccessMap = FREE_PLUGIN_ACCESS;
   private _initialized = false;
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -37,43 +69,25 @@ class PluginManager {
     this._initialized = true;
   }
 
-  isPluginAvailable(pluginType: PluginType, pluginId: string): boolean {
-    return this._pluginAccess[pluginType][pluginId];
+  isPluginAvailable(pluginType: typeof DATA_ACCESS, pluginId: DataAccessPluginId): boolean;
+  isPluginAvailable(pluginType: typeof AUTH, pluginId: AuthPluginId): boolean;
+  isPluginAvailable(pluginType: PluginType, pluginId: DataAccessPluginId | AuthPluginId): boolean {
+    return (this._pluginAccess[pluginType] as any)[pluginId];
   }
 
   getAccessMap(): PluginAccessMap {
     return { ...this._pluginAccess };
   }
 
-  // mock api call until we implement the backend
+  // Mock API call until we implement the backend
   private async _fetchPluginAccess(): Promise<PluginAccessMap> {
     const license = env.LICENSE_KEY;
 
     if (!license || license !== 'premium') {
-      return {
-        [DATA_ACCESS]: {
-          postgres: true,
-          mysql: false,
-          sqlite: true,
-        },
-        [AUTH]: {
-          anonymous: true,
-          google: false,
-        },
-      };
+      return FREE_PLUGIN_ACCESS;
     }
 
-    return {
-      [DATA_ACCESS]: {
-        postgres: true,
-        mysql: true,
-        sqlite: true,
-      },
-      [AUTH]: {
-        anonymous: true,
-        google: true,
-      },
-    };
+    return PREMIUM_PLUGIN_ACCESS;
   }
 }
 

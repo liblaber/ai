@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AUTH, DATA_ACCESS, type PluginAccessMap, type PluginType } from '~/lib/plugins/plugin-manager';
+import { FREE_PLUGIN_ACCESS, type PluginAccessMap, type PluginType } from '~/lib/plugins/plugin-manager';
 
 interface PluginStoreState {
   pluginAccess: PluginAccessMap;
@@ -8,7 +8,7 @@ interface PluginStoreState {
 }
 
 export const usePluginStore = create<PluginStoreState>()((set, get) => ({
-  pluginAccess: { [DATA_ACCESS]: {}, [AUTH]: {} },
+  pluginAccess: FREE_PLUGIN_ACCESS,
   setPluginAccess: (map) => set({ pluginAccess: map }),
-  isPluginEnabled: (pluginType, pluginId) => !!get().pluginAccess[pluginType][pluginId],
+  isPluginEnabled: (pluginType, pluginId) => !!(get().pluginAccess[pluginType] as any)[pluginId],
 }));
