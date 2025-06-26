@@ -5,7 +5,7 @@ import { Buffer } from 'node:buffer';
 import { path } from '~/utils/path';
 import { bufferWatchEvents } from '~/utils/buffer';
 import { WORK_DIR } from '~/utils/constants';
-import { computeFileModifications } from '~/utils/diff';
+import { computeFileModifications, extractRelativePath } from '~/utils/diff';
 import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
 import { chatId } from '~/lib/persistence/useConversationHistory';
@@ -148,7 +148,7 @@ export class FilesStore {
       return;
     }
 
-    await updateLatestSnapshot(conversationId, filePath, fileData.content);
+    await updateLatestSnapshot(conversationId, extractRelativePath(filePath), fileData.content);
   }
 
   async #init() {

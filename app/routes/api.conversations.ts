@@ -57,10 +57,12 @@ export async function action({ request }: LoaderFunctionArgs) {
           messageId: saveMessageModels.at(-1)?.id ?? null,
           conversationId: conversation.id,
           createdAt: undefined,
+          id: undefined,
         };
-        logger.info(`Creating new snapshot db entry ${newSnapshot.id} for conversation ${conversation.id}`);
-        await snapshotService.createSnapshot(newSnapshot, tx);
-        logger.info(`New snapshot ${newSnapshot.id} created for conversation ${conversation.id}`);
+        logger.info(`Creating new snapshot db entry for conversation ${conversation.id}`);
+
+        const createdSnapshot = await snapshotService.createSnapshot(newSnapshot, tx);
+        logger.info(`New snapshot ${createdSnapshot.id} created for conversation ${conversation.id}`);
       } else {
         logger.info(`No snapshot found for messages ${messageIds.join(', ')}`);
       }
