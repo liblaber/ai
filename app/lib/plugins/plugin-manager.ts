@@ -1,5 +1,11 @@
 import { env } from '~/lib/config/env';
-import { type PluginAccessMap, type PluginId, PluginType } from '~/lib/plugins/types';
+import {
+  type AuthPluginId,
+  type DataAccessPluginId,
+  type PluginAccessMap,
+  type PluginId,
+  PluginType,
+} from '~/lib/plugins/types';
 
 export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
   [PluginType.DATA_ACCESS]: {
@@ -56,7 +62,13 @@ class PluginManager {
   }
 
   isPluginAvailable(pluginType: PluginType, pluginId: PluginId): boolean {
-    return (this._pluginAccess[pluginType] as any)[pluginId];
+    if (pluginType === PluginType.DATA_ACCESS) {
+      return this._pluginAccess[pluginType][pluginId as DataAccessPluginId];
+    } else if (pluginType === PluginType.AUTH) {
+      return this._pluginAccess[pluginType][pluginId as AuthPluginId];
+    }
+
+    return false;
   }
 
   getAccessMap(): PluginAccessMap {
