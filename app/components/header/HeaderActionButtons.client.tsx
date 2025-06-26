@@ -233,7 +233,6 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       }
 
       const fileContents = await getAllFiles('');
-      console.log(fileContents);
 
       // Create a zip file
       const zip = new JSZip();
