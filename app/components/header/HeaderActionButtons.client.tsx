@@ -214,6 +214,10 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           }
 
           if (entry.isFile()) {
+            if (entry.name === 'pnpm-lock.yaml') {
+              continue;
+            }
+
             const content = await container.fs.readFile(fullPath, 'utf-8');
 
             // Remove /home/project prefix from the path
@@ -229,6 +233,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       }
 
       const fileContents = await getAllFiles('');
+      console.log(fileContents);
 
       // Create a zip file
       const zip = new JSZip();

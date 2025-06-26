@@ -383,6 +383,9 @@ export async function action({ request }: ActionFunctionArgs) {
           await runCommand('netlify', ['env:set', 'VITE_PROD', 'true'], tempDir, {
             NETLIFY_AUTH_TOKEN: token,
           });
+          await runCommand('netlify', ['env:set', 'NODE_ENV', 'production'], tempDir, {
+            NETLIFY_AUTH_TOKEN: token,
+          });
           logger.info('Netlify configuration completed', JSON.stringify({ chatId }));
         } catch (error) {
           logger.error(
