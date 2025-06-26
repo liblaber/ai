@@ -119,7 +119,7 @@ export const ChatImpl = memo(
       body: {
         apiKeys,
         files,
-        promptId: 'apps',
+        promptId: 'dashboards',
         contextOptimization: contextOptimizationEnabled,
       },
       sendExtraMessageFields: true,
