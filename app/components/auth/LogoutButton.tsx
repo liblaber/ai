@@ -14,7 +14,6 @@ export function LogoutButton() {
     await signOut({
       fetchOptions: {
         onSuccess: () => {
-          sessionStorage.clear();
           navigate('/');
         },
       },

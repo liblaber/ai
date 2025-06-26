@@ -37,7 +37,7 @@ declare global {
 type LoaderData = {
   ENV: Record<string, string | undefined>;
   dataSources: DataSource[];
-  user: UserProfile;
+  user: UserProfile | null;
   pluginAccess: PluginAccessMap;
   dataSourceTypes: DataSourceType[];
 };
@@ -48,9 +48,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const dataSources = await getDataSources();
 
   if (session?.user) {
-    user = userService.getUser(session.user.id);
-
-    // TODO: @skos will pull user's data sources here
+    user = await userService.getUser(session.user.id);
 
     if (!dataSources.length && !request.url.includes(DATA_SOURCE_CONNECTION_ROUTE)) {
       return redirect(DATA_SOURCE_CONNECTION_ROUTE);
