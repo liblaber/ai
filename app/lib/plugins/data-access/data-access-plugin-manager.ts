@@ -6,12 +6,10 @@ import { SQLiteAccessor } from '@liblab/data-access/accessors/sqlite';
 import { type PluginId, PluginType } from '~/lib/plugins/types';
 
 export class DataSourcePluginManager {
-  static pluginType = PluginType.DATA_ACCESS;
-
   static isAvailable(type: string): boolean {
     // Normalize type (e.g., 'postgresql' -> 'postgres')
     const normalized = type.replace('postgresql', 'postgres');
-    return PluginManager.getInstance().isPluginAvailable(DataSourcePluginManager.pluginType, normalized as PluginId);
+    return PluginManager.getInstance().isPluginAvailable(PluginType.DATA_ACCESS, normalized as PluginId);
   }
 
   static getAccessor(databaseUrl: string): BaseAccessor {

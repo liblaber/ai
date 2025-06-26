@@ -17,7 +17,7 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
     anonymous: true,
     google: false,
     twitch: false,
-    x: false,
+    twitter: false,
   },
 };
 
@@ -31,7 +31,7 @@ export const PREMIUM_PLUGIN_ACCESS = {
     anonymous: true,
     google: true,
     twitch: true,
-    x: true,
+    twitter: true,
   },
 };
 
