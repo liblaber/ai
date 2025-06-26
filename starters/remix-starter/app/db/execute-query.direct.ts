@@ -1,4 +1,3 @@
-// @ts-ignore files are loaded in the runtime
 import { DataAccessor } from '@/lib/data-access/dataAccessor';
 
 const databaseUrlDecoded = decodeURIComponent(process.env.DATABASE_URL || '');

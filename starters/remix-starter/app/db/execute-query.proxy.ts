@@ -1,4 +1,3 @@
-// @ts-ignore files are loaded in the runtime
 import { decryptData, encryptData } from '@/lib/encryption/encryption';
 
 export async function executeQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
