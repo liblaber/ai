@@ -110,7 +110,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     }
 
     if (!dbName) {
-      setError('Please enter a datasource name');
+      setError('Please enter the data source name');
       setTestResult(null);
 
       return;

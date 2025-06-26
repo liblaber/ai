@@ -32,19 +32,3 @@ export const TAB_LABELS: Record<TabType, string> = {
   github: 'GitHub',
   'deployed-apps': 'Deployed Apps',
 };
-
-export const categoryLabels: Record<SettingCategory, string> = {
-  file_sharing: 'File Sharing',
-  connectivity: 'Connectivity',
-  system: 'System',
-  services: 'Services',
-  preferences: 'Preferences',
-};
-
-export const categoryIcons: Record<SettingCategory, string> = {
-  file_sharing: 'i-ph:folder-simple',
-  connectivity: 'i-ph:wifi-high',
-  system: 'i-ph:gear',
-  services: 'i-ph:cube',
-  preferences: 'i-ph:sliders',
-};

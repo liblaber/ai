@@ -1,8 +1,7 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/cloudflare';
+import { type LoaderFunctionArgs } from '@remix-run/cloudflare';
 import { default as ChatRoute } from './chat';
+import { requireAuth } from '~/auth/auth-middleware';
 
-export async function loader(args: LoaderFunctionArgs) {
-  return json({ id: args.params.id });
-}
+export const loader = requireAuth(async (args: LoaderFunctionArgs) => ({ id: args.params.id }));
 
 export default ChatRoute;

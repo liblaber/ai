@@ -1,16 +1,15 @@
-import PluginManager, { DATA_ACCESS, type PluginType } from '~/lib/plugins/plugin-manager';
+import PluginManager from '~/lib/plugins/plugin-manager';
 import type { BaseAccessor, BaseAccessorConstructor } from '@liblab/data-access/baseAccessor';
 import { PostgresAccessor } from '@liblab/data-access/accessors/postgres';
 import { MySQLAccessor } from '@liblab/data-access/accessors/mysql';
 import { SQLiteAccessor } from '@liblab/data-access/accessors/sqlite';
+import { type PluginId, PluginType } from '~/lib/plugins/types';
 
 export class DataSourcePluginManager {
-  static pluginType: PluginType = DATA_ACCESS;
-
   static isAvailable(type: string): boolean {
     // Normalize type (e.g., 'postgresql' -> 'postgres')
     const normalized = type.replace('postgresql', 'postgres');
-    return PluginManager.getInstance().isPluginAvailable(DataSourcePluginManager.pluginType, normalized);
+    return PluginManager.getInstance().isPluginAvailable(PluginType.DATA_ACCESS, normalized as PluginId);
   }
 
   static getAccessor(databaseUrl: string): BaseAccessor {

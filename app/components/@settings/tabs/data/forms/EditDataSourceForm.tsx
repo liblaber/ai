@@ -110,7 +110,7 @@ export default function EditDataSourceForm({
     }
 
     if (!dbName) {
-      setError('Please enter a datasource name');
+      setError('Please enter the data source name');
       setTestResult(null);
 
       return;

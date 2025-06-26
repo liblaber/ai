@@ -17,10 +17,14 @@ import 'virtual:uno.css';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/routes/data-source-connection';
 import { Toaster } from 'sonner';
-import PluginManager, { type PluginAccessMap } from '~/lib/plugins/plugin-manager';
+import { AuthProvider } from './components/auth/AuthContext';
+import { getSession } from './auth/session';
+import { type UserProfile, userService } from '~/lib/services/userService';
+import PluginManager from '~/lib/plugins/plugin-manager';
 import { usePluginStore } from '~/lib/plugins/plugin-store';
 import { type DataSourceType, useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import type { PluginAccessMap } from '~/lib/plugins/types';
 
 declare global {
   interface Window {
@@ -33,17 +37,22 @@ declare global {
 type LoaderData = {
   ENV: Record<string, string | undefined>;
   dataSources: DataSource[];
+  user: UserProfile | null;
   pluginAccess: PluginAccessMap;
   dataSourceTypes: DataSourceType[];
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  let dataSources: DataSource[] = [];
+  const session = await getSession(request);
+  let user = null;
+  const dataSources = await getDataSources();
 
-  dataSources = await getDataSources();
+  if (session?.user) {
+    user = await userService.getUser(session.user.id);
 
-  if (!dataSources.length && !request.url.includes(DATA_SOURCE_CONNECTION_ROUTE)) {
-    return redirect(DATA_SOURCE_CONNECTION_ROUTE);
+    if (!dataSources.length && !request.url.includes(DATA_SOURCE_CONNECTION_ROUTE)) {
+      return redirect(DATA_SOURCE_CONNECTION_ROUTE);
+    }
   }
 
   await PluginManager.getInstance().initialize();
@@ -53,6 +62,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
 
   return Response.json({
+    user,
     dataSources,
     pluginAccess,
     dataSourceTypes,
@@ -156,8 +166,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <Layout>
-      <Outlet />
-    </Layout>
+    <AuthProvider>
+      <Layout>
+        <Outlet />
+      </Layout>
+    </AuthProvider>
   );
 }

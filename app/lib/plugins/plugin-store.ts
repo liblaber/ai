@@ -1,17 +1,24 @@
 import { create } from 'zustand';
-import { DATA_ACCESS } from '~/lib/plugins/plugin-manager';
-
-export type PluginType = typeof DATA_ACCESS;
-export type PluginAccessMap = { [type in PluginType]: Record<string, boolean> };
+import { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager';
+import type { AuthPluginId, DataAccessPluginId, PluginAccessMap, PluginId, PluginType } from '~/lib/plugins/types';
+import { PluginType as PluginTypeValue } from '~/lib/plugins/types';
 
 interface PluginStoreState {
   pluginAccess: PluginAccessMap;
   setPluginAccess: (map: PluginAccessMap) => void;
-  isPluginEnabled: (pluginType: PluginType, pluginId: string) => boolean;
+  isPluginEnabled: (pluginType: PluginType, pluginId: PluginId) => boolean;
 }
 
 export const usePluginStore = create<PluginStoreState>()((set, get) => ({
-  pluginAccess: { [DATA_ACCESS]: {} },
+  pluginAccess: FREE_PLUGIN_ACCESS,
   setPluginAccess: (map) => set({ pluginAccess: map }),
-  isPluginEnabled: (pluginType, pluginId) => !!get().pluginAccess[pluginType][pluginId],
+  isPluginEnabled: (pluginType, pluginId) => {
+    if (pluginType === PluginTypeValue.DATA_ACCESS) {
+      return get().pluginAccess[pluginType][pluginId as DataAccessPluginId];
+    } else if (pluginType === PluginTypeValue.AUTH) {
+      return get().pluginAccess[pluginType][pluginId as AuthPluginId];
+    }
+
+    return false;
+  },
 }));
