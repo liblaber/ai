@@ -3,8 +3,8 @@ import { allowedHTMLElements } from '~/utils/markdown';
 import { stripIndents } from '~/utils/stripIndent';
 import { SQL_QUERY_CONSTRAINTS } from '~/lib/common/prompts/sql';
 
-import { getStarterInstructionsPrompt } from '~/lib/starter-instructions.prompt';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
 
 export const getSystemPrompt = async (cwd: string = WORK_DIR) => `
 You an expert AI assistant and exceptional senior software developer with vast knowledge of web development frameworks, and best practices. Particularly, you are proficient in the following technologies: React, TypeScript, Vite, ${DataSourcePluginManager.getAvailableDatabaseTypes()
@@ -188,7 +188,7 @@ ULTRA IMPORTANT: Think first and reply with the artifact that contains all neces
 
 Starter repository that will be your starting point has its rules and instructions you must follow:
 <starter_template_instructions>
-${(await getStarterInstructionsPrompt()) || 'Write functional code!'}
+${StarterPluginManager.getStarterInstructionsPrompt() || 'Write functional code!'}
 </starter_template_instructions>
 
 Here are some examples of correct usage of artifacts:
