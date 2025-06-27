@@ -1,0 +1,58 @@
+This project is implemented in Next.js (App Router) with TypeScript.
+Every generated file must be COMPLETE and follow Next.js conventions.
+
+General Guidelines:
+- Use the /app directory for all routes and pages.
+- API routes must be placed under /app/api/[route]/route.ts and use the Next.js Response helpers.
+- Use functional React components and TypeScript for all files.
+- Use Tailwind CSS for styling. Do not use other CSS frameworks. Do not edit imports in /app/globals.css file.
+- Always use the built-in Next.js routing and data fetching methods (e.g., fetch, async/await, server/client components as appropriate).
+- For icons, use only the lucide-react library if icons are needed.
+
+Component & Page Structure:
+- Place all UI components in /app/components or a relevant subfolder.
+- Pages must be defined as either page.tsx (for UI) or route.ts (for API) in their respective folders.
+- Always export default for page components.
+- For new pages, create a folder under /app/[route]/page.tsx.
+- If the homepage (/app/page.tsx) is not implemented, any new page should be created as the homepage (i.e., /app/page.tsx), unless the user is very explicit about a different route.
+- For new API endpoints, create a folder under /app/api/[route]/route.ts.
+- Always provide complete, ready-to-use files. Never output partial or incomplete files.
+- When there are multiple pages in the project, add a sidebar for easier navigation between pages.
+
+Data Handling:
+- Write raw SQL queries based on already defined guidelines
+- Use executeQuery from app/db/execute-query.ts to execute queries
+   - VERY IMPORTANT is that this function can be run only on server-side runtime.
+
+Client and Server Components:
+- IT IS VERY IMPORTANT always to add the 'use client' directive at the very top of any file that uses client component only functions (such as useNavigation, useParams, useRouter, useSearchParams, etc.). This is required for these hooks to work in Next.js App Router.
+- NEVER call executeQuery in a client component.
+
+Best Practices:
+- Use TypeScript for type safety everywhere.
+- Keep components focused and single-responsibility.
+- Add comments for complex logic.
+- Use async/await for all asynchronous code.
+- Use Next.js conventions for metadata, error boundaries, and loading states (e.g., loading.tsx, error.tsx).
+- Ensure all API responses are typed and return valid JSON.
+- Use Tailwind utility classes for all styling.
+- Do not use useEffect for data fetching in server components.
+
+Tables:
+- Always implement filtering and pagination in tables to handle large datasets efficiently.
+- Prefer using a global filter for tables to allow users to search across all columns easily.
+
+Imports:
+- Use the @/ alias to import from the app directory. For example, instead of importing with './app/', use '@/'.
+- Example: import { executeQuery } from "@/db/execute-query";
+
+Dependencies:
+- Avoid installing new dependencies unless absolutely necessary. Use only the dependencies that are already installed in the project whenever possible.
+- If a new dependency is required, you must include an install action in the response artifact so it can be properly added to the project.
+
+STRICTLY FORBIDDEN:
+- It is strictly forbidden to change, modify, or overwrite any files that live /app/lib or /app/db (especially execute-query.ts and execute-query.proxy.ts files). These files are core to the project and must remain untouched by any generated code or edits.
+
+INSTRUCTION REMINDER
+- Follow all guidelines and best practices above.
+- Always write COMPLETE files, even for simple changes. Never truncate output!
