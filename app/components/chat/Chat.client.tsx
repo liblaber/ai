@@ -25,7 +25,7 @@ import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { type Message, useChat } from '@ai-sdk/react';
 import { generateId } from 'ai';
 import { useGitPullSync } from '~/lib/stores/git';
-import { createConversation } from '~/lib/persistence/conversations';
+import { createConversation, getMessageSnapshotId } from '~/lib/persistence/conversations';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -143,13 +143,10 @@ export const ChatImpl = memo(
             setMessages((currentMessages) =>
               currentMessages.map((message) => {
                 if (message.id === messageId) {
-                  const existingAnnotations = message.annotations || [];
+                  const existingSnapshotId = getMessageSnapshotId(message);
 
-                  const hasSnapshotAnnotation = existingAnnotations.some(
-                    (annotation) => typeof annotation === 'string' && annotation.startsWith('snapshotId:'),
-                  );
-
-                  if (!hasSnapshotAnnotation) {
+                  if (!existingSnapshotId) {
+                    const existingAnnotations = message.annotations || [];
                     return {
                       ...message,
                       annotations: [...existingAnnotations, `snapshotId:${snapshotId}`],
