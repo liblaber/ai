@@ -7,7 +7,7 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import * as dotenv from 'dotenv';
 import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
-import path, { join } from 'path';
+import { join } from 'path';
 
 dotenv.config();
 
@@ -90,7 +90,7 @@ export default defineConfig((config) => {
       __PKG_PEER_DEPENDENCIES: JSON.stringify(pkg.peerDependencies),
       __PKG_OPTIONAL_DEPENDENCIES: JSON.stringify(pkg.optionalDependencies),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-      'process.env.STARTER_PATH': JSON.stringify(path.resolve(process.cwd(), 'starters', 'remix-starter')),
+      'process.env.STARTER': JSON.stringify(process.env.STARTER),
       'process.env.ENCRYPTION_KEY': JSON.stringify(process.env.ENCRYPTION_KEY),
     },
     build: {
@@ -198,4 +198,9 @@ const ADDITIONAL_DEPS_ROUTES_TO_OPTIMIZE = [
   'zustand/middleware',
   '@prisma/client',
   'mysql2/promise',
+  'better-auth/adapters/prisma',
+  'better-auth/plugins',
+  'better-auth/react',
+  'better-auth/client/plugins',
+  'react-icons/lu',
 ];

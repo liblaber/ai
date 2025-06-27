@@ -1,25 +1,18 @@
-import path from 'path';
-import fs from 'fs';
-import { logger } from '~/utils/logger';
-import { getEncoding } from 'istextorbinary';
 import type { FileMap } from '~/lib/.server/llm/constants';
+import fs from 'fs';
+import path from 'path';
+import { getEncoding } from 'istextorbinary';
 
-const DIRECTORIES_TO_SKIP = ['.git', 'node_modules', 'build', '.idea', '.vscode', '.cache', 'analytics-dashboard'];
-const FILES_TO_SKIP = [
-  'package-lock.json',
-  'yarn.lock',
-  'pnpm-lock.yaml',
-  '.DS_Store',
-  'resources.builds.ts',
-  'analytics-dashboard.tsx',
-];
+type GetStarteFileMapOptions = {
+  dirPath: string;
+  basePath?: string;
+  directoriesToSkip?: string[];
+  filesToSkip?: string[];
+  sharedImportsToSkip?: string[];
+};
 
-// We don't want to add crypto as an explicit dependency in the built app because it's already included through node (it will break the project if we add it)
-const SHARED_IMPORTS_TO_SKIP = ['crypto'];
-
-export const STARTER_DIRECTORY = process.env.STARTER_PATH!;
-
-export function readDirectory(dirPath: string, basePath: string = ''): FileMap {
+export function readStarterFileMap(options: GetStarteFileMapOptions): FileMap {
+  const { dirPath, basePath = '', directoriesToSkip = [], filesToSkip = [], sharedImportsToSkip = [] } = options;
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
   let fileMap: FileMap = {};
   const sharedFiles = getSharedFiles();
@@ -29,16 +22,16 @@ export function readDirectory(dirPath: string, basePath: string = ''): FileMap {
     const relativePath = path.join(basePath, entry.name);
 
     if (entry.isDirectory()) {
-      if (DIRECTORIES_TO_SKIP.includes(entry.name)) {
+      if (directoriesToSkip.includes(entry.name)) {
         continue;
       }
 
       fileMap[relativePath] = { type: 'folder' };
 
-      const subDirMap = readDirectory(fullPath, relativePath);
+      const subDirMap = readStarterFileMap({ ...options, dirPath: fullPath, basePath: relativePath });
       fileMap = { ...fileMap, ...subDirMap };
     } else {
-      if (FILES_TO_SKIP.includes(entry.name)) {
+      if (filesToSkip.includes(entry.name)) {
         continue;
       }
 
@@ -58,7 +51,7 @@ export function readDirectory(dirPath: string, basePath: string = ''): FileMap {
                 // Extract the package name from the import
                 const packageName = importPath.split('/')[0];
 
-                if (packageName && !SHARED_IMPORTS_TO_SKIP.includes(packageName)) {
+                if (packageName && !sharedImportsToSkip.includes(packageName)) {
                   sharedImports.add(packageName);
                 }
               }
@@ -140,33 +133,4 @@ function getSharedFiles(): FileMap {
   }
 
   return fileMap;
-}
-
-let starterInstructionsPrompt: string | null;
-
-export async function getStarterInstructionsPrompt(): Promise<string | null> {
-  if (starterInstructionsPrompt) {
-    return starterInstructionsPrompt;
-  }
-
-  try {
-    const promptPath = path.join(STARTER_DIRECTORY, '.liblab', 'prompt');
-
-    if (!fs.existsSync(STARTER_DIRECTORY)) {
-      logger.error('Starter template directory not found');
-      return null;
-    }
-
-    if (!fs.existsSync(promptPath)) {
-      logger.error('Starter template prompt file not found');
-      return null;
-    }
-
-    starterInstructionsPrompt = fs.readFileSync(promptPath, 'utf8');
-
-    return starterInstructionsPrompt;
-  } catch (error) {
-    console.error('Error reading prompt file:', error);
-    return null;
-  }
 }

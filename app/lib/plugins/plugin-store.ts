@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 import { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager';
-import type { AuthPluginId, DataAccessPluginId, PluginAccessMap, PluginId, PluginType } from '~/lib/plugins/types';
+import type {
+  AuthPluginId,
+  DataAccessPluginId,
+  PluginAccessMap,
+  PluginId,
+  PluginType,
+  StarterPluginId,
+} from '~/lib/plugins/types';
 import { PluginType as PluginTypeValue } from '~/lib/plugins/types';
 
 interface PluginStoreState {
@@ -17,6 +24,8 @@ export const usePluginStore = create<PluginStoreState>()((set, get) => ({
       return get().pluginAccess[pluginType][pluginId as DataAccessPluginId];
     } else if (pluginType === PluginTypeValue.AUTH) {
       return get().pluginAccess[pluginType][pluginId as AuthPluginId];
+    } else if (pluginType === PluginTypeValue.STARTER) {
+      return get().pluginAccess[pluginType][pluginId as StarterPluginId];
     }
 
     return false;

@@ -5,6 +5,7 @@ import {
   type PluginAccessMap,
   type PluginId,
   PluginType,
+  type StarterPluginId,
 } from '~/lib/plugins/types';
 
 export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
@@ -19,6 +20,10 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
     twitch: false,
     twitter: false,
   },
+  [PluginType.STARTER]: {
+    remix: true,
+    next: true,
+  },
 };
 
 export const PREMIUM_PLUGIN_ACCESS = {
@@ -32,6 +37,10 @@ export const PREMIUM_PLUGIN_ACCESS = {
     google: true,
     twitch: true,
     twitter: true,
+  },
+  [PluginType.STARTER]: {
+    remix: true,
+    next: true,
   },
 };
 
@@ -66,6 +75,8 @@ class PluginManager {
       return this._pluginAccess[pluginType][pluginId as DataAccessPluginId];
     } else if (pluginType === PluginType.AUTH) {
       return this._pluginAccess[pluginType][pluginId as AuthPluginId];
+    } else if (pluginType === PluginType.STARTER) {
+      return this._pluginAccess[pluginType][pluginId as StarterPluginId];
     }
 
     return false;
