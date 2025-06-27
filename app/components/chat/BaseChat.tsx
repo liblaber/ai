@@ -60,6 +60,7 @@ interface BaseChatProps {
   data?: JSONValue[] | undefined;
   actionRunner?: ActionRunner;
   onSyncFiles?: () => Promise<void>;
+  setMessages?: (messages: Message[]) => void;
 }
 
 export const BaseChat = ({
@@ -85,6 +86,7 @@ export const BaseChat = ({
   data,
   actionRunner,
   onSyncFiles,
+  setMessages,
 }: BaseChatProps) => {
   const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
 
@@ -251,6 +253,7 @@ export const BaseChat = ({
                     className="flex flex-col w-full flex-1 max-w-chat pb-6 mx-auto z-1"
                     messages={messages}
                     isStreaming={isStreaming}
+                    setMessages={setMessages}
                   />
                 ) : null;
               }}
