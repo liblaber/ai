@@ -59,4 +59,16 @@ export const messageService = {
       })),
     });
   },
+
+  async deleteManyWithSnapshots(messageIds: string[], tx?: Prisma.TransactionClient) {
+    const client = tx ?? prisma;
+
+    await client.snapshot.deleteMany({
+      where: { messageId: { in: messageIds } },
+    });
+
+    return await client.message.deleteMany({
+      where: { id: { in: messageIds } },
+    });
+  },
 };

@@ -57,6 +57,9 @@ export const snapshotService = {
       where: {
         id,
       },
+      include: {
+        message: true,
+      },
     });
   },
 };

@@ -34,7 +34,10 @@ type DatabaseUrlResponse = {
 interface ChatProps {
   initialMessages: Message[];
   commandMessage?: Message;
-  storeConversationHistory: (latestMessageId: string) => Promise<void>;
+  storeConversationHistory: (
+    latestMessageId: string,
+    onSnapshotCreated?: (snapshotId: string, messageId: string) => void,
+  ) => Promise<void>;
   exportChat: () => void;
   description?: string;
 }
@@ -135,7 +138,29 @@ export const ChatImpl = memo(
         logger.debug('Finished streaming');
 
         setTimeout(async () => {
-          await storeConversationHistory(id);
+          await storeConversationHistory(id, (snapshotId, messageId) => {
+            // Update the message annotations to include the snapshot ID
+            setMessages((currentMessages) =>
+              currentMessages.map((message) => {
+                if (message.id === messageId) {
+                  const existingAnnotations = message.annotations || [];
+
+                  const hasSnapshotAnnotation = existingAnnotations.some(
+                    (annotation) => typeof annotation === 'string' && annotation.startsWith('snapshotId:'),
+                  );
+
+                  if (!hasSnapshotAnnotation) {
+                    return {
+                      ...message,
+                      annotations: [...existingAnnotations, `snapshotId:${snapshotId}`],
+                    };
+                  }
+                }
+
+                return message;
+              }),
+            );
+          });
         }, 2000);
       },
       initialMessages,
@@ -517,6 +542,7 @@ export const ChatImpl = memo(
           clearAlert={() => workbenchStore.clearAlert()}
           data={chatData}
           onSyncFiles={syncLatestChanges}
+          setMessages={setMessages}
         />
         {selectedQueryId && (
           <QueryModal

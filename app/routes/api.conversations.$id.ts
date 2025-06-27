@@ -17,6 +17,13 @@ export async function loader({ params }: LoaderFunctionArgs) {
       where: { id: conversationId },
       include: {
         messages: {
+          include: {
+            Snapshot: {
+              select: {
+                id: true,
+              },
+            },
+          },
           orderBy: {
             createdAt: 'asc',
           },

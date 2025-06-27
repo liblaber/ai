@@ -14,7 +14,7 @@ interface ErrorResponse {
   error: string;
 }
 
-export const saveSnapshot = async (chatId: string, messageId?: string): Promise<void> => {
+export const saveSnapshot = async (chatId: string, messageId?: string): Promise<{ id: string }> => {
   const fileMap = workbenchStore.getFileMap();
 
   try {
@@ -33,9 +33,14 @@ export const saveSnapshot = async (chatId: string, messageId?: string): Promise<
       const error = (await response.json()) as ErrorResponse;
       throw new Error(error.error || 'Failed to save snapshot');
     }
+
+    const result = (await response.json()) as { id: string };
+
+    return result;
   } catch (error) {
     console.error('Error saving snapshot', error);
     toast.error('Failed to save snapshot');
+    throw error;
   }
 };
 
@@ -53,6 +58,16 @@ export const getLatestSnapshot = async (conversationId: string): Promise<Snapsho
     console.error('Error fetching latest snapshot', error);
     toast.error('Failed to fetch latest snapshot');
     throw error;
+  }
+};
+
+export const rewindToSnapshot = async (conversationId: string, snapshotId: string): Promise<void> => {
+  const response = await fetch(`/api/conversations/${conversationId}/snapshot/${snapshotId}/rewind`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to rewind to snapshot');
   }
 };
 
