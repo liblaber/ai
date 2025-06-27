@@ -1,8 +1,14 @@
 import { json } from '@remix-run/cloudflare';
 import { prisma } from '~/lib/prisma';
+import { requireUserId } from '~/auth/session';
 
-export async function loader() {
+export async function loader({ request }: { request: Request }) {
+  const userId = await requireUserId(request);
+
   const websites = await prisma.website.findMany({
+    where: {
+      userId,
+    },
     orderBy: {
       createdAt: 'desc',
     },
@@ -12,6 +18,7 @@ export async function loader() {
 }
 
 export async function action({ request }: { request: Request }) {
+  const userId = await requireUserId(request);
   const formData = await request.formData();
   const intent = formData.get('intent');
 
@@ -21,6 +28,7 @@ export async function action({ request }: { request: Request }) {
     await prisma.website.delete({
       where: {
         id: websiteId,
+        userId,
       },
     });
 

@@ -65,7 +65,7 @@ export default function Index() {
   return (
     <Tooltip.Provider delayDuration={200}>
       <div className="flex flex-col h-full w-full bg-liblab-elements-bg-depth-1">
-        <ClientOnly>{() => <Menu />}</ClientOnly>
+        {session?.user && <ClientOnly>{() => <Menu />}</ClientOnly>}
         <Background />
         <Header />
         <div className="flex flex-col h-full w-full z-1">
