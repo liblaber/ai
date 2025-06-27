@@ -70,9 +70,15 @@ export const action: ActionFunction = async ({ request, params: { conversationId
 
     if (snapshotIds.length > 0) {
       const storageService = StorageServiceFactory.get();
-      await Promise.all(
+      const results = await Promise.allSettled(
         snapshotIds.map((snapshotId) => storageService.delete(`snapshots/${conversationId}/${snapshotId}`)),
       );
+
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          logger.error(`Failed to delete snapshot ${snapshotIds[index]}:`, result.reason);
+        }
+      });
     }
 
     return Response.json({ success: true });

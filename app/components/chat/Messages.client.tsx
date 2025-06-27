@@ -24,10 +24,12 @@ interface MessagesProps {
 }
 
 export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
-  (props: MessagesProps, ref: ForwardedRef<HTMLDivElement> | undefined) => {
+  (
+    { id, isStreaming = false, messages = [], setMessages, className }: MessagesProps,
+    ref: ForwardedRef<HTMLDivElement> | undefined,
+  ) => {
     const { data } = useSession();
     const user = data?.user;
-    const { id, isStreaming = false, messages = [], setMessages } = props;
     const [rewindDialog, setRewindDialog] = useState<{ isOpen: boolean; snapshotId: string | null }>({
       isOpen: false,
       snapshotId: null,
@@ -86,7 +88,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
     };
 
     return (
-      <div id={id} className={props.className} ref={ref}>
+      <div id={id} className={className} ref={ref}>
         {messages.length > 0
           ? messages.map((message, index) => {
               const { role, content, id: messageId, annotations } = message;
