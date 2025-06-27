@@ -20,8 +20,8 @@ model DataSource {
   createdAt        DateTime       @default(now()) @map("created_at")
   updatedAt        DateTime       @updatedAt @map("updated_at")
   conversations    Conversation[]
-  User             User?          @relation(fields: [userId], references: [id])
-  userId           String?
+  User             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
 
   @@map("data_source")
 }
@@ -35,8 +35,8 @@ model Website {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   isPublic  Boolean  @default(false) @map("is_public")
-  User      User?    @relation(fields: [userId], references: [id])
-  userId    String?
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
 
   @@map("website")
 }
@@ -77,8 +77,8 @@ model Conversation {
   Snapshot     Snapshot[]
   dataSourceId String
   dataSource   DataSource @relation(fields: [dataSourceId], references: [id])
-  User         User?      @relation(fields: [userId], references: [id])
-  userId       String?
+  User         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
 
   @@map("conversation")
 }
