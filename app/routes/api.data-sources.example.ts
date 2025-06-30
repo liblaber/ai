@@ -1,11 +1,15 @@
 import { prisma } from '~/lib/prisma';
 import { json } from '@remix-run/cloudflare';
+import { requireUserId } from '~/auth/session';
 
 export async function action({ request }: { request: Request }) {
+  const userId = await requireUserId(request);
+
   if (request.method === 'POST') {
     try {
       const existingSampleDatabase = await prisma.dataSource.findFirst({
         where: {
+          userId,
           name: 'Sample Database',
         },
       });
@@ -16,6 +20,7 @@ export async function action({ request }: { request: Request }) {
 
       const dataSource = await prisma.dataSource.create({
         data: {
+          userId,
           name: 'Sample Database',
           connectionString: 'sqlite://example.db',
         },

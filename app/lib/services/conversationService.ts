@@ -10,37 +10,46 @@ export const conversationService = {
 
   async createConversation(
     dataSourceId: string,
+    userId: string,
     description?: string,
     tx?: Prisma.TransactionClient,
   ): Promise<Conversation> {
     return await (tx ?? prisma).conversation.create({
       data: {
-        description,
+        User: {
+          connect: { id: userId },
+        },
         dataSource: {
           connect: { id: dataSourceId },
         },
+        description,
       },
     });
   },
 
   async updateConversationDescription(
     conversationId: string,
+    userId: string,
     data: Partial<Conversation>,
   ): Promise<Conversation | null> {
     return await prisma.conversation.update({
-      where: { id: conversationId },
+      where: { id: conversationId, userId },
       data,
     });
   },
 
-  async getAllConversations(): Promise<Conversation[]> {
+  async getAllConversations(userId: string): Promise<Conversation[]> {
     return await prisma.conversation.findMany({
       select: {
         id: true,
         description: true,
         dataSourceId: true,
+        userId: true,
         createdAt: true,
         updatedAt: true,
+      },
+      where: {
+        userId,
       },
       orderBy: {
         createdAt: 'desc',
@@ -48,9 +57,9 @@ export const conversationService = {
     });
   },
 
-  async deleteConversation(conversationId: string): Promise<void> {
+  async deleteConversation(conversationId: string, userId: string): Promise<void> {
     await prisma.conversation.delete({
-      where: { id: conversationId },
+      where: { id: conversationId, userId },
     });
   },
 };

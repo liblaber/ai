@@ -19,6 +19,7 @@ import type { ProgressAnnotation } from '~/types/context';
 import type { ActionRunner } from '~/lib/runtime/action-runner';
 import { ChatTextarea } from './ChatTextarea';
 import { AUTOFIX_ATTEMPT_EVENT } from '~/lib/error-handler';
+import { useSession } from '~/auth/auth-client';
 
 export interface PendingPrompt {
   input: string;
@@ -90,6 +91,7 @@ export const BaseChat = ({
 
   const [progressAnnotations, setProgressAnnotations] = useState<ProgressAnnotation[]>([]);
   const { dataSources } = useDataSourcesStore();
+  const { data: session } = useSession();
 
   useEffect(() => {
     if (data) {
@@ -229,7 +231,7 @@ export const BaseChat = ({
 
   const baseChat = (
     <div className={classNames('BaseChat relative flex h-full w-full overflow-hidden')} data-chat-visible={showChat}>
-      <ClientOnly>{() => <Menu />}</ClientOnly>
+      {session?.user && <ClientOnly>{() => <Menu />}</ClientOnly>}
       <div
         ref={scrollRef}
         className={classNames('flex flex-col lg:flex-row overflow-y-auto w-full h-full', {

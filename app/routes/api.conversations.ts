@@ -5,8 +5,11 @@ import { snapshotService } from '~/lib/services/snapshotService';
 import { messageService } from '~/lib/services/messageService';
 import { createId } from '@paralleldrive/cuid2';
 import { logger } from '~/utils/logger';
+import { requireUserId } from '~/auth/session';
 
 export async function action({ request }: LoaderFunctionArgs) {
+  const userId = await requireUserId(request);
+
   if (request.method !== 'POST') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 });
   }
@@ -25,7 +28,12 @@ export async function action({ request }: LoaderFunctionArgs) {
     const conversation = await prisma.$transaction(async (tx) => {
       logger.info('Creating a new conversation...');
 
-      const conversation = await conversationService.createConversation(body.dataSourceId, body.description, tx);
+      const conversation = await conversationService.createConversation(
+        body.dataSourceId,
+        userId,
+        body.description,
+        tx,
+      );
 
       if (!body?.messages?.length) {
         logger.info(`No messages to duplicate for conversation ${conversation.id}`);
@@ -90,8 +98,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return Response.json({ error: 'Method not allowed' }, { status: 405 });
   }
 
+  const userId = await requireUserId(request);
+
   try {
-    const conversations = await conversationService.getAllConversations();
+    const conversations = await conversationService.getAllConversations(userId);
     return Response.json(conversations);
   } catch (error) {
     console.error('Error fetching conversations:', error);

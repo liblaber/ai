@@ -44,11 +44,12 @@ type LoaderData = {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const session = await getSession(request);
-  let user = null;
-  const dataSources = await getDataSources();
+  let user: UserProfile | null = null;
+  let dataSources: DataSource[] = [];
 
   if (session?.user) {
     user = await userService.getUser(session.user.id);
+    dataSources = await getDataSources(session.user.id);
 
     if (!dataSources.length && !request.url.includes(DATA_SOURCE_CONNECTION_ROUTE)) {
       return redirect(DATA_SOURCE_CONNECTION_ROUTE);

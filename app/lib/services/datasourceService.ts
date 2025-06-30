@@ -9,9 +9,9 @@ export interface DataSource {
   updatedAt: Date;
 }
 
-export async function getDataSource(id: string): Promise<DataSource | null> {
+export async function getDataSource(id: string, userId: string): Promise<DataSource | null> {
   return prisma.dataSource.findFirst({
-    where: { id },
+    where: { id, userId },
     select: {
       id: true,
       name: true,
@@ -22,7 +22,7 @@ export async function getDataSource(id: string): Promise<DataSource | null> {
   });
 }
 
-export async function getDataSources(): Promise<DataSource[]> {
+export async function getDataSources(userId: string): Promise<DataSource[]> {
   return prisma.dataSource.findMany({
     select: {
       id: true,
@@ -31,36 +31,42 @@ export async function getDataSources(): Promise<DataSource[]> {
       createdAt: true,
       updatedAt: true,
     },
+    where: { userId },
   });
 }
 
-export async function createDataSource(data: { name: string; connectionString: string }) {
+export async function createDataSource(data: {
+  name: string;
+  connectionString: string;
+  userId: string;
+}): Promise<DataSource> {
   validateDataSource(data.connectionString);
 
   return prisma.dataSource.create({
     data: {
       name: data.name,
       connectionString: data.connectionString,
+      userId: data.userId,
     },
   });
 }
 
-export async function updateDataSource(data: { id: string; name: string; connectionString: string }) {
+export async function updateDataSource(data: { id: string; name: string; connectionString: string; userId: string }) {
   validateDataSource(data.connectionString);
 
   return prisma.dataSource.update({
-    where: { id: data.id },
+    where: { id: data.id, userId: data.userId },
     data: { name: data.name, connectionString: data.connectionString },
   });
 }
 
-export async function deleteDataSource(id: string) {
-  return prisma.dataSource.delete({ where: { id } });
+export async function deleteDataSource(id: string, userId: string) {
+  return prisma.dataSource.delete({ where: { id, userId } });
 }
 
-export async function getDatabaseUrl(datasourceId: string) {
+export async function getDatabaseUrl(userId: string, datasourceId: string) {
   const dataSource = await prisma.dataSource.findUnique({
-    where: { id: datasourceId },
+    where: { id: datasourceId, userId },
     select: {
       connectionString: true,
     },

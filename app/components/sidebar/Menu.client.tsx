@@ -163,6 +163,7 @@ export const Menu = () => {
               href="/"
               className="flex gap-2 items-center bg-accent-50 dark:bg-accent-500/10 text-accent-700 dark:text-accent-300 hover:bg-accent-100 dark:hover:bg-accent-500/20 rounded-lg px-4 py-2 transition-colors"
             >
+              <span className="inline-block i-ph:chat-circle-duotone h-4 w-4" />
               <span className="text-sm font-medium">Start new chat</span>
             </a>
             <div className="relative w-full">

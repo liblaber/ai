@@ -9,6 +9,7 @@ import AdmZip from 'adm-zip';
 import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
 import { env } from '~/lib/config/env';
+import { requireUserId } from '~/auth/session';
 
 interface CommandResult {
   output: string;
@@ -108,6 +109,7 @@ async function generateUniqueSiteName(chatId: string): Promise<string> {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const userId = await requireUserId(request);
   const encoder = new TextEncoder();
   const stream = new TransformStream();
   const writer = stream.writable.getWriter();
@@ -475,6 +477,7 @@ export async function action({ request }: ActionFunctionArgs) {
               website = await prisma.website.update({
                 where: {
                   id: websiteId,
+                  userId,
                 },
                 data: {
                   siteId: siteInfo.id,
@@ -491,6 +494,7 @@ export async function action({ request }: ActionFunctionArgs) {
                   siteName: siteInfo.name,
                   siteUrl: latestDeploy.links.permalink,
                   chatId: siteInfo.chatId,
+                  userId,
                 },
               });
               logger.info('Website saved to database successfully', JSON.stringify({ chatId, siteId: siteInfo.id }));

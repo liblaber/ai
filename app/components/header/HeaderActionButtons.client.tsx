@@ -375,7 +375,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           className="w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
         >
           <div className="i-ph:gear w-4 h-4" />
-          Site Settings
+          Website Settings
         </button>
       </>
     );

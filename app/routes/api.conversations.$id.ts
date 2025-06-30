@@ -4,17 +4,20 @@ import { z } from 'zod';
 import { conversationService } from '~/lib/services/conversationService';
 import { logger } from '~/utils/logger';
 import { StorageServiceFactory } from '~/lib/services/storage/storage-service-factory';
+import { requireUserId } from '~/auth/session';
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
   const conversationId = params.id;
 
   if (!conversationId) {
     return Response.json({ error: 'Conversation ID is required' }, { status: 400 });
   }
 
+  const userId = await requireUserId(request);
+
   try {
     const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
+      where: { id: conversationId, userId },
       include: {
         messages: {
           orderBy: {
@@ -47,20 +50,22 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     return Response.json({ error: 'Conversation ID is required' }, { status: 400 });
   }
 
+  const userId = await requireUserId(request);
+
   switch (request.method) {
     case 'DELETE':
-      return handleDelete(conversationId);
+      return handleDelete(conversationId, userId);
     case 'PATCH':
-      return handlePatch(conversationId, request);
+      return handlePatch(conversationId, userId, request);
     default:
       return Response.json({ error: 'Method not allowed' }, { status: 405 });
   }
 }
 
-async function handleDelete(conversationId: string) {
+async function handleDelete(conversationId: string, userId: string) {
   try {
     const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
+      where: { id: conversationId, userId },
       select: { id: true },
     });
 
@@ -72,7 +77,7 @@ async function handleDelete(conversationId: string) {
 
     logger.info(`Deleting conversation ${conversationId}`);
 
-    await conversationService.deleteConversation(conversationId);
+    await conversationService.deleteConversation(conversationId, userId);
     await storageService.deleteAll(`snapshots/${conversationId}`);
 
     logger.info(`Deleted conversation ${conversationId}`);
@@ -93,12 +98,16 @@ const UPDATE_CONVERSATION_SCHEMA = z.object({
   description: z.string().nullable().optional(),
 });
 
-async function handlePatch(conversationId: string, request: Request) {
+async function handlePatch(conversationId: string, userId: string, request: Request) {
   try {
     const body = await request.json();
     const updateData = UPDATE_CONVERSATION_SCHEMA.parse(body);
 
-    const updatedConversation = await conversationService.updateConversationDescription(conversationId, updateData);
+    const updatedConversation = await conversationService.updateConversationDescription(
+      conversationId,
+      userId,
+      updateData,
+    );
 
     if (!updatedConversation) {
       return Response.json({ error: 'Conversation not found' }, { status: 404 });

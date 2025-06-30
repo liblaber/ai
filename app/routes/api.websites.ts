@@ -2,6 +2,7 @@ import { type ActionFunctionArgs, json } from '@remix-run/cloudflare';
 import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
 import { env } from '~/lib/config/env';
+import { requireUserId } from '~/auth/session';
 
 // Netlify API client
 const NETLIFY_API_URL = 'https://api.netlify.com/api/v1';
@@ -29,6 +30,7 @@ async function deleteNetlifySite(siteId: string) {
 }
 
 export async function loader({ request }: { request: Request }) {
+  const userId = await requireUserId(request);
   const url = new URL(request.url);
   const siteUrl = url.searchParams.get('url');
   const chatId = url.searchParams.get('chatId');
@@ -37,6 +39,7 @@ export async function loader({ request }: { request: Request }) {
     const website = await prisma.website.findFirst({
       where: {
         chatId,
+        userId,
       },
     });
 
@@ -51,6 +54,7 @@ export async function loader({ request }: { request: Request }) {
     const website = await prisma.website.findFirst({
       where: {
         siteUrl,
+        userId,
       },
     });
 
@@ -62,6 +66,9 @@ export async function loader({ request }: { request: Request }) {
   }
 
   const websites = await prisma.website.findMany({
+    where: {
+      userId,
+    },
     orderBy: {
       createdAt: 'desc',
     },
@@ -75,6 +82,8 @@ interface CreateWebsiteRequest {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const userId = await requireUserId(request);
+
   if (request.method === 'DELETE') {
     const url = new URL(request.url);
     const websiteId = url.searchParams.get('websiteId');
@@ -87,6 +96,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const website = await prisma.website.findFirst({
       where: {
         id: websiteId,
+        userId,
       },
     });
 
@@ -104,6 +114,7 @@ export async function action({ request }: ActionFunctionArgs) {
       await prisma.website.delete({
         where: {
           id: websiteId,
+          userId,
         },
       });
 
@@ -134,6 +145,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const website = await prisma.website.create({
         data: {
           chatId,
+          userId,
           siteId: '',
           siteName: '',
           siteUrl: '',

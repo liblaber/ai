@@ -1,13 +1,17 @@
 import { json } from '@remix-run/cloudflare';
 import { createDataSource, getDataSources } from '~/lib/services/datasourceService';
+import { requireUserId } from '~/auth/session';
 
-export async function loader() {
-  const dataSources = await getDataSources();
+export async function loader({ request }: { request: Request }) {
+  const userId = await requireUserId(request);
+  const dataSources = await getDataSources(userId);
 
   return json({ success: true, dataSources });
 }
 
 export async function action({ request }: { request: Request }) {
+  const userId = await requireUserId(request);
+
   if (request.method === 'POST') {
     const formData = await request.formData();
     const connectionString = formData.get('connectionString') as string;
@@ -17,6 +21,7 @@ export async function action({ request }: { request: Request }) {
       const dataSource = await createDataSource({
         name,
         connectionString,
+        userId,
       });
 
       return json({ success: true, dataSource });

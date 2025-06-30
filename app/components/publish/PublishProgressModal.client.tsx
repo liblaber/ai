@@ -16,7 +16,7 @@ interface PublishProgressModalProps {
 // Constants
 const PUBLISH_STEPS = [
   { title: 'Initializing', description: 'Preparing deployment environment' },
-  { title: 'Site Setup', description: 'Creating or updating Netlify site' },
+  { title: 'Website Setup', description: 'Creating or updating Netlify site' },
   { title: 'File Preparation', description: 'Preparing project files' },
   { title: 'Dependencies', description: 'Installing project dependencies' },
   { title: 'Configuration', description: 'Configuring deployment settings' },
@@ -229,7 +229,7 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
 
           <div className="p-6 pt-16">
             <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-6">
-              {mode === 'publish' ? 'Publishing Wizard' : 'Site Settings'}
+              {mode === 'publish' ? 'Website Publishing' : 'Website Settings'}
             </h3>
 
             {(() => {

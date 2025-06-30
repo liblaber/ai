@@ -5,6 +5,7 @@ import { createScopedLogger } from '~/utils/logger';
 import { z } from 'zod';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 import { prisma } from '~/lib/prisma';
+import { requireUserId } from '~/auth/session';
 
 const logger = createScopedLogger('generate-sql');
 
@@ -15,17 +16,19 @@ const requestSchema = z.object({
 });
 
 export const action: ActionFunction = async ({ request }) => {
+  const userId = await requireUserId(request);
+
   try {
     const body = await request.json();
     const { prompt, existingQuery, dataSourceId } = requestSchema.parse(body);
     const existingQueries = existingQuery ? [existingQuery] : [];
 
-    const schema = await getDatabaseSchema(dataSourceId);
+    const schema = await getDatabaseSchema(dataSourceId, userId);
 
     const llm = await getLlm();
 
     const dataSource = await prisma.dataSource.findUniqueOrThrow({
-      where: { id: dataSourceId },
+      where: { id: dataSourceId, userId },
     });
 
     const connectionDetails = new URL(dataSource.connectionString);
