@@ -3,7 +3,7 @@
 set -e
 
 echo "★═══════════════════════════════════════★"
-echo "        🦙 LibLab Builder Setup 🦙"
+echo "      🦙 liblab AI Builder Setup 🦙"
 echo "★═══════════════════════════════════════★"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -127,10 +127,18 @@ echo "📋 Generating Prisma client..."
 npx prisma generate
 echo "✅ Prisma client generated successfully."
 
+echo ""
 echo "★═══════════════════════════════════════★"
 echo "     🎉 Setup completed successfully! 🎉"
+echo "★═══════════════════════════════════════★"
 echo ""
-echo "You can now start the development server with:"
+
+echo "        ┬  ┬┌┐ ┬  ┌─┐┌┐   ┌─┐┬"
+echo "        │  │├┴┐│  ├─┤├┴┐  ├─┤│"
+echo "        ┴─┘┴└─┘┴─┘┴ ┴└─┘  ┴ ┴┴"
+
+echo ""
+echo "Run the development server with:"
+echo ""
 echo "\033[1;32mpnpm run dev\033[0m"
 echo ""
-echo "★═══════════════════════════════════════★"
