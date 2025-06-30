@@ -19,7 +19,7 @@ export const SQLITE_EXAMPLE_ENUM_VALUES: Record<string, Record<string, string[]>
     category: ['Software', 'Cloud Services', 'Solar Energy', 'Wind Energy', 'Electronics', 'Networking', 'AI Software'],
   },
   sales: {
-    payment_method: ['Credit Card', 'Bank Transfer', 'PayPal', 'Cash', 'Cheque'],
+    payment_method: ['Credit Card', 'Bank Transfer', 'PayPal'],
     status: ['completed'],
   },
 };

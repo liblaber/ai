@@ -1,7 +1,7 @@
 import { Database as SQLiteDatabase, open } from 'sqlite';
 import sqlite3 from 'sqlite3';
 import type { BaseAccessor } from '../baseAccessor';
-import type { Table } from '../../types';
+import type { Column, Table } from '../../types';
 import { SQLITE_EXAMPLE_ENUM_VALUES } from '../../utils/example-db-enum-values';
 
 interface SQLiteColumn {
@@ -9,6 +9,7 @@ interface SQLiteColumn {
   type: string;
   pk: number;
   notnull: number;
+  enumValues?: string[];
 }
 
 interface TableInfo {
@@ -105,14 +106,14 @@ export class SQLiteAccessor implements BaseAccessor {
               type: col.type.toLowerCase(),
               isPrimary: Boolean(col.pk),
               nullable: !col.notnull,
-            };
+            } as Column;
 
             // Only add enum values if this is an example database
             if (isExampleDatabase) {
               const tableEnums = SQLITE_EXAMPLE_ENUM_VALUES[table.table_name];
 
               if (tableEnums && tableEnums[col.name]) {
-                (column as any).enumValues = tableEnums[col.name];
+                column.enumValues = tableEnums[col.name];
               }
             }
 
