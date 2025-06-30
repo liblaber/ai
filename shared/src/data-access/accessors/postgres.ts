@@ -68,7 +68,7 @@ export class PostgresAccessor implements BaseAccessor {
     const port = parseInt(match[4], 10);
 
     if (port < 1 || port > 65535) {
-      throw new Error('Invalid connection string');
+      throw new Error('Port has to be in range from 1 to 65535');
     }
   }
 
