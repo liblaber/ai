@@ -12,6 +12,7 @@ import { getDatabaseSchema } from '~/lib/schema';
 import { mapSqlQueriesToPrompt } from '~/lib/common/prompts/sql';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 import { prisma } from '~/lib/prisma';
+import { requireUserId } from '~/auth/session';
 
 export type Messages = Message[];
 
@@ -30,7 +31,7 @@ export async function streamText(props: {
   messageSliceId?: number;
   request: Request;
 }) {
-  const { messages, options, files, promptId, contextOptimization, contextFiles, summary } = props;
+  const { messages, options, files, promptId, contextOptimization, contextFiles, summary, request } = props;
   let currentDataSourceId: string | undefined = '';
 
   let processedMessages = messages.map((message) => {
@@ -114,8 +115,9 @@ ${props.summary}
     isFirstUserMessage(processedMessages) ||
     (await shouldGenerateSqlQueries(lastUserMessage, llm.instance, llm.maxTokens, existingQueries))
   ) {
-    const dataSource = await prisma.dataSource.findUniqueOrThrow({ where: { id: currentDataSourceId } });
-    const schema = await getDatabaseSchema(currentDataSourceId);
+    const userId = await requireUserId(request);
+    const schema = await getDatabaseSchema(currentDataSourceId, userId);
+    const dataSource = await prisma.dataSource.findUniqueOrThrow({ where: { id: currentDataSourceId, userId } });
 
     const connectionDetails = new URL(dataSource.connectionString);
     const type = connectionDetails.protocol.replace(':', '');

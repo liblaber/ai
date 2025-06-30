@@ -1,8 +1,11 @@
 import { json } from '@remix-run/cloudflare';
 import { deleteDataSource, getDataSource, updateDataSource } from '~/lib/services/datasourceService';
+import { requireUserId } from '~/auth/session';
 
-export async function loader({ params }: { request: Request; params: { id: string } }) {
-  const dataSource = await getDataSource(params.id);
+export async function loader({ params, request }: { request: Request; params: { id: string } }) {
+  const userId = await requireUserId(request);
+
+  const dataSource = await getDataSource(params.id, userId);
 
   if (!dataSource) {
     return json({ success: false, error: 'Data source not found' }, { status: 404 });
@@ -12,7 +15,9 @@ export async function loader({ params }: { request: Request; params: { id: strin
 }
 
 export async function action({ request, params }: { request: Request; params: { id: string } }) {
-  const dataSource = await getDataSource(params.id);
+  const userId = await requireUserId(request);
+
+  const dataSource = await getDataSource(params.id, userId);
 
   if (!dataSource) {
     return json({ success: false, error: 'Data source not found' }, { status: 404 });
@@ -24,7 +29,7 @@ export async function action({ request, params }: { request: Request; params: { 
     const connectionString = formData.get('connectionString') as string;
 
     try {
-      const updatedDataSource = await updateDataSource({ id: params.id, name, connectionString });
+      const updatedDataSource = await updateDataSource({ id: params.id, name, connectionString, userId });
 
       return json({ success: true, dataSource: updatedDataSource });
     } catch (error) {
@@ -36,7 +41,7 @@ export async function action({ request, params }: { request: Request; params: { 
   }
 
   if (request.method === 'DELETE') {
-    await deleteDataSource(params.id);
+    await deleteDataSource(params.id, userId);
 
     return json({ success: true });
   }

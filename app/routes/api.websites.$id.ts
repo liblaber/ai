@@ -1,8 +1,10 @@
 import { json } from '@remix-run/cloudflare';
 import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
+import { requireUserId } from '~/auth/session';
 
 export async function action({ request, params }: { request: Request; params: { id: string } }) {
+  const userId = await requireUserId(request);
   const websiteId = params.id;
 
   if (!websiteId) {
@@ -18,6 +20,7 @@ export async function action({ request, params }: { request: Request; params: { 
     const website = await prisma.website.findFirst({
       where: {
         id: websiteId,
+        userId,
       },
     });
 
@@ -30,6 +33,7 @@ export async function action({ request, params }: { request: Request; params: { 
     const updatedWebsite = await prisma.website.update({
       where: {
         id: websiteId,
+        userId,
       },
       data: updateData,
     });
