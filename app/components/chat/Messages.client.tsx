@@ -14,13 +14,14 @@ import { rewindToSnapshot } from '~/lib/persistence/snapshots';
 import { Dialog, DialogRoot, DialogTitle, DialogDescription, DialogButton } from '~/components/ui/Dialog';
 import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { useNavigate } from '@remix-run/react';
 
 interface MessagesProps {
   id?: string;
   className?: string;
   isStreaming?: boolean;
   messages?: Message[];
-  setMessages?: (messages: Message[]) => void;
+  setMessages: (messages: Message[]) => void;
 }
 
 export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
@@ -29,6 +30,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
     ref: ForwardedRef<HTMLDivElement> | undefined,
   ) => {
     const { data } = useSession();
+    const navigate = useNavigate();
     const user = data?.user;
     const [rewindDialog, setRewindDialog] = useState<{ isOpen: boolean; snapshotId: string | null }>({
       isOpen: false,
@@ -40,30 +42,36 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
     };
 
     const confirmRewind = async () => {
-      if (rewindDialog.snapshotId) {
-        try {
-          workbenchStore.previewsStore.changesLoading();
+      if (!rewindDialog.snapshotId) {
+        console.error('No snapshot ID provided');
+        return;
+      }
 
-          await rewindToSnapshot(chatId.get()!, rewindDialog.snapshotId);
+      try {
+        workbenchStore.previewsStore.changesLoading();
 
-          if (setMessages) {
-            const conversationId = chatId.get();
+        await rewindToSnapshot(chatId.get()!, rewindDialog.snapshotId);
 
-            if (conversationId) {
-              const updatedConversation = await getConversation(conversationId);
+        const conversationId = chatId.get();
 
-              if (updatedConversation?.messages && updatedConversation?.snapshot) {
-                await loadFileMapIntoContainer(updatedConversation.snapshot.fileMap);
+        if (!conversationId) {
+          console.error('No conversation ID provided');
+          navigate('/');
 
-                setMessages(updatedConversation.messages);
-              }
-            }
-          }
-
-          toast.success('Conversation reverted successfully');
-        } catch (error) {
-          toast.error('Failed to revert conversation: ' + (error as Error).message);
+          return;
         }
+
+        const updatedConversation = await getConversation(conversationId);
+
+        if (updatedConversation?.messages && updatedConversation?.snapshot) {
+          await loadFileMapIntoContainer(updatedConversation.snapshot.fileMap);
+
+          setMessages(updatedConversation.messages);
+        }
+
+        toast.success('Conversation reverted successfully');
+      } catch (error) {
+        toast.error('Failed to revert conversation: ' + (error as Error).message);
       }
 
       closeRewindDialog();

@@ -60,7 +60,7 @@ interface BaseChatProps {
   data?: JSONValue[] | undefined;
   actionRunner?: ActionRunner;
   onSyncFiles?: () => Promise<void>;
-  setMessages?: (messages: Message[]) => void;
+  setMessages: (messages: Message[]) => void;
 }
 
 export const BaseChat = ({
