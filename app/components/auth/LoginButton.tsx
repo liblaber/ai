@@ -25,7 +25,7 @@ export function LoginButton() {
           await signIn.anonymous();
 
           // Refresh the landing page after login to show data sources connection modal
-          window.location.href = window.location.href;
+          window.location.reload();
           break;
         default:
           await signIn.social({ provider });
