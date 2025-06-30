@@ -20,6 +20,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       where: { id: conversationId, userId },
       include: {
         messages: {
+          include: {
+            Snapshot: {
+              select: {
+                id: true,
+              },
+            },
+          },
           orderBy: {
             createdAt: 'asc',
           },

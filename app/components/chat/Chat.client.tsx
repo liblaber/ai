@@ -25,7 +25,7 @@ import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { type Message, useChat } from '@ai-sdk/react';
 import { generateId } from 'ai';
 import { useGitPullSync } from '~/lib/stores/git';
-import { createConversation } from '~/lib/persistence/conversations';
+import { createConversation, getMessageSnapshotId } from '~/lib/persistence/conversations';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -34,7 +34,10 @@ type DatabaseUrlResponse = {
 interface ChatProps {
   initialMessages: Message[];
   commandMessage?: Message;
-  storeConversationHistory: (latestMessageId: string) => Promise<void>;
+  storeConversationHistory: (
+    latestMessageId: string,
+    onSnapshotCreated?: (snapshotId: string, messageId: string) => void,
+  ) => Promise<void>;
   exportChat: () => void;
   description?: string;
 }
@@ -135,7 +138,7 @@ export const ChatImpl = memo(
         logger.debug('Finished streaming');
 
         setTimeout(async () => {
-          await storeConversationHistory(id);
+          await storeConversationHistory(id, updateMessageWithSnapshot);
         }, 2000);
       },
       initialMessages,
@@ -273,6 +276,27 @@ export const ChatImpl = memo(
       workbenchStore.previewsStore.makingChanges();
 
       textareaRef.current?.blur();
+    };
+
+    const updateMessageWithSnapshot = (snapshotId: string, messageId: string) => {
+      // Update the message annotations to include the snapshot ID
+      setMessages((currentMessages) =>
+        currentMessages.map((message) => {
+          if (message.id === messageId) {
+            const existingSnapshotId = getMessageSnapshotId(message);
+
+            if (!existingSnapshotId) {
+              const existingAnnotations = message.annotations || [];
+              return {
+                ...message,
+                annotations: [...existingAnnotations, `snapshotId:${snapshotId}`],
+              };
+            }
+          }
+
+          return message;
+        }),
+      );
     };
 
     const sendAutofixMessage = async (message: string) => {
@@ -517,6 +541,7 @@ export const ChatImpl = memo(
           clearAlert={() => workbenchStore.clearAlert()}
           data={chatData}
           onSyncFiles={syncLatestChanges}
+          setMessages={setMessages}
         />
         {selectedQueryId && (
           <QueryModal

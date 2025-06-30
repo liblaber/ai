@@ -14,6 +14,9 @@ type MessageResponse = {
   finishReason?: string;
   createdAt: number;
   annotations: string[];
+  Snapshot?: {
+    id: string;
+  } | null;
 };
 
 type MessageRequest = MessageResponse;
@@ -54,12 +57,18 @@ export async function getConversation(id: string): Promise<UIConversation> {
 
   const messages: Message[] =
     conversation?.messages.map((message) => {
+      const annotations = [...(message.annotations ?? []), NO_EXECUTE_ACTION_ANNOTATION];
+
+      if (message.Snapshot?.id) {
+        annotations.push(`snapshotId:${message.Snapshot.id}`);
+      }
+
       return {
         id: message.id,
         role: message.role.toLowerCase() as Message['role'],
         content: message.content,
         createdAt: message.createdAt ? new Date(message.createdAt) : undefined,
-        annotations: [...(message.annotations ?? []), NO_EXECUTE_ACTION_ANNOTATION],
+        annotations,
       };
     }) ?? [];
 
@@ -150,4 +159,16 @@ export async function forkConversation(conversationId: string, messageId: string
   const messages = conversation.messagesResponse.slice(0, messageIndex + 1);
 
   return createConversation(conversation.dataSourceId, messages);
+}
+
+export function getMessageSnapshotId(message: Message): string | null {
+  const snapshotAnnotation = message.annotations?.find(
+    (annotation) => typeof annotation === 'string' && annotation.startsWith('snapshotId:'),
+  );
+
+  if (!snapshotAnnotation || typeof snapshotAnnotation !== 'string') {
+    return null;
+  }
+
+  return snapshotAnnotation.replace('snapshotId:', '');
 }

@@ -88,14 +88,21 @@ export function useConversationHistory() {
     ready: !id || ready,
     initialMessages,
     commandMessage,
-    storeConversationHistory: async (lastMessageId: string) => {
+    storeConversationHistory: async (
+      lastMessageId: string,
+      onSnapshotCreated?: (snapshotId: string, messageId: string) => void,
+    ) => {
       const conversationId = chatId.get();
 
       if (!conversationId) {
         return;
       }
 
-      await saveSnapshot(conversationId, lastMessageId);
+      const snapshotResult = await saveSnapshot(conversationId, lastMessageId);
+
+      if (onSnapshotCreated && snapshotResult?.id) {
+        onSnapshotCreated(snapshotResult.id, lastMessageId);
+      }
 
       const firstArtifact = workbenchStore.firstArtifact;
 
