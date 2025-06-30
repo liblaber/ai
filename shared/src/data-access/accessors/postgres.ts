@@ -58,10 +58,17 @@ export class PostgresAccessor implements BaseAccessor {
   }
 
   validate(connectionString: string): void {
-    const regex = /^postgres(?:ql)?:\/\/([a-zA-Z0-9_-]+):(.+)@([a-zA-Z0-9.-]+):([0-9]+)\/([a-zA-Z0-9_-]+)(\?.*)?$/;
+    const regex = /^postgres(?:ql)?:\/\/([a-zA-Z0-9_-]+):(.+)@([a-zA-Z0-9.-]+):([0-9]{1,5})\/([a-zA-Z0-9_-]+)(\?.*)?$/;
+    const match = connectionString.match(regex);
 
-    if (!regex.test(connectionString)) {
+    if (!match) {
       throw new Error('Invalid connection string');
+    }
+
+    const port = parseInt(match[4], 10);
+
+    if (port < 1 || port > 65535) {
+      throw new Error('Port has to be in range from 1 to 65535');
     }
   }
 

@@ -57,7 +57,12 @@ export default function EditDataSourceForm({
     } else {
       const connectionDetails = new URL(selectedDataSource.connectionString);
       const type = connectionDetails.protocol.replace(':', '');
-      setDbType(availableDataSourceOptions.find((opt) => opt.value === type) || DEFAULT_DATA_SOURCES[0]);
+
+      // Find matching option (handle postgresql -> postgres mapping specifically)
+      const normalizedType = type === 'postgresql' ? 'postgres' : type;
+      const matchingOption = availableDataSourceOptions.find((opt) => opt.value === normalizedType);
+
+      setDbType(matchingOption || DEFAULT_DATA_SOURCES[0]);
       setDbName(selectedDataSource.name);
       setConnStr(selectedDataSource.connectionString);
     }
