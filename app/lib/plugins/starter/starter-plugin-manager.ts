@@ -37,11 +37,13 @@ export class StarterPluginManager {
     try {
       const content = fs.readFileSync(techFile, 'utf8');
 
-      return content
+      this.starterTechnologies = content
         .split('\n')
         .map((t) => t.trim())
         .filter(Boolean)
         .join(', ');
+
+      return this.starterTechnologies;
     } catch (error) {
       logger.error('Error reading technologies file:', error);
       return this.defaultTechnologies;
