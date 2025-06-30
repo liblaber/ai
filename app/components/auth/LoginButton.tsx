@@ -23,6 +23,9 @@ export function LoginButton() {
       switch (provider) {
         case 'anonymous':
           await signIn.anonymous();
+
+          // Refresh the landing page after login to show data sources connection modal
+          window.location.reload();
           break;
         default:
           await signIn.social({ provider });
