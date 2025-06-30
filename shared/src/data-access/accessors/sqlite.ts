@@ -109,11 +109,7 @@ export class SQLiteAccessor implements BaseAccessor {
 
             // Only add enum values if this is an example database
             if (isExampleDatabase) {
-              const tableEnums = SQLITE_EXAMPLE_ENUM_VALUES[table.table_name];
-
-              if (tableEnums && tableEnums[col.name]) {
-                column.enumValues = tableEnums[col.name];
-              }
+              column.enumValues = SQLITE_EXAMPLE_ENUM_VALUES[table.table_name]?.[col.name];
             }
 
             return column;
