@@ -368,7 +368,7 @@ export const Preview = memo(() => {
               <iframe
                 ref={iframeRef}
                 title="preview"
-                className="border-none w-full h-full bg-liblab-elements-bg-depth-1"
+                className="border-none w-full h-full bg-white"
                 src={iframeUrl}
                 sandbox="allow-scripts allow-forms allow-popups allow-modals allow-storage-access-by-user-activation allow-same-origin"
                 allow="cross-origin-isolated"
@@ -381,11 +381,19 @@ export const Preview = memo(() => {
                 }}
               />
               {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-liblab-elements-bg-depth-1 bg-opacity-50">
-                  <div className="text-liblab-elements-textPrimary text-lg font-medium">
-                    <span className="inline-block animate-[fadeIn_0.3s_ease-in-out] animate-[pulse_1.5s_ease-in-out_infinite]">
-                      {workbenchStore.previewsStore.loadingText.get()}
-                    </span>
+                <div className="absolute inset-0 flex items-center justify-center bg-liblab-elements-bg-depth-1 bg-opacity-50 backdrop-blur-sm">
+                  <div className="flex flex-col items-center gap-4 p-6 rounded-lg bg-liblab-elements-bg-depth-2 shadow-lg border border-liblab-elements-borderColor">
+                    <div className="relative">
+                      <div className="w-12 h-12 border-4 border-liblab-elements-borderColor rounded-full animate-spin border-t-liblab-elements-item-contentAccent"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-3 h-3 bg-liblab-elements-item-contentAccent rounded-full animate-pulse"></div>
+                      </div>
+                    </div>
+                    <div className="text-liblab-elements-textPrimary text-lg font-medium text-center">
+                      <span className="inline-block animate-[fadeIn_0.3s_ease-in-out]">
+                        {workbenchStore.previewsStore.loadingText.get()}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
