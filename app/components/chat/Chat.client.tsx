@@ -138,26 +138,7 @@ export const ChatImpl = memo(
         logger.debug('Finished streaming');
 
         setTimeout(async () => {
-          await storeConversationHistory(id, (snapshotId, messageId) => {
-            // Update the message annotations to include the snapshot ID
-            setMessages((currentMessages) =>
-              currentMessages.map((message) => {
-                if (message.id === messageId) {
-                  const existingSnapshotId = getMessageSnapshotId(message);
-
-                  if (!existingSnapshotId) {
-                    const existingAnnotations = message.annotations || [];
-                    return {
-                      ...message,
-                      annotations: [...existingAnnotations, `snapshotId:${snapshotId}`],
-                    };
-                  }
-                }
-
-                return message;
-              }),
-            );
-          });
+          await storeConversationHistory(id, updateMessageWithSnapshot);
         }, 2000);
       },
       initialMessages,
@@ -295,6 +276,27 @@ export const ChatImpl = memo(
       workbenchStore.previewsStore.makingChanges();
 
       textareaRef.current?.blur();
+    };
+
+    const updateMessageWithSnapshot = (snapshotId: string, messageId: string) => {
+      // Update the message annotations to include the snapshot ID
+      setMessages((currentMessages) =>
+        currentMessages.map((message) => {
+          if (message.id === messageId) {
+            const existingSnapshotId = getMessageSnapshotId(message);
+
+            if (!existingSnapshotId) {
+              const existingAnnotations = message.annotations || [];
+              return {
+                ...message,
+                annotations: [...existingAnnotations, `snapshotId:${snapshotId}`],
+              };
+            }
+          }
+
+          return message;
+        }),
+      );
     };
 
     const sendAutofixMessage = async (message: string) => {
