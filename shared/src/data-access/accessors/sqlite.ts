@@ -1,7 +1,8 @@
 import { Database as SQLiteDatabase, open } from 'sqlite';
 import sqlite3 from 'sqlite3';
 import type { BaseAccessor } from '../baseAccessor';
-import type { Table } from '../../types';
+import type { Column, Table } from '../../types';
+import { EXAMPLE_DB_ENUM_VALUES } from '../../utils/example-db-enum-values';
 
 interface SQLiteColumn {
   name: string;
@@ -13,6 +14,8 @@ interface SQLiteColumn {
 interface TableInfo {
   table_name: string;
 }
+
+const EXAMPLE_DATABASE_NAME = 'example.db';
 
 export class SQLiteAccessor implements BaseAccessor {
   static pluginId = 'sqlite';
@@ -89,17 +92,28 @@ export class SQLiteAccessor implements BaseAccessor {
 
       const result: Table[] = [];
 
+      const isExampleDatabase = this._db.config.filename === EXAMPLE_DATABASE_NAME;
+
       // For each table, get its columns
       for (const table of tables) {
         const columns: SQLiteColumn[] = await this._db.all(`PRAGMA table_info(${table.table_name})`);
         result.push({
           tableName: table.table_name,
-          columns: columns.map((col) => ({
-            name: col.name,
-            type: col.type.toLowerCase(),
-            isPrimary: Boolean(col.pk),
-            nullable: !col.notnull,
-          })),
+          columns: columns.map((col) => {
+            const column = {
+              name: col.name,
+              type: col.type.toLowerCase(),
+              isPrimary: Boolean(col.pk),
+              nullable: !col.notnull,
+            } as Column;
+
+            // Only add enum values if this is an example database
+            if (isExampleDatabase) {
+              column.enumValues = EXAMPLE_DB_ENUM_VALUES[table.table_name]?.[col.name];
+            }
+
+            return column;
+          }),
         });
       }
 
