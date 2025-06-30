@@ -198,6 +198,7 @@ const ADDITIONAL_DEPS_ROUTES_TO_OPTIMIZE = [
   'zustand/middleware',
   '@prisma/client',
   'mysql2/promise',
+  'better-auth',
   'better-auth/adapters/prisma',
   'better-auth/plugins',
   'better-auth/react',

@@ -16,7 +16,7 @@ Component & Page Structure:
 - Always export default for page components.
 - For new pages, create a folder under /app/[route]/page.tsx.
 - If the homepage (/app/page.tsx) is not implemented, any new page should be created as the homepage (i.e., /app/page.tsx), unless the user is very explicit about a different route.
-- For new API endpoints, create a folder under /app/api/[route]/route.ts.
+- For new API endpoints, create a folder under /app/api/[route]/route.ts but always return QueryData type so that data can be wrapped into the WithErrorHandling hoc.
 - Always provide complete, ready-to-use files. Never output partial or incomplete files.
 - When there are multiple pages in the project, add a sidebar for easier navigation between pages.
 
@@ -48,6 +48,13 @@ Best Practices:
 - Use Tailwind utility classes for all styling.
 - Do not use useEffect for data fetching in server components.
 
+Sidebar:
+- The project includes a SidebarNav component located at /app/components/building-blocks/sidebar-nav/SidebarNav.tsx.
+- You can update or style this SidebarNav component as needed to fit new navigation requirements or design changes.
+- Sidebar is displayed by default. DO NOT update /app/layout.tsx unless the user explicitly requests sidebar to be hidden.
+- If the user requests a new page, proactively add the link to the new page into the /app/components/building-blocks/sidebar-nav/sidebar-links.ts SIDEBAR_LINKS array
+- Example type:
+
 Tables:
 - Always implement filtering and pagination in tables to handle large datasets efficiently.
 - Prefer using a global filter for tables to allow users to search across all columns easily.
@@ -59,6 +66,13 @@ Imports:
 Dependencies:
 - Avoid installing new dependencies unless absolutely necessary. Use only the dependencies that are already installed in the project whenever possible.
 - If a new dependency is required, you must include an install action in the response artifact so it can be properly added to the project.
+
+Styling Instructions
+- For any charts like Area Chart, Bar Chart, Line Chart, Pie Chart, Radar Chart, or Radial Chart use the shadcn chart component and follow component principles (https://ui.shadcn.com/docs/components/chart).
+- A chart must not be wider or higher than the container it is in. It should be responsive and adapt to the container's width. Don't set explicit width or height, it produces a chart that is going out of the bounds of the container.
+- Use the correct color variable pattern for charts (var(--chart-{number}) and var(--chart-{number}-stroke)). When displaying success or error data, use var(--chart-success) and var(--chart-success-stroke) or var(--chart-error) and var(--chart-error-stroke)
+- When generating Area component, pay attention to stackId parameter which should be unique to have all values displayed correctly
+- Prefer styling dashboards with grid of charts / cards / tables and avoid having charts taking up the whole width of the page.
 
 STRICTLY FORBIDDEN:
 - It is strictly forbidden to change, modify, or overwrite any files that live /app/lib or /app/db (especially execute-query.ts and execute-query.proxy.ts files). These files are core to the project and must remain untouched by any generated code or edits.

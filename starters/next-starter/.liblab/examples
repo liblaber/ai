@@ -73,7 +73,6 @@ export function MonthlyTrends({ data }: { data: MonthlyTrend[] }) {
         <CardTitle>Monthly Revenue & Profit Trends</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
           <ChartContainer config={chartConfig}>
             <AreaChart data={data}>
               <XAxis dataKey="month" />
@@ -97,7 +96,6 @@ export function MonthlyTrends({ data }: { data: MonthlyTrend[] }) {
               />
             </AreaChart>
           </ChartContainer>
-        </div>
       </CardContent>
     </Card>
   );
@@ -178,7 +176,6 @@ export function PaymentMethods({ data }: { data: PaymentMethod[] }) {
         <CardTitle>Payment Methods Distribution</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
           <ChartContainer config={chartConfig}>
             <PieChart>
               <Pie
@@ -197,7 +194,6 @@ export function PaymentMethods({ data }: { data: PaymentMethod[] }) {
               <ChartTooltip />
             </PieChart>
           </ChartContainer>
-        </div>
       </CardContent>
     </Card>
   );
@@ -288,41 +284,29 @@ export default async function UsersPage() {
   );
 }
         </liblabAction>
-        <liblabAction type="file" filePath="app/components/SidebarNav.tsx">
-"use client";
+        <liblabAction type="file" filePath="app/components/building-blocks/sidebar-nav/sidebar-links.ts">
+        import { House, Users,LucideProps } from 'lucide-react';
+import * as react from 'react';
 
-import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Building2 } from 'lucide-react';
+export type SidebarLink = {
+  href: string;
+  label: string;
+  icon?: react.ForwardRefExoticComponent<Omit<LucideProps, 'ref'> & react.RefAttributes<SVGSVGElement>>;
+};
 
-export default function SidebarNav() {
-  const pathname = usePathname();
-  return (
-    <SidebarMenu className='p-3'>
-      <SidebarMenuItem>
-        <SidebarMenuButton
-          asChild
-          isActive={pathname === '/'}
-        >
-          <Link href="/">
-            <LayoutDashboard className="w-5 h-5" /> Dashboard
-          </Link>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      <SidebarMenuItem>
-        <SidebarMenuButton
-          asChild
-          isActive={pathname === '/users'}
-        >
-          <Link href="/users">
-            <Users className="w-5 h-5" /> Users
-          </Link>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    </SidebarMenu>
-  );
-}
+export const SIDEBAR_LINKS: SidebarLink[] = [
+  {
+    href: '/',
+    label: 'Home',
+    icon: House,
+  },
+  {
+    href: '/users',
+    label: 'Users',
+    icon: Users,
+  },
+];
+
         </liblabAction>
       </liblabArtifact>
     </assistant_response>

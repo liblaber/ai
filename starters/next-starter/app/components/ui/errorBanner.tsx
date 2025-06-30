@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 
-export function ErrorComponent({ errorMessage }: { errorMessage: string }) {
+export function ErrorBanner({ errorMessage }: { errorMessage: string }) {
   return (
     <div
       style={{
