@@ -1,0 +1,330 @@
+<examples>
+  <example>
+    <user_prompt>Create me a revenue dashboard</user_prompt>
+    <assistant_response>
+      I'll create a revenue dashboard to visualize monthly revenue, profit trends, category revenue, subscription revenue, and payment methods.
+
+      <liblabArtifact id="revenue-dashboard" title="Create Revenue Dashboard">
+        <liblabAction type="commit-message">Add revenue dashboard with charts for trends, categories, subscriptions, and payment methods</liblabAction>
+        <liblabAction type="file" filePath="app/page.tsx">
+import { executeQuery } from '@/db/execute-query';
+import { MonthlyTrends } from '@/components/dashboard/MonthlyTrends';
+import { CategoryRevenue } from '@/components/dashboard/CategoryRevenue';
+import { PaymentMethods } from '@/components/dashboard/PaymentMethods';
+import { WithErrorHandling } from '@/components/hoc/WithErrorHandling';
+import { MonthlyTrend as MonthlyTrendType, SubscriptionRevenue as SubscriptionRevenueType, CategoryRevenue as CategoryRevenueType, PaymentMethod as PaymentMethodType } from './types';
+import { SubscriptionRevenue } from './components/dashboard/SubscriptionRevenue';
+
+export default async function Home() {
+  const [
+    monthlyTrends,
+    categoryRevenue,
+    subscriptionRevenue,
+    paymentMethods,
+  ] = await Promise.all([
+    executeQuery<MonthlyTrendType>(`-- SQL: Get monthly revenue and profit`),
+    executeQuery<CategoryRevenueType>(`-- SQL: Get category revenue`),
+    executeQuery<SubscriptionRevenueType>(`-- SQL: Get subscription revenue`),
+    executeQuery<PaymentMethodType>(`-- SQL: Get payment methods`),
+  ]);
+
+  return (
+    <main className="p-8 space-y-8">
+      <h1 className="text-4xl font-bold">Revenue Dashboard</h1>
+      <div className="grid gap-8 md:grid-cols-2">
+        <WithErrorHandling queryData={monthlyTrends} component={MonthlyTrends} />
+        <WithErrorHandling queryData={categoryRevenue} component={CategoryRevenue} />
+        <WithErrorHandling queryData={subscriptionRevenue} component={SubscriptionRevenue} />
+        <WithErrorHandling queryData={paymentMethods} component={PaymentMethods} />
+      </div>
+    </main>
+  );
+}
+        </liblabAction>
+        <liblabAction type="file" filePath="app/components/dashboard/MonthlyTrends.tsx">
+'use client';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { MonthlyTrend } from '@/types';
+import { Area, AreaChart, XAxis, YAxis } from 'recharts';
+
+export function MonthlyTrends({ data }: { data: MonthlyTrend[] }) {
+  const chartConfig = {
+    revenue: {
+      label: 'Revenue',
+      theme: {
+        light: 'var(--color-chart-1)',
+        dark: 'var(--color-chart-1)',
+      },
+    },
+    profit: {
+      label: 'Profit',
+      theme: {
+        light: 'var(--color-chart-2)',
+        dark: 'var(--color-chart-2)',
+      },
+    },
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Monthly Revenue & Profit Trends</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[300px]">
+          <ChartContainer config={chartConfig}>
+            <AreaChart data={data}>
+              <XAxis dataKey="month" />
+              <YAxis />
+              <ChartTooltip />
+              <Area
+                type="monotone"
+                dataKey="monthly_revenue"
+                name="revenue"
+                stroke="var(--color-chart-1)"
+                fill="var(--color-chart-1)"
+                fillOpacity={0.2}
+              />
+              <Area
+                type="monotone"
+                dataKey="monthly_profit"
+                name="profit"
+                stroke="var(--color-chart-2)"
+                fill="var(--color-chart-2)"
+                fillOpacity={0.2}
+              />
+            </AreaChart>
+          </ChartContainer>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+        </liblabAction>
+        <liblabAction type="file" filePath="app/components/dashboard/CategoryRevenue.tsx">
+'use client';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { Bar, BarChart, XAxis, YAxis } from 'recharts';
+import { CategoryRevenue as CategoryRevenueType } from '@/types';
+
+export function CategoryRevenue({ data }: { data: CategoryRevenueType[] }) {
+  const chartConfig = {
+    revenue: {
+      label: 'Revenue',
+      theme: {
+        light: 'var(--color-chart-1)',
+        dark: 'var(--color-chart-1)',
+      },
+    },
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Revenue by Category</CardTitle>
+      </CardHeader>
+      <CardContent>
+          <ChartContainer config={chartConfig}>
+            <BarChart data={data}>
+              <XAxis dataKey="category" />
+              <YAxis />
+              <ChartTooltip />
+              <Bar
+                dataKey="category_revenue"
+                name="revenue"
+                fill="var(--color-chart-1)"
+              />
+            </BarChart>
+          </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+        </liblabAction>
+        <liblabAction type="file" filePath="app/components/dashboard/PaymentMethods.tsx">
+'use client';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { Cell, Pie, PieChart } from 'recharts';
+import { PaymentMethod } from '@/types';
+
+const COLORS = [
+  'var(--color-chart-1)',
+  'var(--color-chart-2)',
+  'var(--color-chart-3)',
+  'var(--color-chart-4)',
+  'var(--color-chart-5)'
+];
+
+export function PaymentMethods({ data }: { data: PaymentMethod[] }) {
+  const chartConfig = {
+    sales: {
+      label: 'Sales',
+      theme: {
+        light: 'var(--color-chart-1)',
+        dark: 'var(--color-chart-1)',
+      },
+    },
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Payment Methods Distribution</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[300px]">
+          <ChartContainer config={chartConfig}>
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="total_sales"
+                nameKey="payment_method"
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                label={(entry) => entry.payment_method}
+              >
+                {data.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <ChartTooltip />
+            </PieChart>
+          </ChartContainer>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+        </liblabAction>
+        <liblabAction type="file" filePath="app/components/dashboard/SubscriptionRevenue.tsx">
+'use client';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { Bar, BarChart, XAxis, YAxis } from 'recharts';
+import { SubscriptionRevenue as SubscriptionRevenueType } from '@/types';
+
+export function SubscriptionRevenue({ data }: { data: SubscriptionRevenueType[] }) {
+  const chartConfig = {
+    revenue: {
+      label: 'Revenue',
+      theme: {
+        light: 'var(--color-chart-3)',
+        dark: 'var(--color-chart-3)',
+      },
+    },
+    organizations: {
+      label: 'Organizations',
+      theme: {
+        light: 'var(--color-chart-4)',
+        dark: 'var(--color-chart-4)',
+      },
+    },
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Subscription Revenue & Organizations</CardTitle>
+      </CardHeader>
+      <CardContent>
+          <ChartContainer config={chartConfig}>
+            <BarChart data={data}>
+              <XAxis dataKey="subscription_tier" />
+              <YAxis yAxisId="left" />
+              <YAxis yAxisId="right" orientation="right" />
+              <ChartTooltip />
+              <Bar
+                yAxisId="left"
+                dataKey="total_subscription_revenue"
+                name="revenue"
+                fill="var(--color-chart-3)"
+              />
+              <Bar
+                yAxisId="right"
+                dataKey="organization_count"
+                name="organizations"
+                fill="var(--color-chart-4)"
+              />
+            </BarChart>
+          </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+        </liblabAction>
+      </liblabArtifact>
+    </assistant_response>
+  </example>
+  <example>
+    <user_prompt>Add separate page with users table</user_prompt>
+    <assistant_response>
+      I'll add a dedicated users page that displays a table of users with their details and organizations.
+
+      <liblabArtifact id="users-table-page" title="Add Users Table Page">
+        <liblabAction type="commit-message">Add separate users page with users table and organization info</liblabAction>
+        <liblabAction type="file" filePath="app/users/page.tsx">
+import { executeQuery } from '@/db/execute-query';
+import UsersTable from '@/components/users/UsersTable';
+import { User } from '@/types';
+import { WithErrorHandling } from '@/components/hoc/WithErrorHandling';
+
+export default async function UsersPage() {
+  const usersResult = await executeQuery<User>(
+    '-- SQL: Get users with organization info'
+  );
+
+  return (
+    <main className="p-8">
+      <WithErrorHandling queryData={usersResult} component={UsersTable} />
+    </main>
+  );
+}
+        </liblabAction>
+        <liblabAction type="file" filePath="app/components/SidebarNav.tsx">
+"use client";
+
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { LayoutDashboard, Users, Building2 } from 'lucide-react';
+
+export default function SidebarNav() {
+  const pathname = usePathname();
+  return (
+    <SidebarMenu className='p-3'>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          isActive={pathname === '/'}
+        >
+          <Link href="/">
+            <LayoutDashboard className="w-5 h-5" /> Dashboard
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          isActive={pathname === '/users'}
+        >
+          <Link href="/users">
+            <Users className="w-5 h-5" /> Users
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}
+        </liblabAction>
+      </liblabArtifact>
+    </assistant_response>
+  </example>
+</examples>

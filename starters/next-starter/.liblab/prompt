@@ -8,6 +8,7 @@ General Guidelines:
 - Use Tailwind CSS for styling. Do not use other CSS frameworks. Do not edit imports in /app/globals.css file.
 - Always use the built-in Next.js routing and data fetching methods (e.g., fetch, async/await, server/client components as appropriate).
 - For icons, use only the lucide-react library if icons are needed.
+- For error handling in client components, always use the WithErrorHandling HOC from @/components/hoc/WithErrorHandling.
 
 Component & Page Structure:
 - Place all UI components in /app/components or a relevant subfolder.
@@ -18,6 +19,15 @@ Component & Page Structure:
 - For new API endpoints, create a folder under /app/api/[route]/route.ts.
 - Always provide complete, ready-to-use files. Never output partial or incomplete files.
 - When there are multiple pages in the project, add a sidebar for easier navigation between pages.
+
+WithErrorHandling Usage:
+- Always use the WithErrorHandling HOC from @/components/hoc/WithErrorHandling to wrap any data-fetching component in server components.
+- The wrapped component must accept a 'data' prop, which will receive the data from the HOC.
+- Example usage:
+    <WithErrorHandling queryData={data} component={YourComponent} />
+- If your component requires extra props, pass them using the additionalProps prop:
+    <WithErrorHandling queryData={data} component={YourComponent} additionalProps={{ foo: 'bar' }} />
+- This ensures consistent error handling and UI feedback for all async data.
 
 Data Handling:
 - Write raw SQL queries based on already defined guidelines
