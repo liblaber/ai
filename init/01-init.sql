@@ -90,7 +90,10 @@ INSERT INTO organizations (organization_name, industry, address, phone, email, c
 ('Green Energy Corp.', 'Renewable Energy', '456 Green Ave, Eco City', '+1987654321', 'contact@greenenergy.com', '2023-03-20 10:30:00', 'pro', '2025-04-15 00:00:00', '2025-05-15 00:00:00'),
 ('Global Retail Ltd.', 'Retail', '789 Market St, Commerce City', '+1122334455', 'support@globalretail.com', '2023-06-10 14:15:00', 'business', '2025-04-10 00:00:00', '2025-05-10 00:00:00'),
 ('AI Innovations', 'Artificial Intelligence', '321 AI Boulevard, Tech City', '+1555666777', 'contact@aiinnovations.com', '2023-09-05 11:20:00', 'enterprise', '2025-04-05 00:00:00', '2025-05-05 00:00:00'),
-('Cloud Services Co.', 'Cloud Computing', '654 Cloud Drive, Data Center', '+1888999000', 'info@cloudservices.com', '2023-11-25 16:45:00', 'pro', '2025-04-20 00:00:00', '2025-05-20 00:00:00');
+('Cloud Services Co.', 'Cloud Computing', '654 Cloud Drive, Data Center', '+1888999000', 'info@cloudservices.com', '2023-11-25 16:45:00', 'pro', '2025-04-20 00:00:00', '2025-05-20 00:00:00'),
+('StartupHub Inc.', 'Technology Incubator', '987 Innovation Lane, Startup Valley', '+1777888999', 'hello@startuphub.com', '2024-01-10 08:30:00', 'starter', '2025-04-25 00:00:00', '2025-05-25 00:00:00'),
+('Premium Consulting Group', 'Business Consulting', '147 Executive Plaza, Business District', '+1666777888', 'contact@premiumconsulting.com', '2024-02-20 13:45:00', 'premium', '2025-04-30 00:00:00', '2025-05-30 00:00:00'),
+('FreeTech Community', 'Open Source Software', '258 Community Center, Dev Town', '+1444555666', 'info@freetech.org', '2024-03-15 10:15:00', 'free', NULL, NULL);
 
 -- Insert users with temporal data
 INSERT INTO users (organization_id, username, email, first_name, last_name, role, created_at, last_login_at, is_active) VALUES
@@ -99,7 +102,11 @@ INSERT INTO users (organization_id, username, email, first_name, last_name, role
 (2, 'dwilliams', 'david.williams@greenenergy.com', 'David', 'Williams', 'Account Manager', '2023-03-21 11:00:00', '2025-05-03 14:20:00', 1),
 (3, 'sbrown', 'sarah.brown@globalretail.com', 'Sarah', 'Brown', 'Store Manager', '2023-06-11 15:30:00', '2025-05-04 10:15:00', 1),
 (4, 'rlee', 'robert.lee@aiinnovations.com', 'Robert', 'Lee', 'Data Scientist', '2023-09-06 12:00:00', '2025-05-05 09:30:00', 1),
-(5, 'lchen', 'lisa.chen@cloudservices.com', 'Lisa', 'Chen', 'Cloud Architect', '2023-11-26 17:00:00', '2025-05-06 16:00:00', 1);
+(5, 'lchen', 'lisa.chen@cloudservices.com', 'Lisa', 'Chen', 'Cloud Architect', '2023-11-26 17:00:00', '2025-05-06 16:00:00', 1),
+(6, 'agarcia', 'alex.garcia@startuphub.com', 'Alex', 'Garcia', 'Sales Manager', '2024-01-11 09:00:00', '2025-05-07 11:30:00', 1),
+(6, 'mwilson', 'mike.wilson@startuphub.com', 'Mike', 'Wilson', 'Sales Representative', '2024-01-15 10:30:00', '2025-05-08 14:15:00', 1),
+(7, 'ktaylor', 'karen.taylor@premiumconsulting.com', 'Karen', 'Taylor', 'Account Manager', '2024-02-21 14:00:00', '2025-05-09 16:45:00', 1),
+(8, 'janderson', 'john.anderson@freetech.org', 'John', 'Anderson', 'Data Scientist', '2024-03-16 11:30:00', '2025-05-10 13:20:00', 1);
 
 -- Insert subscriptions
 INSERT INTO subscriptions (organization_id, plan_name, start_date, end_date, status, monthly_price, features) VALUES
@@ -107,7 +114,14 @@ INSERT INTO subscriptions (organization_id, plan_name, start_date, end_date, sta
 (2, 'Professional', '2023-03-20 00:00:00', '2025-05-31 23:59:59', 'active', 499.99, '{"users": 50, "storage": "500GB", "support": "business hours"}'),
 (3, 'Business', '2023-06-10 00:00:00', '2025-05-31 23:59:59', 'active', 299.99, '{"users": 25, "storage": "250GB", "support": "business hours"}'),
 (4, 'Enterprise', '2023-09-05 00:00:00', '2025-05-31 23:59:59', 'active', 999.99, '{"users": 100, "storage": "1TB", "support": "24/7"}'),
-(5, 'Professional', '2023-11-25 00:00:00', '2025-05-31 23:59:59', 'active', 499.99, '{"users": 50, "storage": "500GB", "support": "business hours"}');
+(5, 'Professional', '2023-11-25 00:00:00', '2025-05-31 23:59:59', 'active', 499.99, '{"users": 50, "storage": "500GB", "support": "business hours"}'),
+(6, 'Starter', '2024-01-10 00:00:00', '2025-05-31 23:59:59', 'active', 99.99, '{"users": 5, "storage": "50GB", "support": "email only"}'),
+(7, 'Premium', '2024-02-20 00:00:00', '2025-05-31 23:59:59', 'active', 799.99, '{"users": 75, "storage": "750GB", "support": "priority 24/7"}'),
+(8, 'Free', '2024-03-15 00:00:00', NULL, 'active', 0.00, '{"users": 1, "storage": "1GB", "support": "community"}'),
+(1, 'Professional', '2022-01-15 00:00:00', '2023-01-14 23:59:59', 'inactive', 499.99, '{"users": 50, "storage": "500GB", "support": "business hours"}'),
+(2, 'Enterprise', '2024-06-01 00:00:00', NULL, 'pending', 999.99, '{"users": 100, "storage": "1TB", "support": "24/7"}'),
+(3, 'Professional', '2024-01-01 00:00:00', '2024-03-31 23:59:59', 'cancelled', 499.99, '{"users": 50, "storage": "500GB", "support": "business hours"}'),
+(4, 'Basic', '2024-04-01 00:00:00', '2024-05-15 23:59:59', 'suspended', 199.99, '{"users": 10, "storage": "100GB", "support": "email only"}');
 
 -- Insert products with temporal data
 INSERT INTO products (organization_id, product_name, description, price, cost, stock_quantity, category, created_at, last_restock_date) VALUES
@@ -379,3 +393,20 @@ INSERT INTO revenue (organization_id, date, total_revenue, total_cost, gross_pro
 (3, '2025-07-31', 579.96, 230.00, 349.96, 299.96, 299.99, 279.97),
 (4, '2025-07-31', 0.00, 0.00, 0.00, 0.00, 999.99, -999.99),
 (5, '2025-07-31', 0.00, 0.00, 0.00, 0.00, 499.99, -499.99);
+
+INSERT INTO sales (organization_id, user_id, sale_date, total_amount, payment_method, status, discount_amount, tax_amount) VALUES
+-- Sales with new payment methods
+(6, 7, '2024-04-01 10:30:00', 1249.99, 'Check', 'completed', 50.00, 124.99),
+(7, 9, '2024-04-05 14:15:00', 799.99, 'Cash', 'completed', 0, 79.99),
+(8, 10, '2024-04-10 11:20:00', 299.99, 'Cryptocurrency', 'completed', 0, 29.99),
+(1, 1, '2024-04-15 16:45:00', 1999.99, 'Wire Transfer', 'completed', 100.00, 199.99),
+-- Sales with different statuses
+(2, 3, '2025-08-01 09:30:00', 2999.99, 'Credit Card', 'pending', 0, 299.99),
+(3, 4, '2025-08-05 13:20:00', 599.99, 'PayPal', 'cancelled', 0, 59.99),
+(4, 5, '2025-08-10 15:45:00', 1499.99, 'Bank Transfer', 'refunded', 0, 149.99),
+(5, 6, '2025-08-15 11:30:00', 399.99, 'Credit Card', 'failed', 0, 39.99),
+-- More examples with new payment methods
+(6, 8, '2024-05-01 10:00:00', 199.99, 'Check', 'completed', 20.00, 17.99),
+(7, 9, '2024-05-05 14:30:00', 899.99, 'Cryptocurrency', 'completed', 0, 89.99),
+(8, 10, '2024-05-10 16:00:00', 149.99, 'Cash', 'completed', 0, 14.99);
+

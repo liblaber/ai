@@ -2,7 +2,7 @@ import { Database as SQLiteDatabase, open } from 'sqlite';
 import sqlite3 from 'sqlite3';
 import type { BaseAccessor } from '../baseAccessor';
 import type { Column, Table } from '../../types';
-import { SQLITE_EXAMPLE_ENUM_VALUES } from '../../utils/example-db-enum-values';
+import { EXAMPLE_DB_ENUM_VALUES } from '../../utils/example-db-enum-values';
 
 interface SQLiteColumn {
   name: string;
@@ -109,7 +109,7 @@ export class SQLiteAccessor implements BaseAccessor {
 
             // Only add enum values if this is an example database
             if (isExampleDatabase) {
-              column.enumValues = SQLITE_EXAMPLE_ENUM_VALUES[table.table_name]?.[col.name];
+              column.enumValues = EXAMPLE_DB_ENUM_VALUES[table.table_name]?.[col.name];
             }
 
             return column;

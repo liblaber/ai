@@ -1,6 +1,13 @@
-export const SQLITE_EXAMPLE_ENUM_VALUES: Record<string, Record<string, string[]>> = {
+/**
+ * Specified enum values for example database
+ * These values correspond to the data in 01-init.sql
+ *
+ * This is used to populate the enum values for the example database
+ * because the SQLite database does not have a native support for this.
+ */
+export const EXAMPLE_DB_ENUM_VALUES: Record<string, Record<string, string[]>> = {
   organizations: {
-    subscription_tier: ['free', 'pro', 'business', 'enterprise'],
+    subscription_tier: ['free', 'starter', 'pro', 'business', 'premium', 'enterprise'],
   },
   users: {
     role: [
@@ -13,13 +20,13 @@ export const SQLITE_EXAMPLE_ENUM_VALUES: Record<string, Record<string, string[]>
     ],
   },
   subscriptions: {
-    status: ['active'],
+    status: ['active', 'inactive', 'pending', 'cancelled', 'suspended'],
   },
   products: {
     category: ['Software', 'Cloud Services', 'Solar Energy', 'Wind Energy', 'Electronics', 'Networking', 'AI Software'],
   },
   sales: {
-    payment_method: ['Credit Card', 'Bank Transfer', 'PayPal'],
-    status: ['completed'],
+    payment_method: ['Credit Card', 'Bank Transfer', 'PayPal', 'Check', 'Cash', 'Cryptocurrency', 'Wire Transfer'],
+    status: ['completed', 'pending', 'cancelled', 'refunded', 'failed'],
   },
 };
