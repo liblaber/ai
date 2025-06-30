@@ -11,7 +11,7 @@ export class StarterPluginManager {
   static starterInstructionsPrompt: string | null;
   static starterTechnologies: string | null;
   static defaultTechnologies: string = 'React, Typescript, TailwindCSS';
-  static readonly defaultStarter: StarterPluginId = 'remix';
+  static readonly defaultStarter: StarterPluginId = 'next';
   static starterId: StarterPluginId = `${process.env.STARTER || this.defaultStarter}` as StarterPluginId;
   static starterDirectory = path.resolve(process.cwd(), 'starters', `${this.starterId}-starter`);
 
