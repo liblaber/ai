@@ -9,7 +9,6 @@ interface SQLiteColumn {
   type: string;
   pk: number;
   notnull: number;
-  enumValues?: string[];
 }
 
 interface TableInfo {
