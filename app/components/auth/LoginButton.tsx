@@ -35,7 +35,7 @@ export function LoginButton() {
     }
 
     autoLoginAnonymous();
-  }, []);
+  }, [anonymousProvider]);
 
   const handleProviderLogin = async (provider: AuthProviderType) => {
     toggleLoginModal(false);
@@ -151,6 +151,6 @@ const autoLoginAnonymous = async () => {
     // Refresh the landing page after successful login to show data sources connection modal
     window.location.reload();
   } catch (error: any) {
-    throw new Error('Anonymous login failed:', error?.message);
+    throw new Error(`Anonymous login failed: ${error?.message}`);
   }
 };
