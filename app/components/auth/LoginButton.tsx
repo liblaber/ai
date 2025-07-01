@@ -123,6 +123,7 @@ const autoLoginAnonymous = async () => {
     const { error: signInError } = await signIn.email({
       email: anonymousUser.email,
       password: anonymousUser.password,
+      rememberMe: true,
     });
 
     if (signInError) {
