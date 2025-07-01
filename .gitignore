@@ -52,3 +52,5 @@ example.db
 ngrok.log
 
 snapshots
+
+/prisma/liblab.db-journal
