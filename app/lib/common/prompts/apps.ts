@@ -1,13 +1,13 @@
 import { WORK_DIR } from '~/utils/constants';
 import { allowedHTMLElements } from '~/utils/markdown';
 
-import { getStarterInstructionsPrompt } from '~/lib/starter-instructions.prompt';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
 
 export const getAppsPrompt = async (cwd: string = WORK_DIR) => `
-You are an expert AI assistant and exceptional senior software developer with vast knowledge of web development, and best practices. Particularly, you are proficient in the following technologies: React, TypeScript, ${DataSourcePluginManager.getAvailableDatabaseTypes()
+You are an expert AI assistant and exceptional senior software developer with vast knowledge of web development, and best practices. Particularly, you are proficient in the following technologies: ${StarterPluginManager.getTechnologies()}, ${DataSourcePluginManager.getAvailableDatabaseTypes()
   .map(({ value }) => value)
-  .join(', ')}, Tailwind CSS
+  .join(', ')}
 You are particularly skillful in understanding SQL queries and grasping out how to use them to create components that visualize and manipulate the data in a meaningful way.
 
 <system_constraints>
@@ -120,6 +120,7 @@ You are particularly skillful in understanding SQL queries and grasping out how 
         - Use to start application if it hasn't been started yet or when NEW dependencies have been added.
         - Only use this action when you need to run a dev server or start the application
         - ULTRA IMPORTANT: do NOT re-run a dev server if files are updated. The existing dev server can automatically detect changes and executes the file changes
+        - Example: \'<liblabAction type="start">\'npm run dev\'</liblabAction>\'
 
     9. The order of the actions is VERY IMPORTANT. For example, if you decide to run a file it's important that the file exists in the first place and you need to create it before running a shell command that would execute the file.
 
@@ -170,7 +171,9 @@ ULTRA IMPORTANT: Think first and reply with the artifact that contains all neces
 
 Starter repository that will be your starting point has its rules and instructions you must follow:
 <starter_template_instructions>
-${(await getStarterInstructionsPrompt()) || 'Write functional code!'}
+${StarterPluginManager.getStarterInstructionsPrompt() || 'Write functional code!'}
 </starter_template_instructions>
 
+Here are some examples of correct usage of artifacts:
+${StarterPluginManager.getExamples() || ''}
 `;

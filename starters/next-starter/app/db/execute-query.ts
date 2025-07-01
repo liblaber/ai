@@ -1,4 +1,5 @@
 import { executeQueryThroughProxy } from './execute-query.proxy';
+import { executeQueryDirectly } from '@/db/execute-query.direct';
 
 export interface ExecuteQueryError {
   isError: true;
@@ -11,7 +12,11 @@ export async function executeQuery<T>(query: string, params?: string[]): Promise
   let result: { data: T[] };
 
   try {
-    result = await executeQueryThroughProxy<T>(query, params);
+    if (process.env.NODE_ENV === 'production') {
+      result = await executeQueryDirectly(query, params);
+    } else {
+      result = await executeQueryThroughProxy<T>(query, params);
+    }
 
     return {
       ...result,

@@ -1,0 +1,10 @@
+.liblab
+node_modules
+.next
+.idea
+.vscode
+.cache
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.DS_Store
