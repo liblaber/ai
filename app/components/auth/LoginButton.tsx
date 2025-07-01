@@ -1,5 +1,5 @@
-import React from 'react';
-import { signIn } from '~/auth/auth-client';
+import React, { useEffect } from 'react';
+import { signIn, signUp, useSession } from '~/auth/auth-client';
 import {
   Description as DialogDescription,
   Root as DialogRoot,
@@ -12,9 +12,30 @@ import { Button } from '~/components/ui/Button';
 import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
 import type { AuthProvider, AuthProviderType } from '~/lib/plugins/types';
 
+const anonymousUser = {
+  email: 'anonymous@anonymous.com',
+  password: 'password1234',
+  name: 'Anonymous',
+};
+
 export function LoginButton() {
   const { isLoginModalOpen, toggleLoginModal, loginModalTitle } = useAuth();
   const { socialProviders, anonymousProvider } = useAuthProvidersPlugin();
+  const { data: session } = useSession();
+
+  // Auto signup and signin anonymous user when component loads
+  useEffect(() => {
+    if (!anonymousProvider) {
+      return;
+    }
+
+    // Only attempt auto-login if user is not already logged in
+    if (session?.user) {
+      return;
+    }
+
+    autoLoginAnonymous();
+  }, []);
 
   const handleProviderLogin = async (provider: AuthProviderType) => {
     toggleLoginModal(false);
@@ -95,3 +116,41 @@ export function LoginButton() {
     </DialogRoot>
   );
 }
+
+const autoLoginAnonymous = async () => {
+  try {
+    // First try to sign in the anonymous user
+    const { error: signInError } = await signIn.email({
+      email: anonymousUser.email,
+      password: anonymousUser.password,
+    });
+
+    if (signInError) {
+      // Anonymous user does not exist, sign up
+      const { error: signUpError } = await signUp.email({
+        email: anonymousUser.email,
+        password: anonymousUser.password,
+        name: anonymousUser.name,
+      });
+
+      if (signUpError) {
+        return;
+      }
+
+      // Try to sign in again after signup
+      const { error: secondSignInError } = await signIn.email({
+        email: anonymousUser.email,
+        password: anonymousUser.password,
+      });
+
+      if (secondSignInError) {
+        return;
+      }
+    }
+
+    // Refresh the landing page after successful login to show data sources connection modal
+    window.location.reload();
+  } catch (error: any) {
+    throw new Error('Anonymous login failed:', error?.message);
+  }
+};

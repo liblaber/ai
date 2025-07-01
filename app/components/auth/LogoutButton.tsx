@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { signOut, useSession } from '~/auth/auth-client';
 import { useNavigate } from '@remix-run/react';
 import { ProfilePicture } from './ProfilePicture';
+import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
 
 export function LogoutButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,6 +10,7 @@ export function LogoutButton() {
   const { data } = useSession();
   const user = data?.user;
   const navigate = useNavigate();
+  const { anonymousProvider } = useAuthProvidersPlugin();
 
   const handleLogout = async () => {
     await signOut({
@@ -54,19 +56,21 @@ export function LogoutButton() {
           </div>
 
           {/* Menu options */}
-          <div className="py-1">
-            <button
-              onClick={() => {
-                handleLogout();
-                setIsOpen(false);
-              }}
-              className="w-full text-left px-4 py-2 text-liblab-elements-textPrimary hover:bg-liblab-elements-item-backgroundAccent hover:text-liblab-elements-item-contentAccent transition-colors flex items-center text-sm group"
-              style={{ backgroundColor: 'transparent' }}
-            >
-              <span className="i-ph:sign-out w-4 h-4 mr-2 group-hover:text-liblab-elements-item-contentAccent transition-colors" />
-              <span className="group-hover:translate-x-0.5 transition-transform duration-150">Logout</span>
-            </button>
-          </div>
+          {!anonymousProvider && (
+            <div className="py-1">
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setIsOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-liblab-elements-textPrimary hover:bg-liblab-elements-item-backgroundAccent hover:text-liblab-elements-item-contentAccent transition-colors flex items-center text-sm group"
+                style={{ backgroundColor: 'transparent' }}
+              >
+                <span className="i-ph:sign-out w-4 h-4 mr-2 group-hover:text-liblab-elements-item-contentAccent transition-colors" />
+                <span className="group-hover:translate-x-0.5 transition-transform duration-150">Logout</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

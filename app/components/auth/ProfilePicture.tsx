@@ -1,5 +1,6 @@
 import type { User } from 'better-auth/types';
 import React from 'react';
+import { LuCircleUser } from 'react-icons/lu';
 
 interface ProfilePictureProps {
   user: User | null | undefined;
@@ -17,7 +18,7 @@ export function ProfilePicture({ user }: ProfilePictureProps) {
           referrerPolicy={'no-referrer'}
         />
       ) : (
-        <div className="text-lg font-bold">{user?.name ? user.name.charAt(0).toUpperCase() : '?'}</div>
+        <LuCircleUser className="text-gray h-6 w-6" />
       )}
     </div>
   );
