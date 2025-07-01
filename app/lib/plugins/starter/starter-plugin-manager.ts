@@ -83,8 +83,7 @@ export class StarterPluginManager {
 
     return readStarterFileMap({
       dirPath: this.starterDirectory,
-      directoriesToSkip: this._getDirectoriesToSkip(),
-      filesToSkip: this._getFilesToSkip(),
+      ignorePatterns: this._getIgnorePatterns(),
       sharedImportsToSkip: this._getSharedImportsToSkip(),
     });
   }
@@ -110,32 +109,22 @@ export class StarterPluginManager {
     }
   }
 
-  private static _getDirectoriesToSkip(): string[] {
-    switch (this.starterId) {
-      case 'remix':
-        return ['node_modules', 'build', '.idea', '.vscode', '.cache', 'analytics-dashboard'];
-      case 'next':
-        return ['node_modules', '.next', '.idea', '.vscode', '.cache'];
-      default:
-        return [];
-    }
-  }
+  private static _getIgnorePatterns(): string[] {
+    const ignoreFile = path.join(this.starterDirectory, '.liblab', 'ignore');
 
-  private static _getFilesToSkip(): string[] {
-    switch (this.starterId) {
-      case 'remix':
-        return [
-          'package-lock.json',
-          'yarn.lock',
-          'pnpm-lock.yaml',
-          '.DS_Store',
-          'resources.builds.ts',
-          'analytics-dashboard.tsx',
-        ];
-      case 'next':
-        return ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', '.DS_Store'];
-      default:
-        return [];
+    if (!fs.existsSync(ignoreFile)) {
+      return [];
+    }
+
+    try {
+      const content = fs.readFileSync(ignoreFile, 'utf8');
+      return content
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith('#'));
+    } catch (error) {
+      logger.error('Error reading ignore file:', error);
+      return [];
     }
   }
 

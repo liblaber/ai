@@ -3,16 +3,15 @@ import fs from 'fs';
 import path from 'path';
 import { getEncoding } from 'istextorbinary';
 
-type GetStarteFileMapOptions = {
+type GetStarterFileMapOptions = {
   dirPath: string;
   basePath?: string;
-  directoriesToSkip?: string[];
-  filesToSkip?: string[];
+  ignorePatterns?: string[];
   sharedImportsToSkip?: string[];
 };
 
-export function readStarterFileMap(options: GetStarteFileMapOptions): FileMap {
-  const { dirPath, basePath = '', directoriesToSkip = [], filesToSkip = [], sharedImportsToSkip = [] } = options;
+export function readStarterFileMap(options: GetStarterFileMapOptions): FileMap {
+  const { dirPath, basePath = '', ignorePatterns = [], sharedImportsToSkip = [] } = options;
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
   let fileMap: FileMap = {};
   const sharedFiles = getSharedFiles();
@@ -21,20 +20,16 @@ export function readStarterFileMap(options: GetStarteFileMapOptions): FileMap {
     const fullPath = path.join(dirPath, entry.name);
     const relativePath = path.join(basePath, entry.name);
 
-    if (entry.isDirectory()) {
-      if (directoriesToSkip.includes(entry.name)) {
-        continue;
-      }
+    if (ignorePatterns.includes(entry.name)) {
+      continue;
+    }
 
+    if (entry.isDirectory()) {
       fileMap[relativePath] = { type: 'folder' };
 
       const subDirMap = readStarterFileMap({ ...options, dirPath: fullPath, basePath: relativePath });
       fileMap = { ...fileMap, ...subDirMap };
     } else {
-      if (filesToSkip.includes(entry.name)) {
-        continue;
-      }
-
       if (entry.name === 'package.json') {
         const packageJson = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
         const dependencies = packageJson.dependencies || {};

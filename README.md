@@ -191,13 +191,14 @@ Each starter must include a `.liblab` directory with the following files:
 - [`prompt`](starters/next-starter/.liblab/prompt): The main system prompt and instructions for code generation
 - [`technologies`](starters/next-starter/.liblab/technologies): List of technologies used by the starter (one per line)
 - [`examples`](starters/next-starter/.liblab/examples): Example user prompts and responses for this starter
+- [`ignore`](starters/next-starter/.liblab/ignore): Patterns for files/folders to exclude from importing into the builder.
 
 These files are dynamically imported and used in the [`getAppsPrompt`](app/lib/common/prompts/apps.ts) logic to generate apps and instructions.
 
 ### Adding a New Starter
 
 1. Create a new directory under [`starters/`](starters/) named `<your-starter>-starter` (e.g., `my-starter-starter`).
-2. Add a `.liblab` directory inside your starter with the required files: `prompt`, `technologies`, and `examples`.
+2. Add a `.liblab` directory inside your starter with the files that will improve the quality of generated code: `prompt`, `technologies`, `examples` and `ignore`.
 3. Update the plugin types in [`app/lib/plugins/types.ts`](app/lib/plugins/types.ts) to include your new starter in `StarterPluginId` and `PluginAccessMap`.
 4. Set `STARTER=<your-starter>` in your `.env` file to use your new starter.
 
