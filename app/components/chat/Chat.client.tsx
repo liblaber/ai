@@ -26,6 +26,7 @@ import { type Message, useChat } from '@ai-sdk/react';
 import { generateId } from 'ai';
 import { useGitPullSync } from '~/lib/stores/git';
 import { createConversation, getMessageSnapshotId } from '~/lib/persistence/conversations';
+import { extractArtifactTitleFromMessageContent } from '~/utils/artifactMapper';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -37,6 +38,7 @@ interface ChatProps {
   storeConversationHistory: (
     latestMessageId: string,
     onSnapshotCreated?: (snapshotId: string, messageId: string) => void,
+    artifactTitle?: string,
   ) => Promise<void>;
   exportChat: () => void;
   description?: string;
@@ -132,13 +134,15 @@ export const ChatImpl = memo(
           'There was an error processing your request: ' + (e.message ? e.message : 'No details were returned'),
         );
       },
-      onFinish: async ({ id }) => {
+      onFinish: async ({ id, content }) => {
         setData(undefined);
 
         logger.debug('Finished streaming');
 
+        const artifactTitle = extractArtifactTitleFromMessageContent(content);
+
         setTimeout(async () => {
-          await storeConversationHistory(id, updateMessageWithSnapshot);
+          await storeConversationHistory(id, updateMessageWithSnapshot, artifactTitle);
         }, 2000);
       },
       initialMessages,
