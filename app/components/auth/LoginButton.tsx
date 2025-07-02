@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { signIn, signUp, useSession } from '~/auth/auth-client';
+import { signIn, useSession } from '~/auth/auth-client';
 import {
   Description as DialogDescription,
   Root as DialogRoot,
@@ -17,13 +17,12 @@ export function LoginButton() {
   const { socialProviders, anonymousProvider } = useAuthProvidersPlugin();
   const { data: session } = useSession();
 
-  // Auto signup and signin anonymous user when component loads
   useEffect(() => {
+    // Allow auto login only if the anonymous plugin is enabled
     if (!anonymousProvider) {
       return;
     }
 
-    // Only attempt auto-login if user is not already logged in
     if (session?.user) {
       return;
     }
@@ -112,42 +111,17 @@ export function LoginButton() {
 }
 
 const autoLoginAnonymous = async () => {
-  const anonymousUser = {
-    email: 'anonymous@anonymous.com',
-    password: 'password1234',
-    name: 'Anonymous',
-  };
-
   try {
-    // First try to sign in the anonymous user
+    // Sign in the anonymous user (should be pre-created by seed)
     const { error: signInError } = await signIn.email({
-      email: anonymousUser.email,
-      password: anonymousUser.password,
+      email: 'anonymous@anonymous.com',
+      password: 'password1234',
       rememberMe: true,
     });
 
     if (signInError) {
-      // Anonymous user does not exist, sign up
-      const { error: signUpError } = await signUp.email({
-        email: anonymousUser.email,
-        password: anonymousUser.password,
-        name: anonymousUser.name,
-      });
-
-      if (signUpError) {
-        return;
-      }
-
-      // Try to sign in again after signup
-      const { error: secondSignInError } = await signIn.email({
-        email: anonymousUser.email,
-        password: anonymousUser.password,
-        rememberMe: true,
-      });
-
-      if (secondSignInError) {
-        return;
-      }
+      console.error('Failed to sign in anonymous user:', signInError);
+      return;
     }
 
     // Refresh the landing page after successful login to show data sources connection modal
