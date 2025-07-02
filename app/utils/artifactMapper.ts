@@ -27,3 +27,10 @@ export const mapRemoteChangesToArtifact = (changes: RemoteChanges): Message | un
     content: artifactContent,
   };
 };
+
+export const extractArtifactTitleFromMessageContent = (messageContent: string) => {
+  const artifactRegex = /<liblabArtifact[^>]*title="([^"]*)"[^>]*>/;
+  const match = messageContent.match(artifactRegex);
+
+  return match ? match[1] : undefined;
+};

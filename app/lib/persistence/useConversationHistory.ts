@@ -91,6 +91,7 @@ export function useConversationHistory() {
     storeConversationHistory: async (
       lastMessageId: string,
       onSnapshotCreated?: (snapshotId: string, messageId: string) => void,
+      artifactTitle?: string,
     ) => {
       const conversationId = chatId.get();
 
@@ -106,11 +107,15 @@ export function useConversationHistory() {
 
       const firstArtifact = workbenchStore.firstArtifact;
 
-      if (!description.get() && firstArtifact?.title) {
-        await updateConversation(conversationId, {
-          description: firstArtifact.title,
-        });
-        description.set(firstArtifact.title);
+      if (!description.get()) {
+        const descriptionToUpdate = artifactTitle || firstArtifact?.title;
+
+        if (descriptionToUpdate) {
+          await updateConversation(conversationId, {
+            description: descriptionToUpdate,
+          });
+          description.set(descriptionToUpdate);
+        }
       }
 
       await pushToRemote();

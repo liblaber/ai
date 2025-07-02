@@ -3,6 +3,7 @@ import { signOut, useSession } from '~/auth/auth-client';
 import { useNavigate } from '@remix-run/react';
 import { ProfilePicture } from './ProfilePicture';
 import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
+import { chatStore } from '~/lib/stores/chat';
 
 export function LogoutButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -59,8 +60,9 @@ export function LogoutButton() {
           {!anonymousProvider && (
             <div className="py-1">
               <button
-                onClick={() => {
-                  handleLogout();
+                onClick={async () => {
+                  await handleLogout();
+                  chatStore.setKey('started', false);
                   setIsOpen(false);
                 }}
                 className="w-full text-left px-4 py-2 text-liblab-elements-textPrimary hover:bg-liblab-elements-item-backgroundAccent hover:text-liblab-elements-item-contentAccent transition-colors flex items-center text-sm group"
