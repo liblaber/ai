@@ -13,7 +13,7 @@ export function requireAuth<T extends LoaderFunction | ActionFunction>(handler: 
     if (!session) {
       // If it's a GET request, redirect to root
       if (args.request.method === 'GET') {
-        return Response.redirect('/');
+        return Response.redirect((process.env.BASE_URL as string) ?? 'http://localhost:5173');
       }
 
       // For other methods, return 401
