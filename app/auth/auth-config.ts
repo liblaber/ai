@@ -9,6 +9,9 @@ export const auth = betterAuth({
     provider: 'sqlite',
   }),
   plugins: [anonymous()],
+  emailAndPassword: {
+    enabled: true,
+  },
   socialProviders: {
     google: {
       clientId: env.GOOGLE_CLIENT_ID || '',

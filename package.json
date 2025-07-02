@@ -27,6 +27,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "prisma:reset": "prisma migrate reset --force",
+    "prisma:seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push",
     "db:pull": "prisma db pull"
   },
@@ -186,6 +187,7 @@
     "prettier": "^3.4.1",
     "prisma": "^6.5.0",
     "sass-embedded": "^1.81.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "unified": "^11.0.5",
     "unocss": "^0.61.9",

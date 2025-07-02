@@ -172,6 +172,16 @@ const runApp = async () => {
       process.exit(1);
     }
 
+    console.log('🌱 Running database seed...');
+
+    try {
+      execSync('npm run prisma:seed', { stdio: 'inherit' });
+      console.log('✅ Database seed completed successfully');
+    } catch (error) {
+      console.error('❌ Error running database seed:', error);
+      process.exit(1);
+    }
+
     console.log('⏳  Setting up ngrok tunnel...');
 
     const ngrokUrl = await setupNgrokTunnel();

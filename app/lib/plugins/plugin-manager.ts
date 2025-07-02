@@ -33,7 +33,7 @@ export const PREMIUM_PLUGIN_ACCESS = {
     sqlite: true,
   },
   [PluginType.AUTH]: {
-    anonymous: true,
+    anonymous: false,
     google: true,
     twitch: true,
     twitter: true,

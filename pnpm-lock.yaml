@@ -469,6 +469,9 @@ importers:
       sass-embedded:
         specifier: ^1.81.0
         version: 1.89.0
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.4
       typescript:
         specifier: ^5.7.2
         version: 5.8.3

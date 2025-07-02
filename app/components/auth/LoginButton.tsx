@@ -1,5 +1,5 @@
-import React from 'react';
-import { signIn } from '~/auth/auth-client';
+import React, { useEffect } from 'react';
+import { signIn, useSession } from '~/auth/auth-client';
 import {
   Description as DialogDescription,
   Root as DialogRoot,
@@ -15,6 +15,20 @@ import type { AuthProvider, AuthProviderType } from '~/lib/plugins/types';
 export function LoginButton() {
   const { isLoginModalOpen, toggleLoginModal, loginModalTitle } = useAuth();
   const { socialProviders, anonymousProvider } = useAuthProvidersPlugin();
+  const { data: session } = useSession();
+
+  useEffect(() => {
+    // Allow auto login only if the anonymous plugin is enabled
+    if (!anonymousProvider) {
+      return;
+    }
+
+    if (session?.user) {
+      return;
+    }
+
+    autoLoginAnonymous();
+  }, [anonymousProvider]);
 
   const handleProviderLogin = async (provider: AuthProviderType) => {
     toggleLoginModal(false);
@@ -95,3 +109,24 @@ export function LoginButton() {
     </DialogRoot>
   );
 }
+
+const autoLoginAnonymous = async () => {
+  try {
+    // Sign in the anonymous user (should be pre-created by seed)
+    const { error: signInError } = await signIn.email({
+      email: 'anonymous@anonymous.com',
+      password: 'password1234',
+      rememberMe: true,
+    });
+
+    if (signInError) {
+      console.error('Failed to sign in anonymous user:', signInError);
+      return;
+    }
+
+    // Refresh the landing page after successful login to show data sources connection modal
+    window.location.reload();
+  } catch (error: any) {
+    throw new Error(`Anonymous login failed: ${error?.message}`);
+  }
+};

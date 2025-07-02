@@ -8,6 +8,8 @@ generator client {
   provider = "prisma-client-js"
 }
 
+/// @seed="tsx prisma/seed.ts"
+
 datasource db {
   provider = "sqlite"
   url      = "file:./liblab.db"
