@@ -13,6 +13,7 @@ import { mapSqlQueriesToPrompt } from '~/lib/common/prompts/sql';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 import { prisma } from '~/lib/prisma';
 import { requireUserId } from '~/auth/session';
+import type { StarterPluginId } from '~/lib/plugins/types';
 
 export type Messages = Message[];
 
@@ -25,13 +26,14 @@ export async function streamText(props: {
   options?: StreamingOptions;
   files?: FileMap;
   promptId?: string;
+  starterId?: StarterPluginId;
   contextOptimization?: boolean;
   contextFiles?: FileMap;
   summary?: string;
   messageSliceId?: number;
   request: Request;
 }) {
-  const { messages, options, files, promptId, contextOptimization, contextFiles, summary, request } = props;
+  const { messages, options, files, promptId, starterId, contextOptimization, contextFiles, summary, request } = props;
   let currentDataSourceId: string | undefined = '';
 
   let processedMessages = messages.map((message) => {
@@ -64,6 +66,7 @@ export async function streamText(props: {
   let systemPrompt =
     (await PromptLibrary.getPromptFromLibrary(promptId || 'default', {
       cwd: WORK_DIR,
+      starterId,
       allowedHtmlElements: allowedHTMLElements,
       modificationTagName: MODIFICATIONS_TAG_NAME,
     })) ?? (await getSystemPrompt());

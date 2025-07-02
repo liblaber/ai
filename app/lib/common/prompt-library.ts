@@ -3,9 +3,11 @@ import optimized from './prompts/optimized';
 import { getExperimentalSystemPrompt } from './prompts/experimental';
 import { getDashboardsPrompt } from '~/lib/common/prompts/dashboards';
 import { getAppsPrompt } from '~/lib/common/prompts/apps';
+import type { StarterPluginId } from '~/lib/plugins/types';
 
 export interface PromptOptions {
   cwd: string;
+  starterId?: StarterPluginId;
   allowedHtmlElements: string[];
   modificationTagName: string;
 }
@@ -42,7 +44,7 @@ export class PromptLibrary {
     apps: {
       label: 'Apps Prompt',
       description: 'This is a system prompt for general purpose applications',
-      get: (options) => getAppsPrompt(options.cwd),
+      get: (options) => getAppsPrompt(options.cwd, options.starterId),
     },
   };
   static getList() {

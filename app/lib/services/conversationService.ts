@@ -1,5 +1,6 @@
 import { prisma } from '~/lib/prisma';
 import type { Conversation, Prisma } from '@prisma/client';
+import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
 
 export const conversationService = {
   async getConversation(conversationId: string): Promise<Conversation | null> {
@@ -14,6 +15,8 @@ export const conversationService = {
     description?: string,
     tx?: Prisma.TransactionClient,
   ): Promise<Conversation> {
+    const starterId = StarterPluginManager.starterId;
+
     return await (tx ?? prisma).conversation.create({
       data: {
         User: {
@@ -23,6 +26,7 @@ export const conversationService = {
           connect: { id: dataSourceId },
         },
         description,
+        starterId,
       },
     });
   },
@@ -43,6 +47,7 @@ export const conversationService = {
       select: {
         id: true,
         description: true,
+        starterId: true,
         dataSourceId: true,
         userId: true,
         createdAt: true,

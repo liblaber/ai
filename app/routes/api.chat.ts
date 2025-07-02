@@ -13,6 +13,8 @@ import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
 import { messageService } from '~/lib/services/messageService';
 import { MESSAGE_ROLE } from '~/types/database';
 import { createId } from '@paralleldrive/cuid2';
+import { conversationService } from '~/lib/services/conversationService';
+import type { StarterPluginId } from '~/lib/plugins/types';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
@@ -71,6 +73,8 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
   const cookieHeader = request.headers.get('Cookie');
   const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
+
+  const conversation = await conversationService.getConversation(conversationId);
 
   const stream = new SwitchableStream();
 
@@ -274,6 +278,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
               options,
               files,
               promptId,
+              starterId: conversation?.starterId as StarterPluginId,
               contextOptimization,
               contextFiles: filteredFiles,
               summary,
@@ -311,6 +316,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           options,
           files,
           promptId,
+          starterId: conversation?.starterId as StarterPluginId,
           contextOptimization,
           contextFiles: filteredFiles,
           summary,
