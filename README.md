@@ -72,14 +72,103 @@ Local Machine ← Encrypted Response ← Secure Tunnel ← Preview Dashboard
 
 ### Prerequisites
 
-Before starting, ensure you have:
+Before starting, ensure you have all the following installed and configured:
 
-- [pnpm](https://pnpm.io/installation) - Package manager
-- [ngrok account](https://ngrok.com/signup) - Free account for local tunneling (one time setup)
-  - create an account with ngrok
-  - run `brew install ngrok`
-  - run `ngrok config add-authtoken <your-ngrok-auth-token>`
-- [Anthropic's API key](https://docs.anthropic.com/en/api/overview) - API key to access LLM models
+<details>
+<summary><strong>Node.js (18 or higher)</strong> - Required for running the application</summary>
+
+#### Option A: Single version of Node, using Homebrew (Recommended for most users)
+
+**Best for:** Simple setup, single Node.js version, macOS users
+
+```bash
+# Install Homebrew if you don't have it
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install Node.js
+brew install node
+```
+
+#### Option B: Using Node Version Manager (Recommended for developers)
+
+**Best for:** Developers who work with multiple projects requiring switching different Node.js versions
+
+```bash
+# Install Homebrew if you don't have it
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install NVM
+brew install nvm
+
+# To make the nvm command available, restart your terminal or run:
+source ~/.zshrc  # or source ~/.bashrc
+
+# Install latest stable Node.js
+nvm install --lts
+```
+
+#### Verify Installation
+
+```bash
+node --version  # Should show v18.x.x or higher
+npm --version   # Should show version number
+```
+
+</details>
+
+<details>
+<summary><strong> pnpm</strong> - Package manager (faster than npm)</summary>
+
+```bash
+# Install pnpm globally
+npm install -g pnpm
+
+# Verify installation
+pnpm --version
+```
+
+</details>
+
+<details>
+<summary><strong>ngrok</strong> - Free account for local tunneling (one time setup)</summary>
+
+#### Step 1: Create ngrok Account
+
+1. Go to [ngrok.com/signup](https://ngrok.com/signup)
+2. Create a free account
+3. Follow ngrok's [setup instructions](https://dashboard.ngrok.com/get-started/setup)
+   - Install ngrok CLI tool with: `brew install ngrok`
+   - Set your ngrok authtoken with: `ngrok config add-authtoken YOUR_AUTHTOKEN_HERE`
+   - Verify the installation with `ngrok version`
+   </details>
+
+<details>
+<summary><strong>Anthropic API Key</strong> - Required for AI model access</summary>
+
+#### Step 1: Create Anthropic Account
+
+1. Go to [console.anthropic.com/signup](https://console.anthropic.com/signup)
+2. Create an account
+3. Verify your email
+
+#### Step 2: Generate API Key
+
+1. Go to [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
+2. Click "Create Key"
+3. Give it a name (e.g., "liblab-ai")
+4. Copy the API key (starts with `sk-ant-`)
+
+#### Step 3: Save Your API Key
+
+You'll add this to your `.env` file during setup, but keep it handy:
+
+```
+ANTHROPIC_API_KEY=sk-ant-your-api-key-here
+```
+
+> **💡 Pro Tip:** The setup script will prompt you for this API key, so you don't need to manually edit files.
+
+</details>
 
 ### Setup
 
