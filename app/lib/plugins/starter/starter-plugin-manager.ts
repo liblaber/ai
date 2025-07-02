@@ -7,96 +7,115 @@ import { readStarterFileMap } from './read-starter-directory';
 import type { FileMap } from '~/lib/stores/files';
 import { StarterNotAvailableError, StarterNotFoundError } from './errors';
 
+type Starter = {
+  instructionsPrompt: string | null;
+  technologies: string;
+  directory: string;
+  examples: string | null;
+  ignorePatterns: string[];
+};
+
 export class StarterPluginManager {
-  static starterInstructionsPrompt: string | null;
-  static starterTechnologies: string | null;
+  static starters: Record<string, Starter> = {};
+
   static defaultTechnologies: string = 'React, Typescript, TailwindCSS';
   static readonly defaultStarter: StarterPluginId = 'next';
   static starterId: StarterPluginId = `${process.env.STARTER || this.defaultStarter}` as StarterPluginId;
-  static starterDirectory = path.resolve(process.cwd(), 'starters', `${this.starterId}-starter`);
 
-  static isAvailable(starter: StarterPluginId = this.starterId): boolean {
-    return PluginManager.getInstance().isPluginAvailable(PluginType.STARTER, starter);
+  static async getStarterFileMap(): Promise<FileMap> {
+    const starter = this._getStarter();
+
+    logger.info(
+      `Reading starter file map for starter ${this.starterId}, directory: ${this._getStarterDirectory(this.starterId)}`,
+    );
+
+    return readStarterFileMap({
+      dirPath: starter.directory,
+      ignorePatterns: starter.ignorePatterns,
+      sharedImportsToSkip: this._getSharedImportsToSkip(),
+    });
   }
 
-  static getTechnologies(): string {
-    if (this.starterTechnologies) {
-      return this.starterTechnologies;
+  static getExamples(starterId?: StarterPluginId): string | null {
+    return this._getStarter(starterId).examples;
+  }
+
+  static getTechnologies(starterId?: StarterPluginId): string {
+    return this._getStarter(starterId).technologies;
+  }
+
+  static getStarterInstructionsPrompt(starterId?: StarterPluginId): string | null {
+    return this._getStarter(starterId).instructionsPrompt;
+  }
+
+  private static _getStarter(starterId?: StarterPluginId): Starter {
+    const targetStarterId = starterId || this.starterId;
+
+    if (!this.starters[targetStarterId]) {
+      this._checkAvailability(targetStarterId);
+      this._checkStarterExists(targetStarterId);
+
+      this.starters[targetStarterId] = {
+        instructionsPrompt: this._populateStarterInstructionsPrompt(targetStarterId),
+        technologies: this._populateStarterTechnologies(targetStarterId),
+        directory: this._getStarterDirectory(targetStarterId),
+        examples: this._populateStarterExamples(targetStarterId),
+        ignorePatterns: this._populateIgnorePatterns(targetStarterId),
+      };
     }
 
-    this._checkAvailability();
-    this._checkStarterExists();
+    return this.starters[targetStarterId];
+  }
 
-    const techFile = path.join(this.starterDirectory, '.liblab', 'technologies');
+  private static _populateStarterTechnologies(starterId: StarterPluginId): string {
+    const techFile = path.join(this._getStarterDirectory(starterId), '.liblab', 'technologies');
 
     if (!fs.existsSync(techFile)) {
-      logger.warn(`Technologies file not found for starter ${this.starterId}`);
+      logger.warn(`Technologies file not found for starter ${starterId}`);
+
       return this.defaultTechnologies;
     }
 
     try {
       const content = fs.readFileSync(techFile, 'utf8');
 
-      this.starterTechnologies = content
+      return content
         .split('\n')
         .map((t) => t.trim())
         .filter(Boolean)
         .join(', ');
-
-      return this.starterTechnologies;
     } catch (error) {
       logger.error('Error reading technologies file:', error);
+
       return this.defaultTechnologies;
     }
   }
 
-  static getStarterInstructionsPrompt(): string | null {
-    if (this.starterInstructionsPrompt) {
-      return this.starterInstructionsPrompt;
-    }
-
-    this._checkAvailability();
-    this._checkStarterExists();
-
+  private static _populateStarterInstructionsPrompt(starterId: StarterPluginId): string | null {
     try {
-      const promptPath = path.join(this.starterDirectory, '.liblab', 'prompt');
+      const promptPath = path.join(this._getStarterDirectory(starterId), '.liblab', 'prompt');
 
       if (!fs.existsSync(promptPath)) {
-        logger.warn(`Starter template prompt file not found for starter ${this.starterId}`);
+        logger.warn(`Starter template prompt file not found for starter ${starterId}`);
+
         return null;
       }
 
-      this.starterInstructionsPrompt = fs.readFileSync(promptPath, 'utf8');
-
-      return this.starterInstructionsPrompt;
+      return fs.readFileSync(promptPath, 'utf8');
     } catch (error) {
       logger.error('Error reading prompt file:', error);
+
       return null;
     }
   }
 
-  static async getStarterFileMap(): Promise<FileMap> {
-    this._checkAvailability();
-    this._checkStarterExists();
-
-    logger.info(`Reading starter file map for starter ${this.starterId}, directory: ${this.starterDirectory}`);
-
-    return readStarterFileMap({
-      dirPath: this.starterDirectory,
-      ignorePatterns: this._getIgnorePatterns(),
-      sharedImportsToSkip: this._getSharedImportsToSkip(),
-    });
-  }
-
-  static getExamples(): string | null {
-    this._checkAvailability();
-    this._checkStarterExists();
-
+  private static _populateStarterExamples(starterId: StarterPluginId): string | null {
     try {
-      const examplesPath = path.join(this.starterDirectory, '.liblab', 'examples');
+      const examplesPath = path.join(this._getStarterDirectory(starterId), '.liblab', 'examples');
 
       if (!fs.existsSync(examplesPath)) {
-        logger.warn(`Examples file not found for starter ${this.starterId}`);
+        logger.warn(`Examples file not found for starter ${starterId}`);
+
         return null;
       }
 
@@ -105,12 +124,17 @@ export class StarterPluginManager {
       return content.trim() ? content : null;
     } catch (error) {
       logger.error('Error reading examples file:', error);
+
       return null;
     }
   }
 
-  private static _getIgnorePatterns(): string[] {
-    const ignoreFile = path.join(this.starterDirectory, '.liblab', 'ignore');
+  private static _getStarterDirectory(starterId: StarterPluginId): string {
+    return path.resolve(process.cwd(), 'starters', `${starterId}-starter`);
+  }
+
+  private static _populateIgnorePatterns(starterId: StarterPluginId): string[] {
+    const ignoreFile = path.join(this._getStarterDirectory(starterId), '.liblab', 'ignore');
 
     if (!fs.existsSync(ignoreFile)) {
       return [];
@@ -118,12 +142,14 @@ export class StarterPluginManager {
 
     try {
       const content = fs.readFileSync(ignoreFile, 'utf8');
+
       return content
         .split('\n')
         .map((line) => line.trim())
         .filter((line) => line && !line.startsWith('#'));
     } catch (error) {
       logger.error('Error reading ignore file:', error);
+
       return [];
     }
   }
@@ -132,15 +158,19 @@ export class StarterPluginManager {
     return ['crypto'];
   }
 
-  private static _checkAvailability(): void {
-    if (!this.isAvailable()) {
-      throw new StarterNotAvailableError(this.starterId);
+  static _isAvailable(starter: StarterPluginId): boolean {
+    return PluginManager.getInstance().isPluginAvailable(PluginType.STARTER, starter);
+  }
+
+  private static _checkAvailability(starterId: StarterPluginId): void {
+    if (!this._isAvailable(starterId)) {
+      throw new StarterNotAvailableError(starterId);
     }
   }
 
-  private static _checkStarterExists(): void {
-    if (!fs.existsSync(this.starterDirectory)) {
-      throw new StarterNotFoundError(this.starterId);
+  private static _checkStarterExists(starterId: StarterPluginId): void {
+    if (!fs.existsSync(this._getStarterDirectory(starterId))) {
+      throw new StarterNotFoundError(starterId);
     }
   }
 }

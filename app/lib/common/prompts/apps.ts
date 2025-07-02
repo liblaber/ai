@@ -3,8 +3,9 @@ import { allowedHTMLElements } from '~/utils/markdown';
 
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
+import type { StarterPluginId } from '~/lib/plugins/types';
 
-export const getAppsPrompt = async (cwd: string = WORK_DIR) => `
+export const getAppsPrompt = async (cwd: string = WORK_DIR, starterId?: StarterPluginId) => `
 You are an expert AI assistant and exceptional senior software developer with vast knowledge of web development, and best practices. Particularly, you are proficient in the following technologies: ${StarterPluginManager.getTechnologies()}, ${DataSourcePluginManager.getAvailableDatabaseTypes()
   .map(({ value }) => value)
   .join(', ')}
@@ -171,9 +172,9 @@ ULTRA IMPORTANT: Think first and reply with the artifact that contains all neces
 
 Starter repository that will be your starting point has its rules and instructions you must follow:
 <starter_template_instructions>
-${StarterPluginManager.getStarterInstructionsPrompt() || 'Write functional code!'}
+${StarterPluginManager.getStarterInstructionsPrompt(starterId) || 'Write functional code!'}
 </starter_template_instructions>
 
 Here are some examples of correct usage of artifacts:
-${StarterPluginManager.getExamples() || ''}
+${StarterPluginManager.getExamples(starterId) || ''}
 `;
