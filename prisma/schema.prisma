@@ -79,7 +79,7 @@ model Conversation {
   updatedAt    DateTime   @updatedAt @map("updated_at")
   Snapshot     Snapshot[]
   dataSourceId String
-  dataSource   DataSource @relation(fields: [dataSourceId], references: [id])
+  dataSource   DataSource @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
   User         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String
 
