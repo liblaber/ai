@@ -187,7 +187,7 @@ function isErrorBoundaryError({ stack }: ConsoleErrorMessage) {
 }
 
 function isNextJsError(message: ConsoleErrorMessage & BasePreviewMessage) {
-  return message.stack.includes('node_modules/next');
+  return message.stack.includes('node_modules/next') || message.stack.includes('nextjs');
 }
 
 function getContentAndDescription(message: ConsoleErrorMessage & BasePreviewMessage): [string, string] {
