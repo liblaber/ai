@@ -13,7 +13,15 @@ export class LiblabShell {
   #terminal: ITerminal | undefined;
   #process: WebContainerProcess | undefined;
   executionState = atom<
-    { sessionId: string; active: boolean; executionPrms?: Promise<any>; abort?: () => void } | undefined
+    | {
+        sessionId: string;
+        active: boolean;
+        executionPrms?: Promise<any>;
+        abort?: () => void;
+        command?: string;
+        process?: WebContainerProcess;
+      }
+    | undefined
   >();
   #outputStream: ReadableStreamDefaultReader<string> | undefined;
   #shellInputStream: WritableStreamDefaultWriter<string> | undefined;
@@ -76,10 +84,16 @@ export class LiblabShell {
 
     //wait for the execution to finish
     const executionPromise = this.getCurrentExecutionResult();
-    this.executionState.set({ sessionId, active: true, executionPrms: executionPromise, abort });
+    this.executionState.set({
+      sessionId,
+      active: true,
+      executionPrms: executionPromise,
+      abort,
+      command,
+    });
 
     const resp = await executionPromise;
-    this.executionState.set({ sessionId, active: false });
+    this.executionState.set({ sessionId, active: false, command });
 
     if (resp) {
       try {

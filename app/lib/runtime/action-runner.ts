@@ -114,6 +114,16 @@ export class ActionRunner {
     return lastTerminalInstance;
   }
 
+  #runningAppShellTerminal(): LiblabShell | null {
+    const shell = this.#shells.find((shell) => {
+      const executionState = shell.executionState.get();
+
+      return executionState?.active && executionState?.command === 'npm run dev';
+    });
+
+    return shell ?? null;
+  }
+
   addAction(data: ActionCallbackData) {
     const { actionId } = data;
 
@@ -122,6 +132,16 @@ export class ActionRunner {
 
     if (action) {
       // action already added
+      return;
+    }
+
+    // if pnpm install / pnpm add, find the running shell with npm run dev, abort it, use that shell to install and re-run
+    console.log(this.#shells.map((shell) => shell.executionState.get()));
+
+    const runnigAppShell = this.#runningAppShellTerminal();
+
+    if (runnigAppShell && data.action.type === 'start') {
+      console.log('already running');
       return;
     }
 
@@ -286,7 +306,26 @@ export class ActionRunner {
       unreachable('Expected shell action');
     }
 
-    const shell = await this.#availableShellTerminal();
+    let shell: LiblabShell;
+
+    if (['pnpm i', 'pnpm install', 'pnpm add'].some((command) => action.content.includes(command))) {
+      const runningAppShell = this.#runningAppShellTerminal();
+
+      if (runningAppShell) {
+        runningAppShell.process?.kill();
+
+        /*
+         * const exitCode = await runningAppShell.process?.exit;
+         * console.log({ exitCode });
+         */
+        shell = runningAppShell;
+      } else {
+        shell = await this.#availableShellTerminal();
+      }
+    } else {
+      shell = await this.#availableShellTerminal();
+    }
+
     await shell.ready();
 
     if (!shell || !shell.terminal || !shell.process) {

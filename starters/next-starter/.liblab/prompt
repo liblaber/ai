@@ -65,7 +65,9 @@ Imports:
 
 Dependencies:
 - Avoid installing new dependencies unless absolutely necessary. Use only the dependencies that are already installed in the project whenever possible.
-- If a new dependency is required, you must include an install action in the response artifact so it can be properly added to the project.
+- If a new dependency is required, you must include a shell action with pnpm add command inside the response artifact so it can be properly added to the project.
+- NEVER update package.json file to add new dependencies, use pnpm add command!
+- Example: <liblabAction type="shell">pnpm add {example-lib}</liblabAction>
 
 Styling Instructions
 - For any charts like Area Chart, Bar Chart, Line Chart, Pie Chart, Radar Chart, or Radial Chart use the shadcn chart component and follow component principles (https://ui.shadcn.com/docs/components/chart).

@@ -3,7 +3,7 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } f
 import tailwindReset from '@unocss/reset/tailwind-compat.css?url';
 import { stripIndents } from './utils/stripIndent';
 import { createHead } from 'remix-island';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ClientOnly } from 'remix-utils/client-only';
@@ -25,6 +25,9 @@ import { usePluginStore } from '~/lib/plugins/plugin-store';
 import { type DataSourceType, useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import type { PluginAccessMap } from '~/lib/plugins/types';
+import { workbenchStore } from './lib/stores/workbench';
+import type { LiblabAction } from '~/types/actions';
+import { webcontainer } from './lib/webcontainer';
 
 declare global {
   interface Window {
@@ -119,6 +122,131 @@ export const Head = createHead(() => (
   </>
 ));
 
+let i = 100;
+
+// Function to extract PID for a given command from ps -ef output
+function getCommandPid(psOutput: string, targetCommand: string): number | null {
+  const lines = psOutput.trim().split('\n');
+
+  // Skip the header line
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    const parts = line.split(/\s+/);
+
+    // PID is the second column (index 1)
+    if (parts.length >= 2) {
+      const pid = parseInt(parts[1], 10);
+      const cmd = parts.slice(7).join(' '); // Command starts from column 8
+
+      if (cmd.includes(targetCommand)) {
+        return pid;
+      }
+    }
+  }
+
+  return null;
+}
+
+// Helper Popover Component for Testing
+function HelperPopover() {
+  const [command, setCommand] = useState('');
+  const [pid, setPid] = useState<number | null>(null);
+
+  const handleExecute2 = async () => {
+    try {
+      const artifact = workbenchStore.firstArtifact;
+      const runner = artifact?.runner;
+      console.log({ runner });
+
+      const action = {
+        artifactId: artifact!.id || 'bla',
+        messageId: '123',
+        actionId: `${++i}`,
+        action: {
+          type: 'shell',
+          content: command,
+        } as LiblabAction,
+        shouldExecute: true,
+      };
+      runner?.addAction(action);
+      runner?.runAction(action);
+    } catch (error) {
+      console.error('Invalid JSON:', error);
+    }
+  };
+
+  const handleExecute = async () => {
+    try {
+      const awaitedWebcontainer = await webcontainer;
+      const process = await awaitedWebcontainer.spawn('ps', ['-ef']);
+      const [_a, terminalOutput] = process.output.tee();
+
+      terminalOutput.pipeTo(
+        new WritableStream({
+          write(data) {
+            const foundPid = getCommandPid(data, command);
+            setPid(foundPid);
+            console.log(data);
+            console.log(foundPid);
+          },
+        }),
+      );
+    } catch (error) {
+      console.error('Invalid JSON:', error);
+    }
+  };
+
+  const handleKill = async () => {
+    if (pid === null) {
+      console.log('No PID to kill');
+      return;
+    }
+
+    try {
+      const awaitedWebcontainer = await webcontainer;
+      const process = await awaitedWebcontainer.spawn('kill', [pid.toString()]);
+      console.log(`Killed process with PID: ${pid}`);
+      setPid(null); // Reset PID after killing
+    } catch (error) {
+      console.error('Error killing process:', error);
+    }
+  };
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4 w-80">
+      <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Testing Helper</h3>
+      <textarea
+        value={command}
+        onChange={(e) => setCommand(e.target.value)}
+        placeholder="Enter command to find PID..."
+        className="w-full h-32 p-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      />
+      {pid !== null && (
+        <div className="mt-2 p-2 bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-600 rounded-md">
+          <span className="text-sm text-green-800 dark:text-green-200">
+            Found PID: <strong>{pid}</strong>
+          </span>
+        </div>
+      )}
+      <div className="mt-2 flex gap-2">
+        <button
+          onClick={handleExecute}
+          className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors"
+        >
+          Execute
+        </button>
+        <button
+          onClick={handleKill}
+          disabled={pid === null}
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-medium rounded-md transition-colors"
+        >
+          Kill
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const loaderData = useRouteLoaderData<LoaderData>('root');
 
@@ -161,6 +289,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <Toaster richColors />
       <ScrollRestoration />
       <Scripts />
+      <HelperPopover />
     </>
   );
 }
