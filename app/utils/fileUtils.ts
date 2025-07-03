@@ -23,6 +23,32 @@ export const ig = ignore().add(IGNORE_PATTERNS);
 
 export const generateId = () => Math.random().toString(36).substring(2, 15);
 
+export const processImageFile = async (
+  file: File,
+  maxSize = 1024,
+  quality = 0.8,
+): Promise<{ processedFile: File; base64: string }> => {
+  try {
+    const { compressedFile, base64 } = await compressImageToJpeg(file, maxSize, quality);
+    return { processedFile: compressedFile, base64 };
+  } catch (error) {
+    console.error('Failed to compress image:', error);
+
+    // Fallback to original file if compression fails
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const base64Image = e.target?.result as string;
+        resolve({ processedFile: file, base64: base64Image });
+      };
+
+      reader.onerror = () => reject(new Error('Failed to read file as base64'));
+      reader.readAsDataURL(file);
+    });
+  }
+};
+
 export const compressImageToJpeg = (
   file: File,
   maxSize = 1024,
@@ -38,8 +64,12 @@ export const compressImageToJpeg = (
       return;
     }
 
+    const objectUrl = URL.createObjectURL(file);
+
     img.onload = () => {
       try {
+        URL.revokeObjectURL(objectUrl);
+
         const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
         canvas.width = img.width * scale;
         canvas.height = img.height * scale;
@@ -77,12 +107,17 @@ export const compressImageToJpeg = (
           quality,
         );
       } catch (error) {
+        URL.revokeObjectURL(objectUrl);
         reject(error);
       }
     };
 
-    img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = URL.createObjectURL(file);
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = objectUrl;
   });
 };
 
