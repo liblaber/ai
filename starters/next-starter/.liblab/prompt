@@ -15,7 +15,8 @@ Component & Page Structure:
 - Pages must be defined as either page.tsx (for UI) or route.ts (for API) in their respective folders.
 - Always export default for page components.
 - For new pages, create a folder under /app/[route]/page.tsx.
-- If the homepage (/app/page.tsx) is not implemented, any new page should be created as the homepage (i.e., /app/page.tsx), unless the user is very explicit about a different route.
+- If the homepage (/app/page.tsx) is not implemented, any new page should be created as the homepage (i.e., /app/page.tsx), unless the user is very explicit about a different route. You must always check if the homepage has implementation!
+- If the homepage is implemented, and user's request does not require editing that page, create a new page and add a sidebar link.
 - For new API endpoints, create a folder under /app/api/[route]/route.ts but always return QueryData type so that data can be wrapped into the WithErrorHandling hoc.
 - Always provide complete, ready-to-use files. Never output partial or incomplete files.
 - When there are multiple pages in the project, add a sidebar for easier navigation between pages.
