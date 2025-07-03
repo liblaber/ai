@@ -94,10 +94,13 @@ export default function DataTab() {
 
     try {
       const response = await fetch(`/api/data-sources/${selectedDataSource.id}`);
-      const data = (await response.json()) as { success: boolean; conversationCount?: number };
+      const data = await response.json<{ success: boolean; conversationCount?: number }>();
 
       if (data.success) {
         setConversationCount(data.conversationCount || 0);
+        setShowDeleteConfirm(true);
+      } else {
+        setConversationCount(0);
         setShowDeleteConfirm(true);
       }
     } catch (error) {
