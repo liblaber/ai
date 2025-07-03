@@ -191,9 +191,14 @@ function isNextJsError(message: ConsoleErrorMessage & BasePreviewMessage) {
 }
 
 function getContentAndDescription(message: ConsoleErrorMessage & BasePreviewMessage): [string, string] {
-  const [description, content] = message.args
-    ?.filter(({ name, message, stack }) => name && message && stack)
-    .map(({ name, message, stack }) => [`${name}: ${message}`, stack])?.[0];
+  const errorArg = message.args?.find(
+    (arg): arg is { name: string; message: string; stack: string } =>
+      typeof arg === 'object' && arg !== null && !!arg.name && !!arg.message && !!arg.stack,
+  );
 
-  return [description || '', content || ''];
+  if (!errorArg) {
+    return ['', ''];
+  }
+
+  return [`${errorArg.name}: ${errorArg.message}`, errorArg.stack];
 }
