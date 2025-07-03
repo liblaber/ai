@@ -99,12 +99,14 @@ const ProgressItem = ({ progress }: { progress: ProgressAnnotation }) => {
           {progress.status === 'in-progress' ? (
             <div className="i-svg-spinners:90-ring-with-bg"></div>
           ) : progress.status === 'complete' ? (
-            <div className="i-ph:check"></div>
+            <div className="i-ph:check text-green-500"></div>
+          ) : progress.status === 'error' ? (
+            <div className="i-ph:x text-red-500"></div>
           ) : null}
         </div>
         {/* {x.label} */}
       </div>
-      {progress.message}
+      <span className={progress.status === 'error' ? 'text-red-500' : ''}>{progress.message}</span>
     </motion.div>
   );
 };

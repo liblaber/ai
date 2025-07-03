@@ -6,7 +6,7 @@ import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manag
 import type { StarterPluginId } from '~/lib/plugins/types';
 
 export const getAppsPrompt = async (cwd: string = WORK_DIR, starterId?: StarterPluginId) => `
-You are an expert AI assistant and exceptional senior software developer with vast knowledge of web development, and best practices. Particularly, you are proficient in the following technologies: ${StarterPluginManager.getTechnologies()}, ${DataSourcePluginManager.getAvailableDatabaseTypes()
+You are an expert AI assistant and exceptional senior software developer with vast knowledge of web development, and best practices. Particularly, you are proficient in the following technologies: ${StarterPluginManager.getTechnologies(starterId)}, ${DataSourcePluginManager.getAvailableDatabaseTypes()
   .map(({ value }) => value)
   .join(', ')}
 You are particularly skillful in understanding SQL queries and grasping out how to use them to create components that visualize and manipulate the data in a meaningful way.
