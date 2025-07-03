@@ -9,6 +9,7 @@ import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { openSettingsPanel } from '~/lib/stores/settings';
 import { ClientOnly } from 'remix-utils/client-only';
 import { SendButton } from './SendButton.client';
+import { compressImageToJpeg } from '~/utils/fileUtils';
 
 interface ChatTextareaProps {
   value: string;
@@ -76,14 +77,23 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
         const file = (e.target as HTMLInputElement).files?.[0];
 
         if (file) {
-          const reader = new FileReader();
+          try {
+            const { compressedFile, base64 } = await compressImageToJpeg(file);
+            setUploadedFiles?.([...uploadedFiles, compressedFile]);
+            setImageDataList?.([...imageDataList, base64]);
+          } catch (error) {
+            console.error('Failed to compress image:', error);
 
-          reader.onload = (e) => {
-            const base64Image = e.target?.result as string;
-            setUploadedFiles?.([...uploadedFiles, file]);
-            setImageDataList?.([...imageDataList, base64Image]);
-          };
-          reader.readAsDataURL(file);
+            // Fallback to original file if compression fails
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+              const base64Image = e.target?.result as string;
+              setUploadedFiles?.([...uploadedFiles, file]);
+              setImageDataList?.([...imageDataList, base64Image]);
+            };
+            reader.readAsDataURL(file);
+          }
         }
       };
       input.click();

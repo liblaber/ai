@@ -6,6 +6,7 @@ import { ScreenshotStateManager } from './ScreenshotStateManager';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { openSettingsPanel } from '~/lib/stores/settings';
 import { ClientOnly } from 'remix-utils/client-only';
+import { compressImageToJpeg } from '~/utils/fileUtils';
 
 interface HomepageTextareaProps {
   value: string;
@@ -83,16 +84,25 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
         const files = Array.from((e.target as HTMLInputElement).files || []);
 
         if (files.length > 0) {
-          files.forEach((file) => {
-            const reader = new FileReader();
+          for (const file of files) {
+            try {
+              const { compressedFile, base64 } = await compressImageToJpeg(file);
+              setUploadedFiles([...uploadedFiles, compressedFile]);
+              setImageDataList([...imageDataList, base64]);
+            } catch (error) {
+              console.error('Failed to compress image:', error);
 
-            reader.onload = (e) => {
-              const base64Image = e.target?.result as string;
-              setUploadedFiles([...uploadedFiles, file]);
-              setImageDataList([...imageDataList, base64Image]);
-            };
-            reader.readAsDataURL(file);
-          });
+              // Fallback to original file if compression fails
+              const reader = new FileReader();
+
+              reader.onload = (e) => {
+                const base64Image = e.target?.result as string;
+                setUploadedFiles([...uploadedFiles, file]);
+                setImageDataList([...imageDataList, base64Image]);
+              };
+              reader.readAsDataURL(file);
+            }
+          }
         }
       };
       input.click();
