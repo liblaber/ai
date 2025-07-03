@@ -294,6 +294,14 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
                   const error: any = part.error;
                   logger.error(`${error}`);
 
+                  dataStream.writeData({
+                    type: 'progress',
+                    label: 'response',
+                    status: 'error',
+                    order: progressCounter++,
+                    message: 'Failed to generate response',
+                  } satisfies ProgressAnnotation);
+
                   return;
                 }
               }
@@ -329,6 +337,14 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             if (part.type === 'error') {
               const error: any = part.error;
               logger.error(`${error}`);
+
+              dataStream.writeData({
+                type: 'progress',
+                label: 'response',
+                status: 'error',
+                order: progressCounter++,
+                message: 'Failed to generate response',
+              } satisfies ProgressAnnotation);
 
               return;
             }
