@@ -1,5 +1,10 @@
 import { json } from '@remix-run/cloudflare';
-import { deleteDataSource, getDataSource, updateDataSource } from '~/lib/services/datasourceService';
+import {
+  deleteDataSource,
+  getDataSource,
+  updateDataSource,
+  getConversationCount,
+} from '~/lib/services/datasourceService';
 import { requireUserId } from '~/auth/session';
 
 export async function loader({ params, request }: { request: Request; params: { id: string } }) {
@@ -11,7 +16,9 @@ export async function loader({ params, request }: { request: Request; params: { 
     return json({ success: false, error: 'Data source not found' }, { status: 404 });
   }
 
-  return json({ success: true, dataSource });
+  const conversationCount = await getConversationCount(params.id, userId);
+
+  return json({ success: true, dataSource, conversationCount });
 }
 
 export async function action({ request, params }: { request: Request; params: { id: string } }) {

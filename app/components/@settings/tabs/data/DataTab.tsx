@@ -36,6 +36,7 @@ export default function DataTab() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedDataSource, setSelectedDataSource] = useState<DataSource | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [conversationCount, setConversationCount] = useState<number>(0);
   const { dataSources, setDataSources } = useDataSourcesStore();
   const { selectedTab } = useSettingsStore();
 
@@ -84,6 +85,26 @@ export default function DataTab() {
     setSelectedDataSource(dataSource);
     setShowEditForm(true);
     setShowAddFormLocal(false);
+  };
+
+  const handleDeleteClick = async () => {
+    if (!selectedDataSource) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/data-sources/${selectedDataSource.id}`);
+      const data = (await response.json()) as { success: boolean; conversationCount?: number };
+
+      if (data.success) {
+        setConversationCount(data.conversationCount || 0);
+        setShowDeleteConfirm(true);
+      }
+    } catch (error) {
+      console.error('Failed to fetch conversation count:', error);
+      setConversationCount(0);
+      setShowDeleteConfirm(true);
+    }
   };
 
   const handleBack = () => {
@@ -179,7 +200,7 @@ export default function DataTab() {
               fetcher.load('/api/data-sources');
               handleBack();
             }}
-            onDelete={() => setShowDeleteConfirm(true)}
+            onDelete={handleDeleteClick}
           />
         </div>
       )}
@@ -248,6 +269,24 @@ export default function DataTab() {
                   Are you sure you want to delete the data source "{selectedDataSource?.name}"? This will remove all
                   associated data and cannot be undone.
                 </p>
+
+                {conversationCount > 0 && (
+                  <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                    <div className="flex items-center gap-2">
+                      <div className="i-ph:warning-circle w-5 h-5 text-amber-500" />
+                      <div className="text-sm">
+                        <p className="text-amber-600 dark:text-amber-400 font-medium">
+                          Warning: This will also delete {conversationCount} conversation
+                          {conversationCount === 1 ? '' : 's'}!
+                        </p>
+                        <p className="text-amber-600 dark:text-amber-400 mt-1">
+                          All conversations associated with this data source will be permanently deleted and cannot be
+                          recovered.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
