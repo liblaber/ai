@@ -374,7 +374,6 @@ export const Preview = memo(() => {
                 allow="cross-origin-isolated"
                 onLoad={() => {
                   if (!initialLoadRef.current) {
-                    console.log('[Preview] Iframe loaded:', iframeRef.current?.src, { isLoading });
                     workbenchStore.previewsStore.finishLoading();
                   }
 
