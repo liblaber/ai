@@ -1,4 +1,9 @@
-import { type ConsoleErrorMessage, type PreviewMessage, WebContainer } from '@webcontainer/api';
+import {
+  type BasePreviewMessage,
+  type ConsoleErrorMessage,
+  type PreviewMessage,
+  WebContainer,
+} from '@webcontainer/api';
 import { WORK_DIR_NAME } from '~/utils/constants';
 import { cleanStackTrace } from '~/utils/stacktrace';
 import { streamingState } from '~/lib/stores/streaming';
@@ -63,7 +68,7 @@ if (!import.meta.env.SSR) {
 
         // Listen for preview errors
         webcontainer.on('preview-message', async (message) => {
-          if (streamingState.get() || workbenchStore.previewsStore.isLoading.get()) {
+          if (streamingState.get() && !workbenchStore.previewsStore.readyForFixing.get()) {
             return;
           }
 
@@ -116,13 +121,21 @@ if (!import.meta.env.SSR) {
           }
 
           if (message.type === 'PREVIEW_CONSOLE_ERROR' && isErrorBoundaryError(message)) {
-            const [description, content] = message.args?.map(({ name, message, stack }) => [
-              `${name}: ${message}`,
-              stack,
-            ])?.[0];
+            const [description, content] = getContentAndDescription(message);
             await errorHandler.handle({
               type: 'preview',
               title: 'Application Error',
+              description,
+              content,
+              source: 'preview',
+            });
+          }
+
+          if (message.type === 'PREVIEW_CONSOLE_ERROR' && isNextJsError(message)) {
+            const [description, content] = getContentAndDescription(message);
+            await errorHandler.handle({
+              type: 'preview',
+              title: 'Error',
               description,
               content,
               source: 'preview',
@@ -171,4 +184,16 @@ function isQueryError(message: ConsoleErrorMessage) {
 
 function isErrorBoundaryError({ stack }: ConsoleErrorMessage) {
   return stack?.includes('at ErrorBoundary');
+}
+
+function isNextJsError(message: ConsoleErrorMessage & BasePreviewMessage) {
+  return message.stack.includes('node_modules/next');
+}
+
+function getContentAndDescription(message: ConsoleErrorMessage & BasePreviewMessage): [string, string] {
+  const [description, content] = message.args
+    ?.filter(({ name, message, stack }) => name && message && stack)
+    .map(({ name, message, stack }) => [`${name}: ${message}`, stack])?.[0];
+
+  return [description || '', content || ''];
 }

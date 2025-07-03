@@ -20,6 +20,7 @@ import type { ActionRunner } from '~/lib/runtime/action-runner';
 import { ChatTextarea } from './ChatTextarea';
 import { AUTOFIX_ATTEMPT_EVENT } from '~/lib/error-handler';
 import { useSession } from '~/auth/auth-client';
+import { workbenchStore } from '~/lib/stores/workbench';
 
 export interface PendingPrompt {
   input: string;
@@ -272,6 +273,7 @@ export const BaseChat = ({
                     alert={actionAlert}
                     clearAlert={() => clearAlert?.()}
                     postMessage={async (message) => {
+                      workbenchStore.previewsStore.fixingIssues();
                       await sendMessage?.({} as any, message, true);
                       clearAlert?.();
                     }}

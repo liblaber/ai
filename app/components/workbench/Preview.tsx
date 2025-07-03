@@ -374,11 +374,13 @@ export const Preview = memo(() => {
                 allow="cross-origin-isolated"
                 onLoad={() => {
                   if (!initialLoadRef.current) {
+                    console.log('[Preview] Iframe loaded:', iframeRef.current?.src, { isLoading });
                     workbenchStore.previewsStore.finishLoading();
                   }
 
                   initialLoadRef.current = false;
                 }}
+                hidden={isLoading}
               />
               {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-liblab-elements-bg-depth-1 bg-opacity-50 backdrop-blur-sm">

@@ -19,6 +19,12 @@ export default class GoogleProvider extends BaseProvider {
       provider: 'Google',
       maxTokenAllowed: 165536,
     },
+    {
+      name: 'gemini-2.5-flash',
+      label: 'Gemini 2.5 flash',
+      provider: 'Google',
+      maxTokenAllowed: 165536,
+    },
     { name: 'gemini-1.5-flash-latest', label: 'Gemini 1.5 Flash', provider: 'Google', maxTokenAllowed: 8192 },
     {
       name: 'gemini-2.0-flash-thinking-exp-01-21',

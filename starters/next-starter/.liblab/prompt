@@ -8,7 +8,6 @@ General Guidelines:
 - Use Tailwind CSS for styling. Do not use other CSS frameworks. Do not edit imports in /app/globals.css file.
 - Always use the built-in Next.js routing and data fetching methods (e.g., fetch, async/await, server/client components as appropriate).
 - For icons, use only the lucide-react library if icons are needed.
-- For error handling in client components, always use the WithErrorHandling HOC from @/components/hoc/WithErrorHandling.
 
 Component & Page Structure:
 - Place all UI components in /app/components or a relevant subfolder.
@@ -33,6 +32,13 @@ Data Handling:
 - Write raw SQL queries based on already defined guidelines
 - Use executeQuery from app/db/execute-query.ts to execute queries
    - VERY IMPORTANT is that this function can be run only on server-side runtime.
+
+More Complex Data Handling:
+In some cases, you may need to build dynamic, interactive components like tables with pagination, filtering, or live updates. For these scenarios:
+   - Use a separate resource route (e.g. app/api/[route]/route.ts) to handle the dynamic data fetching logic.
+   - Use the fetch api to interact with the resource route from your component.
+   - Place fetch logic in the parent component, and pass the fetcher's result to the UI via the WithErrorHandling component.
+   - Refetch the data by reacting to the event produced by the child component (e.g. handleBuildsTableFiltersChange)
 
 Client and Server Components:
 - IT IS VERY IMPORTANT always to add the 'use client' directive at the very top of any file that uses client component only functions (such as useNavigation, useParams, useRouter, useSearchParams, etc.). This is required for these hooks to work in Next.js App Router.
