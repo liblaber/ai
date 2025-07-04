@@ -10,9 +10,8 @@ typesToParse.forEach((type) => {
 export class PostgresAccessor implements BaseAccessor {
   static pluginId = 'postgres';
   readonly label = 'PostgreSQL';
-  private _pool: Pool | null = null;
-
   readonly connectionStringFormat = 'postgres(ql)://username:password@host:port/database';
+  private _pool: Pool | null = null;
 
   static isAccessor(databaseUrl: string): boolean {
     return databaseUrl.startsWith('postgres://') || databaseUrl.startsWith('postgresql://');
@@ -52,7 +51,7 @@ export class PostgresAccessor implements BaseAccessor {
       const result = await this._pool!.query(query, params);
       return result.rows;
     } catch (error) {
-      console.error('Error executing query:', error);
+      console.error('Error executing query:', JSON.stringify(error));
       throw new Error((error as Error)?.message);
     }
   }

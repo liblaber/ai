@@ -24,7 +24,7 @@ export class ErrorHandler {
   }
 
   async handle(currentError: ActionAlert): Promise<void> {
-    if (streamingState.get() || workbenchStore.previewsStore.isLoading.get()) {
+    if (streamingState.get() && !workbenchStore.previewsStore.readyForFixing.get()) {
       console.debug('[ErrorHandler] Streaming or loading in progress, skipping error handling...');
       return;
     }
