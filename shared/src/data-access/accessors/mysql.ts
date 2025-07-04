@@ -9,9 +9,8 @@ const typesToParse = ['INT', 'BIGINT', 'DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE', 
 export class MySQLAccessor implements BaseAccessor {
   static pluginId = 'mysql';
   readonly label = 'MySQL';
-  private _connection: Connection | null = null;
-
   readonly connectionStringFormat = 'mysql://username:password@host:port/database';
+  private _connection: Connection | null = null;
 
   static isAccessor(databaseUrl: string): boolean {
     return databaseUrl.startsWith('mysql://');
@@ -38,7 +37,7 @@ export class MySQLAccessor implements BaseAccessor {
       const [rows] = await this._connection.query(query, params);
       return rows as any[];
     } catch (error) {
-      console.error('Error executing query:', error);
+      console.error('Error executing query:', JSON.stringify(error));
       throw new Error((error as Error)?.message);
     }
   }

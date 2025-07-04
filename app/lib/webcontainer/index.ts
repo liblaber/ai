@@ -122,6 +122,8 @@ if (!import.meta.env.SSR) {
 
           if (message.type === 'PREVIEW_CONSOLE_ERROR' && isErrorBoundaryError(message)) {
             const { description, content } = getDescriptionAndContent(message);
+            console.log({ description, content, message });
+
             await errorHandler.handle({
               type: 'preview',
               title: 'Application Error',
@@ -133,6 +135,8 @@ if (!import.meta.env.SSR) {
 
           if (message.type === 'PREVIEW_CONSOLE_ERROR' && isNextJsError(message)) {
             const { description, content } = getDescriptionAndContent(message);
+            console.log({ description, content, message });
+
             await errorHandler.handle({
               type: 'preview',
               title: 'Error',
@@ -200,7 +204,10 @@ function getDescriptionAndContent(message: ConsoleErrorMessage & BasePreviewMess
   );
 
   if (!errorArg) {
-    return { description: 'Unknown Error', content: 'No error details available' };
+    const errorMessage = message.args?.find((arg) => typeof arg === 'string') || 'Unknown error';
+    const errorStack = message.stack || 'No stack trace available';
+
+    return { description: errorMessage, content: `${errorMessage}: ${errorStack}` };
   }
 
   return { description: `${errorArg.name}: ${errorArg.message}`, content: errorArg.stack };
