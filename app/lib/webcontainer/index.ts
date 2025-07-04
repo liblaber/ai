@@ -122,7 +122,6 @@ if (!import.meta.env.SSR) {
 
           if (message.type === 'PREVIEW_CONSOLE_ERROR' && isErrorBoundaryError(message)) {
             const { description, content } = getDescriptionAndContent(message);
-            console.log({ description, content, message });
 
             await errorHandler.handle({
               type: 'preview',
@@ -135,7 +134,6 @@ if (!import.meta.env.SSR) {
 
           if (message.type === 'PREVIEW_CONSOLE_ERROR' && isNextJsError(message)) {
             const { description, content } = getDescriptionAndContent(message);
-            console.log({ description, content, message });
 
             await errorHandler.handle({
               type: 'preview',
