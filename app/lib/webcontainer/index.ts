@@ -121,7 +121,7 @@ if (!import.meta.env.SSR) {
           }
 
           if (message.type === 'PREVIEW_CONSOLE_ERROR' && isErrorBoundaryError(message)) {
-            const [description, content] = getContentAndDescription(message);
+            const { description, content } = getDescriptionAndContent(message);
             await errorHandler.handle({
               type: 'preview',
               title: 'Application Error',
@@ -132,7 +132,7 @@ if (!import.meta.env.SSR) {
           }
 
           if (message.type === 'PREVIEW_CONSOLE_ERROR' && isNextJsError(message)) {
-            const [description, content] = getContentAndDescription(message);
+            const { description, content } = getDescriptionAndContent(message);
             await errorHandler.handle({
               type: 'preview',
               title: 'Error',
@@ -190,15 +190,18 @@ function isNextJsError(message: ConsoleErrorMessage & BasePreviewMessage) {
   return message.stack.includes('node_modules/next') || message.stack.includes('nextjs');
 }
 
-function getContentAndDescription(message: ConsoleErrorMessage & BasePreviewMessage): [string, string] {
+function getDescriptionAndContent(message: ConsoleErrorMessage & BasePreviewMessage): {
+  description: string;
+  content: string;
+} {
   const errorArg = message.args?.find(
     (arg): arg is { name: string; message: string; stack: string } =>
       typeof arg === 'object' && arg !== null && !!arg.name && !!arg.message && !!arg.stack,
   );
 
   if (!errorArg) {
-    return ['', ''];
+    return { description: 'Unknown Error', content: 'No error details available' };
   }
 
-  return [`${errorArg.name}: ${errorArg.message}`, errorArg.stack];
+  return { description: `${errorArg.name}: ${errorArg.message}`, content: errorArg.stack };
 }
