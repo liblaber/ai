@@ -256,6 +256,8 @@ export function SubscriptionRevenue({ data }: { data: SubscriptionRevenueType[] 
   );
 }
         </liblabAction>
+
+        <liblabAction type="start">npm run dev</liblabAction>
       </liblabArtifact>
     </assistant_response>
   </example>
@@ -285,16 +287,10 @@ export default async function UsersPage() {
 }
         </liblabAction>
         <liblabAction type="file" filePath="app/components/building-blocks/sidebar-nav/sidebar-links.ts">
-        import { House, Users,LucideProps } from 'lucide-react';
+        import { House, Users } from 'lucide-react';
 import * as react from 'react';
 
-export type SidebarLink = {
-  href: string;
-  label: string;
-  icon?: react.ForwardRefExoticComponent<Omit<LucideProps, 'ref'> & react.RefAttributes<SVGSVGElement>>;
-};
-
-export const SIDEBAR_LINKS: SidebarLink[] = [
+export const SIDEBAR_LINKS = [
   {
     href: '/',
     label: 'Home',
@@ -308,6 +304,8 @@ export const SIDEBAR_LINKS: SidebarLink[] = [
 ];
 
         </liblabAction>
+
+        <liblabAction type="start">npm run dev</liblabAction>
       </liblabArtifact>
     </assistant_response>
   </example>

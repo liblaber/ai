@@ -23,6 +23,104 @@ export const ig = ignore().add(IGNORE_PATTERNS);
 
 export const generateId = () => Math.random().toString(36).substring(2, 15);
 
+export const processImageFile = async (
+  file: File,
+  maxSize = 1024,
+  quality = 0.8,
+): Promise<{ processedFile: File; base64: string }> => {
+  try {
+    const { compressedFile, base64 } = await compressImageToJpeg(file, maxSize, quality);
+    return { processedFile: compressedFile, base64 };
+  } catch (error) {
+    console.error('Failed to compress image:', error);
+
+    // Fallback to original file if compression fails
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const base64Image = e.target?.result as string;
+        resolve({ processedFile: file, base64: base64Image });
+      };
+
+      reader.onerror = () => reject(new Error('Failed to read file as base64'));
+      reader.readAsDataURL(file);
+    });
+  }
+};
+
+export const compressImageToJpeg = (
+  file: File,
+  maxSize = 1024,
+  quality = 0.8,
+): Promise<{ compressedFile: File; base64: string }> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    if (!ctx) {
+      reject(new Error('Could not get canvas context'));
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      try {
+        URL.revokeObjectURL(objectUrl);
+
+        const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+
+        if (file.type === 'image/png' || file.type === 'image/webp') {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Failed to create blob'));
+              return;
+            }
+
+            const jpegFileName = file.name.replace(/\.[^/.]+$/, '.jpg');
+            const compressedFile = new File([blob], jpegFileName, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+
+            const reader = new FileReader();
+
+            reader.onload = () => {
+              const base64 = reader.result as string;
+              resolve({ compressedFile, base64 });
+            };
+            reader.onerror = () => reject(new Error('Failed to read file as base64'));
+            reader.readAsDataURL(compressedFile);
+          },
+          'image/jpeg',
+          quality,
+        );
+      } catch (error) {
+        URL.revokeObjectURL(objectUrl);
+        reject(error);
+      }
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = objectUrl;
+  });
+};
+
 export const isBinaryFile = async (file: File): Promise<boolean> => {
   const chunkSize = 1024;
   const buffer = new Uint8Array(await file.slice(0, chunkSize).arrayBuffer());

@@ -8,9 +8,9 @@ import { SIDEBAR_LINKS } from '@/components/building-blocks/sidebar-nav/sidebar-
 export default function SidebarNav() {
   const pathname = usePathname();
   return (
-    <Sidebar>
+    <Sidebar variant="sidebar">
       <SidebarContent>
-        <SidebarMenu className="p-3">
+        <SidebarMenu className="p-2">
           {SIDEBAR_LINKS.map(({ href, label, icon: Icon }) => (
             <SidebarMenuItem key={href}>
               <SidebarMenuButton asChild isActive={pathname === href}>

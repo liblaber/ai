@@ -9,6 +9,7 @@ import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { openSettingsPanel } from '~/lib/stores/settings';
 import { ClientOnly } from 'remix-utils/client-only';
 import { SendButton } from './SendButton.client';
+import { processImageFile } from '~/utils/fileUtils';
 
 interface ChatTextareaProps {
   value: string;
@@ -76,14 +77,13 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
         const file = (e.target as HTMLInputElement).files?.[0];
 
         if (file) {
-          const reader = new FileReader();
-
-          reader.onload = (e) => {
-            const base64Image = e.target?.result as string;
-            setUploadedFiles?.([...uploadedFiles, file]);
-            setImageDataList?.([...imageDataList, base64Image]);
-          };
-          reader.readAsDataURL(file);
+          try {
+            const { processedFile, base64 } = await processImageFile(file);
+            setUploadedFiles?.([...uploadedFiles, processedFile]);
+            setImageDataList?.([...imageDataList, base64]);
+          } catch (error) {
+            console.error('Failed to process image:', error);
+          }
         }
       };
       input.click();

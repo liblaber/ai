@@ -15,16 +15,56 @@ export interface PreviewInfo {
 }
 
 export class PreviewsStore {
-  #availablePreviews = new Map<number, PreviewInfo>();
-  #webcontainer: Promise<WebContainer>;
   previews = atom<PreviewInfo[]>([]);
   isLoading = atom<boolean>(false);
   loadingText = atom<string>('Loading...');
+  readyForFixing = atom<boolean>(false);
+  #availablePreviews = new Map<number, PreviewInfo>();
+  #webcontainer: Promise<WebContainer>;
 
   constructor(webcontainerPromise: Promise<WebContainer>) {
     this.#webcontainer = webcontainerPromise;
 
     this.#init();
+  }
+
+  finishLoading() {
+    this.isLoading.set(false);
+    this.readyForFixing.set(true);
+    this.loadingText.set('Loading...');
+  }
+
+  almostReadyLoading() {
+    this.isLoading.set(true);
+    this.readyForFixing.set(true);
+    this.loadingText.set('Your app is almost ready! Making final touches...');
+  }
+
+  changesLoading() {
+    this.isLoading.set(true);
+    this.loadingText.set('Loading changes...');
+  }
+
+  startLoading() {
+    this.loadingText.set('Your app is loading...');
+    this.isLoading.set(true);
+    this.readyForFixing.set(false);
+  }
+
+  makingChanges() {
+    this.loadingText.set('Making changes...');
+    this.isLoading.set(true);
+  }
+
+  fixingIssues() {
+    this.isLoading.set(true);
+    this.loadingText.set('Fixing issues... Almost there!');
+    this.readyForFixing.set(false);
+  }
+
+  preparingEnvironment() {
+    this.loadingText.set('Preparing environment...');
+    this.isLoading.set(true);
   }
 
   async #init() {
@@ -66,40 +106,5 @@ export class PreviewsStore {
         this.startLoading();
       }
     });
-  }
-
-  finishLoading() {
-    this.isLoading.set(false);
-    this.loadingText.set('Loading...');
-  }
-
-  almostReadyLoading() {
-    this.isLoading.set(true);
-    this.loadingText.set('Your app is almost ready! Making final touches...');
-  }
-
-  changesLoading() {
-    this.isLoading.set(true);
-    this.loadingText.set('Loading changes...');
-  }
-
-  startLoading() {
-    this.loadingText.set('Your app is loading...');
-    this.isLoading.set(true);
-  }
-
-  makingChanges() {
-    this.loadingText.set('Making changes...');
-    this.isLoading.set(true);
-  }
-
-  fixingIssues() {
-    this.loadingText.set('Fixing issues... Almost there!');
-    this.isLoading.set(true);
-  }
-
-  preparingEnvironment() {
-    this.loadingText.set('Preparing environment...');
-    this.isLoading.set(true);
   }
 }

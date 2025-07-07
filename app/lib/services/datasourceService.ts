@@ -79,6 +79,15 @@ export async function getDatabaseUrl(userId: string, datasourceId: string) {
   return dataSource.connectionString;
 }
 
+export async function getConversationCount(dataSourceId: string, userId: string): Promise<number> {
+  return prisma.conversation.count({
+    where: {
+      dataSourceId,
+      userId,
+    },
+  });
+}
+
 function validateDataSource(connectionString: string) {
   const accessor = DataSourcePluginManager.getAccessor(connectionString);
   accessor.validate(connectionString);

@@ -6,6 +6,7 @@ import { ScreenshotStateManager } from './ScreenshotStateManager';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { openSettingsPanel } from '~/lib/stores/settings';
 import { ClientOnly } from 'remix-utils/client-only';
+import { processImageFile } from '~/utils/fileUtils';
 
 interface HomepageTextareaProps {
   value: string;
@@ -77,22 +78,18 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
-      input.multiple = true;
 
       input.onchange = async (e) => {
-        const files = Array.from((e.target as HTMLInputElement).files || []);
+        const file = (e.target as HTMLInputElement).files?.[0];
 
-        if (files.length > 0) {
-          files.forEach((file) => {
-            const reader = new FileReader();
-
-            reader.onload = (e) => {
-              const base64Image = e.target?.result as string;
-              setUploadedFiles([...uploadedFiles, file]);
-              setImageDataList([...imageDataList, base64Image]);
-            };
-            reader.readAsDataURL(file);
-          });
+        if (file) {
+          try {
+            const { processedFile, base64 } = await processImageFile(file);
+            setUploadedFiles([...uploadedFiles, processedFile]);
+            setImageDataList([...imageDataList, base64]);
+          } catch (error) {
+            console.error('Failed to process image:', error);
+          }
         }
       };
       input.click();
