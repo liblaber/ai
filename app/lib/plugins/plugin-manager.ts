@@ -6,6 +6,7 @@ import {
   type PluginId,
   PluginType,
   type StarterPluginId,
+  type McpPluginId,
 } from '~/lib/plugins/types';
 
 export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
@@ -24,6 +25,9 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
     remix: true,
     next: true,
   },
+  [PluginType.MCP]: {
+    mcp: true,
+  },
 };
 
 export const PREMIUM_PLUGIN_ACCESS = {
@@ -41,6 +45,9 @@ export const PREMIUM_PLUGIN_ACCESS = {
   [PluginType.STARTER]: {
     remix: true,
     next: true,
+  },
+  [PluginType.MCP]: {
+    mcp: true,
   },
 };
 
@@ -77,6 +84,8 @@ class PluginManager {
       return this._pluginAccess[pluginType][pluginId as AuthPluginId];
     } else if (pluginType === PluginType.STARTER) {
       return this._pluginAccess[pluginType][pluginId as StarterPluginId];
+    } else if (pluginType === PluginType.MCP) {
+      return this._pluginAccess[pluginType][pluginId as McpPluginId];
     }
 
     return false;

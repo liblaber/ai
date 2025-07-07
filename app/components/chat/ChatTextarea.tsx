@@ -29,6 +29,8 @@ interface ChatTextareaProps {
   onSend: (e: React.UIEvent) => void;
   isStreaming?: boolean;
   handleStop?: () => void;
+  setAskMcp?: (askMcp: boolean) => void;
+  askMcp?: boolean;
 }
 
 export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
@@ -51,6 +53,8 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
       onSend,
       isStreaming = false,
       handleStop,
+      setAskMcp,
+      askMcp,
     },
     ref,
   ) => {
@@ -64,6 +68,23 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
       <IconButton title="Upload file" className="transition-all" onClick={() => handleFileUpload()}>
         <WithTooltip tooltip="Upload file">
           <div className="i-liblab:ic_attach text-3xl opacity-50 hover:opacity-100" />
+        </WithTooltip>
+      </IconButton>
+    );
+
+    const mcpButton = (
+      <IconButton
+        title="Ask to my MCP"
+        onClick={() => setAskMcp && setAskMcp(!askMcp)}
+        className={classNames('transition-all')}
+      >
+        <WithTooltip tooltip={`${askMcp ? 'Deactivate' : 'Activate'} ask to my MCP`}>
+          <div
+            className={classNames('i-liblab:ic_magic text-3xl rounded', {
+              'opacity-100 bg-accent-500/20 text-accent-500 flex items-center gap-2': !!askMcp,
+              'opacity-50 hover:opacity-100': !askMcp,
+            })}
+          />
         </WithTooltip>
       </IconButton>
     );
@@ -171,7 +192,9 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
               </button>
             )}
           </div>
-          <div className="flex items-center gap-4">{fileUploadButton}</div>
+          <div className="flex items-center gap-4">
+            {fileUploadButton} {mcpButton}
+          </div>
         </div>
       </div>
     );

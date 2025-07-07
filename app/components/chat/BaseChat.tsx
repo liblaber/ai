@@ -62,6 +62,8 @@ interface BaseChatProps {
   actionRunner?: ActionRunner;
   onSyncFiles?: () => Promise<void>;
   setMessages: (messages: Message[]) => void;
+  askMcp?: boolean;
+  setAskMcp?: (askMcp: boolean) => void;
 }
 
 export const BaseChat = ({
@@ -88,6 +90,8 @@ export const BaseChat = ({
   actionRunner,
   onSyncFiles,
   setMessages,
+  setAskMcp,
+  askMcp,
 }: BaseChatProps) => {
   const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
 
@@ -346,6 +350,8 @@ export const BaseChat = ({
                   onSend={handleSendMessage}
                   isStreaming={isStreaming}
                   handleStop={handleStop}
+                  setAskMcp={setAskMcp}
+                  askMcp={askMcp}
                 />
               )}
             </div>

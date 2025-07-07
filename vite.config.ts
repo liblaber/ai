@@ -96,7 +96,6 @@ export default defineConfig((config) => {
     build: {
       target: 'esnext',
     },
-
     // Needed because of the vite cold start reloading issue (ref: https://github.com/vitejs/vite/discussions/14801)
     optimizeDeps: {
       holdUntilCrawlEnd: false,
@@ -189,7 +188,14 @@ function chrome129IssuePlugin() {
   };
 }
 
-const DEPS_TO_SKIP_OPTIMIZATION = ['@remix-run/node', 'node-fetch', 'netlify', 'wrangler', 'remix-utils'];
+const DEPS_TO_SKIP_OPTIMIZATION = [
+  '@remix-run/node',
+  'node-fetch',
+  'netlify',
+  'wrangler',
+  'remix-utils',
+  '@modelcontextprotocol/sdk',
+];
 const ADDITIONAL_DEPS_ROUTES_TO_OPTIMIZE = [
   'remix-utils/client-only',
   'vite-plugin-node-polyfills/shims/buffer',

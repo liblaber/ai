@@ -3,6 +3,7 @@ import { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager';
 import type {
   AuthPluginId,
   DataAccessPluginId,
+  McpPluginId,
   PluginAccessMap,
   PluginId,
   PluginType,
@@ -26,6 +27,8 @@ export const usePluginStore = create<PluginStoreState>()((set, get) => ({
       return get().pluginAccess[pluginType][pluginId as AuthPluginId];
     } else if (pluginType === PluginTypeValue.STARTER) {
       return get().pluginAccess[pluginType][pluginId as StarterPluginId];
+    } else if (pluginType === PluginTypeValue.MCP) {
+      return get().pluginAccess[pluginType][pluginId as McpPluginId];
     }
 
     return false;

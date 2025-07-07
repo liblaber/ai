@@ -27,6 +27,8 @@ import { generateId } from 'ai';
 import { useGitPullSync } from '~/lib/stores/git';
 import { createConversation, getMessageSnapshotId } from '~/lib/persistence/conversations';
 import { extractArtifactTitleFromMessageContent } from '~/utils/artifactMapper';
+import { McpPluginManager } from '~/lib/plugins/mcp/mcp-plugin-manager';
+import type { McpChatMessage, McpChatResponse } from '~/lib/.server/llm/mcp-client';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -94,6 +96,8 @@ export const ChatImpl = memo(
     const files = useStore(workbenchStore.files);
     const actionAlert = useStore(workbenchStore.alert);
     const { contextOptimizationEnabled } = useSettings();
+    const [askMcp, setAskMcp] = useState(false); // TODO: CHANGE THIS TO FALSE WHEN MCP IS READY
+    const [mcpChatMessages, setMcpChatMessages] = useState<McpChatMessage[]>([]);
 
     useEffect(() => {
       chatStore.setKey('started', chatStarted);
@@ -212,6 +216,55 @@ export const ChatImpl = memo(
 
       if (isLoading) {
         abort();
+        return;
+      }
+
+      if (askMcp) {
+        // TODO: MOVE THIS TO A SEPARATE FUNCTION
+        try {
+          setFakeLoading(true);
+          setMessages((currentMessages) => [
+            ...currentMessages,
+            {
+              id: generateId(),
+              role: 'user',
+              content: formatMessageWithModelInfo({
+                messageContent,
+                dataSourceId: selectedDataSourceId!,
+                askMcp: true,
+              }),
+            },
+          ]);
+
+          const result: McpChatResponse = await McpPluginManager.sendRequest(messageContent, mcpChatMessages);
+
+          console.log('MCP response received:', result);
+
+          setMessages((currentMessages) => [
+            ...currentMessages,
+            {
+              id: generateId(),
+              role: 'assistant',
+              content: result.message,
+            },
+          ]);
+
+          setMcpChatMessages(result.conversation);
+          setInput('');
+        } catch (e) {
+          setMessages((currentMessages) => [
+            ...currentMessages,
+            {
+              id: generateId(),
+              role: 'assistant',
+              content: e instanceof Error ? e.message : String(e),
+            },
+          ]);
+          console.error('Error while sending message to MCP:', e);
+        } finally {
+          setFakeLoading(false);
+        }
+
         return;
       }
 
@@ -546,6 +599,8 @@ export const ChatImpl = memo(
           data={chatData}
           onSyncFiles={syncLatestChanges}
           setMessages={setMessages}
+          askMcp={askMcp}
+          setAskMcp={setAskMcp}
         />
         {selectedQueryId && (
           <QueryModal
@@ -566,6 +621,7 @@ interface MessageWithModelInfo {
   firstUserMessage?: boolean;
   askLiblab?: boolean;
   dataList?: string[];
+  askMcp?: boolean;
 }
 
 const createExperimentalAttachments = (dataList: string[], files: File[]) =>
@@ -581,6 +637,7 @@ const formatMessageWithModelInfo = ({
   firstUserMessage,
   askLiblab,
   dataList,
+  askMcp,
 }: MessageWithModelInfo) => {
   let formattedMessage = '';
 
@@ -590,6 +647,10 @@ const formatMessageWithModelInfo = ({
 
   if (askLiblab) {
     formattedMessage += `\n\n[AskLiblab: true]`;
+  }
+
+  if (askMcp) {
+    formattedMessage += `\n\n[AskMCP: true]`;
   }
 
   formattedMessage += `\n\n[DataSourceId: ${dataSourceId}]`;
