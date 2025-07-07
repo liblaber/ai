@@ -46,13 +46,12 @@ class MCPClientSingleton {
     if (!MCPClientSingleton._instance) {
       MCPClientSingleton._instance = new MCPClientSingleton();
     }
-    
+
     return MCPClientSingleton._instance;
   }
 
   async initialize(): Promise<void> {
     if (this._isConnected || this._isInitializing) {
-      
       return; // Already connected or connecting
     }
 
@@ -60,6 +59,7 @@ class MCPClientSingleton {
 
     try {
       console.log('Initializing MCP client...');
+
       const url = new URL('https://mcp.liblab.io/liblab-dev'); // TODO: MOVE THIS OUT OF HERE
       this._transport = new StreamableHTTPClientTransport(url);
       await this._mcp.connect(this._transport);
@@ -67,6 +67,7 @@ class MCPClientSingleton {
       // Set up error handlers with cleanup protection
       this._transport.onclose = async () => {
         console.log('MCP Transport closed');
+
         if (!this._isCleaningUp) {
           this._isConnected = false;
           this._transport = null;
@@ -75,6 +76,7 @@ class MCPClientSingleton {
 
       this._transport.onerror = async (error: any) => {
         console.log('MCP Transport error', error);
+
         if (!this._isCleaningUp) {
           this._isConnected = false;
           this._transport = null;
@@ -110,12 +112,10 @@ class MCPClientSingleton {
   }
 
   getTools(): any[] {
-    
     return this._tools;
   }
 
   isClientConnected(): boolean {
-    
     return this._isConnected;
   }
 
@@ -127,6 +127,7 @@ class MCPClientSingleton {
     }
 
     console.log('Sending MCP query to Anthropic...');
+
     let response = await this._anthropic.messages.create({
       model,
       max_tokens: 1000,
@@ -134,15 +135,15 @@ class MCPClientSingleton {
       tools: this._tools,
     });
 
-    let conversationMessages = [...conversation];
-    let toolCalls: Array<{ name: string; input: any; result: any }> = [];
+    const conversationMessages = [...conversation];
+    const toolCalls: Array<{ name: string; input: any; result: any }> = [];
     let finalMessage = '';
 
     // Process the response and handle tool calls
     while (true) {
       let hasToolCalls = false;
-      let assistantMessage: McpChatMessage = { role: 'assistant', content: [] };
-      let toolResults: any[] = [];
+      const assistantMessage: McpChatMessage = { role: 'assistant', content: [] };
+      const toolResults: any[] = [];
 
       // First pass: collect all content and execute tool calls
       for (const content of response.content) {
@@ -219,7 +220,6 @@ class MCPClientSingleton {
       });
     }
 
-    
     return {
       message: finalMessage,
       conversation: conversationMessages,
@@ -229,7 +229,6 @@ class MCPClientSingleton {
 
   async cleanup(): Promise<void> {
     if (this._isCleaningUp || !this._isConnected) {
-      
       return;
     }
 
@@ -269,7 +268,7 @@ export async function runServerStyleClient(
     const result = await mcpClient.chat(conversation);
 
     console.log('MCP chat completed successfully');
-    
+
     return result;
   } catch (error) {
     console.log('MCP error in chat:', error);
@@ -280,12 +279,10 @@ export async function runServerStyleClient(
 // Helper function to get available tools
 export async function getAvailableTools(): Promise<any[]> {
   await mcpClient.ensureConnected();
-  
   return mcpClient.getTools();
 }
 
 // Helper function to check connection status
 export function isConnected(): boolean {
-  
   return mcpClient.isClientConnected();
 }
