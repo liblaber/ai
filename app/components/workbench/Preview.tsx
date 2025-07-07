@@ -405,7 +405,9 @@ export const Preview = memo(() => {
             </>
           ) : (
             <div className="flex w-full h-full justify-center items-center bg-liblab-elements-bg-depth-1 text-liblab-elements-textPrimary">
-              No preview available
+              {workbenchStore.previewsStore.isLoading.get()
+                ? workbenchStore.previewsStore.loadingText.get()
+                : 'No preview available'}
             </div>
           )}
 

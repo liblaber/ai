@@ -88,6 +88,7 @@ export function useConversationHistory() {
     ready: !id || ready,
     initialMessages,
     commandMessage,
+    setCommandMessage,
     storeConversationHistory: async (
       lastMessageId: string,
       onSnapshotCreated?: (snapshotId: string, messageId: string) => void,

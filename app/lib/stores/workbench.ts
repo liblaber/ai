@@ -169,7 +169,6 @@ export class WorkbenchStore {
         .map(([path, dirent]) => [extractRelativePath(path), dirent]),
     );
   }
-
   setCurrentDocumentContent(newContent: string) {
     const filePath = this.currentDocument.get()?.filePath;
 
@@ -304,7 +303,6 @@ export class WorkbenchStore {
       closed: false,
       type,
       runner: new ActionRunner(
-        webcontainer,
         () => this.shells,
         (alert) => {
           if (this.#reloadedMessages.has(messageId)) {

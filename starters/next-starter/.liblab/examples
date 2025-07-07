@@ -256,7 +256,6 @@ export function SubscriptionRevenue({ data }: { data: SubscriptionRevenueType[] 
   );
 }
         </liblabAction>
-        <liblabAction type="start">npm run dev</liblabAction>
       </liblabArtifact>
     </assistant_response>
   </example>
@@ -309,7 +308,6 @@ export const SIDEBAR_LINKS: SidebarLink[] = [
 ];
 
         </liblabAction>
-        <liblabAction type="start">npm run dev</liblabAction>
       </liblabArtifact>
     </assistant_response>
   </example>

@@ -27,6 +27,8 @@ import { generateId } from 'ai';
 import { useGitPullSync } from '~/lib/stores/git';
 import { createConversation, getMessageSnapshotId } from '~/lib/persistence/conversations';
 import { extractArtifactTitleFromMessageContent } from '~/utils/artifactMapper';
+import { createCommandsMessage, detectProjectCommands } from '~/utils/projectCommands';
+import { ActionRunner } from '~/lib/runtime/action-runner';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -35,6 +37,7 @@ type DatabaseUrlResponse = {
 interface ChatProps {
   initialMessages: Message[];
   commandMessage?: Message;
+  setCommandMessage?: (message: Message) => void;
   storeConversationHistory: (
     latestMessageId: string,
     onSnapshotCreated?: (snapshotId: string, messageId: string) => void,
@@ -49,7 +52,8 @@ const logger = createScopedLogger('Chat');
 export function Chat() {
   renderLogger.trace('Chat');
 
-  const { ready, initialMessages, commandMessage, storeConversationHistory, exportChat } = useConversationHistory();
+  const { ready, initialMessages, commandMessage, setCommandMessage, storeConversationHistory, exportChat } =
+    useConversationHistory();
   const title = useStore(description);
   useEffect(() => {
     workbenchStore.setReloadedMessages(initialMessages.map((m) => m.id));
@@ -62,6 +66,7 @@ export function Chat() {
           description={title}
           initialMessages={initialMessages}
           commandMessage={commandMessage}
+          setCommandMessage={setCommandMessage}
           exportChat={exportChat}
           storeConversationHistory={storeConversationHistory}
         />
@@ -83,7 +88,14 @@ const processSampledMessages = createSampler(
 );
 
 export const ChatImpl = memo(
-  ({ description, initialMessages, commandMessage, storeConversationHistory, exportChat }: ChatProps) => {
+  ({
+    description,
+    initialMessages,
+    commandMessage,
+    setCommandMessage,
+    storeConversationHistory,
+    exportChat,
+  }: ChatProps) => {
     useShortcuts();
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -138,6 +150,17 @@ export const ChatImpl = memo(
         setData(undefined);
 
         logger.debug('Finished streaming');
+
+        const isAppRunning = await ActionRunner.isAppRunning();
+
+        if (!isAppRunning) {
+          const projectCommands = await detectProjectCommands(workbenchStore.getFileMap());
+          const projectCommandsMessage = projectCommands ? createCommandsMessage(projectCommands) : null;
+
+          if (projectCommandsMessage) {
+            setCommandMessage?.(projectCommandsMessage);
+          }
+        }
 
         const artifactTitle = extractArtifactTitleFromMessageContent(content);
 

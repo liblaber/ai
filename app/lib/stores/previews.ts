@@ -45,7 +45,6 @@ export class PreviewsStore {
       if (type === 'close' && previewInfo) {
         this.#availablePreviews.delete(port);
         this.previews.set(this.previews.get().filter((preview) => preview.port !== port));
-        this.finishLoading();
 
         return;
       }
@@ -96,6 +95,11 @@ export class PreviewsStore {
 
   fixingIssues() {
     this.loadingText.set('Fixing issues... Almost there!');
+    this.isLoading.set(true);
+  }
+
+  preparingEnvironment() {
+    this.loadingText.set('Preparing environment...');
     this.isLoading.set(true);
   }
 }

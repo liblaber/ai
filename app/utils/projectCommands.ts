@@ -16,6 +16,7 @@ export async function detectProjectCommands(fileMap: FileMap): Promise<ProjectCo
   );
 
   if (!packageJsonFileKey) {
+    console.log('No package.json file found.');
     return null;
   }
 
@@ -31,9 +32,8 @@ export async function detectProjectCommands(fileMap: FileMap): Promise<ProjectCo
     if (availableCommand) {
       return {
         type: 'Node.js',
-        setupCommand: `pnpm install`,
         startCommand: `npm run ${availableCommand}`,
-        followupMessage: `Found "${availableCommand}" script in package.json. Running "npm run ${availableCommand}" after installation.`,
+        followupMessage: `I’m starting your app now...`,
       };
     }
 
@@ -69,10 +69,10 @@ export function createCommandsMessage(commands: ProjectCommands): Message | null
 
   return {
     role: 'assistant',
-    content: `
+    content: `${commands.followupMessage ? `${commands.followupMessage}` : ''}\n\n
 <liblabArtifact id="project-setup" title="Project Setup">
 ${commandString}
-</liblabArtifact>${commands.followupMessage ? `\n\n${commands.followupMessage}` : ''}`,
+</liblabArtifact>`,
     id: generateId(),
     createdAt: new Date(),
   };

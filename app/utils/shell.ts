@@ -14,7 +14,6 @@ export class LiblabShell {
   #process: WebContainerProcess | undefined;
   executionState = atom<
     | {
-        sessionId: string;
         active: boolean;
         executionPrms?: Promise<any>;
         abort?: () => void;
@@ -56,7 +55,7 @@ export class LiblabShell {
     return this.#process;
   }
 
-  async executeCommand(sessionId: string, command: string, abort?: () => void): Promise<ExecutionResult> {
+  async executeCommand(command: string, abort?: () => void): Promise<ExecutionResult> {
     if (!this.process || !this.terminal) {
       console.log('Returning undefined terminal');
       return undefined;
@@ -72,20 +71,23 @@ export class LiblabShell {
      * interrupt the current execution
      *  this.#shellInputStream?.write('\x03');
      */
-    this.terminal.input('\x03');
-    await this.waitTillOscCode('prompt');
+    /*
+     * this.terminal.input('\x03');
+     * await this.waitTillOscCode('prompt');
+     */
 
     if (state && state.executionPrms) {
       await state.executionPrms;
     }
 
     //start a new execution
+    console.log('inputing command...');
     this.terminal.input(command.trim() + '\n');
 
     //wait for the execution to finish
     const executionPromise = this.getCurrentExecutionResult();
+    console.log(executionPromise);
     this.executionState.set({
-      sessionId,
       active: true,
       executionPrms: executionPromise,
       abort,
@@ -93,7 +95,7 @@ export class LiblabShell {
     });
 
     const resp = await executionPromise;
-    this.executionState.set({ sessionId, active: false, command });
+    this.executionState.set({ active: false, command });
 
     if (resp) {
       try {
