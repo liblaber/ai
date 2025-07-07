@@ -73,9 +73,9 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
 
   // Render Functions
   const renderLoadingState = () => (
-    <div className="flex flex-col items-center justify-center h-full">
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="animate-spin rounded-full h-12 w-12 border-4 border-accent-500 border-t-transparent mb-4" />
-      <div className="text-gray-700 dark:text-gray-300">Creating site...</div>
+      <div className="text-gray-700 dark:text-gray-300">Loading...</div>
     </div>
   );
 
@@ -233,7 +233,10 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
             </h3>
 
             {(() => {
-              if (isLoading && mode === 'settings' && !website) {
+              const isCreatingSite = isLoading && mode === 'settings' && !website;
+              const isZippingProject = isLoading && mode === 'publish' && deploymentProgress?.status === undefined;
+
+              if (isCreatingSite || isZippingProject) {
                 return renderLoadingState();
               }
 
