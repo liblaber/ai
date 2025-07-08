@@ -1,5 +1,5 @@
 import { Database as SQLiteDatabase, open } from 'sqlite';
-import Database from 'better-sqlite3';
+import sqlite3 from 'sqlite3';
 import type { BaseAccessor } from '../baseAccessor';
 import type { Column, Table } from '../../types';
 import { EXAMPLE_DB_ENUM_VALUES } from '../../utils/example-db-enum-values';
@@ -129,7 +129,7 @@ export class SQLiteAccessor implements BaseAccessor {
 
     return open({
       filename,
-      driver: Database,
+      driver: sqlite3.Database,
     });
   }
 
