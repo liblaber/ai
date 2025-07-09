@@ -184,6 +184,14 @@ If you lack permissions to run `scripts/setup.sh` fix it with:
 chmod +x scripts/setup.sh
 ```
 
+Finally, approve the builds for better-sqlite3:
+
+```bash
+pnpm approve-builds
+```
+
+Select better-sqlite3 and continue.
+
 **That's it! 🎉**
 
 The script automatically handles:
