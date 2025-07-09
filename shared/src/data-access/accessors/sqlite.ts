@@ -20,9 +20,9 @@ const EXAMPLE_DATABASE_NAME = 'example.db';
 export class SQLiteAccessor implements BaseAccessor {
   static pluginId = 'sqlite';
   readonly label = 'SQLite';
-  private _db: SQLiteDatabase | null = null;
-
+  readonly preparedStatementPlaceholder = '?';
   readonly connectionStringFormat = 'sqlite://path/to/database.db';
+  private _db: SQLiteDatabase | null = null;
 
   static isAccessor(databaseUrl: string): boolean {
     return databaseUrl.startsWith('sqlite://');
@@ -124,15 +124,6 @@ export class SQLiteAccessor implements BaseAccessor {
     }
   }
 
-  private async _createConnection(databaseUrl: string): Promise<SQLiteDatabase> {
-    const filename = databaseUrl.startsWith('sqlite://') ? databaseUrl.replace('sqlite://', '') : databaseUrl;
-
-    return open({
-      filename,
-      driver: sqlite3.Database,
-    });
-  }
-
   async initialize(databaseUrl: string): Promise<void> {
     if (this._db) {
       await this.close();
@@ -146,5 +137,14 @@ export class SQLiteAccessor implements BaseAccessor {
       await this._db.close();
       this._db = null;
     }
+  }
+
+  private async _createConnection(databaseUrl: string): Promise<SQLiteDatabase> {
+    const filename = databaseUrl.startsWith('sqlite://') ? databaseUrl.replace('sqlite://', '') : databaseUrl;
+
+    return open({
+      filename,
+      driver: sqlite3.Database,
+    });
   }
 }

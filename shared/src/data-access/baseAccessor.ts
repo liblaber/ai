@@ -8,6 +8,12 @@ export interface BaseAccessor {
   readonly connectionStringFormat: string;
 
   /**
+   * Placeholder used in prepared statements for this accessor
+   * @returns The placeholder string, e.g. "?" for SQLite, "$1" for Postgres
+   */
+  readonly preparedStatementPlaceholder: string;
+
+  /**
    * Executes a SQL query against the database
    * @param query - The SQL query string to execute
    * @param params - Optional array of parameters to safely substitute into the query

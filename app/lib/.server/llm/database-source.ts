@@ -1,6 +1,7 @@
 import { logger } from '~/utils/logger';
 import { generateObject, type LanguageModel } from 'ai';
 import { z } from 'zod';
+import { DataAccessor } from '@liblab/data-access/dataAccessor';
 
 const queryDecisionSchema = z.object({
   shouldUpdateSql: z.boolean(),
@@ -58,7 +59,7 @@ You will be working with the following database type:
 ${databaseType}
 </databaseType>
 
-${databaseType === 'sqlite' ? `Please use ? instead of $1 for placeholders in prepared statements` : databaseType === 'postgres' ? `Please use $1, $2, etc. for placeholders in prepared statements` : ''}
+Please use ${DataAccessor.getByDatabaseType(databaseType)?.preparedStatementPlaceholder} for placeholders in prepared statements
 
 Here is the database schema you should use:
 <dbSchema>
