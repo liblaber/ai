@@ -58,7 +58,7 @@ You will be working with the following database type:
 ${databaseType}
 </databaseType>
 
-${databaseType == 'sqlite' ? `Please use ? instead of $1 for placeholders in prepared statements` : ''}
+${databaseType === 'sqlite' ? `Please use ? instead of $1 for placeholders in prepared statements` : databaseType === 'postgres' ? `Please use $1, $2, etc. for placeholders in prepared statements` : ''}
 
 Here is the database schema you should use:
 <dbSchema>
