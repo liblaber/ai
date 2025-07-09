@@ -6,6 +6,7 @@ import {
   type PluginId,
   PluginType,
   type StarterPluginId,
+  type UserManagementPluginId,
 } from '~/lib/plugins/types';
 
 export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
@@ -24,6 +25,10 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
     remix: true,
     next: true,
   },
+  [PluginType.USER_MANAGEMENT]: {
+    'single-user': true,
+    'multi-user': false,
+  },
 };
 
 export const PREMIUM_PLUGIN_ACCESS = {
@@ -41,6 +46,10 @@ export const PREMIUM_PLUGIN_ACCESS = {
   [PluginType.STARTER]: {
     remix: true,
     next: true,
+  },
+  [PluginType.USER_MANAGEMENT]: {
+    'single-user': true,
+    'multi-user': true,
   },
 };
 
@@ -77,6 +86,8 @@ class PluginManager {
       return this._pluginAccess[pluginType][pluginId as AuthPluginId];
     } else if (pluginType === PluginType.STARTER) {
       return this._pluginAccess[pluginType][pluginId as StarterPluginId];
+    } else if (pluginType === PluginType.USER_MANAGEMENT) {
+      return this._pluginAccess[pluginType][pluginId as UserManagementPluginId];
     }
 
     return false;
