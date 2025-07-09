@@ -24,6 +24,8 @@ import ignore from 'ignore';
 
 const { saveAs } = fileSaver;
 
+const DEFAULT_START_APP_COMMAND = 'npm run dev';
+
 export interface ArtifactState {
   id: string;
   title: string;
@@ -56,6 +58,7 @@ export class WorkbenchStore {
   modifiedFiles = new Set<string>();
   artifactIdList: string[] = [];
   #globalExecutionQueue = Promise.resolve();
+  startCommand = atom<string>(DEFAULT_START_APP_COMMAND);
 
   get mostRecentCommitMessage() {
     return this.#mostRecentCommitMessage || 'liblab ai syncing files';
@@ -304,7 +307,6 @@ export class WorkbenchStore {
       closed: false,
       type,
       runner: new ActionRunner(
-        webcontainer,
         () => this.shells,
         (alert) => {
           if (this.#reloadedMessages.has(messageId)) {

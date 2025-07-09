@@ -1,4 +1,3 @@
-import type { WebContainer } from '@webcontainer/api';
 import { path as nodePath } from '~/utils/path';
 import { atom, map, type MapStore } from 'nanostores';
 import type { ActionAlert, FileHistory, LiblabAction } from '~/types/actions';
@@ -7,6 +6,8 @@ import { unreachable } from '~/utils/unreachable';
 import type { ActionCallbackData } from './message-parser';
 import { LiblabShell } from '~/utils/shell';
 import { injectEnvVariable } from '~/utils/envUtils';
+import { webcontainer as webcontainerPromise } from '~/lib/webcontainer';
+import { workbenchStore } from '~/lib/stores/workbench';
 
 const logger = createScopedLogger('ActionRunner');
 
@@ -73,16 +74,10 @@ export class ActionRunner {
   actions: ActionsMap = map({});
   onAlert?: (alert: ActionAlert) => void;
   buildOutput?: { path: string; exitCode: number; output: string };
-  #webcontainer: Promise<WebContainer>;
   #currentExecutionPromise: Promise<void> = Promise.resolve();
   #shells: LiblabShell[] = [];
 
-  constructor(
-    webcontainerPromise: Promise<WebContainer>,
-    getShells: () => LiblabShell[],
-    onAlert?: (alert: ActionAlert) => void,
-  ) {
-    this.#webcontainer = webcontainerPromise;
+  constructor(getShells: () => LiblabShell[], onAlert?: (alert: ActionAlert) => void) {
     this.onAlert = onAlert;
 
     // Initialize with the first shell instance
@@ -114,7 +109,7 @@ export class ActionRunner {
     return lastTerminalInstance;
   }
 
-  addAction(data: ActionCallbackData) {
+  async addAction(data: ActionCallbackData) {
     const { actionId } = data;
 
     const actions = this.actions.get();
@@ -122,6 +117,11 @@ export class ActionRunner {
 
     if (action) {
       // action already added
+      return;
+    }
+
+    if (data.action.type === 'start' && (await ActionRunner.isAppRunning())) {
+      logger.debug('Application is already running');
       return;
     }
 
@@ -178,7 +178,7 @@ export class ActionRunner {
 
   async getFileHistory(filePath: string): Promise<FileHistory | null> {
     try {
-      const webcontainer = await this.#webcontainer;
+      const webcontainer = await webcontainerPromise;
       const historyPath = this.#getHistoryPath(filePath);
       const content = await webcontainer.fs.readFile(historyPath, 'utf-8');
 
@@ -190,7 +190,6 @@ export class ActionRunner {
   }
 
   async saveFileHistory(filePath: string, history: FileHistory) {
-    // const webcontainer = await this.#webcontainer;
     const historyPath = this.#getHistoryPath(filePath);
 
     await this.#runFileAction({
@@ -281,37 +280,125 @@ export class ActionRunner {
     }
   }
 
+  static #getCommandPid(targetCommand: string, psOutput?: string): number | null {
+    if (!psOutput) {
+      return null;
+    }
+
+    const lines = psOutput.trim().split('\n');
+
+    // Skip the header line
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      const parts = line.split(/\s+/);
+
+      // PID is the second column (index 1)
+      if (parts.length >= 2) {
+        const pid = parseInt(parts[1], 10);
+        const cmd = parts.slice(7).join(' '); // Command starts from column 8
+
+        if (cmd.includes(targetCommand)) {
+          return pid;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  static async isAppRunning(): Promise<boolean> {
+    const runningAppPid = await ActionRunner.getRunningAppPid();
+
+    return !!runningAppPid;
+  }
+
+  async #killRunningAppProcess(shell: LiblabShell): Promise<boolean> {
+    try {
+      const pid = await ActionRunner.getRunningAppPid();
+
+      if (pid === null) {
+        logger.debug('No PID to kill');
+        return false;
+      }
+
+      logger.debug(`Killing PID (${pid})`);
+
+      const webcontainer = await webcontainerPromise;
+      await webcontainer.spawn('kill', [pid.toString()]);
+
+      shell.executionState.set({
+        ...shell.executionState.get(),
+        active: false,
+        executionPrms: Promise.resolve(),
+      });
+      logger.debug(`Killed process with PID: ${pid}`);
+
+      return true;
+    } catch (error) {
+      logger.error('Error killing process:', error);
+      return false;
+    }
+  }
+
+  static async getRunningAppPid() {
+    const webcontainer = await webcontainerPromise;
+    logger.debug('Getting PID of the running app process');
+
+    const { output } = await webcontainer.spawn('ps', ['-ef']);
+    const outputResult = await output.getReader().read();
+    const pid = this.#getCommandPid(workbenchStore.startCommand.get(), outputResult.value);
+    logger.debug(`Found PID (${pid}) of the running app process`);
+
+    return pid;
+  }
+
   async #runShellAction(action: ActionState) {
     if (action.type !== 'shell') {
       unreachable('Expected shell action');
     }
 
     const shell = await this.#availableShellTerminal();
+
+    const killedProcess = await this.#killRunningAppProcess(shell);
+
+    if (killedProcess) {
+      workbenchStore.previewsStore.preparingEnvironment();
+    }
+
     await shell.ready();
 
     if (!shell || !shell.terminal || !shell.process) {
       unreachable('Shell terminal not found');
     }
 
-    logger.debug(`[${action.type}]:Executing Action\n\n`, action);
+    logger.debug(`[${action.type}]:Executing Action: ${action.content}\n\n`);
 
     /*
      * Installing packages takes longer, and we don't want to block other actions
      * Since install is required for start command, we're saving promise and awaiting it before the start command
      */
-    const isPackageInstall = /^(pnpm|npm)\s+(i|install)/.test(action.content);
+    const isPackageInstall = /^(pnpm|npm)\s+(i|install|add)/.test(action.content);
 
     if (isPackageInstall) {
       isPackageInstalling.set(true);
       packageInstallPromise.set(
         shell
-          .executeCommand(this.runnerId.get(), action.content, () => {
+          .executeCommand(action.content, () => {
             logger.debug(`[${action.type}]:Aborting Action\n\n`, action);
             action.abort();
           })
           .then((result) => {
             if (result?.exitCode != 0) {
               logger.error(`Shell command failed: ${result?.output || 'No Output Available'}`);
+            }
+
+            if (killedProcess) {
+              // Re-run the application
+              shell.executeCommand(workbenchStore.startCommand.get()).then((result) => {
+                if (result?.exitCode != 0) {
+                  logger.error(`Shell command failed: ${result?.output || 'No Output Available'}`);
+                }
+              });
             }
 
             isPackageInstalling.set(false);
@@ -322,13 +409,23 @@ export class ActionRunner {
     }
 
     shell
-      .executeCommand(this.runnerId.get(), action.content, () => {
+      .executeCommand(action.content, () => {
         logger.debug(`[${action.type}]:Aborting Action\n\n`, action);
         action.abort();
       })
       .then((result) => {
         if (result?.exitCode != 0) {
           logger.error(`Shell command failed: ${result?.output || 'No Output Available'}`);
+          return;
+        }
+
+        if (killedProcess) {
+          // Re-run the application
+          shell.executeCommand(workbenchStore.startCommand.get()).then((result) => {
+            if (result?.exitCode != 0) {
+              logger.error(`Shell command failed: ${result?.output || 'No Output Available'}`);
+            }
+          });
         }
       });
   }
@@ -349,7 +446,7 @@ export class ActionRunner {
       unreachable('Shell terminal not found');
     }
 
-    const resp = await shell.executeCommand(this.runnerId.get(), action.content, () => {
+    const resp = await shell.executeCommand(action.content, () => {
       logger.debug(`[${action.type}]:Aborting Action\n\n`, action);
       action.abort();
     });
@@ -367,7 +464,7 @@ export class ActionRunner {
       unreachable('Expected file action');
     }
 
-    const webcontainer = await this.#webcontainer;
+    const webcontainer = await webcontainerPromise;
     const relativePath = nodePath.relative(webcontainer.workdir, action.filePath);
 
     let folder = nodePath.dirname(relativePath);
@@ -422,7 +519,7 @@ export class ActionRunner {
       unreachable('Expected build action');
     }
 
-    const webcontainer = await this.#webcontainer;
+    const webcontainer = await webcontainerPromise;
 
     // Create a new terminal specifically for the build
     const buildProcess = await webcontainer.spawn('pnpm', ['run', 'build']);
