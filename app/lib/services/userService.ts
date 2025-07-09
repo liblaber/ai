@@ -83,4 +83,10 @@ export const userService = {
 
     return user;
   },
+
+  async deleteUser(userId: string) {
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+  },
 };

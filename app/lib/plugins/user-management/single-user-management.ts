@@ -7,13 +7,18 @@ export class SingleUserManagement implements UserManagementPlugin {
   static pluginId = 'single-user';
 
   async createOrganizationFromEmail(email: string, userId: string): Promise<void> {
-    const user = await userService.getUser(userId);
+    const existingMembers = await prisma.user.count();
 
-    if (user) {
+    if (existingMembers > 1) {
+      await userService.deleteUser(userId);
       return;
     }
 
-    // TODO: Allow only one user in database as a defualt behavior
+    const user = await userService.getUser(userId);
+
+    if (user.organizationId) {
+      return;
+    }
 
     const [localPart, domain] = email.split('@');
     let organizationName: string;
