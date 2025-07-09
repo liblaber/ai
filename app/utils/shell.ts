@@ -17,8 +17,6 @@ export class LiblabShell {
         active: boolean;
         executionPrms?: Promise<any>;
         abort?: () => void;
-        command?: string;
-        process?: WebContainerProcess;
       }
     | undefined
   >();
@@ -91,11 +89,10 @@ export class LiblabShell {
       active: true,
       executionPrms: executionPromise,
       abort,
-      command,
     });
 
     const resp = await executionPromise;
-    this.executionState.set({ active: false, command });
+    this.executionState.set({ active: false });
 
     if (resp) {
       try {

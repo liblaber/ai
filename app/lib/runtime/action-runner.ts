@@ -109,17 +109,7 @@ export class ActionRunner {
     return lastTerminalInstance;
   }
 
-  #runningAppShellTerminal(): LiblabShell | null {
-    const shell = this.#shells.find((shell) => {
-      const executionState = shell.executionState.get();
-
-      return executionState?.active && executionState?.command === 'npm run dev';
-    });
-
-    return shell ?? null;
-  }
-
-  addAction(data: ActionCallbackData) {
+  async addAction(data: ActionCallbackData) {
     const { actionId } = data;
 
     const actions = this.actions.get();
@@ -130,9 +120,7 @@ export class ActionRunner {
       return;
     }
 
-    const runnigAppShell = this.#runningAppShellTerminal();
-
-    if (runnigAppShell && data.action.type === 'start') {
+    if (await ActionRunner.isAppRunning()) {
       logger.debug('Application is already running');
       return;
     }

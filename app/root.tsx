@@ -119,35 +119,6 @@ export const Head = createHead(() => (
   </>
 ));
 
-const i = 100;
-
-// Function to extract PID for a given command from ps -ef output
-function getCommandPid(targetCommand: string, psOutput?: string): number | null {
-  if (!psOutput) {
-    return null;
-  }
-
-  const lines = psOutput.trim().split('\n');
-
-  // Skip the header line
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    const parts = line.split(/\s+/);
-
-    // PID is the second column (index 1)
-    if (parts.length >= 2) {
-      const pid = parseInt(parts[1], 10);
-      const cmd = parts.slice(7).join(' '); // Command starts from column 8
-
-      if (cmd.includes(targetCommand)) {
-        return pid;
-      }
-    }
-  }
-
-  return null;
-}
-
 export function Layout({ children }: { children: React.ReactNode }) {
   const loaderData = useRouteLoaderData<LoaderData>('root');
 
