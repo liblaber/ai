@@ -2,6 +2,7 @@ import type { Message } from 'ai';
 import { generateId } from './fileUtils';
 import type { File, FileMap } from '~/lib/stores/files';
 import { extractRelativePath } from '~/utils/diff';
+import { logger } from './logger';
 
 export interface ProjectCommands {
   type: string;
@@ -10,21 +11,25 @@ export interface ProjectCommands {
   followupMessage: string;
 }
 
-export async function detectProjectCommands(fileMap: FileMap): Promise<ProjectCommands | null> {
+export async function detectProjectCommandsFromFileMap(fileMap: FileMap): Promise<ProjectCommands | null> {
   const packageJsonFileKey: string | undefined = Object.keys(fileMap).find(
     (path) => extractRelativePath(path) === 'package.json',
   );
 
   if (!packageJsonFileKey) {
-    console.log('No package.json file found.');
+    logger.warn('No package.json file found.');
     return null;
   }
 
   const packageJsonFile = fileMap[packageJsonFileKey] as File;
 
+  return detectProjectCommands(packageJsonFile);
+}
+
+export function detectProjectCommands(packageJson: File): ProjectCommands | null {
   try {
-    const packageJson = JSON.parse(packageJsonFile.content);
-    const scripts = packageJson?.scripts || {};
+    const packageJsonContent = JSON.parse(packageJson.content);
+    const scripts = packageJsonContent?.scripts || {};
 
     const preferredCommands = ['dev', 'start', 'preview'];
     const availableCommand = preferredCommands.find((cmd) => scripts[cmd]);
@@ -45,15 +50,11 @@ export async function detectProjectCommands(fileMap: FileMap): Promise<ProjectCo
     };
   } catch (error) {
     console.error('Error parsing package.json:', error);
-    return { type: '', setupCommand: '', followupMessage: '' };
+    return null;
   }
 }
 
-export function createCommandsMessage(commands: ProjectCommands): Message | null {
-  if (!commands.setupCommand && !commands.startCommand) {
-    return null;
-  }
-
+export function createCommandsMessage(commands: ProjectCommands): Message {
   let commandString = '';
 
   if (commands.setupCommand) {

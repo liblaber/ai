@@ -27,7 +27,7 @@ import { generateId } from 'ai';
 import { useGitPullSync } from '~/lib/stores/git';
 import { createConversation, getMessageSnapshotId } from '~/lib/persistence/conversations';
 import { extractArtifactTitleFromMessageContent } from '~/utils/artifactMapper';
-import { createCommandsMessage, detectProjectCommands } from '~/utils/projectCommands';
+import { createCommandsMessage, detectProjectCommandsFromFileMap } from '~/utils/projectCommands';
 import { ActionRunner } from '~/lib/runtime/action-runner';
 
 type DatabaseUrlResponse = {
@@ -154,11 +154,10 @@ export const ChatImpl = memo(
         const isAppRunning = await ActionRunner.isAppRunning();
 
         if (!isAppRunning) {
-          const projectCommands = await detectProjectCommands(workbenchStore.getFileMap());
-          const projectCommandsMessage = projectCommands ? createCommandsMessage(projectCommands) : null;
+          const projectCommands = await detectProjectCommandsFromFileMap(workbenchStore.getFileMap());
 
-          if (projectCommandsMessage) {
-            setCommandMessage?.(projectCommandsMessage);
+          if (projectCommands) {
+            setCommandMessage?.(createCommandsMessage(projectCommands));
           }
         }
 

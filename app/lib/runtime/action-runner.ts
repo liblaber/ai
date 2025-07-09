@@ -120,7 +120,7 @@ export class ActionRunner {
       return;
     }
 
-    if (await ActionRunner.isAppRunning()) {
+    if (data.action.type === 'start' && (await ActionRunner.isAppRunning())) {
       logger.debug('Application is already running');
       return;
     }
@@ -346,7 +346,7 @@ export class ActionRunner {
 
     const { output } = await webcontainer.spawn('ps', ['-ef']);
     const outputResult = await output.getReader().read();
-    const pid = this.#getCommandPid('npm run dev', outputResult.value);
+    const pid = this.#getCommandPid(workbenchStore.startCommand.get(), outputResult.value);
     logger.debug(`Found PID (${pid}) of the running app process`);
 
     return pid;
@@ -393,7 +393,12 @@ export class ActionRunner {
             }
 
             if (killedProcess) {
-              shell.executeCommand('npm run dev');
+              // Re-run the application
+              shell.executeCommand(workbenchStore.startCommand.get()).then((result) => {
+                if (result?.exitCode != 0) {
+                  logger.error(`Shell command failed: ${result?.output || 'No Output Available'}`);
+                }
+              });
             }
 
             isPackageInstalling.set(false);
@@ -416,7 +421,7 @@ export class ActionRunner {
 
         if (killedProcess) {
           // Re-run the application
-          shell.executeCommand('npm run dev').then((result) => {
+          shell.executeCommand(workbenchStore.startCommand.get()).then((result) => {
             if (result?.exitCode != 0) {
               logger.error(`Shell command failed: ${result?.output || 'No Output Available'}`);
             }

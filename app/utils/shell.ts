@@ -78,8 +78,6 @@ export class LiblabShell {
       await state.executionPrms;
     }
 
-    //start a new execution
-    console.log('inputing command...');
     this.terminal.input(command.trim() + '\n');
 
     //wait for the execution to finish
