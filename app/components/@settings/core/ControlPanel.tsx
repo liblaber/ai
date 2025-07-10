@@ -37,37 +37,42 @@ const TabSection = ({ title, tabs, activeTab, onTabClick }: TabSectionProps) => 
   <>
     <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 px-3">{title}</div>
     <AnimatePresence mode="popLayout">
-      {tabs.map((tab: TabVisibilityConfig) => (
-        <motion.div
-          key={tab.id}
-          layout
-          className={classNames(
-            'flex items-center gap-3 p-3 h-9 rounded-[15px] mb-2 cursor-pointer',
-            'transition-all duration-200',
-            activeTab === tab.id
-              ? 'bg-white dark:bg-white text-black dark:text-black'
-              : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-white',
-          )}
-          onClick={() => onTabClick(tab.id as TabType)}
-        >
-          <div
+      {tabs.map((tab: TabVisibilityConfig) => {
+        const tabId = tab.id as TabType;
+        const isActiveTab = activeTab === tabId;
+
+        return (
+          <motion.div
+            key={tabId}
+            layout
             className={classNames(
-              'w-5 h-5',
-              activeTab === tab.id ? 'text-gray-900 dark:text-gray-900' : 'text-gray-600 dark:text-white',
+              'flex items-center gap-3 p-3 h-9 rounded-[15px] mb-2 cursor-pointer',
+              'transition-all duration-200',
+              isActiveTab
+                ? 'bg-white dark:bg-white text-black dark:text-black'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-white',
             )}
+            onClick={() => onTabClick(tabId)}
           >
-            {typeof TAB_ICONS[tab.id] === 'string' ? (
-              <div className={classNames(TAB_ICONS[tab.id] as string, 'w-full h-full')} />
-            ) : (
-              (() => {
-                const Icon = TAB_ICONS[tab.id] as ComponentType<IconProps>;
-                return <Icon variant="Bold" size={20} />;
-              })()
-            )}
-          </div>
-          <span className="text-sm font-medium">{TAB_LABELS[tab.id]}</span>
-        </motion.div>
-      ))}
+            <div
+              className={classNames(
+                'w-5 h-5',
+                isActiveTab ? 'text-gray-900 dark:text-gray-900' : 'text-gray-600 dark:text-white',
+              )}
+            >
+              {typeof TAB_ICONS[tabId] === 'string' ? (
+                <div className={classNames(TAB_ICONS[tabId] as string, 'w-full h-full')} />
+              ) : (
+                (() => {
+                  const Icon = TAB_ICONS[tabId] as ComponentType<IconProps>;
+                  return <Icon variant="Bold" size={20} />;
+                })()
+              )}
+            </div>
+            <span className="text-sm font-medium">{TAB_LABELS[tabId]}</span>
+          </motion.div>
+        );
+      })}
     </AnimatePresence>
   </>
 );

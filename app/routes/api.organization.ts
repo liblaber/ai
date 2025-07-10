@@ -35,7 +35,7 @@ export async function action({ request }: LoaderFunctionArgs) {
     }
 
     try {
-      const updatedOrganization = await organizationService.updateOrganization(userId, data.name);
+      const updatedOrganization = await organizationService.updateOrganizationByUser(userId, data.name);
       return json({
         success: true,
         organization: updatedOrganization,

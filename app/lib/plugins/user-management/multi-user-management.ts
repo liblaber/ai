@@ -1,4 +1,4 @@
-import { freeEmailDomains } from 'free-email-domains-typescript';
+import { capitalizeFirstLetter, isFreeEmailDomain } from '~/lib/.server/llm/utils';
 import type { UserManagementPlugin } from './user-management-plugin-manager';
 import { UserRole, type Organization } from '@prisma/client';
 
@@ -19,11 +19,11 @@ export class MultiUserManagement implements UserManagementPlugin {
     let organizationName: string;
     let organizationDomain: string | null = null;
 
-    if (MultiUserManagement._isFreeEmailDomain(domain)) {
-      organizationName = MultiUserManagement._capitalizeFirstLetter(localPart);
+    if (isFreeEmailDomain(domain)) {
+      organizationName = capitalizeFirstLetter(localPart);
     } else {
       const domainWithoutExt = domain.split('.')[0];
-      organizationName = MultiUserManagement._capitalizeFirstLetter(domainWithoutExt);
+      organizationName = capitalizeFirstLetter(domainWithoutExt);
       organizationDomain = domain;
     }
 
@@ -58,12 +58,4 @@ export class MultiUserManagement implements UserManagementPlugin {
       },
     });
   }
-
-  private static _isFreeEmailDomain = (domain: string): boolean => {
-    return freeEmailDomains.includes(domain.toLowerCase());
-  };
-
-  private static _capitalizeFirstLetter = (str: string): string => {
-    return str[0].toUpperCase() + str.slice(1);
-  };
 }

@@ -20,7 +20,7 @@ export const organizationService = {
     return user?.organization || null;
   },
 
-  async updateOrganization(userId: string, name: string) {
+  async updateOrganizationByUser(userId: string, name: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { organization: true },
