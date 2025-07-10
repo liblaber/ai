@@ -25,6 +25,7 @@ import { usePluginStore } from '~/lib/plugins/plugin-store';
 import { type DataSourceType, useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import type { PluginAccessMap } from '~/lib/plugins/types';
+import { useUserStore } from './lib/stores/user';
 
 declare global {
   interface Window {
@@ -125,6 +126,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { setDataSources } = useDataSourcesStore();
   const { setPluginAccess } = usePluginStore();
   const { setDataSourceTypes } = useDataSourceTypesStore();
+  const { setUser } = useUserStore();
 
   useEffect(() => {
     if (loaderData?.dataSources) {
@@ -143,6 +145,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
       setDataSourceTypes(loaderData?.dataSourceTypes);
     }
   }, [loaderData?.dataSourceTypes]);
+
+  useEffect(() => {
+    if (loaderData?.user) {
+      setUser(loaderData?.user);
+    }
+  }, [loaderData?.user]);
 
   useEffect(() => {
     if (loaderData && loaderData.ENV) {

@@ -2,19 +2,22 @@ export enum PluginType {
   DATA_ACCESS = 'data-access',
   AUTH = 'auth',
   STARTER = 'starter',
+  USER_MANAGEMENT = 'user-management',
 }
 
 export type DataAccessPluginId = 'postgres' | 'mysql' | 'sqlite';
 export type AuthPluginId = 'anonymous' | 'google' | 'twitch' | 'twitter';
 export type StarterPluginId = 'remix' | 'next';
+export type UserManagementPluginId = 'single-user' | 'multi-user';
 
 export type PluginAccessMap = {
   [PluginType.DATA_ACCESS]: Record<DataAccessPluginId, boolean>;
   [PluginType.AUTH]: Record<AuthPluginId, boolean>;
   [PluginType.STARTER]: Record<StarterPluginId, boolean>;
+  [PluginType.USER_MANAGEMENT]: Record<UserManagementPluginId, boolean>;
 };
 
-export type PluginId = DataAccessPluginId | AuthPluginId | StarterPluginId;
+export type PluginId = DataAccessPluginId | AuthPluginId | StarterPluginId | UserManagementPluginId;
 
 export interface Plugin {
   pluginId: PluginId;

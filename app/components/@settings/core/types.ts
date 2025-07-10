@@ -1,34 +1,33 @@
-import type { ReactNode } from 'react';
+export type TabType = 'data' | 'github' | 'deployed-apps' | 'organization' | 'members';
 
-export type SettingCategory = 'file_sharing' | 'connectivity' | 'system' | 'services' | 'preferences';
-
-export type TabType = 'data' | 'github' | 'deployed-apps';
-
-export interface SettingItem {
-  id: TabType;
-  label: string;
-  icon: string;
-  category: SettingCategory;
-  description?: string;
-  component: () => ReactNode;
-  badge?: string;
-  keywords?: string[];
-}
+export type WindowType = 'user' | 'admin';
 
 export interface TabVisibilityConfig {
   id: TabType;
   visible: boolean;
+  window: WindowType;
   order: number;
   isExtraDevTab?: boolean;
   locked?: boolean;
 }
 
+export interface AdminTabConfig extends TabVisibilityConfig {
+  window: 'admin';
+}
+
+export interface UserTabConfig extends TabVisibilityConfig {
+  window: 'user';
+}
+
 export interface TabWindowConfig {
-  userTabs: TabVisibilityConfig[];
+  userTabs: UserTabConfig[];
+  adminTabs: AdminTabConfig[];
 }
 
 export const TAB_LABELS: Record<TabType, string> = {
   data: 'Data Sources',
   github: 'GitHub',
   'deployed-apps': 'Deployed Apps',
+  organization: 'Organization',
+  members: 'Members',
 };

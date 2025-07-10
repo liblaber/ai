@@ -103,19 +103,27 @@ model Snapshot {
   @@map("snapshot")
 }
 
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
 model User {
-  id            String         @id
-  name          String
-  email         String
-  emailVerified Boolean
-  image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
-  sessions      Session[]
-  accounts      Account[]
-  dataSources   DataSource[]
-  conversations Conversation[]
-  websites      Website[]
+  id             String         @id
+  name           String
+  email          String
+  emailVerified  Boolean
+  image          String?
+  createdAt      DateTime
+  updatedAt      DateTime
+  sessions       Session[]
+  accounts       Account[]
+  dataSources    DataSource[]
+  conversations  Conversation[]
+  websites       Website[]
+  role           UserRole       @default(MEMBER)
+  organizationId String?
+  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   isAnonymous Boolean?
 
@@ -166,4 +174,15 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  domain    String?  @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  users     User[]
+
+  @@map("organization")
 }

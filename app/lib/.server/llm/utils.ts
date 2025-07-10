@@ -3,6 +3,7 @@ import { DATA_SOURCE_ID_REGEX, FIRST_USER_MESSAGE_REGEX, ASK_LIBLAB_REGEX, FILES
 import { type FileMap, IGNORE_PATTERNS } from './constants';
 import ignore from 'ignore';
 import type { ContextAnnotation } from '~/types/context';
+import { freeEmailDomains } from 'free-email-domains-typescript';
 
 export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
   isFirstUserMessage?: boolean;
@@ -131,4 +132,12 @@ export function extractCurrentContext(messages: Message[]) {
   }
 
   return { summary, codeContext };
+}
+
+export function isFreeEmailDomain(domain: string): boolean {
+  return freeEmailDomains.includes(domain.toLowerCase());
+}
+
+export function capitalizeFirstLetter(str: string): string {
+  return str[0].toUpperCase() + str.slice(1);
 }

@@ -10,12 +10,11 @@ import {
   updateContextOptimization,
   updatePromptId,
   updateProviderSettings as updateProviderSettingsStore,
-  updateTabConfiguration as updateTabConfig,
 } from '~/lib/stores/settings';
 import { useCallback, useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import type { IProviderConfig, IProviderSetting, ProviderInfo } from '~/types/model';
-import type { TabVisibilityConfig, TabWindowConfig } from '~/components/@settings/core/types';
+import type { TabWindowConfig } from '~/components/@settings/core/types';
 
 export interface UseSettingsReturn {
   // Provider settings
@@ -33,7 +32,6 @@ export interface UseSettingsReturn {
 
   // Tab configuration
   tabConfiguration: TabWindowConfig;
-  updateTabConfiguration: (config: TabVisibilityConfig) => void;
   resetTabConfiguration: () => void;
 }
 
@@ -94,7 +92,6 @@ export function useSettings(): UseSettingsReturn {
     contextOptimizationEnabled,
     enableContextOptimization,
     tabConfiguration,
-    updateTabConfiguration: updateTabConfig,
     resetTabConfiguration: resetTabConfig,
   };
 }
