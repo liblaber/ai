@@ -462,7 +462,7 @@ export const buildsQuery = \`
          LEFT JOIN apis a ON b.api_id = a.id
          LEFT JOIN users u ON b.created_by_id = u.id
   WHERE b.is_deleted = false
-    AND b.status = ?
+    AND b.status = $1
   ORDER BY b.created_at DESC
     LIMIT $2
   OFFSET $3
@@ -471,7 +471,7 @@ export const buildsQuery = \`
 export const buildsCountQuery = \`
   SELECT COUNT(*) as total
   FROM builds b
-  WHERE b.is_deleted = false AND b.status = ?
+  WHERE b.is_deleted = false AND b.status = $1
 \`;
 
 export enum BuildStatus {
