@@ -10,6 +10,7 @@ typesToParse.forEach((type) => {
 export class PostgresAccessor implements BaseAccessor {
   static pluginId = 'postgres';
   readonly label = 'PostgreSQL';
+  readonly preparedStatementPlaceholder = '$1';
   readonly connectionStringFormat = 'postgres(ql)://username:password@host:port/database';
   private _pool: Pool | null = null;
 
