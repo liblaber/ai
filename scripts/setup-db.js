@@ -1,21 +1,17 @@
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import Database from 'better-sqlite3';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function setupDatabase() {
   try {
     // Open database connection
-    const db = await open({
-      filename: './example.db',
-      driver: sqlite3.Database,
-    });
+    const db = new Database('./example.db');
 
     // Quick check if tables exist
-    const tables = await db.all("SELECT name FROM sqlite_master WHERE type='table'");
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
 
     if (tables.length > 0) {
       console.log('✅ Database already initialized');
