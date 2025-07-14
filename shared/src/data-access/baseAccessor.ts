@@ -8,10 +8,10 @@ export interface BaseAccessor {
   readonly connectionStringFormat: string;
 
   /**
-   * Placeholder used in prepared statements for this accessor
-   * @returns The placeholder string, e.g. "?" for SQLite, "$1" for Postgres
+   * Placeholder used in prepared statements for this accessor as an example for the LLM
+   * @returns The placeholder string, e.g. "?" for SQLite, "$1, $2" for Postgres
    */
-  readonly preparedStatementPlaceholder: string;
+  readonly preparedStatementPlaceholderExample: string;
 
   /**
    * Executes a SQL query against the database

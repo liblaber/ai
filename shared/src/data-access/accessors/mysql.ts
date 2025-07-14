@@ -10,7 +10,7 @@ export class MySQLAccessor implements BaseAccessor {
   static pluginId = 'mysql';
   readonly label = 'MySQL';
   readonly connectionStringFormat = 'mysql://username:password@host:port/database';
-  readonly preparedStatementPlaceholder = '?';
+  readonly preparedStatementPlaceholderExample = '?';
   private _connection: Connection | null = null;
 
   static isAccessor(databaseUrl: string): boolean {

@@ -20,7 +20,7 @@ const EXAMPLE_DATABASE_NAME = 'example.db';
 export class SQLiteAccessor implements BaseAccessor {
   static pluginId = 'sqlite';
   readonly label = 'SQLite';
-  readonly preparedStatementPlaceholder = '?';
+  readonly preparedStatementPlaceholderExample = '?';
   readonly connectionStringFormat = 'sqlite://path/to/database.db';
   private _db: SQLiteDatabase | null = null;
 
