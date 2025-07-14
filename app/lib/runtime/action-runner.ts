@@ -66,9 +66,6 @@ class ActionCommandError extends Error {
   }
 }
 
-const packageInstallPromise = atom<Promise<void>>(Promise.resolve());
-const isPackageInstalling = atom<boolean>(false);
-
 export class ActionRunner {
   runnerId = atom<string>(`${Date.now()}`);
   actions: ActionsMap = map({});
@@ -120,7 +117,7 @@ export class ActionRunner {
       return;
     }
 
-    if (data.action.type === 'start' && (await ActionRunner.isAppRunning())) {
+    if (data.action.content === workbenchStore.startCommand.get() && (await ActionRunner.isAppRunning())) {
       logger.debug('Application is already running');
       return;
     }
@@ -208,7 +205,7 @@ export class ActionRunner {
     try {
       switch (action.type) {
         case 'shell': {
-          await this.#runShellAction(action);
+          void this.#runShellAction(action);
           break;
         }
         case 'file': {
@@ -221,27 +218,27 @@ export class ActionRunner {
           break;
         }
         case 'start': {
-          this.#runStartAction(action)
-            .then(() => this.#updateAction(actionId, { status: 'complete' }))
-            .catch((err: Error) => {
-              if (action.abortSignal.aborted) {
-                return;
-              }
+          this.#runStartAction(action).catch((err: Error) => {
+            if (action.abortSignal.aborted) {
+              return;
+            }
 
-              this.#updateAction(actionId, { status: 'failed', error: 'Action failed' });
-              logger.error(`[${action.type}]:Action failed\n\n`, err);
+            this.#updateAction(actionId, { status: 'failed', error: 'Action failed' });
+            logger.error(`[${action.type}]:Action failed\n\n`, err);
 
-              if (!(err instanceof ActionCommandError)) {
-                return;
-              }
+            if (!(err instanceof ActionCommandError)) {
+              return;
+            }
 
-              this.onAlert?.({
-                type: 'error',
-                title: 'Dev Server Failed',
-                description: err.header,
-                content: err.output,
-              });
+            this.onAlert?.({
+              type: 'error',
+              title: 'Dev Server Failed',
+              description: err.header,
+              content: err.output,
             });
+          });
+
+          this.#updateAction(actionId, { status: 'complete' });
 
           /*
            * adding a delay to avoid any race condition between 2 start actions
@@ -347,7 +344,12 @@ export class ActionRunner {
     const { output } = await webcontainer.spawn('ps', ['-ef']);
     const outputResult = await output.getReader().read();
     const pid = this.#getCommandPid(workbenchStore.startCommand.get(), outputResult.value);
-    logger.debug(`Found PID (${pid}) of the running app process`);
+
+    if (pid) {
+      logger.debug(`Found PID (${pid}) of the running app process`);
+    } else {
+      logger.debug('No running app process');
+    }
 
     return pid;
   }
@@ -373,70 +375,26 @@ export class ActionRunner {
 
     logger.debug(`[${action.type}]:Executing Action: ${action.content}\n\n`);
 
-    /*
-     * Installing packages takes longer, and we don't want to block other actions
-     * Since install is required for start command, we're saving promise and awaiting it before the start command
-     */
-    const isPackageInstall = /^(pnpm|npm)\s+(i|install|add)/.test(action.content);
-
-    if (isPackageInstall) {
-      isPackageInstalling.set(true);
-      packageInstallPromise.set(
-        shell
-          .executeCommand(action.content, () => {
-            logger.debug(`[${action.type}]:Aborting Action\n\n`, action);
-            action.abort();
-          })
-          .then((result) => {
-            if (result?.exitCode != 0) {
-              logger.error(`Shell command failed: ${result?.output || 'No Output Available'}`);
-            }
-
-            if (killedProcess) {
-              // Re-run the application
-              shell.executeCommand(workbenchStore.startCommand.get()).then((result) => {
-                if (result?.exitCode != 0) {
-                  logger.error(`Shell command failed: ${result?.output || 'No Output Available'}`);
-                }
-              });
-            }
-
-            isPackageInstalling.set(false);
-          }),
-      );
-
-      return;
-    }
-
-    shell
-      .executeCommand(action.content, () => {
+    try {
+      const result = await shell.executeCommand(action.content, () => {
         logger.debug(`[${action.type}]:Aborting Action\n\n`, action);
         action.abort();
-      })
-      .then((result) => {
-        if (result?.exitCode != 0) {
-          logger.error(`Shell command failed: ${result?.output || 'No Output Available'}`);
-          return;
-        }
-
-        if (killedProcess) {
-          // Re-run the application
-          shell.executeCommand(workbenchStore.startCommand.get()).then((result) => {
-            if (result?.exitCode != 0) {
-              logger.error(`Shell command failed: ${result?.output || 'No Output Available'}`);
-            }
-          });
-        }
       });
+
+      await workbenchStore.syncPackageJsonFile();
+
+      if (result?.exitCode != 0) {
+        logger.error(`Shell command failed: ${result?.output || 'No Output Available'}`);
+        return;
+      }
+    } catch (error) {
+      logger.error(`[${action.type}]:Error Executing Action: ${action.content}\n\n`, error);
+    }
   }
 
   async #runStartAction(action: ActionState) {
     if (action.type !== 'start') {
       unreachable('Expected shell action');
-    }
-
-    if (isPackageInstalling.get()) {
-      await packageInstallPromise.get();
     }
 
     const shell = await this.#availableShellTerminal();

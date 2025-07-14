@@ -1,18 +1,14 @@
-import type { WebContainer } from '@webcontainer/api';
 import { atom, type WritableAtom } from 'nanostores';
 import type { ITerminal } from '~/types/terminal';
 import { LiblabShell } from '~/utils/shell';
 import { coloredText } from '~/utils/terminal';
 
 export class TerminalStore {
-  #webcontainer: Promise<WebContainer>;
   #shells: Array<LiblabShell> = [];
 
   showTerminal: WritableAtom<boolean> = import.meta.hot?.data.showTerminal ?? atom(true);
 
-  constructor(webcontainerPromise: Promise<WebContainer>) {
-    this.#webcontainer = webcontainerPromise;
-
+  constructor() {
     if (import.meta.hot) {
       import.meta.hot.data.showTerminal = this.showTerminal;
     }
@@ -27,7 +23,7 @@ export class TerminalStore {
   async attachTerminal(terminal: ITerminal) {
     try {
       const newShellProcess = new LiblabShell();
-      await newShellProcess.init(await this.#webcontainer, terminal);
+      await newShellProcess.init(terminal);
       this.#shells.push(newShellProcess);
     } catch (error: any) {
       terminal.write(coloredText.red('Failed to spawn shell\n\n') + error.message);

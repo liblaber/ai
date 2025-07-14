@@ -60,16 +60,16 @@ export function useConversationHistory() {
 
         await loadFileMapIntoContainer(snapshot.fileMap);
 
-        const projectCommands = await detectProjectCommandsFromFileMap(snapshot.fileMap);
-
-        if (projectCommands) {
-          setCommandMessage(createCommandsMessage(projectCommands));
-        }
-
         setInitialMessages(conversation.messages);
 
         if (conversation.dataSourceId && conversation.dataSourceId !== selectedDataSourceId) {
           setSelectedDataSourceId(conversation.dataSourceId);
+        }
+
+        const projectCommands = await detectProjectCommandsFromFileMap(snapshot.fileMap);
+
+        if (projectCommands) {
+          setCommandMessage(createCommandsMessage(projectCommands));
         }
 
         chatId.set(conversation.id);

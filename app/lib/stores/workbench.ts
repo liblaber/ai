@@ -6,7 +6,7 @@ import { webcontainer } from '~/lib/webcontainer';
 import type { ITerminal } from '~/types/terminal';
 import { unreachable } from '~/utils/unreachable';
 import { EditorStore } from './editor';
-import { type FileMap, FilesStore } from './files';
+import { type File, type FileMap, FilesStore } from './files';
 import { PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
 import JSZip from 'jszip';
@@ -44,7 +44,7 @@ export class WorkbenchStore {
   #previewsStore = new PreviewsStore(webcontainer);
   #filesStore = new FilesStore(webcontainer);
   #editorStore = new EditorStore(this.#filesStore);
-  #terminalStore = new TerminalStore(webcontainer);
+  #terminalStore = new TerminalStore();
 
   #reloadedMessages = new Set<string>();
   #mostRecentCommitMessage: string | undefined;
@@ -171,6 +171,10 @@ export class WorkbenchStore {
         .filter(([path]) => !path.includes('.next'))
         .map(([path, dirent]) => [extractRelativePath(path), dirent]),
     );
+  }
+
+  async syncPackageJsonFile(): Promise<File> {
+    return this.#filesStore.syncPackageJsonFile();
   }
 
   setCurrentDocumentContent(newContent: string) {

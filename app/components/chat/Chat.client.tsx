@@ -27,7 +27,7 @@ import { generateId } from 'ai';
 import { useGitPullSync } from '~/lib/stores/git';
 import { createConversation, getMessageSnapshotId } from '~/lib/persistence/conversations';
 import { extractArtifactTitleFromMessageContent } from '~/utils/artifactMapper';
-import { createCommandsMessage, detectProjectCommandsFromFileMap } from '~/utils/projectCommands';
+import { createCommandsMessage, detectProjectCommands } from '~/utils/projectCommands';
 import { ActionRunner } from '~/lib/runtime/action-runner';
 
 type DatabaseUrlResponse = {
@@ -151,20 +151,24 @@ export const ChatImpl = memo(
 
         logger.debug('Finished streaming');
 
-        const isAppRunning = await ActionRunner.isAppRunning();
-
-        if (!isAppRunning) {
-          const projectCommands = await detectProjectCommandsFromFileMap(workbenchStore.getFileMap());
-
-          if (projectCommands) {
-            setCommandMessage?.(createCommandsMessage(projectCommands));
-          }
-        }
-
         const artifactTitle = extractArtifactTitleFromMessageContent(content);
 
         setTimeout(async () => {
           await storeConversationHistory(id, updateMessageWithSnapshot, artifactTitle);
+
+          const isAppRunning = await ActionRunner.isAppRunning();
+
+          if (!isAppRunning) {
+            const packageJsonFile = await workbenchStore.syncPackageJsonFile();
+
+            if (packageJsonFile) {
+              const projectCommands = detectProjectCommands(packageJsonFile);
+
+              if (projectCommands) {
+                setCommandMessage?.(createCommandsMessage(projectCommands));
+              }
+            }
+          }
         }, 2000);
       },
       initialMessages,
@@ -172,13 +176,13 @@ export const ChatImpl = memo(
     });
 
     useEffect(() => {
-      if (!commandMessage) {
+      if (!commandMessage || messagesRef.current.some((message) => message.id === commandMessage.id)) {
         return;
       }
 
       setTimeout(() => {
         setMessages([...messagesRef.current, commandMessage]);
-      }, 2000);
+      }, 500);
     }, [commandMessage]);
 
     const isLoading = status === 'streaming';

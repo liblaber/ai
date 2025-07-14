@@ -1,7 +1,8 @@
-import type { WebContainer, WebContainerProcess } from '@webcontainer/api';
+import type { WebContainerProcess } from '@webcontainer/api';
 import type { ITerminal } from '~/types/terminal';
 import { withResolvers } from './promises';
 import { atom } from 'nanostores';
+import { webcontainer as webcontainerPromise } from '~/lib/webcontainer';
 
 export type ExecutionResult = { output: string; exitCode: number } | undefined;
 
@@ -9,7 +10,6 @@ export class LiblabShell {
   #initialized: (() => void) | undefined;
   #isInitialized = atom<boolean>(false);
   #readyPromise: Promise<void>;
-  #webcontainer: WebContainer | undefined;
   #terminal: ITerminal | undefined;
   #process: WebContainerProcess | undefined;
   executionState = atom<
@@ -33,11 +33,10 @@ export class LiblabShell {
     return this.#readyPromise;
   }
 
-  async init(webcontainer: WebContainer, terminal: ITerminal) {
-    this.#webcontainer = webcontainer;
+  async init(terminal: ITerminal) {
     this.#terminal = terminal;
 
-    const { process, output } = await this.newLiblabShellProcess(webcontainer, terminal);
+    const { process, output } = await this.newLiblabShellProcess(terminal);
     this.#process = process;
     this.#outputStream = output.getReader();
     await this.waitTillOscCode('interactive');
@@ -82,7 +81,6 @@ export class LiblabShell {
 
     //wait for the execution to finish
     const executionPromise = this.getCurrentExecutionResult();
-    console.log(executionPromise);
     this.executionState.set({
       active: true,
       executionPrms: executionPromise,
@@ -103,8 +101,9 @@ export class LiblabShell {
     return resp;
   }
 
-  async newLiblabShellProcess(webcontainer: WebContainer, terminal: ITerminal) {
+  async newLiblabShellProcess(terminal: ITerminal) {
     const args: string[] = [];
+    const webcontainer = await webcontainerPromise;
 
     // we spawn a JSH process with a fallback cols and rows in case the process is not attached yet to a visible terminal
     const process = await webcontainer.spawn('/bin/jsh', ['--osc', ...args], {
