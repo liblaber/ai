@@ -1,14 +1,14 @@
-require('dotenv').config();
-
-const { execSync } = require('child_process');
-const fs = require('fs');
-const os = require('os');
+import 'dotenv/config';
+import { getTelemetry, getTelemetrySync, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { execSync } from 'child_process';
+import fs from 'fs';
+import os from 'os';
 
 const NGROK_LOG_FILE = './ngrok.log';
 const NGROK_PROCESS_PORT = 4040;
 
-const setupNgrokTunnel = () => {
-  const port = process.env.PORT || 5173;
+const setupNgrokTunnel = (): string | null => {
+  const port = process.env.PORT || '5173';
 
   try {
     killPreviousNgrokProcessAndClearLogFile();
@@ -28,7 +28,7 @@ const setupNgrokTunnel = () => {
     execSync('sleep 2');
 
     let attempts = 0;
-    let forwardingUrl;
+    let forwardingUrl: string | null = null;
 
     while (attempts < 10 && !forwardingUrl) {
       try {
@@ -38,14 +38,14 @@ const setupNgrokTunnel = () => {
 
         for (const line of logLines) {
           try {
-            const logEntry = JSON.parse(line);
+            const logEntry = JSON.parse(line) as { addr?: string; url?: string };
 
             if (logEntry.addr && logEntry.url) {
               forwardingUrl = logEntry.url;
               break;
             }
           } catch (e) {
-            console.error('Error parsing log line:', e.message);
+            console.error('Error parsing log line:', (e as Error).message);
             console.error(e);
           }
         }
@@ -55,7 +55,7 @@ const setupNgrokTunnel = () => {
           return forwardingUrl;
         }
       } catch (err) {
-        console.error('Error reading ngrok log file:', err.message);
+        console.error('Error reading ngrok log file:', (err as Error).message);
         console.error(err);
       }
 
@@ -71,14 +71,14 @@ const setupNgrokTunnel = () => {
 
     return forwardingUrl;
   } catch (error) {
-    console.error('Error setting up ngrok tunnel:', error.message);
+    console.error('Error setting up ngrok tunnel:', (error as Error).message);
     return null;
   }
 };
 
-const killPreviousNgrokProcessAndClearLogFile = () => {
+const killPreviousNgrokProcessAndClearLogFile = (): void => {
   try {
-    let processId = null;
+    let processId: string | null = null;
 
     if (os.platform() === 'win32') {
       // Windows: Find process ID by port
@@ -88,9 +88,12 @@ const killPreviousNgrokProcessAndClearLogFile = () => {
       }).trim();
 
       if (result) {
-        processId = result.split(/\s+/).pop(); // Last column is the PID
-        execSync(`taskkill /PID ${processId} /F`);
-        console.log(`Killed process ${processId} on port ${NGROK_PROCESS_PORT}`);
+        processId = result.split(/\s+/).pop() || null; // The Last column is the PID
+
+        if (processId) {
+          execSync(`taskkill /PID ${processId} /F`);
+          console.log(`Killed process ${processId} on port ${NGROK_PROCESS_PORT}`);
+        }
       }
     } else {
       // Unix/macOS: Find process ID and kill
@@ -102,7 +105,7 @@ const killPreviousNgrokProcessAndClearLogFile = () => {
       }
     }
   } catch (error) {
-    console.warn(`No process found on port ${NGROK_PROCESS_PORT} or failed to kill:`, error.message);
+    console.warn(`No process found on port ${NGROK_PROCESS_PORT} or failed to kill:`, (error as Error).message);
   }
 
   // Remove log file safely
@@ -112,11 +115,11 @@ const killPreviousNgrokProcessAndClearLogFile = () => {
       console.log(`🗡️ Deleted log file: ${NGROK_LOG_FILE}`);
     }
   } catch (error) {
-    console.error('Error deleting log file:', error.message);
+    console.error('Error deleting log file:', (error as Error).message);
   }
 };
 
-const updateEnvFile = (ngrokUrl) => {
+const updateEnvFile = (ngrokUrl: string): void => {
   try {
     let envContent = '';
 
@@ -144,7 +147,7 @@ const updateEnvFile = (ngrokUrl) => {
   }
 };
 
-const runApp = async () => {
+const runApp = async (): Promise<void> => {
   console.log(`
 ★═══════════════════════════════════════★
           🦙 liblab builder 🦙
@@ -184,7 +187,7 @@ const runApp = async () => {
 
     console.log('⏳  Setting up ngrok tunnel...');
 
-    const ngrokUrl = await setupNgrokTunnel();
+    const ngrokUrl = setupNgrokTunnel();
 
     if (ngrokUrl) {
       updateEnvFile(ngrokUrl);
@@ -193,6 +196,62 @@ const runApp = async () => {
 
   console.log('⏳  Please wait until the URL appears here');
   console.log('★═══════════════════════════════════════★');
+
+  // Track start success
+  try {
+    const telemetry = await getTelemetry();
+    await telemetry.trackEvent(TelemetryEventType.START_SUCCESS);
+  } catch (error) {
+    console.warn('Failed to track start success:', (error as Error).message);
+  }
 };
 
-runApp();
+// Add error handling for the entire runApp function
+const runAppWithErrorHandling = async (): Promise<void> => {
+  try {
+    await runApp();
+  } catch (error) {
+    console.error('❌ Error during app startup:', error);
+
+    try {
+      const telemetry = await getTelemetry();
+      await telemetry.trackEvent(TelemetryEventType.APP_ERROR, {
+        error: (error as Error).message || 'Unknown error',
+      });
+      await telemetry.shutdown();
+    } catch (telemetryError) {
+      console.warn('Failed to track start error:', (telemetryError as Error).message);
+    }
+
+    process.exit(1);
+  }
+};
+
+// Handle graceful shutdown
+process.on('SIGINT', async () => {
+  try {
+    const telemetry = getTelemetrySync();
+
+    if (telemetry) {
+      await telemetry.shutdown();
+    }
+  } catch (error) {
+    console.warn('Failed to shutdown telemetry:', (error as Error).message);
+  }
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  try {
+    const telemetry = getTelemetrySync();
+
+    if (telemetry) {
+      await telemetry.shutdown();
+    }
+  } catch (error) {
+    console.warn('Failed to shutdown telemetry:', (error as Error).message);
+  }
+  process.exit(0);
+});
+
+runAppWithErrorHandling();
