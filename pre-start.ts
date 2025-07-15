@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { getTelemetry, getTelemetrySync, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
@@ -166,14 +166,9 @@ const runApp = async (): Promise<void> => {
   }
 
   if (process.env.VITE_ENV_NAME === 'local') {
-    console.log('⏳ Setting up example database...');
+    console.log('⏳ Setting up sample database...');
 
-    try {
-      execSync('node scripts/setup-db.js', { stdio: 'inherit' });
-    } catch (error) {
-      console.error('❌ Error setting up example database:', error);
-      process.exit(1);
-    }
+    execSync('tsx scripts/setup-samples-db.ts', { stdio: 'inherit' });
 
     console.log('🌱 Running database seed...');
 
@@ -200,7 +195,7 @@ const runApp = async (): Promise<void> => {
   // Track start success
   try {
     const telemetry = await getTelemetry();
-    await telemetry.trackEvent(TelemetryEventType.START_SUCCESS);
+    await telemetry.trackEvent({ eventType: TelemetryEventType.APP_START_SUCCESS });
   } catch (error) {
     console.warn('Failed to track start success:', (error as Error).message);
   }
@@ -215,10 +210,12 @@ const runAppWithErrorHandling = async (): Promise<void> => {
 
     try {
       const telemetry = await getTelemetry();
-      await telemetry.trackEvent(TelemetryEventType.APP_ERROR, {
-        error: (error as Error).message || 'Unknown error',
+      await telemetry.trackEvent({
+        eventType: TelemetryEventType.APP_ERROR,
+        properties: {
+          error: 'Unknown error',
+        },
       });
-      await telemetry.shutdown();
     } catch (telemetryError) {
       console.warn('Failed to track start error:', (telemetryError as Error).message);
     }
@@ -226,32 +223,5 @@ const runAppWithErrorHandling = async (): Promise<void> => {
     process.exit(1);
   }
 };
-
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-  try {
-    const telemetry = getTelemetrySync();
-
-    if (telemetry) {
-      await telemetry.shutdown();
-    }
-  } catch (error) {
-    console.warn('Failed to shutdown telemetry:', (error as Error).message);
-  }
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  try {
-    const telemetry = getTelemetrySync();
-
-    if (telemetry) {
-      await telemetry.shutdown();
-    }
-  } catch (error) {
-    console.warn('Failed to shutdown telemetry:', (error as Error).message);
-  }
-  process.exit(0);
-});
 
 runAppWithErrorHandling();

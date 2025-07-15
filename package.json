@@ -21,7 +21,6 @@
     "typecheck": "tsc",
     "preview": "pnpm run build && pnpm run start",
     "prepare": "husky",
-    "clean": "node scripts/clean.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",

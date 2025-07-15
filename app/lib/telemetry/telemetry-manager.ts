@@ -4,16 +4,15 @@ import { PostHog } from 'posthog-node';
 const { machineIdSync } = await import('node-machine-id');
 
 export enum TelemetryEventType {
-  SETUP_SUCCESS = 'setup_success',
-  SETUP_ERROR = 'setup_error',
-  START_SUCCESS = 'start_success',
+  APP_SETUP_SUCCESS = 'setup_success',
+  APP_SETUP_ERROR = 'setup_error',
+  APP_START_SUCCESS = 'app_start_success',
   APP_ERROR = 'app_error',
 }
 
 export interface TelemetryEvent {
-  event: TelemetryEventType;
+  eventType: TelemetryEventType;
   properties?: Record<string, any>;
-  timestamp?: number;
 }
 
 class TelemetryManager {
@@ -28,50 +27,40 @@ class TelemetryManager {
     const instance = new TelemetryManager();
     instance._posthogApiKey = process.env.POSTHOG_API_KEY || null;
     instance._machineId = machineIdSync();
-
-    if (instance._isTelemetryEnabled()) {
-      // Initialize PostHog client
-      instance._posthogClient = new PostHog(instance._posthogApiKey!, {
-        host: 'https://us.i.posthog.com',
-        flushAt: 1, // Flush immediately for server-side tracking
-        flushInterval: 0, // Disable automatic flushing
-      });
-      console.log('📊 Telemetry enabled');
-    } else {
-      console.log('📊 Telemetry disabled');
-    }
+    instance._posthogClient = new PostHog(instance._posthogApiKey!, {
+      host: 'https://us.i.posthog.com',
+      flushAt: 1, // Flush immediately, no batching
+      flushInterval: 0, // Disable periodic flushing
+    });
 
     return instance;
   }
 
-  async trackEvent(event: TelemetryEventType, properties: Record<string, any> = {}): Promise<void> {
+  async trackEvent(event: TelemetryEvent): Promise<void> {
     if (!this._isTelemetryEnabled() || !this._posthogClient) {
       return;
     }
 
     const eventProperties = {
-      ...properties,
+      ...event.properties,
       machine_id: this._machineId,
       platform: platform(),
       hostname: hostname(),
       node_version: process.version,
       liblab_version: process.env.npm_package_version || '0.0.1',
     };
+    console.log('Event properties', eventProperties);
 
     try {
       this._posthogClient.capture({
         distinctId: this._machineId!,
-        event,
+        event: event.eventType,
         properties: eventProperties,
+        timestamp: new Date(),
       });
+      console.log('Captured event', event.eventType);
     } catch (error) {
       console.warn('Failed to send telemetry event:', error);
-    }
-  }
-
-  async shutdown(): Promise<void> {
-    if (this._posthogClient) {
-      await this._posthogClient.shutdown();
     }
   }
 
@@ -108,9 +97,5 @@ export async function getTelemetry(): Promise<TelemetryManager> {
     _telemetryInstance = await TelemetryManager.create();
   }
 
-  return _telemetryInstance;
-}
-
-export function getTelemetrySync(): TelemetryManager | null {
   return _telemetryInstance;
 }

@@ -2,7 +2,7 @@ import type { Database as SQLiteDatabase } from 'better-sqlite3';
 import Database from 'better-sqlite3';
 import type { BaseAccessor } from '../baseAccessor';
 import type { Column, Table } from '../../types';
-import { EXAMPLE_DB_ENUM_VALUES } from '../../utils/example-db-enum-values';
+import { SAMPLE_DB_ENUM_VALUES } from '@liblab/constants/sample-db-enum-values';
 
 interface SQLiteColumn {
   name: string;
@@ -15,7 +15,7 @@ interface TableInfo {
   table_name: string;
 }
 
-const EXAMPLE_DATABASE_NAME = 'example.db';
+const SAMPLE_DATABASE_NAME = 'sample.db';
 
 export class SQLiteAccessor implements BaseAccessor {
   static pluginId = 'sqlite';
@@ -96,7 +96,7 @@ export class SQLiteAccessor implements BaseAccessor {
 
       const result: Table[] = [];
 
-      const isExampleDatabase = this._db.name === EXAMPLE_DATABASE_NAME;
+      const isSampleDatabase = this._db.name === SAMPLE_DATABASE_NAME;
 
       // For each table, get its columns
       for (const table of tables) {
@@ -111,9 +111,9 @@ export class SQLiteAccessor implements BaseAccessor {
               nullable: !col.notnull,
             } as Column;
 
-            // Only add enum values if this is an example database
-            if (isExampleDatabase) {
-              column.enumValues = EXAMPLE_DB_ENUM_VALUES[table.table_name]?.[col.name];
+            // Only add enum values if this is the sample database
+            if (isSampleDatabase) {
+              column.enumValues = SAMPLE_DB_ENUM_VALUES[table.table_name]?.[col.name];
             }
 
             return column;
