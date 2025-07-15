@@ -17,63 +17,58 @@ const setupNgrokTunnel = (): string | null => {
     // no-op
   }
 
-  try {
-    console.log(`⚙️ Setting up ngrok tunnel for port ${port}...`);
+  console.log(`⚙️ Setting up ngrok tunnel for port ${port}...`);
 
-    execSync(
-      `ngrok http ${port} --response-header-add "Access-Control-Allow-Origin: *" --log=stdout --log-format=json > ${NGROK_LOG_FILE} 2>&1 &`,
-    );
+  execSync(
+    `ngrok http ${port} --response-header-add "Access-Control-Allow-Origin: *" --log=stdout --log-format=json > ${NGROK_LOG_FILE} 2>&1 &`,
+  );
 
-    console.log('⏳  Waiting for ngrok to initialize...');
-    execSync('sleep 2');
+  console.log('⏳  Waiting for ngrok to initialize...');
+  execSync('sleep 2');
 
-    let attempts = 0;
-    let forwardingUrl: string | null = null;
+  let attempts = 0;
+  let forwardingUrl: string | null = null;
 
-    while (attempts < 10 && !forwardingUrl) {
-      try {
-        const logContent = fs.readFileSync(NGROK_LOG_FILE, 'utf8');
+  while (attempts < 10 && !forwardingUrl) {
+    try {
+      const logContent = fs.readFileSync(NGROK_LOG_FILE, 'utf8');
 
-        const logLines = logContent.trim().split('\n');
+      const logLines = logContent.trim().split('\n');
 
-        for (const line of logLines) {
-          try {
-            const logEntry = JSON.parse(line) as { addr?: string; url?: string };
+      for (const line of logLines) {
+        try {
+          const logEntry = JSON.parse(line) as { addr?: string; url?: string };
 
-            if (logEntry.addr && logEntry.url) {
-              forwardingUrl = logEntry.url;
-              break;
-            }
-          } catch (e) {
-            console.error('Error parsing log line:', (e as Error).message);
-            console.error(e);
+          if (logEntry.addr && logEntry.url) {
+            forwardingUrl = logEntry.url;
+            break;
           }
+        } catch (e) {
+          console.error('Error parsing log line:', (e as Error).message);
+          console.error(e);
         }
-
-        if (forwardingUrl) {
-          console.log(`🌐 Ngrok Forwarding URL: ${forwardingUrl}`);
-          return forwardingUrl;
-        }
-      } catch (err) {
-        console.error('Error reading ngrok log file:', (err as Error).message);
-        console.error(err);
       }
 
-      console.log('Waiting for ngrok URL...');
-      execSync('sleep 1');
-      attempts++;
+      if (forwardingUrl) {
+        console.log(`🌐 Ngrok Forwarding URL: ${forwardingUrl}`);
+        return forwardingUrl;
+      }
+    } catch (err) {
+      console.error('Error reading ngrok log file:', (err as Error).message);
+      console.error(err);
     }
 
-    if (!forwardingUrl) {
-      console.log('Could not get ngrok URL after multiple attempts. Check if ngrok is running properly.');
-      return null;
-    }
+    console.log('Waiting for ngrok URL...');
+    execSync('sleep 1');
+    attempts++;
+  }
 
-    return forwardingUrl;
-  } catch (error) {
-    console.error('Error setting up ngrok tunnel:', (error as Error).message);
+  if (!forwardingUrl) {
+    console.log('Could not get ngrok URL after multiple attempts. Check if ngrok is running properly.');
     return null;
   }
+
+  return forwardingUrl;
 };
 
 const killPreviousNgrokProcessAndClearLogFile = (): void => {
@@ -120,31 +115,24 @@ const killPreviousNgrokProcessAndClearLogFile = (): void => {
 };
 
 const updateEnvFile = (ngrokUrl: string): void => {
-  try {
-    let envContent = '';
+  let envContent = '';
 
-    if (fs.existsSync('.env')) {
-      envContent = fs.readFileSync('.env', 'utf8');
-    }
-
-    // Replace existing VITE_NGROK_FORWARDING_URL or add new one
-    const newEnvContent = envContent.replace(
-      /^VITE_TUNNEL_FORWARDING_URL=.*/m,
-      `VITE_TUNNEL_FORWARDING_URL=${ngrokUrl}`,
-    );
-
-    if (newEnvContent === envContent) {
-      // If no replacement was made, append the new variable
-      envContent = `${envContent}\nVITE_TUNNEL_FORWARDING_URL=${ngrokUrl}`;
-    } else {
-      envContent = newEnvContent;
-    }
-
-    fs.writeFileSync('.env', envContent.trim() + '\n');
-    console.log('👍  Updated .env file with ngrok URL');
-  } catch (error) {
-    console.error('👎  Error updating .env file:', error);
+  if (fs.existsSync('.env')) {
+    envContent = fs.readFileSync('.env', 'utf8');
   }
+
+  // Replace existing VITE_NGROK_FORWARDING_URL or add new one
+  const newEnvContent = envContent.replace(/^VITE_TUNNEL_FORWARDING_URL=.*/m, `VITE_TUNNEL_FORWARDING_URL=${ngrokUrl}`);
+
+  if (newEnvContent === envContent) {
+    // If no replacement was made, append the new variable
+    envContent = `${envContent}\nVITE_TUNNEL_FORWARDING_URL=${ngrokUrl}`;
+  } else {
+    envContent = newEnvContent;
+  }
+
+  fs.writeFileSync('.env', envContent.trim() + '\n');
+  console.log('👍  Updated .env file with ngrok URL');
 };
 
 const runApp = async (): Promise<void> => {
@@ -157,30 +145,19 @@ const runApp = async (): Promise<void> => {
   // Run Prisma migrations
   console.log('⏳ Running Prisma migrations...');
 
-  try {
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-    console.log('✅ Prisma migrations completed successfully');
-  } catch (error) {
-    console.error('❌ Error running Prisma migrations:', error);
-    process.exit(1);
-  }
+  execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+  console.log('✅ Prisma migrations completed successfully');
 
   if (process.env.VITE_ENV_NAME === 'local') {
     console.log('⏳ Setting up sample database...');
 
-    execSync('tsx scripts/setup-samples-db.ts', { stdio: 'inherit' });
+    execSync('tsx scripts/setup-samplze-db.ts', { stdio: 'inherit' });
 
     console.log('🌱 Running database seed...');
 
-    try {
-      execSync('npm run prisma:seed', { stdio: 'inherit' });
-      console.log('✅ Database seed completed successfully');
-    } catch (error) {
-      console.error('❌ Error running database seed:', error);
-      process.exit(1);
-    }
+    execSync('npm run prisma:seed', { stdio: 'inherit' });
 
-    console.log('⏳  Setting up ngrok tunnel...');
+    console.log('✅ Database seed completed successfully');
 
     const ngrokUrl = setupNgrokTunnel();
 
@@ -192,12 +169,11 @@ const runApp = async (): Promise<void> => {
   console.log('⏳  Please wait until the URL appears here');
   console.log('★═══════════════════════════════════════★');
 
-  // Track start success
   try {
     const telemetry = await getTelemetry();
     await telemetry.trackEvent({ eventType: TelemetryEventType.APP_START_SUCCESS });
-  } catch (error) {
-    console.warn('Failed to track start success:', (error as Error).message);
+  } catch (telemetryError) {
+    console.warn('Failed to track app start success:', (telemetryError as Error).message);
   }
 };
 
@@ -206,18 +182,22 @@ const runAppWithErrorHandling = async (): Promise<void> => {
   try {
     await runApp();
   } catch (error) {
-    console.error('❌ Error during app startup:', error);
+    console.error('❌ App terminated with error:', error);
+
+    const telemetry = await getTelemetry();
 
     try {
-      const telemetry = await getTelemetry();
       await telemetry.trackEvent({
         eventType: TelemetryEventType.APP_ERROR,
         properties: {
-          error: 'Unknown error',
+          error: error ?? 'Unknown error',
         },
       });
     } catch (telemetryError) {
-      console.warn('Failed to track start error:', (telemetryError as Error).message);
+      console.warn('Failed to track app error:', (telemetryError as Error).message);
+    } finally {
+      // Make sure the events are delivered before process exit
+      await telemetry.flushAndShutdown();
     }
 
     process.exit(1);

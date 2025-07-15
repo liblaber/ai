@@ -29,7 +29,7 @@ class TelemetryManager {
     instance._machineId = machineIdSync();
     instance._posthogClient = new PostHog(instance._posthogApiKey!, {
       host: 'https://us.i.posthog.com',
-      flushAt: 1, // Flush immediately, no batching
+      flushAt: 1, // Flush every event, no batching
       flushInterval: 0, // Disable periodic flushing
     });
 
@@ -49,7 +49,6 @@ class TelemetryManager {
       node_version: process.version,
       liblab_version: process.env.npm_package_version || '0.0.1',
     };
-    console.log('Event properties', eventProperties);
 
     try {
       this._posthogClient.capture({
@@ -58,10 +57,21 @@ class TelemetryManager {
         properties: eventProperties,
         timestamp: new Date(),
       });
-      console.log('Captured event', event.eventType);
     } catch (error) {
       console.warn('Failed to send telemetry event:', error);
     }
+  }
+
+  async flushAndShutdown(): Promise<void> {
+    if (!this._posthogClient) {
+      return;
+    }
+
+    this._posthogClient.flush();
+    this._posthogClient.shutdown();
+
+    // Leave some time for telemetry to flush the event before the process exits
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
   private _isTelemetryEnabled(): boolean {
