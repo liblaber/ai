@@ -1,6 +1,8 @@
 import type { FileMap } from '~/lib/stores/files';
 import { injectEnvVariable } from '~/utils/envUtils';
 import { webcontainer } from '~/lib/webcontainer/index';
+import { detectProjectCommands } from '~/utils/projectCommands';
+import { workbenchStore } from '~/lib/stores/workbench';
 
 /**
  * Loads a file map into the web container.
@@ -33,6 +35,14 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
     }
 
     const fileName = key.startsWith(webContainer.workdir) ? key.replace(webContainer.workdir, '') : key;
+
+    if (fileName === 'package.json') {
+      const projectCommands = detectProjectCommands(value);
+
+      if (projectCommands?.startCommand) {
+        workbenchStore.startCommand.set(projectCommands.startCommand);
+      }
+    }
 
     await webContainer.fs.writeFile(fileName, value.content, { encoding: value.isBinary ? undefined : 'utf8' });
   }
