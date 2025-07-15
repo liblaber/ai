@@ -1,13 +1,11 @@
 import { type ActionFunctionArgs } from '@remix-run/cloudflare';
-import { createDataStream, generateId } from 'ai';
-import { type FileMap, MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/llm/constants';
-import { CONTINUE_PROMPT } from '~/lib/common/prompts/prompts';
+import { createDataStream } from 'ai';
+import { type FileMap } from '~/lib/.server/llm/constants';
 import { type Messages, type StreamingOptions, streamText } from '~/lib/.server/llm/stream-text';
-import SwitchableStream from '~/lib/.server/llm/switchable-stream';
 import { createScopedLogger } from '~/utils/logger';
 import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
 import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
-import { DEFAULT_MODEL, DEFAULT_PROVIDER, WORK_DIR } from '~/utils/constants';
+import { DEFAULT_MODEL, WORK_DIR } from '~/utils/constants';
 import { createSummary } from '~/lib/.server/llm/create-summary';
 import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
 import { messageService } from '~/lib/services/messageService';
@@ -76,7 +74,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
   const conversation = await conversationService.getConversation(conversationId);
 
-  const stream = new SwitchableStream();
+  const stream = new TransformStream();
 
   const cumulativeUsage = {
     completionTokens: 0,
@@ -84,7 +82,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
     totalTokens: 0,
   };
   const encoder: TextEncoder = new TextEncoder();
-  let progressCounter: number = 1;
+  let progressCounter: number = 0;
 
   try {
     const totalMessageContent = messages.reduce((acc, message) => acc + message.content, '');
@@ -94,265 +92,239 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
     const dataStream = createDataStream({
       async execute(dataStream) {
-        const filePaths = getFilePaths(files || {});
-        let filteredFiles: FileMap | undefined = undefined;
-        let summary: string | undefined = undefined;
-        let messageSliceId = 0;
-
-        if (messages.length > 3) {
-          messageSliceId = messages.length - 3;
-        }
-
-        if (filePaths.length > 0 && contextOptimization) {
-          logger.debug('Generating Chat Summary');
-          dataStream.writeData({
-            type: 'progress',
-            label: 'summary',
-            status: 'in-progress',
-            order: progressCounter++,
-            message: 'Analysing Request',
-          } satisfies ProgressAnnotation);
-
-          // Create a summary of the chat
-          console.log(`Messages count: ${messages.length}`);
-
-          summary = await createSummary({
-            messages: [...messages],
-            env: context.cloudflare?.env,
-            apiKeys,
-            promptId,
-            contextOptimization,
-            onFinish(resp) {
-              if (resp.usage) {
-                logger.debug('createSummary token usage', JSON.stringify(resp.usage));
-                cumulativeUsage.completionTokens += resp.usage.completionTokens || 0;
-                cumulativeUsage.promptTokens += resp.usage.promptTokens || 0;
-                cumulativeUsage.totalTokens += resp.usage.totalTokens || 0;
-              }
-            },
-          });
-          dataStream.writeData({
-            type: 'progress',
-            label: 'summary',
-            status: 'complete',
-            order: progressCounter++,
-            message: 'Analysis Complete',
-          } satisfies ProgressAnnotation);
-
-          dataStream.writeMessageAnnotation({
-            type: 'chatSummary',
-            summary,
-            chatId: messages.slice(-1)?.[0]?.id,
-          } as ContextAnnotation);
-
-          // Update context buffer
-          logger.debug('Updating Context Buffer');
-          dataStream.writeData({
-            type: 'progress',
-            label: 'context',
-            status: 'in-progress',
-            order: progressCounter++,
-            message: 'Determining Files to Read',
-          } satisfies ProgressAnnotation);
-
-          // Select context files
-          logger.debug(`Messages count: ${messages.length}`);
-          filteredFiles = await selectContext({
-            messages: [...messages],
-            env: context.cloudflare?.env,
-            apiKeys,
-            files,
-            promptId,
-            contextOptimization,
-            summary,
-            onFinish(resp) {
-              if (resp.usage) {
-                logger.debug('selectContext token usage', JSON.stringify(resp.usage));
-                cumulativeUsage.completionTokens += resp.usage.completionTokens || 0;
-                cumulativeUsage.promptTokens += resp.usage.promptTokens || 0;
-                cumulativeUsage.totalTokens += resp.usage.totalTokens || 0;
-              }
-            },
-          });
-
-          if (filteredFiles) {
-            logger.debug(`files in context : ${JSON.stringify(Object.keys(filteredFiles))}`);
-          }
-
-          dataStream.writeMessageAnnotation({
-            type: 'codeContext',
-            files: Object.keys(filteredFiles).map((key) => {
-              let path = key;
-
-              if (path.startsWith(WORK_DIR)) {
-                path = path.replace(WORK_DIR, '');
-              }
-
-              return path;
-            }),
-          } as ContextAnnotation);
-
-          dataStream.writeData({
-            type: 'progress',
-            label: 'context',
-            status: 'complete',
-            order: progressCounter++,
-            message: 'Code Files Selected',
-          } satisfies ProgressAnnotation);
-
-          // logger.debug('Code Files Selected');
-        }
-
-        // Stream the text
-        const options: StreamingOptions = {
-          experimental_generateMessageId: createId,
-          toolChoice: 'none',
-          onFinish: async ({ text: content, finishReason, usage, response: { messages } }) => {
-            logger.debug('usage', JSON.stringify(usage));
-
-            const assistantMessage = messages.find((m) => m.role === 'assistant');
-
-            if (usage) {
-              try {
-                await messageService.saveMessage({
-                  conversationId,
-                  content,
-                  model: DEFAULT_MODEL,
-                  inputTokens: usage.promptTokens,
-                  outputTokens: usage.completionTokens,
-                  finishReason,
-                  role: MESSAGE_ROLE.ASSISTANT,
-                  id: assistantMessage?.id,
-                });
-
-                logger.debug('Prompt saved');
-              } catch (error) {
-                logger.error('Failed to save prompt', error);
-              }
-
-              cumulativeUsage.completionTokens += usage.completionTokens || 0;
-              cumulativeUsage.promptTokens += usage.promptTokens || 0;
-              cumulativeUsage.totalTokens += usage.totalTokens || 0;
-            }
-
-            if (finishReason !== 'length') {
-              dataStream.writeMessageAnnotation({
-                type: 'usage',
-                value: {
-                  completionTokens: cumulativeUsage.completionTokens,
-                  promptTokens: cumulativeUsage.promptTokens,
-                  totalTokens: cumulativeUsage.totalTokens,
-                },
-              });
-              dataStream.writeData({
-                type: 'progress',
-                label: 'response',
-                status: 'complete',
-                order: progressCounter++,
-                message: 'Response Generated',
-              } satisfies ProgressAnnotation);
-              await new Promise((resolve) => setTimeout(resolve, 0));
-
-              return;
-            }
-
-            if (stream.switches >= MAX_RESPONSE_SEGMENTS) {
-              throw Error('Cannot continue message: Maximum segments reached');
-            }
-
-            const switchesLeft = MAX_RESPONSE_SEGMENTS - stream.switches;
-
-            logger.info(`Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
-
-            const continueMessages = [
-              ...messages,
-              { id: generateId(), role: 'assistant', content },
-              {
-                id: generateId(),
-                role: 'user',
-                content: `[Model: ${DEFAULT_MODEL}]\n\n[Provider: ${DEFAULT_PROVIDER}]\n\n${CONTINUE_PROMPT}`,
-              },
-            ];
-            const result = await streamText({
-              messages: continueMessages as any[],
-              options,
-              files,
-              promptId,
-              starterId: conversation?.starterId as StarterPluginId,
-              contextOptimization,
-              contextFiles: filteredFiles,
-              summary,
-              messageSliceId,
-              request,
-            });
-
-            result.mergeIntoDataStream(dataStream);
-
-            (async () => {
-              for await (const part of result.fullStream) {
-                if (part.type === 'error') {
-                  const error: any = part.error;
-                  logger.error(`${error}`);
-
-                  dataStream.writeData({
-                    type: 'progress',
-                    label: 'response',
-                    status: 'error',
-                    order: progressCounter++,
-                    message: 'Failed to generate response',
-                  } satisfies ProgressAnnotation);
-
-                  return;
-                }
-              }
-            })();
-
-            return;
-          },
+        let currentProgressAnnotation: ProgressAnnotation = {
+          type: 'progress',
+          label: 'init',
+          status: 'init',
+          order: progressCounter++,
+          message: 'Initializing Request',
         };
 
-        dataStream.writeData({
-          type: 'progress',
-          label: 'response',
-          status: 'in-progress',
-          order: progressCounter++,
-          message: 'Generating Response',
-        } satisfies ProgressAnnotation);
+        try {
+          const filePaths = getFilePaths(files || {});
+          let filteredFiles: FileMap | undefined = undefined;
+          let summary: string | undefined = undefined;
+          let messageSliceId = 0;
 
-        const result = await streamText({
-          messages,
-          options,
-          files,
-          promptId,
-          starterId: conversation?.starterId as StarterPluginId,
-          contextOptimization,
-          contextFiles: filteredFiles,
-          summary,
-          messageSliceId,
-          request,
-        });
-
-        (async () => {
-          for await (const part of result.fullStream) {
-            if (part.type === 'error') {
-              const error: any = part.error;
-              logger.error(`${error}`);
-
-              dataStream.writeData({
-                type: 'progress',
-                label: 'response',
-                status: 'error',
-                order: progressCounter++,
-                message: 'Failed to generate response',
-              } satisfies ProgressAnnotation);
-
-              return;
-            }
+          if (messages.length > 3) {
+            messageSliceId = messages.length - 3;
           }
-        })();
-        result.mergeIntoDataStream(dataStream);
+
+          if (filePaths.length > 0 && contextOptimization) {
+            logger.debug('Generating Chat Summary');
+            currentProgressAnnotation = {
+              type: 'progress',
+              label: 'summary',
+              status: 'in-progress',
+              order: progressCounter++,
+              message: 'Analysing Request',
+            };
+            dataStream.writeData(currentProgressAnnotation);
+
+            // Create a summary of the chat
+            console.log(`Messages count: ${messages.length}`);
+
+            summary = await createSummary({
+              messages: [...messages],
+              env: context.cloudflare?.env,
+              apiKeys,
+              promptId,
+              contextOptimization,
+              onFinish(resp) {
+                if (resp.usage) {
+                  logger.debug('createSummary token usage', JSON.stringify(resp.usage));
+                  cumulativeUsage.completionTokens += resp.usage.completionTokens || 0;
+                  cumulativeUsage.promptTokens += resp.usage.promptTokens || 0;
+                  cumulativeUsage.totalTokens += resp.usage.totalTokens || 0;
+                }
+              },
+            });
+            currentProgressAnnotation = {
+              type: 'progress',
+              label: 'summary',
+              status: 'complete',
+              order: progressCounter++,
+              message: 'Analysis Complete',
+            };
+            dataStream.writeData(currentProgressAnnotation);
+
+            dataStream.writeMessageAnnotation({
+              type: 'chatSummary',
+              summary,
+              chatId: messages.slice(-1)?.[0]?.id,
+            } as ContextAnnotation);
+
+            // Update context buffer
+            logger.debug('Updating Context Buffer');
+
+            currentProgressAnnotation = {
+              type: 'progress',
+              label: 'context',
+              status: 'in-progress',
+              order: progressCounter++,
+              message: 'Determining Files to Read',
+            };
+            dataStream.writeData(currentProgressAnnotation);
+
+            throw new Error('MILE BACA JERRORCINU');
+
+            // Select context files
+            logger.debug(`Messages count: ${messages.length}`);
+            filteredFiles = await selectContext({
+              messages: [...messages],
+              env: context.cloudflare?.env,
+              apiKeys,
+              files,
+              promptId,
+              contextOptimization,
+              summary,
+              onFinish(resp) {
+                if (resp.usage) {
+                  logger.debug('selectContext token usage', JSON.stringify(resp.usage));
+                  cumulativeUsage.completionTokens += resp.usage.completionTokens || 0;
+                  cumulativeUsage.promptTokens += resp.usage.promptTokens || 0;
+                  cumulativeUsage.totalTokens += resp.usage.totalTokens || 0;
+                }
+              },
+            });
+
+            if (filteredFiles) {
+              logger.debug(`files in context : ${JSON.stringify(Object.keys(filteredFiles))}`);
+            }
+
+            dataStream.writeMessageAnnotation({
+              type: 'codeContext',
+              files: Object.keys(filteredFiles).map((key) => {
+                let path = key;
+
+                if (path.startsWith(WORK_DIR)) {
+                  path = path.replace(WORK_DIR, '');
+                }
+
+                return path;
+              }),
+            } as ContextAnnotation);
+
+            currentProgressAnnotation = {
+              type: 'progress',
+              label: 'context',
+              status: 'complete',
+              order: progressCounter++,
+              message: 'Code Files Selected',
+            };
+            dataStream.writeData(currentProgressAnnotation);
+          }
+
+          // Stream the text
+          const options: StreamingOptions = {
+            experimental_generateMessageId: createId,
+            toolChoice: 'none',
+            onFinish: async ({ text: content, finishReason, usage, response: { messages } }) => {
+              logger.debug('usage', JSON.stringify(usage));
+
+              const assistantMessage = messages.find((m) => m.role === 'assistant');
+
+              if (usage) {
+                try {
+                  await messageService.saveMessage({
+                    conversationId,
+                    content,
+                    model: DEFAULT_MODEL,
+                    inputTokens: usage.promptTokens,
+                    outputTokens: usage.completionTokens,
+                    finishReason,
+                    role: MESSAGE_ROLE.ASSISTANT,
+                    id: assistantMessage?.id,
+                  });
+
+                  logger.debug('Prompt saved');
+                } catch (error) {
+                  logger.error('Failed to save prompt', error);
+                }
+
+                cumulativeUsage.completionTokens += usage.completionTokens || 0;
+                cumulativeUsage.promptTokens += usage.promptTokens || 0;
+                cumulativeUsage.totalTokens += usage.totalTokens || 0;
+              }
+
+              if (finishReason !== 'length') {
+                dataStream.writeMessageAnnotation({
+                  type: 'usage',
+                  value: {
+                    completionTokens: cumulativeUsage.completionTokens,
+                    promptTokens: cumulativeUsage.promptTokens,
+                    totalTokens: cumulativeUsage.totalTokens,
+                  },
+                });
+                currentProgressAnnotation = {
+                  type: 'progress',
+                  label: 'response',
+                  status: 'complete',
+                  order: progressCounter++,
+                  message: 'Response Generated',
+                };
+                dataStream.writeData(currentProgressAnnotation);
+                await new Promise((resolve) => setTimeout(resolve, 0));
+
+                return;
+              }
+            },
+          };
+
+          currentProgressAnnotation = {
+            type: 'progress',
+            label: 'response',
+            status: 'in-progress',
+            order: progressCounter++,
+            message: 'Generating Response',
+          };
+          dataStream.writeData(currentProgressAnnotation);
+
+          const result = await streamText({
+            messages,
+            options,
+            files,
+            promptId,
+            starterId: conversation?.starterId as StarterPluginId,
+            contextOptimization,
+            contextFiles: filteredFiles,
+            summary,
+            messageSliceId,
+            request,
+          });
+
+          await (async () => {
+            for await (const part of result.fullStream) {
+              if (part.type === 'error') {
+                const error: any = part.error;
+                logger.error(`${error}`);
+
+                currentProgressAnnotation = {
+                  type: 'progress',
+                  label: 'response',
+                  status: 'error',
+                  order: progressCounter++,
+                  message: 'Failed to generate response',
+                };
+                dataStream.writeData(currentProgressAnnotation);
+
+                return;
+              }
+            }
+          })();
+          result.mergeIntoDataStream(dataStream);
+        } catch (error) {
+          logger.error(error);
+          currentProgressAnnotation.status = 'error';
+          dataStream.writeData(currentProgressAnnotation);
+          dataStream.writeMessageAnnotation(currentProgressAnnotation);
+
+          throw error;
+        }
       },
-      onError: (error: any) => `Custom error: ${error.message}`,
+      onError: (error: any) => {
+        return error.message;
+      },
     }).pipeThrough(
       new TransformStream({
         transform: (chunk, controller) => {

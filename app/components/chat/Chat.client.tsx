@@ -193,6 +193,8 @@ export const ChatImpl = memo(
 
     const { syncLatestChanges } = useGitPullSync({ setMessages, messagesRef });
 
+    console.log(messages);
+
     useEffect(() => {
       messagesRef.current = messages;
 
