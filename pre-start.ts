@@ -185,7 +185,7 @@ async function trackAppError(error: any) {
       },
     });
 
-    await telemetry.flushAndShutdown();
+    telemetry.shutdown();
 
     // Leave some time for telemetry to flush the event before the process exits
     await new Promise((resolve) => setTimeout(resolve, 2000));

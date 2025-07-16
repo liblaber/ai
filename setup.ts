@@ -3,14 +3,6 @@ import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-mana
 import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
 
-const runSetup = async (): Promise<void> => {
-  console.log('⏳ Running setup script...');
-
-  execSync('sh ./scripts/setup.sh', { stdio: 'inherit' });
-
-  console.log('✅ Setup completed successfully');
-};
-
 async function trackSetupError(error: any) {
   const telemetry = await getTelemetry();
 
@@ -25,7 +17,7 @@ async function trackSetupError(error: any) {
       },
     });
 
-    await telemetry.flushAndShutdown();
+    telemetry.shutdown();
 
     // Leave some time for telemetry to flush the event before the process exits
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -37,7 +29,7 @@ async function trackSetupError(error: any) {
 // Add error handling for the entire runSetup function
 const runSetupWithErrorHandling = async (): Promise<void> => {
   try {
-    await runSetup();
+    execSync('sh ./scripts/setup.sh', { stdio: 'inherit' });
 
     try {
       const telemetry = await getTelemetry();
@@ -45,6 +37,8 @@ const runSetupWithErrorHandling = async (): Promise<void> => {
     } catch (telemetryError) {
       console.warn('Failed to track setup success:', (telemetryError as Error).message);
     }
+
+    execSync('sh ./scripts/run-dev-prompt.sh', { stdio: 'inherit' });
   } catch (error) {
     await trackSetupError(error);
 

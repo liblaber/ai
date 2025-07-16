@@ -31,7 +31,7 @@ class TelemetryManager {
     instance._machineId = machineIdSync();
 
     if (!instance._posthogApiKey) {
-      console.warn('No POSTHOG_API_KEY found');
+      console.warn('No POSTHOG_API_KEY found. Telemetry not initialized.');
       return instance;
     }
 
@@ -70,13 +70,12 @@ class TelemetryManager {
     }
   }
 
-  async flushAndShutdown(): Promise<void> {
+  shutdown(): void {
     if (!this._posthogClient) {
       return;
     }
 
-    await this._posthogClient.flushAsync();
-    await this._posthogClient.shutdownAsync();
+    this._posthogClient.shutdown();
   }
 
   private _isTelemetryEnabled(): boolean {
