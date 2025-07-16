@@ -1,7 +1,9 @@
 import { hostname, platform } from 'os';
 import { PostHog } from 'posthog-node';
 
-const { machineIdSync } = await import('node-machine-id');
+import nodeMachineId from 'node-machine-id';
+
+const { machineIdSync } = nodeMachineId;
 
 export enum TelemetryEventType {
   APP_START_SUCCESS = 'app_start_success',

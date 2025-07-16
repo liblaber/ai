@@ -46,7 +46,6 @@ const runSetupWithErrorHandling = async (): Promise<void> => {
       console.warn('Failed to track setup success:', (telemetryError as Error).message);
     }
   } catch (error) {
-    console.error('❌ Setup terminated with error:', error);
     await trackSetupError(error);
 
     process.exit(1);

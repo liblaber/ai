@@ -9,6 +9,9 @@ import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
+// Do not shorten this import to ~ because it won't work
+import { getTelemetry, TelemetryEventType } from './app/lib/telemetry/telemetry-manager';
+
 dotenv.config();
 
 // Get detailed git info with fallbacks
@@ -145,6 +148,7 @@ export default defineConfig((config) => {
       tsconfigPaths(),
       chrome129IssuePlugin(),
       config.mode === 'production' && optimizeCssModules({ apply: 'build' }),
+      telemetryPlugin(),
     ],
     envPrefix: [
       'VITE_',
@@ -184,6 +188,25 @@ function chrome129IssuePlugin() {
         }
 
         next();
+      });
+    },
+  };
+}
+
+function telemetryPlugin() {
+  return {
+    name: 'telemetry-plugin',
+    configureServer(server: ViteDevServer) {
+      // Wait until Vite is fully ready
+      server.httpServer?.once('listening', async () => {
+        console.log('✅ Dev server started successfully');
+
+        try {
+          const telemetry = await getTelemetry();
+          await telemetry.trackEvent({ eventType: TelemetryEventType.APP_START_SUCCESS });
+        } catch (error) {
+          console.error('❌ Failed to track app start success:', error);
+        }
       });
     },
   };

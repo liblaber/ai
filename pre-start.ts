@@ -169,13 +169,6 @@ const runApp = async (): Promise<void> => {
 
   console.log('⏳  Please wait until the URL appears here');
   console.log('★═══════════════════════════════════════★');
-
-  try {
-    const telemetry = await getTelemetry();
-    await telemetry.trackEvent({ eventType: TelemetryEventType.APP_START_SUCCESS });
-  } catch (telemetryError) {
-    console.warn('Failed to track app start success:', (telemetryError as Error).message);
-  }
 };
 
 async function trackAppError(error: any) {
@@ -206,7 +199,6 @@ const runAppWithErrorHandling = async (): Promise<void> => {
   try {
     await runApp();
   } catch (error) {
-    console.error('❌ App terminated with error:', error);
     await trackAppError(error);
 
     process.exit(1);
