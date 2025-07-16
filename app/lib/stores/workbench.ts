@@ -50,8 +50,8 @@ export class WorkbenchStore {
   #mostRecentCommitMessage: string | undefined;
 
   artifacts: Artifacts = import.meta.hot?.data.artifacts ?? map({});
-  showWorkbench: WritableAtom<boolean> = import.meta.hot?.data.showWorkbench ?? atom(false);
-  currentView: WritableAtom<WorkbenchViewType> = import.meta.hot?.data.currentView ?? atom('code');
+  devMode: WritableAtom<boolean> = import.meta.hot?.data.devMode ?? atom(false);
+  currentView: WritableAtom<WorkbenchViewType> = import.meta.hot?.data.currentView ?? atom('preview');
   unsavedFiles: WritableAtom<Set<string>> = import.meta.hot?.data.unsavedFiles ?? atom(new Set<string>());
   actionAlert: WritableAtom<ActionAlert | undefined> =
     import.meta.hot?.data.actionAlert ?? atom<ActionAlert | undefined>(undefined);
@@ -76,7 +76,7 @@ export class WorkbenchStore {
     if (import.meta.hot) {
       import.meta.hot.data.artifacts = this.artifacts;
       import.meta.hot.data.unsavedFiles = this.unsavedFiles;
-      import.meta.hot.data.showWorkbench = this.showWorkbench;
+      import.meta.hot.data.devMode = this.devMode;
       import.meta.hot.data.currentView = this.currentView;
       import.meta.hot.data.actionAlert = this.actionAlert;
     }
@@ -157,8 +157,8 @@ export class WorkbenchStore {
     }
   }
 
-  setShowWorkbench(show: boolean) {
-    this.showWorkbench.set(show);
+  setDevMode(dev: boolean) {
+    this.devMode.set(dev);
   }
 
   /**
@@ -381,7 +381,7 @@ export class WorkbenchStore {
         this.setSelectedFile(fullPath);
       }
 
-      if (this.currentView.value !== 'code') {
+      if (this.currentView.value !== 'code' && this.devMode.value) {
         this.currentView.set('code');
       }
 
