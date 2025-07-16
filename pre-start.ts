@@ -4,6 +4,11 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 
+interface NormalizedError {
+  message: string;
+  stack: string;
+}
+
 const NGROK_LOG_FILE = './ngrok.log';
 const NGROK_PROCESS_PORT = 4040;
 
@@ -151,7 +156,7 @@ const runApp = async (): Promise<void> => {
   if (process.env.VITE_ENV_NAME === 'local') {
     console.log('⏳ Setting up sample database...');
 
-    execSync('tsx scripts/setup-samplze-db.ts', { stdio: 'inherit' });
+    execSync('tsx scripts/setup-sample-db.ts', { stdio: 'inherit' });
 
     console.log('🌱 Running database seed...');
 
@@ -177,28 +182,64 @@ const runApp = async (): Promise<void> => {
   }
 };
 
+function normalizeError(error: any): NormalizedError {
+  const normalizedError: NormalizedError = {
+    message: 'Unknown error',
+    stack: '',
+  };
+
+  if (error instanceof Error) {
+    normalizedError.message = error.message;
+    normalizedError.stack = error.stack || '';
+  } else if (typeof error === 'object' && error !== null) {
+    // Handle execSync errors which have status, signal, output properties
+    const execError = error as any;
+    normalizedError.message = `Process failed with status ${execError.status}`;
+
+    if (execError.signal) {
+      normalizedError.message += ` (signal: ${execError.signal})`;
+    }
+
+    if (execError.stderr) {
+      normalizedError.message += ` - ${execError.stderr}`;
+    }
+  } else {
+    normalizedError.message = String(error);
+  }
+
+  return normalizedError;
+}
+
+async function trackAppError(error: any) {
+  const telemetry = await getTelemetry();
+
+  try {
+    const errorInfo = normalizeError(error);
+
+    await telemetry.trackEvent({
+      eventType: TelemetryEventType.APP_ERROR,
+      properties: {
+        errorMessage: errorInfo.message,
+        error: errorInfo,
+      },
+    });
+
+    await telemetry.flushAndShutdown();
+
+    // Leave some time for telemetry to flush the event before the process exits
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  } catch (telemetryError) {
+    console.warn('Failed to track start error:', (telemetryError as Error).message);
+  }
+}
+
 // Add error handling for the entire runApp function
 const runAppWithErrorHandling = async (): Promise<void> => {
   try {
     await runApp();
   } catch (error) {
     console.error('❌ App terminated with error:', error);
-
-    const telemetry = await getTelemetry();
-
-    try {
-      await telemetry.trackEvent({
-        eventType: TelemetryEventType.APP_ERROR,
-        properties: {
-          error: error ?? 'Unknown error',
-        },
-      });
-    } catch (telemetryError) {
-      console.warn('Failed to track app error:', (telemetryError as Error).message);
-    } finally {
-      // Make sure the events are delivered before process exit
-      await telemetry.flushAndShutdown();
-    }
+    await trackAppError(error);
 
     process.exit(1);
   }

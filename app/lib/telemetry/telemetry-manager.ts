@@ -67,11 +67,8 @@ class TelemetryManager {
       return;
     }
 
-    this._posthogClient.flush();
-    this._posthogClient.shutdown();
-
-    // Leave some time for telemetry to flush the event before the process exits
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await this._posthogClient.flushAsync();
+    await this._posthogClient.shutdownAsync();
   }
 
   private _isTelemetryEnabled(): boolean {
