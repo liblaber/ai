@@ -22,12 +22,13 @@ interface MessagesProps {
   isStreaming?: boolean;
   messages?: Message[];
   setMessages: (messages: Message[]) => void;
+  error?: Error;
   onRetry?: () => Promise<void>;
 }
 
 export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
   (
-    { id, isStreaming = false, messages = [], setMessages, className, onRetry }: MessagesProps,
+    { id, isStreaming = false, messages = [], setMessages, className, error, onRetry }: MessagesProps,
     ref: ForwardedRef<HTMLDivElement> | undefined,
   ) => {
     const { data } = useSession();
@@ -126,7 +127,12 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                     {isUserMessage ? (
                       <UserMessage content={content} />
                     ) : (
-                      <AssistantMessage content={content} annotations={message.annotations} onRetry={onRetry} />
+                      <AssistantMessage
+                        content={content}
+                        annotations={message.annotations}
+                        onRetry={onRetry}
+                        error={isLast ? error : undefined}
+                      />
                     )}
                   </div>
                   {!isUserMessage && (

@@ -1,4 +1,5 @@
 import { convertToCoreMessages, generateId, type Message, streamText as _streamText } from 'ai';
+import { MockLanguageModelV1, simulateReadableStream } from 'ai/test';
 import { type FileMap } from './constants';
 import { getSystemPrompt } from '~/lib/common/prompts/prompts';
 import { DEFAULT_PROVIDER, MessageRole, MODIFICATIONS_TAG_NAME, WORK_DIR } from '~/utils/constants';
@@ -14,6 +15,9 @@ import { getLlm } from '~/lib/.server/llm/get-llm';
 import { prisma } from '~/lib/prisma';
 import { requireUserId } from '~/auth/session';
 import type { StarterPluginId } from '~/lib/plugins/types';
+import { TEST_ARTIFACT } from '~/lib/.server/llm/test-artifact';
+
+export const MOCK_RESPONSE = true;
 
 export type Messages = Message[];
 
@@ -33,6 +37,45 @@ export async function streamText(props: {
   messageSliceId?: number;
   request: Request;
 }) {
+  if (MOCK_RESPONSE) {
+    const chunks = TEST_ARTIFACT.match(/\S+\s+\S+\s+\S+/g)!
+      .slice(0, 300)
+      .map((token) => ({
+        type: 'text-delta' as const,
+        textDelta: `${token} `,
+      }));
+
+    return _streamText({
+      model: new MockLanguageModelV1({
+        doStream: async () => ({
+          stream: simulateReadableStream({
+            chunkDelayInMs: 50,
+            initialDelayInMs: 3000,
+            chunks: [
+              ...chunks,
+              { type: 'error', error: new Error('Mile making shit') },
+              {
+                type: 'finish',
+                finishReason: 'error',
+                logprobs: undefined,
+                usage: { completionTokens: 10, promptTokens: 3 },
+              },
+
+              // {
+              //   type: 'finish',
+              //   finishReason: 'stop',
+              //   logprobs: undefined,
+              //   usage: { completionTokens: 10, promptTokens: 3 },
+              // },
+            ],
+          }),
+          rawCall: { rawPrompt: null, rawSettings: {} },
+        }),
+      }),
+      prompt: 'Hello, test!',
+    });
+  }
+
   const { messages, options, files, promptId, starterId, contextOptimization, contextFiles, summary, request } = props;
   let currentDataSourceId: string | undefined = '';
 

@@ -16,7 +16,7 @@ import Cookies from 'js-cookie';
 import { debounce } from '~/utils/debounce';
 import { useSettings } from '~/lib/hooks/useSettings';
 import { createSampler } from '~/utils/sampler';
-import { getStarterTemplateMessages } from '~/utils/selectStarterTemplate';
+import { getStarterTemplateFiles, getStarterTemplateMessages } from '~/utils/selectStarterTemplate';
 import { streamingState } from '~/lib/stores/streaming';
 import { filesToArtifacts } from '~/utils/fileUtils';
 import { type OutputAppEvent, OutputAppEventType } from '~/utils/output-app';
@@ -30,6 +30,9 @@ import { extractArtifactTitleFromMessageContent } from '~/utils/artifactMapper';
 import { createCommandsMessage, detectProjectCommands } from '~/utils/projectCommands';
 import { ActionRunner } from '~/lib/runtime/action-runner';
 import { createId } from '@paralleldrive/cuid2';
+import { getLatestSnapshotOrNull } from '~/lib/persistence/snapshots';
+import { loadPreviousFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
+import type { FileMap } from '~/lib/stores/files';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -107,6 +110,7 @@ export const ChatImpl = memo(
     const files = useStore(workbenchStore.files);
     const actionAlert = useStore(workbenchStore.alert);
     const { contextOptimizationEnabled } = useSettings();
+    const [dataSourceUrl, setDataSourceUrl] = useState<string>();
 
     useEffect(() => {
       chatStore.setKey('started', chatStarted);
@@ -141,11 +145,22 @@ export const ChatImpl = memo(
         contextOptimization: contextOptimizationEnabled,
       },
       sendExtraMessageFields: true,
-      onError: (e) => {
-        logger.error('Request failed\n\n', e, error);
+      onError: async (e) => {
+        logger.error('Request failed', e);
         toast.error(
           'There was an error processing your request: ' + (e.message ? e.message : 'No details were returned'),
         );
+
+        const latestSnapshot = await getLatestSnapshotOrNull(chatId.get()!);
+        let fileMapToRevertTo: FileMap;
+
+        if (latestSnapshot) {
+          fileMapToRevertTo = latestSnapshot.fileMap;
+        } else {
+          fileMapToRevertTo = await getStarterTemplateFiles(dataSourceUrl);
+        }
+
+        await loadPreviousFileMapIntoContainer(fileMapToRevertTo);
       },
       onFinish: async ({ id, content }) => {
         setData(undefined);
@@ -406,6 +421,7 @@ export const ChatImpl = memo(
       const dataSourceUrlJson = await dataSourceUrlResponse.json<DatabaseUrlResponse>();
 
       const databaseUrl = dataSourceUrlJson.url;
+      setDataSourceUrl(databaseUrl);
 
       const starterTemplateMessages = await getStarterTemplateMessages(messageContent, databaseUrl).catch((e) => {
         if (e.message.includes('rate limit')) {
@@ -520,6 +536,9 @@ export const ChatImpl = memo(
         (message, index) => !(message.role === 'assistant' && index === messages.length - 1),
       );
 
+      console.log(messagesWithoutLastAssistant);
+
+      setData(undefined);
       setMessages(messagesWithoutLastAssistant);
 
       // Reload the chat to retry the request
@@ -571,14 +590,14 @@ export const ChatImpl = memo(
           handleStop={abort}
           description={description}
           exportChat={exportChat}
-          messages={messages.map((message, i) => {
+          messages={messages.map((message) => {
             if (message.role === MessageRole.User) {
               return message;
             }
 
             return {
               ...message,
-              content: parsedMessages[i] || '',
+              content: parsedMessages[message.id] || '',
             };
           })}
           uploadedFiles={uploadedFiles}
@@ -588,6 +607,7 @@ export const ChatImpl = memo(
           actionAlert={actionAlert}
           clearAlert={() => workbenchStore.clearAlert()}
           data={chatData}
+          error={error}
           onSyncFiles={syncLatestChanges}
           setMessages={setMessages}
           onRetry={handleRetry}

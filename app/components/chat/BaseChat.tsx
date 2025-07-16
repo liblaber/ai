@@ -60,6 +60,7 @@ interface BaseChatProps {
   actionAlert?: ActionAlert;
   clearAlert?: () => void;
   data?: JSONValue[] | undefined;
+  error?: Error;
   actionRunner?: ActionRunner;
   onSyncFiles?: () => Promise<void>;
   setMessages: (messages: Message[]) => void;
@@ -91,6 +92,7 @@ export const BaseChat = ({
   onSyncFiles,
   setMessages,
   onRetry,
+  error,
 }: BaseChatProps) => {
   const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
 
@@ -103,9 +105,14 @@ export const BaseChat = ({
       const progressList = data.filter(
         (x) => typeof x === 'object' && (x as any).type === 'progress',
       ) as ProgressAnnotation[];
+
+      if (error && progressList.length) {
+        progressList[progressList.length - 1] = { ...progressList.at(-1)!, status: 'error' };
+      }
+
       setProgressAnnotations(progressList);
     }
-  }, [data]);
+  }, [data, error]);
 
   useEffect(() => {
     onStreamingChange?.(isStreaming);
@@ -259,6 +266,7 @@ export const BaseChat = ({
                     messages={messages}
                     isStreaming={isStreaming}
                     setMessages={setMessages}
+                    error={error}
                     onRetry={onRetry}
                   />
                 ) : null;

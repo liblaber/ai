@@ -23,6 +23,7 @@ export default [
       'no-eval': ['error'],
       'linebreak-style': ['error', 'unix'],
       'arrow-spacing': ['error', { before: true, after: true }],
+      'multiline-comment-style': off,
     },
   },
   {

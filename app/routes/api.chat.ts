@@ -152,7 +152,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             };
             dataStream.writeData(currentProgressAnnotation);
 
-            throw new Error('This is some sort of unexpected error');
+            // throw new Error('This is some sort of unexpected error');
 
             // Select context files
             logger.debug(`Messages count: ${messages.length}`);
@@ -216,6 +216,17 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             toolChoice: 'none',
             onFinish: async ({ text: assistantMessageContent, finishReason, usage, response: { messages } }) => {
               logger.debug('usage', JSON.stringify(usage));
+
+              if (finishReason === 'error') {
+                currentProgressAnnotation.status = 'error';
+                dataStream.writeData(currentProgressAnnotation);
+                dataStream.writeMessageAnnotation({
+                  ...currentProgressAnnotation,
+                  errorMessage: 'Unable to generate response.',
+                });
+
+                return;
+              }
 
               const assistantMessage = messages.find((m) => m.role === 'assistant');
 
@@ -297,22 +308,11 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             request,
           });
 
-          await (async () => {
+          (async () => {
             for await (const part of result.fullStream) {
               if (part.type === 'error') {
                 const error: any = part.error;
                 logger.error(`${error}`);
-
-                currentProgressAnnotation = {
-                  type: 'progress',
-                  label: 'response',
-                  status: 'error',
-                  order: progressCounter++,
-                  message: 'Failed to generate response',
-                };
-                dataStream.writeData(currentProgressAnnotation);
-
-                return;
               }
             }
           })();
@@ -330,6 +330,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         }
       },
       onError: (error: any) => {
+        console.log('Error happened!', error);
         return error.message;
       },
     }).pipeThrough(

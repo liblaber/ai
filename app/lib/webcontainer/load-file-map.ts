@@ -47,3 +47,60 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
     await webContainer.fs.writeFile(fileName, value.content, { encoding: value.isBinary ? undefined : 'utf8' });
   }
 };
+
+export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap): Promise<void> => {
+  const currentFileMap = workbenchStore.getFileMap();
+  const webContainer = await webcontainer;
+
+  // Get all unique file paths from both maps
+  const allPaths = new Set([
+    ...Object.keys(currentFileMap),
+    ...Object.keys(previousFileMap)
+  ]);
+
+  for (const filePath of allPaths) {
+    const currentFile = currentFileMap[filePath];
+    const previousFile = previousFileMap[filePath];
+
+    // Case 1: File exists in current but not in previous - remove it
+    if (currentFile && !previousFile) {
+      try {
+        await webContainer.fs.rm(filePath, { recursive: true, force: true });
+      } catch (error) {
+        // Ignore errors if file doesn't exist
+        console.warn(`Failed to remove file ${filePath}:`, error);
+      }
+      continue;
+    }
+
+    // Case 2 & 3: File exists in previous but not in current, OR files are different - use previous
+    if (previousFile && (!currentFile || currentFile !== previousFile)) {
+      if (previousFile.type === 'folder') {
+        await webContainer.fs.mkdir(filePath, { recursive: true });
+      } else if (previousFile.type === 'file') {
+        // Handle .env file injection for local environment
+        let content = previousFile.content;
+        if (filePath.endsWith('.env') && import.meta.env.VITE_ENV_NAME === 'local') {
+          const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
+          content = injectEnvVariable(
+            content,
+            'VITE_API_BASE_URL',
+            tunnelForwardingUrl ? tunnelForwardingUrl : undefined,
+          );
+        }
+
+        // Handle package.json for start command detection
+        if (filePath === 'package.json') {
+          const projectCommands = detectProjectCommands(previousFile);
+          if (projectCommands?.startCommand) {
+            workbenchStore.startCommand.set(projectCommands.startCommand);
+          }
+        }
+
+        await webContainer.fs.writeFile(filePath, content, { 
+          encoding: previousFile.isBinary ? undefined : 'utf8' 
+        });
+      }
+    }
+  }
+};

@@ -51,7 +51,7 @@ const extractTextContent = (message: Message) =>
     : message.content;
 
 export function useMessageParser() {
-  const [parsedMessages, setParsedMessages] = useState<{ [key: number]: string }>({});
+  const [parsedMessages, setParsedMessages] = useState<{ [key: string]: string }>({});
 
   const parseMessages = useCallback((messages: Message[], isLoading: boolean) => {
     let reset = false;
@@ -61,7 +61,7 @@ export function useMessageParser() {
       messageParser.reset();
     }
 
-    for (const [index, message] of messages.entries()) {
+    for (const message of messages) {
       if (message.role === 'assistant' || message.role === 'user') {
         const shouldExecuteActions = !message.annotations?.some(
           (annotation) => annotation === NO_EXECUTE_ACTION_ANNOTATION,
@@ -69,7 +69,7 @@ export function useMessageParser() {
         const newParsedContent = messageParser.parse(message.id, extractTextContent(message), shouldExecuteActions);
         setParsedMessages((prevParsed) => ({
           ...prevParsed,
-          [index]: !reset ? (prevParsed[index] || '') + newParsedContent : newParsedContent,
+          [message.id]: !reset ? (prevParsed[message.id] || '') + newParsedContent : newParsedContent,
         }));
       }
     }

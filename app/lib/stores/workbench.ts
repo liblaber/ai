@@ -347,6 +347,11 @@ export class WorkbenchStore {
     return artifact.runner.addAction(data);
   }
 
+  restartApp() {
+    if (ActionRunner.isAppRunning()) {
+    }
+  }
+
   runAction(data: ActionCallbackData, isStreaming: boolean = false) {
     if (!data.shouldExecute) {
       return;

@@ -10,6 +10,7 @@ import { Card } from '~/components/ui/Card';
 interface AssistantMessageProps {
   content: string;
   annotations?: JSONValue[];
+  error?: Error;
   onRetry?: () => Promise<void>;
 }
 
@@ -37,7 +38,7 @@ function normalizedFilePath(path: string) {
   return normalizedPath;
 }
 
-export const AssistantMessage = memo(({ content, annotations, onRetry }: AssistantMessageProps) => {
+export const AssistantMessage = memo(({ content, annotations, onRetry, error }: AssistantMessageProps) => {
   const filteredAnnotations = (annotations?.filter(
     (annotation: JSONValue) => annotation && typeof annotation === 'object' && Object.keys(annotation).includes('type'),
   ) || []) as { type: string; value: any } & { [key: string]: any }[];
@@ -51,7 +52,7 @@ export const AssistantMessage = memo(({ content, annotations, onRetry }: Assista
 
   const chatSummary: string | undefined = chatSummaryAnnotation?.summary;
   const codeContext: string[] | undefined = codeContextAnnotation?.files;
-  const errorMessage: string | undefined = errorAnnotation?.errorMessage;
+  const errorMessage: string | undefined = errorAnnotation?.errorMessage || error?.message;
 
   const usage: {
     completionTokens: number;
@@ -110,8 +111,7 @@ export const AssistantMessage = memo(({ content, annotations, onRetry }: Assista
         </div>
       </>
       <div className="text-liblab-elements-textPrimary">
-        <Markdown html>{content}</Markdown>
-        {errorMessage && (
+        {errorMessage ? (
           <>
             <p className="mt-2">Unfortunately, your request has failed with the following error:</p>{' '}
             <Card className="mt-4 px-4 py-2 text-sm text-red-300 border-red-500/20 bg-red-500/10">
@@ -122,6 +122,8 @@ export const AssistantMessage = memo(({ content, annotations, onRetry }: Assista
               Retry
             </Button>
           </>
+        ) : (
+          <Markdown html>{content}</Markdown>
         )}
       </div>
     </div>
