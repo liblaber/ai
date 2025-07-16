@@ -19,16 +19,17 @@ async function setupSampleDatabase(): Promise<void> {
 
     if (tables.length > 0) {
       console.log('✅ Database already initialized');
-      await db.close();
+      db.close();
+
       return;
     }
 
     // Read and execute the init SQL file
     const initSql = fs.readFileSync(path.join(__dirname, '..', 'init', '01-init.sql'), 'utf-8');
-    await db.exec(initSql);
+    db.exec(initSql);
 
     console.log('✅ Database initialized successfully');
-    await db.close();
+    db.close();
     process.exit(0);
   } catch (error) {
     console.error('❌ Failed to initialize database:', error);

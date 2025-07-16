@@ -29,7 +29,13 @@ class TelemetryManager {
     const instance = new TelemetryManager();
     instance._posthogApiKey = process.env.POSTHOG_API_KEY || null;
     instance._machineId = machineIdSync();
-    instance._posthogClient = new PostHog(instance._posthogApiKey!, {
+
+    if (!instance._posthogApiKey) {
+      console.warn('No POSTHOG_API_KEY found');
+      return instance;
+    }
+
+    instance._posthogClient = new PostHog(instance._posthogApiKey, {
       host: 'https://us.i.posthog.com',
       flushAt: 1, // Flush every event, no batching
       flushInterval: 0, // Disable periodic flushing
