@@ -1,13 +1,9 @@
 import 'dotenv/config';
 import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
-
-interface NormalizedError {
-  message: string;
-  stack: string;
-}
 
 const NGROK_LOG_FILE = './ngrok.log';
 const NGROK_PROCESS_PORT = 4040;
@@ -181,34 +177,6 @@ const runApp = async (): Promise<void> => {
     console.warn('Failed to track app start success:', (telemetryError as Error).message);
   }
 };
-
-function normalizeError(error: any): NormalizedError {
-  const normalizedError: NormalizedError = {
-    message: 'Unknown error',
-    stack: '',
-  };
-
-  if (error instanceof Error) {
-    normalizedError.message = error.message;
-    normalizedError.stack = error.stack || '';
-  } else if (typeof error === 'object' && error !== null) {
-    // Handle execSync errors which have status, signal, output properties
-    const execError = error as any;
-    normalizedError.message = `Process failed with status ${execError.status}`;
-
-    if (execError.signal) {
-      normalizedError.message += ` (signal: ${execError.signal})`;
-    }
-
-    if (execError.stderr) {
-      normalizedError.message += ` - ${execError.stderr}`;
-    }
-  } else {
-    normalizedError.message = String(error);
-  }
-
-  return normalizedError;
-}
 
 async function trackAppError(error: any) {
   const telemetry = await getTelemetry();

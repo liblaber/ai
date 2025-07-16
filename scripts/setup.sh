@@ -149,7 +149,7 @@ echo "📋 Validating environment variables..."
 if ! grep -q "^ANTHROPIC_API_KEY=." .env; then
     echo "⚠️ ANTHROPIC_API_KEY not found or empty in .env file."
     read -p "Please enter your Anthropic API key: " anthropic_key
-    
+
     # Try to update existing empty ANTHROPIC_API_KEY line, otherwise add new one
     if [ -f .env ] && grep -q "^ANTHROPIC_API_KEY=$" .env; then
         # Update existing empty key using awk (more reliable than sed for special characters)

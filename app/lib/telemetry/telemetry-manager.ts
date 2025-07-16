@@ -4,10 +4,10 @@ import { PostHog } from 'posthog-node';
 const { machineIdSync } = await import('node-machine-id');
 
 export enum TelemetryEventType {
-  APP_SETUP_SUCCESS = 'setup_success',
-  APP_SETUP_ERROR = 'setup_error',
   APP_START_SUCCESS = 'app_start_success',
   APP_ERROR = 'app_error',
+  SETUP_SUCCESS = 'setup_success',
+  SETUP_ERROR = 'setup_error',
 }
 
 export interface TelemetryEvent {
