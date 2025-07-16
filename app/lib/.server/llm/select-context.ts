@@ -22,7 +22,7 @@ export async function selectContext(props: {
   files: FileMap;
   promptId?: string;
   contextOptimization?: boolean;
-  summary: string;
+  summary?: string;
   onFinish?: (resp: GenerateTextResult<Record<string, CoreTool<any, any>>, never>) => void;
 }) {
   const { messages, env: serverEnv, apiKeys, files, summary, onFinish } = props;

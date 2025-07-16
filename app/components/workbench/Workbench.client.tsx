@@ -375,7 +375,7 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncF
             },
           )}
         >
-          <div className="absolute inset-0 px-2 lg:px-6">
+          <div className="absolute inset-0 px-2 lg:px-4">
             <div className="h-full flex flex-col bg-liblab-elements-bg-depth-2 border border-liblab-elements-borderColor shadow-sm rounded-xl overflow-hidden">
               <div className="flex items-center px-3 py-1 h-12 border-b border-liblab-elements-borderColor">
                 <Slider selected={selectedView} options={sliderOptions} setSelected={setSelectedView} />

@@ -48,33 +48,19 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   }>();
   const { messages, files, conversationId, promptId, contextOptimization } = body;
 
-  const message = messages.at(-1);
+  const userMessage = messages.at(-1);
 
-  if (!message) {
+  if (!userMessage) {
     throw new Response('Message not specified', {
       status: 400,
       statusText: 'Bad Request',
     });
   }
 
-  const messageProperties = extractPropertiesFromMessage(message);
-  const content = Array.isArray(messageProperties.content)
-    ? messageProperties.content.find((item) => item.type === 'text')?.text || ''
-    : messageProperties.content;
-
-  await messageService.saveMessage({
-    conversationId,
-    content,
-    model: DEFAULT_MODEL,
-    annotations: message.annotations,
-  });
-
   const cookieHeader = request.headers.get('Cookie');
   const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
 
   const conversation = await conversationService.getConversation(conversationId);
-
-  const stream = new TransformStream();
 
   const cumulativeUsage = {
     completionTokens: 0,
@@ -166,7 +152,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             };
             dataStream.writeData(currentProgressAnnotation);
 
-            throw new Error('MILE BACA JERRORCINU');
+            throw new Error('This is some sort of unexpected error');
 
             // Select context files
             logger.debug(`Messages count: ${messages.length}`);
@@ -190,28 +176,37 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
             if (filteredFiles) {
               logger.debug(`files in context : ${JSON.stringify(Object.keys(filteredFiles))}`);
+
+              dataStream.writeMessageAnnotation({
+                type: 'codeContext',
+                files: Object.keys(filteredFiles).map((key) => {
+                  let path = key;
+
+                  if (path.startsWith(WORK_DIR)) {
+                    path = path.replace(WORK_DIR, '');
+                  }
+
+                  return path;
+                }),
+              } as ContextAnnotation);
+
+              currentProgressAnnotation = {
+                type: 'progress',
+                label: 'context',
+                status: 'complete',
+                order: progressCounter++,
+                message: 'Code Files Selected',
+              };
+            } else {
+              currentProgressAnnotation = {
+                type: 'progress',
+                label: 'context',
+                status: 'complete',
+                order: progressCounter++,
+                message: 'No Code Files Selected',
+              };
             }
 
-            dataStream.writeMessageAnnotation({
-              type: 'codeContext',
-              files: Object.keys(filteredFiles).map((key) => {
-                let path = key;
-
-                if (path.startsWith(WORK_DIR)) {
-                  path = path.replace(WORK_DIR, '');
-                }
-
-                return path;
-              }),
-            } as ContextAnnotation);
-
-            currentProgressAnnotation = {
-              type: 'progress',
-              label: 'context',
-              status: 'complete',
-              order: progressCounter++,
-              message: 'Code Files Selected',
-            };
             dataStream.writeData(currentProgressAnnotation);
           }
 
@@ -219,55 +214,64 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           const options: StreamingOptions = {
             experimental_generateMessageId: createId,
             toolChoice: 'none',
-            onFinish: async ({ text: content, finishReason, usage, response: { messages } }) => {
+            onFinish: async ({ text: assistantMessageContent, finishReason, usage, response: { messages } }) => {
               logger.debug('usage', JSON.stringify(usage));
 
               const assistantMessage = messages.find((m) => m.role === 'assistant');
 
-              if (usage) {
-                try {
-                  await messageService.saveMessage({
-                    conversationId,
-                    content,
-                    model: DEFAULT_MODEL,
-                    inputTokens: usage.promptTokens,
-                    outputTokens: usage.completionTokens,
-                    finishReason,
-                    role: MESSAGE_ROLE.ASSISTANT,
-                    id: assistantMessage?.id,
-                  });
+              try {
+                const messageProperties = extractPropertiesFromMessage(userMessage);
+                const userMessageContent = Array.isArray(messageProperties.content)
+                  ? messageProperties.content.find((item) => item.type === 'text')?.text || ''
+                  : messageProperties.content;
 
-                  logger.debug('Prompt saved');
-                } catch (error) {
-                  logger.error('Failed to save prompt', error);
-                }
-
-                cumulativeUsage.completionTokens += usage.completionTokens || 0;
-                cumulativeUsage.promptTokens += usage.promptTokens || 0;
-                cumulativeUsage.totalTokens += usage.totalTokens || 0;
-              }
-
-              if (finishReason !== 'length') {
-                dataStream.writeMessageAnnotation({
-                  type: 'usage',
-                  value: {
-                    completionTokens: cumulativeUsage.completionTokens,
-                    promptTokens: cumulativeUsage.promptTokens,
-                    totalTokens: cumulativeUsage.totalTokens,
-                  },
+                await messageService.saveMessage({
+                  conversationId,
+                  content: userMessageContent,
+                  model: DEFAULT_MODEL,
+                  annotations: userMessage.annotations,
+                  id: userMessage?.id,
                 });
-                currentProgressAnnotation = {
-                  type: 'progress',
-                  label: 'response',
-                  status: 'complete',
-                  order: progressCounter++,
-                  message: 'Response Generated',
-                };
-                dataStream.writeData(currentProgressAnnotation);
-                await new Promise((resolve) => setTimeout(resolve, 0));
 
-                return;
+                await messageService.saveMessage({
+                  conversationId,
+                  content: assistantMessageContent,
+                  model: DEFAULT_MODEL,
+                  inputTokens: usage?.promptTokens,
+                  outputTokens: usage?.completionTokens,
+                  finishReason,
+                  role: MESSAGE_ROLE.ASSISTANT,
+                  id: assistantMessage?.id,
+                });
+
+                logger.debug('Prompt saved');
+              } catch (error) {
+                logger.error('Failed to save prompt', error);
               }
+
+              cumulativeUsage.completionTokens += usage.completionTokens || 0;
+              cumulativeUsage.promptTokens += usage.promptTokens || 0;
+              cumulativeUsage.totalTokens += usage.totalTokens || 0;
+
+              dataStream.writeMessageAnnotation({
+                type: 'usage',
+                value: {
+                  completionTokens: cumulativeUsage.completionTokens,
+                  promptTokens: cumulativeUsage.promptTokens,
+                  totalTokens: cumulativeUsage.totalTokens,
+                },
+              });
+              currentProgressAnnotation = {
+                type: 'progress',
+                label: 'response',
+                status: 'complete',
+                order: progressCounter++,
+                message: 'Response Generated',
+              };
+              dataStream.writeData(currentProgressAnnotation);
+              await new Promise((resolve) => setTimeout(resolve, 0));
+
+              return;
             },
           };
 
@@ -313,11 +317,14 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             }
           })();
           result.mergeIntoDataStream(dataStream);
-        } catch (error) {
+        } catch (error: any) {
           logger.error(error);
           currentProgressAnnotation.status = 'error';
           dataStream.writeData(currentProgressAnnotation);
-          dataStream.writeMessageAnnotation(currentProgressAnnotation);
+          dataStream.writeMessageAnnotation({
+            ...currentProgressAnnotation,
+            errorMessage: error?.message || 'Unable to generate response.',
+          });
 
           throw error;
         }

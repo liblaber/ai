@@ -4,10 +4,13 @@ import type { JSONValue } from 'ai';
 import Popover from '~/components/ui/Popover';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { WORK_DIR } from '~/utils/constants';
+import { Button } from '~/components/ui/Button';
+import { Card } from '~/components/ui/Card';
 
 interface AssistantMessageProps {
   content: string;
   annotations?: JSONValue[];
+  onRetry?: () => Promise<void>;
 }
 
 function openArtifactInWorkbench(filePath: string) {
@@ -34,34 +37,33 @@ function normalizedFilePath(path: string) {
   return normalizedPath;
 }
 
-export const AssistantMessage = memo(({ content, annotations }: AssistantMessageProps) => {
+export const AssistantMessage = memo(({ content, annotations, onRetry }: AssistantMessageProps) => {
   const filteredAnnotations = (annotations?.filter(
     (annotation: JSONValue) => annotation && typeof annotation === 'object' && Object.keys(annotation).includes('type'),
   ) || []) as { type: string; value: any } & { [key: string]: any }[];
 
-  let chatSummary: string | undefined = undefined;
+  const chatSummaryAnnotation = filteredAnnotations.find((annotation) => annotation.type === 'chatSummary');
+  const codeContextAnnotation = filteredAnnotations.find((annotation) => annotation.type === 'codeContext');
+  const usageAnnotation = filteredAnnotations.find((annotation) => annotation.type === 'usage');
+  const errorAnnotation = filteredAnnotations.find(
+    (annotation) => annotation.type === 'progress' && annotation.status === 'error',
+  );
 
-  if (filteredAnnotations.find((annotation) => annotation.type === 'chatSummary')) {
-    chatSummary = filteredAnnotations.find((annotation) => annotation.type === 'chatSummary')?.summary;
-  }
-
-  let codeContext: string[] | undefined = undefined;
-
-  if (filteredAnnotations.find((annotation) => annotation.type === 'codeContext')) {
-    codeContext = filteredAnnotations.find((annotation) => annotation.type === 'codeContext')?.files;
-  }
+  const chatSummary: string | undefined = chatSummaryAnnotation?.summary;
+  const codeContext: string[] | undefined = codeContextAnnotation?.files;
+  const errorMessage: string | undefined = errorAnnotation?.errorMessage;
 
   const usage: {
     completionTokens: number;
     promptTokens: number;
     totalTokens: number;
-  } = filteredAnnotations.find((annotation) => annotation.type === 'usage')?.value;
+  } = usageAnnotation?.value;
 
   return (
     <div className="overflow-hidden w-full">
       <>
-        <div className=" flex gap-2 items-center text-sm text-liblab-elements-textSecondary mb-2">
-          {(codeContext || chatSummary) && (
+        <div className=" flex gap-2 items-center text-sm text-liblab-elements-textSecondary">
+          {(codeContext || chatSummary) && !errorMessage && (
             <Popover side="right" align="start" trigger={<div className="i-ph:info" />}>
               {chatSummary && (
                 <div className="max-w-chat">
@@ -107,7 +109,21 @@ export const AssistantMessage = memo(({ content, annotations }: AssistantMessage
           )}
         </div>
       </>
-      <Markdown html>{content}</Markdown>
+      <div className="text-liblab-elements-textPrimary">
+        <Markdown html>{content}</Markdown>
+        {errorMessage && (
+          <>
+            <p className="mt-2">Unfortunately, your request has failed with the following error:</p>{' '}
+            <Card className="mt-4 px-4 py-2 text-sm text-red-300 border-red-500/20 bg-red-500/10">
+              <p>{errorMessage}</p>
+            </Card>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={onRetry}>
+              <div className="i-ph:arrow-clockwise w-3 h-3 mr-2" />
+              Retry
+            </Button>
+          </>
+        )}
+      </div>
     </div>
   );
 });

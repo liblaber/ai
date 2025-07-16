@@ -22,11 +22,12 @@ interface MessagesProps {
   isStreaming?: boolean;
   messages?: Message[];
   setMessages: (messages: Message[]) => void;
+  onRetry?: () => Promise<void>;
 }
 
 export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
   (
-    { id, isStreaming = false, messages = [], setMessages, className }: MessagesProps,
+    { id, isStreaming = false, messages = [], setMessages, className, onRetry }: MessagesProps,
     ref: ForwardedRef<HTMLDivElement> | undefined,
   ) => {
     const { data } = useSession();
@@ -125,7 +126,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                     {isUserMessage ? (
                       <UserMessage content={content} />
                     ) : (
-                      <AssistantMessage content={content} annotations={message.annotations} />
+                      <AssistantMessage content={content} annotations={message.annotations} onRetry={onRetry} />
                     )}
                   </div>
                   {!isUserMessage && (
@@ -142,15 +143,20 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                         </WithTooltip>
                       )}
 
-                      <WithTooltip tooltip="Fork chat from this message">
-                        <button
-                          onClick={() => handleFork(messageId)}
-                          key="i-liblab:ic_back-square"
-                          className={classNames(
-                            'i-liblab:ic_back-square text-2xl opacity-50 hover:opacity-100 text-liblab-elements-icon-primary transition-colors',
-                          )}
-                        />
-                      </WithTooltip>
+                      {!isStreaming &&
+                        !annotations?.some(
+                          (annotation: any) => annotation?.type === 'progress' && annotation?.status === 'error',
+                        ) && (
+                          <WithTooltip tooltip="Fork chat from this message">
+                            <button
+                              onClick={() => handleFork(messageId)}
+                              key="i-liblab:ic_back-square"
+                              className={classNames(
+                                'i-liblab:ic_back-square text-2xl opacity-50 hover:opacity-100 text-liblab-elements-icon-primary transition-colors',
+                              )}
+                            />
+                          </WithTooltip>
+                        )}
                     </div>
                   )}
                 </div>

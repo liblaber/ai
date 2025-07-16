@@ -29,6 +29,7 @@ import { createConversation, getMessageSnapshotId } from '~/lib/persistence/conv
 import { extractArtifactTitleFromMessageContent } from '~/utils/artifactMapper';
 import { createCommandsMessage, detectProjectCommands } from '~/utils/projectCommands';
 import { ActionRunner } from '~/lib/runtime/action-runner';
+import { createId } from '@paralleldrive/cuid2';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -424,7 +425,7 @@ export const ChatImpl = memo(
         setMessages([
           ...starterTemplateMessages,
           {
-            id: `3-${new Date().getTime()}`,
+            id: createId(),
             role: 'user',
             content: formatMessageWithModelInfo({
               messageContent,
@@ -456,7 +457,7 @@ export const ChatImpl = memo(
       // If template selection failed, proceed with normal conversation without a template
       setMessages([
         {
-          id: `${new Date().getTime()}`,
+          id: createId(),
           role: 'user',
           content: formatMessageWithModelInfo({
             messageContent,
@@ -513,6 +514,21 @@ export const ChatImpl = memo(
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedQueryId, setSelectedQueryId] = useState<string | number | null>(null);
+
+    const handleRetry = async () => {
+      const messagesWithoutLastAssistant = messages.filter(
+        (message, index) => !(message.role === 'assistant' && index === messages.length - 1),
+      );
+
+      setMessages(messagesWithoutLastAssistant);
+
+      // Reload the chat to retry the request
+      reload({
+        body: {
+          conversationId: chatId.get(),
+        },
+      });
+    };
 
     useEffect(() => {
       const handleIframeMessage = (event: MessageEvent<OutputAppEvent>) => {
@@ -574,6 +590,7 @@ export const ChatImpl = memo(
           data={chatData}
           onSyncFiles={syncLatestChanges}
           setMessages={setMessages}
+          onRetry={handleRetry}
         />
         {selectedQueryId && (
           <QueryModal

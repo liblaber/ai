@@ -21,7 +21,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       include: {
         messages: {
           include: {
-            Snapshot: {
+            snapshot: {
               select: {
                 id: true,
               },

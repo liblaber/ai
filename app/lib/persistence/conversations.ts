@@ -14,7 +14,7 @@ type MessageResponse = {
   finishReason?: string;
   createdAt: number;
   annotations: string[];
-  Snapshot?: {
+  snapshot?: {
     id: string;
   } | null;
 };
@@ -25,6 +25,9 @@ type ConversationResponse = {
   id: string;
   description?: string;
   messages: MessageResponse[];
+  snapshots: {
+    id: string;
+  }[];
   createdAt: number;
   updatedAt: number;
   dataSourceId: string;
@@ -59,8 +62,8 @@ export async function getConversation(id: string): Promise<UIConversation> {
     conversation?.messages.map((message) => {
       const annotations = [...(message.annotations ?? []), NO_EXECUTE_ACTION_ANNOTATION];
 
-      if (message.Snapshot?.id) {
-        annotations.push(`snapshotId:${message.Snapshot.id}`);
+      if (message.snapshot?.id) {
+        annotations.push(`snapshotId:${message.snapshot.id}`);
       }
 
       return {
@@ -139,6 +142,16 @@ export async function deleteConversation(id: string): Promise<void> {
 
   if (!response.ok) {
     throw new Error(`Failed to delete conversation: ${response.statusText}`);
+  }
+}
+
+export async function deleteMessage(conversationId: string, messageId: string): Promise<void> {
+  const response = await fetch(`${CONVERSATIONS_API}/${conversationId}/messages/${messageId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to delete message: ${response.statusText}`);
   }
 }
 
