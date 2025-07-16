@@ -65,6 +65,8 @@ class TelemetryManager {
         properties: eventProperties,
         timestamp: new Date(),
       });
+
+      await this._posthogClient.flushAsync();
     } catch (error) {
       console.warn('Failed to send telemetry event:', error);
     }
