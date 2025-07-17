@@ -534,8 +534,6 @@ export const ChatImpl = memo(
         (message, index) => !(message.role === 'assistant' && index === messages.length - 1),
       );
 
-      console.log(messagesWithoutLastAssistant);
-
       setData(undefined);
       setMessages(messagesWithoutLastAssistant);
 

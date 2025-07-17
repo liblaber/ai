@@ -352,7 +352,6 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncF
   }, []);
 
   const handleSelectFile = useCallback((filePath: string) => {
-    console.log('handleSelectFile', filePath);
     workbenchStore.setSelectedFile(filePath);
     workbenchStore.currentView.set('diff');
   }, []);

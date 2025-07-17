@@ -9,7 +9,6 @@ import {
   simplifyLiblabActions,
 } from './utils';
 import { createScopedLogger } from '~/utils/logger';
-import { MOCK_RESPONSE } from '~/lib/.server/llm/stream-text';
 
 // Common patterns to ignore, similar to .gitignore
 
@@ -26,9 +25,6 @@ export async function selectContext(props: {
   summary?: string;
   onFinish?: (resp: GenerateTextResult<Record<string, CoreTool<any, any>>, never>) => void;
 }) {
-  if (MOCK_RESPONSE) {
-    return {};
-  }
   const { messages, env: serverEnv, apiKeys, files, summary, onFinish } = props;
   const currentModel = DEFAULT_MODEL;
   const processedMessages = messages.map((message) => {

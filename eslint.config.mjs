@@ -23,7 +23,7 @@ export default [
       'no-eval': ['error'],
       'linebreak-style': ['error', 'unix'],
       'arrow-spacing': ['error', { before: true, after: true }],
-      'multiline-comment-style': off,
+      'multiline-comment-style': 'off',
     },
   },
   {
@@ -55,6 +55,7 @@ export default [
       ],
     },
   },
+
   // Override for shared directory to allow relative imports
   {
     files: ['shared/**/*'],

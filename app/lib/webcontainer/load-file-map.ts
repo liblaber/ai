@@ -77,6 +77,7 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
       } else if (previousFile.type === 'file') {
         // Handle .env file injection for local environment
         let content = previousFile.content;
+
         if (filePath.endsWith('.env') && import.meta.env.VITE_ENV_NAME === 'local') {
           const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
           content = injectEnvVariable(
@@ -89,6 +90,7 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
         // Handle package.json for start command detection
         if (filePath === 'package.json') {
           const projectCommands = detectProjectCommands(previousFile);
+
           if (projectCommands?.startCommand) {
             workbenchStore.startCommand.set(projectCommands.startCommand);
           }

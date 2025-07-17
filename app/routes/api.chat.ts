@@ -1,6 +1,5 @@
 import { type ActionFunctionArgs } from '@remix-run/cloudflare';
 import { createDataStream } from 'ai';
-import { type FileMap } from '~/lib/.server/llm/constants';
 import { type Messages, type StreamingOptions, streamText } from '~/lib/.server/llm/stream-text';
 import { createScopedLogger } from '~/utils/logger';
 import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
@@ -13,6 +12,7 @@ import { MESSAGE_ROLE } from '~/types/database';
 import { createId } from '@paralleldrive/cuid2';
 import { conversationService } from '~/lib/services/conversationService';
 import type { StarterPluginId } from '~/lib/plugins/types';
+import type { FileMap } from '~/lib/stores/files';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);

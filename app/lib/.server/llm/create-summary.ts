@@ -2,7 +2,6 @@ import { type CoreTool, generateText, type GenerateTextResult, type Message } fr
 import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '~/utils/constants';
 import { extractCurrentContext, extractPropertiesFromMessage, simplifyLiblabActions } from './utils';
 import { createScopedLogger } from '~/utils/logger';
-import { MOCK_RESPONSE } from '~/lib/.server/llm/stream-text';
 
 const logger = createScopedLogger('create-summary');
 
@@ -14,9 +13,6 @@ export async function createSummary(props: {
   contextOptimization?: boolean;
   onFinish?: (resp: GenerateTextResult<Record<string, CoreTool<any, any>>, never>) => void;
 }) {
-  if (MOCK_RESPONSE) {
-    return undefined;
-  }
   const { messages, env: serverEnv, apiKeys, onFinish } = props;
   const currentModel = DEFAULT_MODEL;
   const processedMessages = messages.map((message) => {
