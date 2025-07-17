@@ -153,8 +153,8 @@ export default function DataSourceConnectionPage() {
               <Label className="mb-3 block text-gray-300">Data source</Label>
               <BaseSelect
                 value={dbType}
-                onChange={(value: DataSourceOption) => {
-                  if (value.status !== 'available') {
+                onChange={(value: DataSourceOption | null) => {
+                  if (!value || value.status !== 'available') {
                     return;
                   }
 

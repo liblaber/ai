@@ -4,13 +4,21 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './auth/AuthContext';
+import { DataLoader, type RootData } from './DataLoader';
 
-export function ClientProviders({ children }: { children: React.ReactNode }) {
+interface ClientProvidersProps {
+  children: React.ReactNode;
+  rootData: RootData;
+}
+
+export function ClientProviders({ children, rootData }: ClientProvidersProps) {
   return (
     <AuthProvider>
       <DndProvider backend={HTML5Backend}>
-        {children}
-        <Toaster richColors />
+        <DataLoader rootData={rootData}>
+          {children}
+          <Toaster richColors />
+        </DataLoader>
       </DndProvider>
     </AuthProvider>
   );

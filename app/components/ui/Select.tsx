@@ -45,10 +45,10 @@ const Control = ({ children, controlIcon, ...props }: ControlWithIconProps) => {
   );
 };
 
-interface SelectProps {
-  value?: SelectOption | null;
-  onChange?: (option: SelectOption | null) => void;
-  options: SelectOption[];
+interface SelectProps<T extends SelectOption = SelectOption> {
+  value?: T | null;
+  onChange?: (option: T | null) => void;
+  options: readonly T[];
   placeholder?: string;
   isSearchable?: boolean;
   isClearable?: boolean;
@@ -59,11 +59,11 @@ interface SelectProps {
   menuPlacement?: 'auto' | 'bottom' | 'top';
   menuPosition?: 'absolute' | 'fixed';
   components?: any;
-  styles?: Partial<StylesConfig<SelectOption, false>>;
+  styles?: Partial<StylesConfig<T, false>>;
   controlIcon?: React.ReactNode;
 }
 
-const defaultStyles: StylesConfig<SelectOption, false> = {
+const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> => ({
   control: (base) => ({
     ...base,
     minWidth: '300px',
@@ -186,9 +186,9 @@ const defaultStyles: StylesConfig<SelectOption, false> = {
       color: 'var(--liblab-elements-textPrimary)',
     },
   }),
-};
+});
 
-export const BaseSelect: React.FC<SelectProps> = ({
+export const BaseSelect = <T extends SelectOption = SelectOption>({
   value,
   onChange,
   options,
@@ -204,8 +204,9 @@ export const BaseSelect: React.FC<SelectProps> = ({
   components: customComponents,
   styles: customStyles,
   controlIcon,
-}) => {
-  const mergedStyles = {
+}: SelectProps<T>) => {
+  const defaultStyles = createDefaultStyles<T>();
+  const mergedStyles: StylesConfig<T, false> = {
     ...defaultStyles,
     ...customStyles,
     control: (base: any, state: any) => ({
@@ -245,6 +246,7 @@ export const BaseSelect: React.FC<SelectProps> = ({
       menuPosition={menuPosition}
       components={mergedComponents}
       styles={mergedStyles}
+      instanceId="data-source-select"
     />
   );
 };

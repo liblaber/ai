@@ -20,11 +20,13 @@ async function shellHighlighter(): Promise<HighlighterGeneric<any, any>> {
 
 if (import.meta.hot) {
   shellHighlighter().then((hl) => {
-    import.meta.hot.data.shellHighlighter = hl;
+    if (import.meta.hot?.data) {
+      import.meta.hot.data.shellHighlighter = hl;
+    }
   });
 }
 
-let shellHigh;
+let shellHigh: any;
 
 shellHighlighter().then((hl) => {
   shellHigh = hl;

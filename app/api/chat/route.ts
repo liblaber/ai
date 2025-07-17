@@ -121,7 +121,7 @@ async function chatAction(request: NextRequest) {
 
           summary = await createSummary({
             messages: [...messages],
-            env: process.env,
+            env: process.env as Record<string, string>,
             apiKeys,
             promptId,
             contextOptimization,
@@ -162,7 +162,7 @@ async function chatAction(request: NextRequest) {
           logger.debug(`Messages count: ${messages.length}`);
           filteredFiles = await selectContext({
             messages: [...messages],
-            env: process.env,
+            env: process.env as Record<string, string>,
             apiKeys,
             files,
             promptId,

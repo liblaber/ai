@@ -3,6 +3,12 @@ import '@unocss/reset/tailwind.css';
 import type { ReactNode } from 'react';
 import { ClientProviders } from './components/ClientProviders';
 import './globals.css';
+import { getDataSources } from '~/lib/services/datasourceService';
+import { userService } from '~/lib/services/userService';
+import PluginManager, { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { headers } from 'next/headers';
+import { auth } from '~/auth/auth-config';
 
 const inlineThemeCode = `
   setLiblabTheme();
@@ -16,7 +22,60 @@ export const metadata = {
   description: 'Build internal apps using AI',
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+async function getRootData() {
+  try {
+    // Get session from headers
+    const headersList = await headers();
+    const session = await auth.api.getSession({
+      headers: headersList,
+    });
+
+    let user = null;
+    let dataSources: any[] = [];
+    let pluginAccess = FREE_PLUGIN_ACCESS;
+    let dataSourceTypes: any[] = [];
+
+    if (session?.user) {
+      // Get user profile
+      user = await userService.getUser(session.user.id);
+
+      // Get data sources for the user
+      dataSources = await getDataSources(session.user.id);
+
+      // Initialize plugin manager
+      await PluginManager.getInstance().initialize();
+      pluginAccess = PluginManager.getInstance().getAccessMap();
+
+      // Get available data source types
+      dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
+    }
+
+    return {
+      user,
+      dataSources,
+      pluginAccess,
+      dataSourceTypes,
+      ENV: {
+        VITE_BASE_URL: process.env.VITE_BASE_URL,
+      },
+    };
+  } catch (error) {
+    console.error('Error loading root data:', error);
+    return {
+      user: null,
+      dataSources: [],
+      pluginAccess: FREE_PLUGIN_ACCESS,
+      dataSourceTypes: [],
+      ENV: {
+        VITE_BASE_URL: process.env.VITE_BASE_URL,
+      },
+    };
+  }
+}
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const rootData = await getRootData();
+
   return (
     <html lang="en" data-theme="dark">
       <head>
@@ -31,9 +90,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" />
         <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__ENV__ = ${JSON.stringify(rootData.ENV || {})}`,
+          }}
+        />
       </head>
       <body className="w-full h-full bg-liblab-elements-bg-depth-1">
-        <ClientProviders>{children}</ClientProviders>
+        <ClientProviders rootData={rootData}>{children}</ClientProviders>
       </body>
     </html>
   );

@@ -138,7 +138,7 @@ export default function DeployedAppsTab() {
         return;
       }
 
-      setWebsites(data.websites);
+      setWebsites(data.websites || []);
 
       setIsLoading(false);
     };
