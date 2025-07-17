@@ -1,21 +1,25 @@
-import type { ActionFunction } from '@remix-run/node';
+import { NextRequest, NextResponse } from 'next/server';
 import { StorageServiceFactory } from '~/lib/services/storage/storage-service-factory';
 import { snapshotService } from '~/lib/services/snapshotService';
 import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
 import { messageService } from '~/lib/services/messageService';
+import { requireUserId } from '~/auth/session';
 
-export const action: ActionFunction = async ({ request, params: { conversationId, id } }) => {
-  if (request.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 });
-  }
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ conversationId: string; id: string }> },
+) {
+  const { conversationId, id } = await params;
 
   if (!conversationId || !id) {
-    return Response.json({ error: 'Invalid request' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 
+  const userId = await requireUserId(request);
+
   const conversation = await prisma.conversation.findUnique({
-    where: { id: conversationId },
+    where: { id: conversationId, userId },
     include: {
       messages: {
         select: {
@@ -34,30 +38,30 @@ export const action: ActionFunction = async ({ request, params: { conversationId
   });
 
   if (!conversation) {
-    return Response.json({ error: 'Conversation not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
   }
 
   try {
     const snapshot = await snapshotService.getSnapshotById(id);
 
     if (!snapshot) {
-      return Response.json({ error: 'Snapshot not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Snapshot not found' }, { status: 404 });
     }
 
     if (snapshot.conversationId !== conversationId) {
-      return Response.json({ error: 'Snapshot does not belong to this conversation' }, { status: 403 });
+      return NextResponse.json({ error: 'Snapshot does not belong to this conversation' }, { status: 403 });
     }
 
     if (!snapshot.messageId) {
       logger.info(`Snapshot ${snapshot.id} does not have a messageId, skipping rewind`);
-      return Response.json({ success: true });
+      return NextResponse.json({ success: true });
     }
 
     const messageIndex = conversation.messages.findIndex((msg) => msg.id === snapshot.messageId);
 
     if (messageIndex < 0) {
       logger.info(`Snapshot ${snapshot.id} does not have a newer message, skipping rewind`);
-      return Response.json({ success: true });
+      return NextResponse.json({ success: true });
     }
 
     const messagesToDelete = conversation.messages.slice(messageIndex + 1);
@@ -81,9 +85,9 @@ export const action: ActionFunction = async ({ request, params: { conversationId
       });
     }
 
-    return Response.json({ success: true });
+    return NextResponse.json({ success: true });
   } catch (error) {
     logger.error('Failed to fetch snapshot:', error);
-    return Response.json({ error: 'Failed to fetch snapshot' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch snapshot' }, { status: 500 });
   }
-};
+}

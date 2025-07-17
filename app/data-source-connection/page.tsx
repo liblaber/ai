@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
@@ -5,7 +7,7 @@ import { Label } from '~/components/ui/Label';
 import { BaseSelect } from '~/components/ui/Select';
 import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/database/SelectDatabaseTypeOptions';
 import { useDataSourceActions, useDataSourcesStore } from '~/lib/stores/dataSources';
-import { useNavigate } from '@remix-run/react';
+import { useRouter } from 'next/navigation';
 import { Header } from '~/components/header/Header';
 import {
   type DataSourceOption,
@@ -23,8 +25,6 @@ interface ApiResponse {
   };
 }
 
-export const DATA_SOURCE_CONNECTION_ROUTE = '/data-source-connection';
-
 export default function DataSourceConnectionPage() {
   const [dbType, setDbType] = useState<DataSourceOption>(DEFAULT_DATA_SOURCES[0]);
   const [dbName, setDbName] = useState('');
@@ -35,7 +35,7 @@ export default function DataSourceConnectionPage() {
   const [error, setError] = useState<string | null>(null);
   const { setSelectedDataSourceId } = useDataSourcesStore();
   const { refetchDataSources } = useDataSourceActions();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
@@ -98,7 +98,7 @@ export default function DataSourceConnectionPage() {
         refetchDataSources();
         setSelectedDataSourceId(result.dataSource.id);
         setTimeout(() => {
-          navigate('/');
+          router.push('/');
         }, 1000);
       } else {
         setError(result.error || 'Failed to create data source');
@@ -124,7 +124,7 @@ export default function DataSourceConnectionPage() {
         refetchDataSources();
         setSelectedDataSourceId(result.dataSource.id);
         setTimeout(() => {
-          navigate('/');
+          router.push('/');
         }, 1000);
       } else {
         setError('Failed to connect sample data source.');
@@ -153,12 +153,12 @@ export default function DataSourceConnectionPage() {
               <Label className="mb-3 block text-gray-300">Data source</Label>
               <BaseSelect
                 value={dbType}
-                onChange={(value) => {
-                  if ((value as DataSourceOption).status !== 'available') {
+                onChange={(value: DataSourceOption) => {
+                  if (value.status !== 'available') {
                     return;
                   }
 
-                  setDbType(value as DataSourceOption);
+                  setDbType(value);
                   setDbName('');
                   setConnStr('');
                   setError(null);
@@ -180,13 +180,23 @@ export default function DataSourceConnectionPage() {
                 <Label htmlFor="db-name" className="mb-3 block text-gray-300">
                   Database Name
                 </Label>
-                <Input id="db-name" type="text" value={dbName} onChange={(e) => setDbName(e.target.value)} />
+                <Input
+                  id="db-name"
+                  type="text"
+                  value={dbName}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDbName(e.target.value)}
+                />
               </div>
               <div>
                 <Label htmlFor="conn-str" className="mb-3 block text-gray-300">
                   Connection String
                 </Label>
-                <Input id="conn-str" type="text" value={connStr} onChange={(e) => setConnStr(e.target.value)} />
+                <Input
+                  id="conn-str"
+                  type="text"
+                  value={connStr}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConnStr(e.target.value)}
+                />
                 <Label className="mb-3 block !text-[13px] text-gray-300 mt-2">
                   e.g. {dbType.value}://username:password@host:port/database
                 </Label>

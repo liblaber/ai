@@ -1,4 +1,4 @@
-import { type ActionFunctionArgs } from '@remix-run/cloudflare';
+import { NextRequest } from 'next/server';
 import type { NetlifySiteInfo } from '~/types/netlify';
 import { type ChildProcess, spawn } from 'child_process';
 import { mkdir, unlink, writeFile } from 'fs/promises';
@@ -8,7 +8,7 @@ import { rimraf } from 'rimraf';
 import AdmZip from 'adm-zip';
 import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
-import { env } from '~/lib/config/env';
+import '~/lib/config/env';
 import { requireUserId } from '~/auth/session';
 
 interface CommandResult {
@@ -108,7 +108,7 @@ async function generateUniqueSiteName(chatId: string): Promise<string> {
   throw new Error('Maximum number of site name generation attempts reached');
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function POST(request: NextRequest) {
   const userId = await requireUserId(request);
   const encoder = new TextEncoder();
   const stream = new TransformStream();
@@ -128,7 +128,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const chatId = formData.get('chatId') as string;
     const description = formData.get('description') as string;
     const zipFile = formData.get('zipFile') as File;
-    const token = env.NETLIFY_AUTH_TOKEN;
+    const token = process.env.NETLIFY_AUTH_TOKEN;
 
     try {
       logger.info('Starting deployment process', JSON.stringify({ chatId, siteId, websiteId }));

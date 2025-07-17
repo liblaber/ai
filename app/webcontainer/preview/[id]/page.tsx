@@ -1,21 +1,13 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/cloudflare';
-import { useLoaderData } from '@remix-run/react';
+'use client';
+
+import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const PREVIEW_CHANNEL = 'preview-updates';
 
-export async function loader({ params }: LoaderFunctionArgs) {
-  const previewId = params.id;
-
-  if (!previewId) {
-    throw new Response('Preview ID is required', { status: 400 });
-  }
-
-  return json({ previewId });
-}
-
 export default function WebContainerPreview() {
-  const { previewId } = useLoaderData<typeof loader>();
+  const params = useParams();
+  const previewId = params.id as string;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const broadcastChannelRef = useRef<BroadcastChannel>();
   const [previewUrl, setPreviewUrl] = useState('');
@@ -46,6 +38,10 @@ export default function WebContainerPreview() {
   }, [previewId, previewUrl]);
 
   useEffect(() => {
+    if (!previewId) {
+      return undefined;
+    }
+
     // Initialize broadcast channel
     broadcastChannelRef.current = new BroadcastChannel(PREVIEW_CHANNEL);
 
@@ -75,6 +71,10 @@ export default function WebContainerPreview() {
       broadcastChannelRef.current?.close();
     };
   }, [previewId, handleRefresh, notifyPreviewReady]);
+
+  if (!previewId) {
+    return <div>Preview ID is required</div>;
+  }
 
   return (
     <div className="w-full h-full">

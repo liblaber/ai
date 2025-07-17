@@ -1,5 +1,4 @@
-import { json } from '@remix-run/cloudflare';
-import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/cloudflare';
+import { NextRequest, NextResponse } from 'next/server';
 
 // Allowed headers to forward to the target server
 const ALLOW_HEADERS = [
@@ -43,18 +42,45 @@ const EXPOSE_HEADERS = [
 ];
 
 // Handle all HTTP methods
-export async function action({ request, params }: ActionFunctionArgs) {
-  return handleProxyRequest(request, params['*']);
+export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  return handleProxyRequest(request, path);
 }
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  return handleProxyRequest(request, params['*']);
+export async function POST(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  return handleProxyRequest(request, path);
 }
 
-async function handleProxyRequest(request: Request, path: string | undefined) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  return handleProxyRequest(request, path);
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  return handleProxyRequest(request, path);
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  return handleProxyRequest(request, path);
+}
+
+export async function HEAD(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  return handleProxyRequest(request, path);
+}
+
+export async function OPTIONS(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  return handleProxyRequest(request, path);
+}
+
+async function handleProxyRequest(request: NextRequest, pathSegments: string[]) {
   try {
-    if (!path) {
-      return json({ error: 'Invalid proxy URL format' }, { status: 400 });
+    if (!pathSegments || pathSegments.length === 0) {
+      return NextResponse.json({ error: 'Invalid proxy URL format' }, { status: 400 });
     }
 
     // Handle CORS preflight request
@@ -72,10 +98,11 @@ async function handleProxyRequest(request: Request, path: string | undefined) {
     }
 
     // Extract domain and remaining path
+    const path = pathSegments.join('/');
     const parts = path.match(/([^\/]+)\/?(.*)/);
 
     if (!parts) {
-      return json({ error: 'Invalid path format' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid path format' }, { status: 400 });
     }
 
     const domain = parts[1];
@@ -165,11 +192,11 @@ async function handleProxyRequest(request: Request, path: string | undefined) {
     });
   } catch (error) {
     console.error('Proxy error:', error);
-    return json(
+    return NextResponse.json(
       {
         error: 'Proxy error',
         message: error instanceof Error ? error.message : 'Unknown error',
-        url: path ? `https://${path}` : 'Invalid URL',
+        url: pathSegments ? `https://${pathSegments.join('/')}` : 'Invalid URL',
       },
       { status: 500 },
     );

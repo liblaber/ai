@@ -1,13 +1,11 @@
-import { type ActionFunctionArgs } from '@remix-run/cloudflare';
+import { NextRequest } from 'next/server';
 import { createDataStream, generateId } from 'ai';
 import { type FileMap, MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/llm/constants';
-import { CONTINUE_PROMPT } from '~/lib/common/prompts/prompts';
 import { type Messages, type StreamingOptions, streamText } from '~/lib/.server/llm/stream-text';
 import SwitchableStream from '~/lib/.server/llm/switchable-stream';
 import { createScopedLogger } from '~/utils/logger';
 import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
 import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
-import { DEFAULT_MODEL, DEFAULT_PROVIDER, WORK_DIR } from '~/utils/constants';
 import { createSummary } from '~/lib/.server/llm/create-summary';
 import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
 import { messageService } from '~/lib/services/messageService';
@@ -16,9 +14,10 @@ import { createId } from '@paralleldrive/cuid2';
 import { conversationService } from '~/lib/services/conversationService';
 import type { StarterPluginId } from '~/lib/plugins/types';
 
-export async function action(args: ActionFunctionArgs) {
-  return chatAction(args);
-}
+const CONTINUE_PROMPT = 'Please continue your response.';
+const DEFAULT_MODEL = 'claude-3-5-sonnet-latest';
+const DEFAULT_PROVIDER = 'Anthropic';
+const WORK_DIR = '/home/project';
 
 const logger = createScopedLogger('api.chat');
 
@@ -40,7 +39,11 @@ function parseCookies(cookieHeader: string): Record<string, string> {
   return cookies;
 }
 
-async function chatAction({ context, request }: ActionFunctionArgs) {
+export async function POST(request: NextRequest) {
+  return chatAction(request);
+}
+
+async function chatAction(request: NextRequest) {
   const body = await request.json<{
     messages: Messages;
     files: any;
@@ -118,11 +121,11 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
           summary = await createSummary({
             messages: [...messages],
-            env: context.cloudflare?.env,
+            env: process.env,
             apiKeys,
             promptId,
             contextOptimization,
-            onFinish(resp) {
+            onFinish: (resp: any) => {
               if (resp.usage) {
                 logger.debug('createSummary token usage', JSON.stringify(resp.usage));
                 cumulativeUsage.completionTokens += resp.usage.completionTokens || 0;
@@ -159,7 +162,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           logger.debug(`Messages count: ${messages.length}`);
           filteredFiles = await selectContext({
             messages: [...messages],
-            env: context.cloudflare?.env,
+            env: process.env,
             apiKeys,
             files,
             promptId,

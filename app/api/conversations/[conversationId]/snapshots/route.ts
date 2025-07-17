@@ -1,24 +1,31 @@
-import type { ActionFunction } from '@remix-run/node';
+import { NextRequest, NextResponse } from 'next/server';
 import { conversationService } from '~/lib/services/conversationService';
 import { StorageServiceFactory } from '~/lib/services/storage/storage-service-factory';
 import type { FileMap } from '~/lib/stores/files';
 import { createId } from '@paralleldrive/cuid2';
 import { snapshotService } from '~/lib/services/snapshotService';
 import { logger } from '~/utils/logger';
+import { requireUserId } from '~/auth/session';
+import { prisma } from '~/lib/prisma';
 
-export const action: ActionFunction = async ({ request, params: { conversationId } }) => {
-  if (request.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 });
-  }
+export async function POST(request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) {
+  const { conversationId } = await params;
 
   if (!conversationId) {
-    return Response.json({ error: 'Conversation ID is required' }, { status: 400 });
+    return NextResponse.json({ error: 'Conversation ID is required' }, { status: 400 });
   }
+
+  const userId = await requireUserId(request);
 
   const conversation = await conversationService.getConversation(conversationId);
 
   if (!conversation) {
-    return Response.json({ error: 'Conversation not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+  }
+
+  // Check if the conversation belongs to the authenticated user
+  if (conversation.userId !== userId) {
+    return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
   }
 
   try {
@@ -51,12 +58,12 @@ export const action: ActionFunction = async ({ request, params: { conversationId
       await storageService.save(storageKey, serializedData);
     });
 
-    return Response.json({ id: snapshotId });
+    return NextResponse.json({ id: snapshotId });
   } catch (error) {
     logger.error('Failed to store snapshot:', error);
-    return Response.json({ error: 'Failed to store snapshot' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to store snapshot' }, { status: 500 });
   }
-};
+}
 
 const getSnapshotKey = (conversationId: string, snapshotId: string) => {
   return `snapshots/${conversationId}/${snapshotId}`;

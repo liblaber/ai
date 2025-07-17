@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node';
+import { NextRequest, NextResponse } from 'next/server';
 import { userService, type UserProfile } from '~/lib/services/userService';
 import { requireUserId } from '~/auth/session';
 
@@ -8,7 +8,7 @@ interface UserResponse {
   error?: string;
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function GET(request: NextRequest) {
   try {
     const userId = await requireUserId(request);
     const user = await userService.getUser(userId);
@@ -18,7 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         success: false,
         error: 'User not found',
       };
-      return json(response, { status: 404 });
+      return NextResponse.json(response, { status: 404 });
     }
 
     const response: UserResponse = {
@@ -26,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       user,
     };
 
-    return json(response);
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Failed to fetch user data:', error);
 
@@ -35,6 +35,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       error: 'Failed to fetch user data',
     };
 
-    return json(response, { status: 500 });
+    return NextResponse.json(response, { status: 500 });
   }
 }

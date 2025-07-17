@@ -1,8 +1,8 @@
-import { json } from '@remix-run/cloudflare';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '~/lib/prisma';
 import { requireUserId } from '~/auth/session';
 
-export async function loader({ request }: { request: Request }) {
+export async function GET(request: NextRequest) {
   const userId = await requireUserId(request);
 
   const websites = await prisma.website.findMany({
@@ -14,10 +14,10 @@ export async function loader({ request }: { request: Request }) {
     },
   });
 
-  return json({ websites });
+  return NextResponse.json({ websites });
 }
 
-export async function action({ request }: { request: Request }) {
+export async function POST(request: NextRequest) {
   const userId = await requireUserId(request);
   const formData = await request.formData();
   const intent = formData.get('intent');
@@ -32,8 +32,8 @@ export async function action({ request }: { request: Request }) {
       },
     });
 
-    return json({ success: true });
+    return NextResponse.json({ success: true });
   }
 
-  return json({ error: 'Invalid intent' }, { status: 400 });
+  return NextResponse.json({ error: 'Invalid intent' }, { status: 400 });
 }

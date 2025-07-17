@@ -1,25 +1,21 @@
+'use client';
+
 import { HomepageTextarea } from '~/components/chat/HomepageTextarea';
-import { type MetaFunction } from '@remix-run/cloudflare';
 import { Header } from '~/components/header/Header';
 import { Background } from '~/components/ui/Background';
 import React, { useState } from 'react';
-import { useNavigate } from '@remix-run/react';
+import { useRouter } from 'next/navigation';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
-import { ClientOnly } from 'remix-utils/client-only';
 import { Menu } from '~/components/sidebar/Menu.client';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { PendingPrompt } from '~/components/chat/BaseChat';
 import { HomepageHeadings } from '~/components/homepage/HomepageHeadings';
-import { DATA_SOURCE_CONNECTION_ROUTE } from '~/routes/data-source-connection';
+import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
 import { useAuth } from '~/components/auth/AuthContext';
 import { useSession } from '~/auth/auth-client';
 
-export const meta: MetaFunction = () => {
-  return [{ title: 'liblab ai' }, { name: 'description', content: 'Build internal apps using AI' }];
-};
-
 export default function Index() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { selectedDataSourceId, dataSources } = useDataSourcesStore();
   const [input, setInput] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
@@ -54,18 +50,18 @@ export default function Index() {
     }
 
     if (dataSources.length === 0 || !selectedDataSourceId) {
-      navigate(DATA_SOURCE_CONNECTION_ROUTE);
+      router.push(DATA_SOURCE_CONNECTION_ROUTE);
 
       return;
     }
 
-    navigate('/chat');
+    router.push('/chat');
   };
 
   return (
     <Tooltip.Provider delayDuration={200}>
       <div className="flex flex-col h-full w-full bg-liblab-elements-bg-depth-1">
-        {session?.user && <ClientOnly>{() => <Menu />}</ClientOnly>}
+        {session?.user && <Menu />}
         <Background />
         <Header />
         <div className="flex flex-col h-full w-full z-1">

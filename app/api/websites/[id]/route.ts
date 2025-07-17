@@ -1,19 +1,14 @@
-import { json } from '@remix-run/cloudflare';
-import { prisma } from '~/lib/prisma';
-import { logger } from '~/utils/logger';
-import { requireUserId } from '~/auth/session';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '~//lib/prisma';
+import { logger } from '~//utils/logger';
+import { requireUserId } from '~//auth/session';
 
-export async function action({ request, params }: { request: Request; params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await requireUserId(request);
-  const websiteId = params.id;
+  const { id: websiteId } = await params;
 
   if (!websiteId) {
-    return json({ error: 'Website ID is required' }, { status: 400 });
-  }
-
-  // Only allow PATCH requests
-  if (request.method !== 'PATCH') {
-    return json({ error: 'Method not allowed' }, { status: 405 });
+    return NextResponse.json({ error: 'Website ID is required' }, { status: 400 });
   }
 
   try {
@@ -25,7 +20,7 @@ export async function action({ request, params }: { request: Request; params: { 
     });
 
     if (!website) {
-      return json({ error: 'Website not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Website not found' }, { status: 404 });
     }
 
     const updateData: any = {};
@@ -38,7 +33,7 @@ export async function action({ request, params }: { request: Request; params: { 
       data: updateData,
     });
 
-    return json({ website: updatedWebsite });
+    return NextResponse.json({ website: updatedWebsite });
   } catch (error) {
     logger.error(
       'Error updating website',
@@ -50,6 +45,6 @@ export async function action({ request, params }: { request: Request; params: { 
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to update website';
 
-    return json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

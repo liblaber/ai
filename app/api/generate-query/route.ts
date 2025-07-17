@@ -1,5 +1,5 @@
 import { getDatabaseSchema } from '~/lib/schema';
-import { type ActionFunction, json } from '@remix-run/cloudflare';
+import { NextRequest, NextResponse } from 'next/server';
 import { generateSqlQueries } from '~/lib/.server/llm/database-source';
 import { createScopedLogger } from '~/utils/logger';
 import { z } from 'zod';
@@ -15,7 +15,7 @@ const requestSchema = z.object({
   dataSourceId: z.string(),
 });
 
-export const action: ActionFunction = async ({ request }) => {
+export async function POST(request: NextRequest) {
   const userId = await requireUserId(request);
 
   try {
@@ -37,12 +37,15 @@ export const action: ActionFunction = async ({ request }) => {
     const queries = await generateSqlQueries(schema, prompt, llm.instance, llm.maxTokens, type, existingQueries);
 
     if (!queries || queries.length === 0) {
-      return json({ error: 'Failed to generate SQL query' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to generate SQL query' }, { status: 500 });
     }
 
-    return json(queries[0].query);
+    return NextResponse.json(queries[0].query);
   } catch (error) {
     logger.error('Error generating SQL:', error);
-    return json({ error: error instanceof Error ? error.message : 'Failed to generate SQL query' }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to generate SQL query' },
+      { status: 500 },
+    );
   }
-};
+}

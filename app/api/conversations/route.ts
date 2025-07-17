@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs } from '@remix-run/cloudflare';
+import { NextRequest, NextResponse } from 'next/server';
 import { conversationService } from '~/lib/services/conversationService';
 import type { Message } from '@prisma/client';
 import { snapshotService } from '~/lib/services/snapshotService';
@@ -6,13 +6,10 @@ import { messageService } from '~/lib/services/messageService';
 import { createId } from '@paralleldrive/cuid2';
 import { logger } from '~/utils/logger';
 import { requireUserId } from '~/auth/session';
+import { prisma } from '~/lib/prisma';
 
-export async function action({ request }: LoaderFunctionArgs) {
+export async function POST(request: NextRequest) {
   const userId = await requireUserId(request);
-
-  if (request.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 });
-  }
 
   try {
     const body = (await request.json()) as {
@@ -22,10 +19,10 @@ export async function action({ request }: LoaderFunctionArgs) {
     };
 
     if (!body?.dataSourceId) {
-      return Response.json({ error: 'Datasource id is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Datasource id is required' }, { status: 400 });
     }
 
-    const conversation = await prisma.$transaction(async (tx) => {
+    const conversation = await prisma.$transaction(async (tx: any) => {
       logger.info('Creating a new conversation...');
 
       const conversation = await conversationService.createConversation(
@@ -78,13 +75,13 @@ export async function action({ request }: LoaderFunctionArgs) {
       return conversation;
     });
 
-    return Response.json({
+    return NextResponse.json({
       id: conversation.id,
     });
   } catch (error) {
     console.error('Error creating conversation:', error);
 
-    return Response.json(
+    return NextResponse.json(
       {
         error: 'Failed to create conversation',
       },
@@ -93,19 +90,15 @@ export async function action({ request }: LoaderFunctionArgs) {
   }
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  if (request.method !== 'GET') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 });
-  }
-
+export async function GET(request: NextRequest) {
   const userId = await requireUserId(request);
 
   try {
     const conversations = await conversationService.getAllConversations(userId);
-    return Response.json(conversations);
+    return NextResponse.json(conversations);
   } catch (error) {
     console.error('Error fetching conversations:', error);
-    return Response.json(
+    return NextResponse.json(
       {
         error: 'Failed to fetch conversations',
       },
