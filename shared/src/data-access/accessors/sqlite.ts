@@ -2,7 +2,7 @@ import type { Database as SQLiteDatabase } from 'better-sqlite3';
 import Database from 'better-sqlite3';
 import type { BaseAccessor } from '../baseAccessor';
 import type { Column, Table } from '../../types';
-import { SAMPLE_DB_ENUM_VALUES } from '@liblab/constants/sample-db-enum-values';
+import { SAMPLE_DB_ENUM_VALUES } from '../../constants/sample-db-enum-values';
 
 interface SQLiteColumn {
   name: string;
@@ -100,7 +100,7 @@ export class SQLiteAccessor implements BaseAccessor {
 
       // For each table, get its columns
       for (const table of tables) {
-        const columns: SQLiteColumn[] = this._db.pragma(`PRAGMA table_info(${table.table_name})`) as SQLiteColumn[];
+        const columns: SQLiteColumn[] = this._db.pragma(`table_info(${table.table_name})`) as SQLiteColumn[];
         result.push({
           tableName: table.table_name,
           columns: columns.map((col) => {
