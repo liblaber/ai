@@ -14,7 +14,6 @@ function openArtifactInWorkbench(filePath: string) {
   filePath = normalizedFilePath(filePath);
 
   if (workbenchStore.currentView.get() !== 'code') {
-    console.log('HERE in assistant message');
     workbenchStore.currentView.set('code');
   }
 

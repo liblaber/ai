@@ -163,7 +163,6 @@ const actionVariants = {
 
 function openArtifactInWorkbench(filePath: any) {
   if (workbenchStore.currentView.get() !== 'code') {
-    console.log('HERE in action list');
     workbenchStore.currentView.set('code');
   }
 
