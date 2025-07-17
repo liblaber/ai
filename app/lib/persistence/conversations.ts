@@ -145,16 +145,6 @@ export async function deleteConversation(id: string): Promise<void> {
   }
 }
 
-export async function deleteMessage(conversationId: string, messageId: string): Promise<void> {
-  const response = await fetch(`${CONVERSATIONS_API}/${conversationId}/messages/${messageId}`, {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to delete message: ${response.statusText}`);
-  }
-}
-
 export async function forkConversation(conversationId: string, messageId: string): Promise<string> {
   const conversation = await getConversation(conversationId);
 

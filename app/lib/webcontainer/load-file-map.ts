@@ -6,6 +6,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 
 /**
  * Loads a file map into the web container.
+ * Assumes that the file system is empty. If it's not, use loadPreviousFileMapIntoContainer instead.
  * @param fileMap - The file map to load.
  */
 export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> => {
@@ -25,16 +26,9 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
       continue;
     }
 
-    if (key.endsWith('.env') && import.meta.env.VITE_ENV_NAME === 'local') {
-      const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
-      value.content = injectEnvVariable(
-        value.content,
-        'VITE_API_BASE_URL',
-        tunnelForwardingUrl ? tunnelForwardingUrl : undefined,
-      );
-    }
-
     const fileName = key.startsWith(webContainer.workdir) ? key.replace(webContainer.workdir, '') : key;
+
+    value.content = injectEnvVariables(key, value.content);
 
     if (fileName === 'package.json') {
       const projectCommands = detectProjectCommands(value);
@@ -48,14 +42,22 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
   }
 };
 
+/**
+ * Loads a previous file map into the web container, taking into account the current file map, by:
+ * - Removing files that are not present in the previous file map
+ * - Updating files that are present in both file maps
+ * - Adding files that are present in the previous file map but not in the current file map
+ * When the app is running with HMR, this function should be preferred over loadFileMapIntoContainer,
+ * because the app will be able to pick up the changes in the file map without crashing.
+ * @param previousFileMap - The previous file map to load.
+ */
 export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap): Promise<void> => {
   const currentFileMap = workbenchStore.getFileMap();
   const webContainer = await webcontainer;
 
-  // Get all unique file paths from both maps
-  const allPaths = new Set([...Object.keys(currentFileMap), ...Object.keys(previousFileMap)]);
+  const allUniquePaths = new Set([...Object.keys(currentFileMap), ...Object.keys(previousFileMap)]);
 
-  for (const filePath of allPaths) {
+  for (const filePath of allUniquePaths) {
     const currentFile = currentFileMap[filePath];
     const previousFile = previousFileMap[filePath];
 
@@ -75,19 +77,10 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
       if (previousFile.type === 'folder') {
         await webContainer.fs.mkdir(filePath, { recursive: true });
       } else if (previousFile.type === 'file') {
-        // Handle .env file injection for local environment
         let content = previousFile.content;
 
-        if (filePath.endsWith('.env') && import.meta.env.VITE_ENV_NAME === 'local') {
-          const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
-          content = injectEnvVariable(
-            content,
-            'VITE_API_BASE_URL',
-            tunnelForwardingUrl ? tunnelForwardingUrl : undefined,
-          );
-        }
+        content = injectEnvVariables(filePath, content);
 
-        // Handle package.json for start command detection
         if (filePath === 'package.json') {
           const projectCommands = detectProjectCommands(previousFile);
 
@@ -102,4 +95,14 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
       }
     }
   }
+};
+
+const injectEnvVariables = (filePath: string, content: string): string => {
+  if (!(filePath.endsWith('.env') && import.meta.env.VITE_ENV_NAME === 'local')) {
+    return content;
+  }
+
+  const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
+
+  return injectEnvVariable(content, 'VITE_API_BASE_URL', tunnelForwardingUrl ? tunnelForwardingUrl : undefined);
 };

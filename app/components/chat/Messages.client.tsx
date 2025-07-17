@@ -12,7 +12,7 @@ import { useSession } from '~/auth/auth-client';
 import { forkConversation, getConversation, getMessageSnapshotId } from '~/lib/persistence/conversations';
 import { rewindToSnapshot } from '~/lib/persistence/snapshots';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
-import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
+import { loadPreviousFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { useNavigate } from '@remix-run/react';
 
@@ -66,7 +66,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
         const updatedConversation = await getConversation(conversationId);
 
         if (updatedConversation?.messages && updatedConversation?.snapshot) {
-          await loadFileMapIntoContainer(updatedConversation.snapshot.fileMap);
+          await loadPreviousFileMapIntoContainer(updatedConversation.snapshot.fileMap);
 
           setMessages(updatedConversation.messages);
         }
