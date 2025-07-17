@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function main() {
+async function seed() {
   // Create anonymous user
   const anonymousUser = {
     id: 'TYOjutAGl9gxV4b2jbBG2loaohynFnFs',
@@ -50,7 +50,7 @@ async function main() {
   console.log('🎉 Database seed completed successfully');
 }
 
-main()
+seed()
   .catch((e) => {
     console.error('❌ Error during seeding:', e);
     process.exit(1);
