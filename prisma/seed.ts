@@ -2,7 +2,7 @@ import { PrismaClient, UserRole } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function main() {
+async function seed() {
   // Create organization
   const anonymousOrganization = {
     name: 'Anonymous',
@@ -62,7 +62,7 @@ async function main() {
   console.log('🎉 Database seed completed successfully');
 }
 
-main()
+seed()
   .catch((e) => {
     console.error('❌ Error during seeding:', e);
     process.exit(1);

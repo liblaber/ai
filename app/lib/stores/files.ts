@@ -5,7 +5,7 @@ import { Buffer } from 'node:buffer';
 import { path } from '~/utils/path';
 import { bufferWatchEvents } from '~/utils/buffer';
 import { WORK_DIR } from '~/utils/constants';
-import { computeFileModifications, extractRelativePath } from '~/utils/diff';
+import { computeFileModifications, extractRelativePath, toAbsoluteFilePath } from '~/utils/diff';
 import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
 import { chatId } from '~/lib/persistence/useConversationHistory';
@@ -72,6 +72,33 @@ export class FilesStore {
     }
 
     return dirent;
+  }
+
+  async syncPackageJsonFile(): Promise<File> {
+    const webcontainer = await this.#webcontainer;
+
+    try {
+      const webcontainerFileContent = await webcontainer.fs.readFile('package.json', 'utf-8');
+
+      const fileMapFile = this.getFile(toAbsoluteFilePath('package.json'));
+
+      if (webcontainerFileContent === fileMapFile?.content) {
+        return fileMapFile;
+      }
+
+      logger.debug('Webcontainer package.json file content differs from the one in the map, updating it...');
+
+      const updatedFileMapFile: File = { type: 'file', content: webcontainerFileContent, isBinary: false };
+
+      this.files.setKey('package.json', updatedFileMapFile);
+
+      await this.#updateFileInSnapshot('package.json', updatedFileMapFile);
+
+      return updatedFileMapFile;
+    } catch (error) {
+      logger.error('Could not read package.json file', error);
+      throw error;
+    }
   }
 
   getFileModifications() {

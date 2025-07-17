@@ -47,7 +47,7 @@ docs/instructions/Roadmap.md
 # SQLite databases
 queries.db
 liblab.db
-example.db
+sample.db
 
 ngrok.log
 

@@ -1,7 +1,8 @@
-import type { WebContainer, WebContainerProcess } from '@webcontainer/api';
+import type { WebContainerProcess } from '@webcontainer/api';
 import type { ITerminal } from '~/types/terminal';
 import { withResolvers } from './promises';
 import { atom } from 'nanostores';
+import { webcontainer as webcontainerPromise } from '~/lib/webcontainer';
 
 export type ExecutionResult = { output: string; exitCode: number } | undefined;
 
@@ -9,11 +10,15 @@ export class LiblabShell {
   #initialized: (() => void) | undefined;
   #isInitialized = atom<boolean>(false);
   #readyPromise: Promise<void>;
-  #webcontainer: WebContainer | undefined;
   #terminal: ITerminal | undefined;
   #process: WebContainerProcess | undefined;
   executionState = atom<
-    { sessionId: string; active: boolean; executionPrms?: Promise<any>; abort?: () => void } | undefined
+    | {
+        active: boolean;
+        executionPrms?: Promise<any>;
+        abort?: () => void;
+      }
+    | undefined
   >();
   #outputStream: ReadableStreamDefaultReader<string> | undefined;
   #shellInputStream: WritableStreamDefaultWriter<string> | undefined;
@@ -28,11 +33,10 @@ export class LiblabShell {
     return this.#readyPromise;
   }
 
-  async init(webcontainer: WebContainer, terminal: ITerminal) {
-    this.#webcontainer = webcontainer;
+  async init(terminal: ITerminal) {
     this.#terminal = terminal;
 
-    const { process, output } = await this.newLiblabShellProcess(webcontainer, terminal);
+    const { process, output } = await this.newLiblabShellProcess(terminal);
     this.#process = process;
     this.#outputStream = output.getReader();
     await this.waitTillOscCode('interactive');
@@ -48,7 +52,7 @@ export class LiblabShell {
     return this.#process;
   }
 
-  async executeCommand(sessionId: string, command: string, abort?: () => void): Promise<ExecutionResult> {
+  async executeCommand(command: string, abort?: () => void): Promise<ExecutionResult> {
     if (!this.process || !this.terminal) {
       console.log('Returning undefined terminal');
       return undefined;
@@ -64,22 +68,27 @@ export class LiblabShell {
      * interrupt the current execution
      *  this.#shellInputStream?.write('\x03');
      */
-    this.terminal.input('\x03');
-    await this.waitTillOscCode('prompt');
+    /*
+     * this.terminal.input('\x03');
+     * await this.waitTillOscCode('prompt');
+     */
 
     if (state && state.executionPrms) {
       await state.executionPrms;
     }
 
-    //start a new execution
     this.terminal.input(command.trim() + '\n');
 
     //wait for the execution to finish
     const executionPromise = this.getCurrentExecutionResult();
-    this.executionState.set({ sessionId, active: true, executionPrms: executionPromise, abort });
+    this.executionState.set({
+      active: true,
+      executionPrms: executionPromise,
+      abort,
+    });
 
     const resp = await executionPromise;
-    this.executionState.set({ sessionId, active: false });
+    this.executionState.set({ active: false });
 
     if (resp) {
       try {
@@ -92,8 +101,9 @@ export class LiblabShell {
     return resp;
   }
 
-  async newLiblabShellProcess(webcontainer: WebContainer, terminal: ITerminal) {
+  async newLiblabShellProcess(terminal: ITerminal) {
     const args: string[] = [];
+    const webcontainer = await webcontainerPromise;
 
     // we spawn a JSH process with a fallback cols and rows in case the process is not attached yet to a visible terminal
     const process = await webcontainer.spawn('/bin/jsh', ['--osc', ...args], {

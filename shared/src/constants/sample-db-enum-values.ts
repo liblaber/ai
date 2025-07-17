@@ -1,11 +1,11 @@
 /**
- * Specified enum values for example database
+ * Specified enum values for sample database
  * These values correspond to the data in 01-init.sql
  *
- * This is used to populate the enum values for the example database
+ * This is used to populate the enum values for the sample database
  * because the SQLite database does not have a native support for this.
  */
-export const EXAMPLE_DB_ENUM_VALUES: Record<string, Record<string, string[]>> = {
+export const SAMPLE_DB_ENUM_VALUES: Record<string, Record<string, string[]>> = {
   organizations: {
     subscription_tier: ['free', 'starter', 'pro', 'business', 'premium', 'enterprise'],
   },

@@ -6,7 +6,7 @@ import { webcontainer } from '~/lib/webcontainer';
 import type { ITerminal } from '~/types/terminal';
 import { unreachable } from '~/utils/unreachable';
 import { EditorStore } from './editor';
-import { type FileMap, FilesStore } from './files';
+import { type File, type FileMap, FilesStore } from './files';
 import { PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
 import JSZip from 'jszip';
@@ -23,6 +23,8 @@ import { useGitStore } from './git';
 import ignore from 'ignore';
 
 const { saveAs } = fileSaver;
+
+const DEFAULT_START_APP_COMMAND = 'npm run dev';
 
 export interface ArtifactState {
   id: string;
@@ -42,7 +44,7 @@ export class WorkbenchStore {
   #previewsStore = new PreviewsStore(webcontainer);
   #filesStore = new FilesStore(webcontainer);
   #editorStore = new EditorStore(this.#filesStore);
-  #terminalStore = new TerminalStore(webcontainer);
+  #terminalStore = new TerminalStore();
 
   #reloadedMessages = new Set<string>();
   #mostRecentCommitMessage: string | undefined;
@@ -56,6 +58,7 @@ export class WorkbenchStore {
   modifiedFiles = new Set<string>();
   artifactIdList: string[] = [];
   #globalExecutionQueue = Promise.resolve();
+  startCommand = atom<string>(DEFAULT_START_APP_COMMAND);
 
   get mostRecentCommitMessage() {
     return this.#mostRecentCommitMessage || 'liblab ai syncing files';
@@ -168,6 +171,10 @@ export class WorkbenchStore {
         .filter(([path]) => !path.includes('.next'))
         .map(([path, dirent]) => [extractRelativePath(path), dirent]),
     );
+  }
+
+  async syncPackageJsonFile(): Promise<File> {
+    return this.#filesStore.syncPackageJsonFile();
   }
 
   setCurrentDocumentContent(newContent: string) {
@@ -304,7 +311,6 @@ export class WorkbenchStore {
       closed: false,
       type,
       runner: new ActionRunner(
-        webcontainer,
         () => this.shells,
         (alert) => {
           if (this.#reloadedMessages.has(messageId)) {

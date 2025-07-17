@@ -62,6 +62,11 @@ export class PreviewsStore {
     this.readyForFixing.set(false);
   }
 
+  preparingEnvironment() {
+    this.loadingText.set('Preparing environment...');
+    this.isLoading.set(true);
+  }
+
   async #init() {
     const webcontainer = await this.#webcontainer;
 
@@ -80,7 +85,6 @@ export class PreviewsStore {
       if (type === 'close' && previewInfo) {
         this.#availablePreviews.delete(port);
         this.previews.set(this.previews.get().filter((preview) => preview.port !== port));
-        this.finishLoading();
 
         return;
       }
