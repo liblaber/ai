@@ -1,8 +1,8 @@
-import { Database as SQLiteDatabase, open } from 'sqlite';
-import sqlite3 from 'sqlite3';
+import type { Database as SQLiteDatabase } from 'better-sqlite3';
+import Database from 'better-sqlite3';
 import type { BaseAccessor } from '../baseAccessor';
 import type { Column, Table } from '../../types';
-import { EXAMPLE_DB_ENUM_VALUES } from '../../utils/example-db-enum-values';
+import { EXAMPLE_DB_ENUM_VALUES } from '@liblab/utils/example-db-enum-values';
 
 interface SQLiteColumn {
   name: string;
@@ -15,14 +15,14 @@ interface TableInfo {
   table_name: string;
 }
 
-const EXAMPLE_DATABASE_NAME = 'example.db';
+const SAMPLE_DATABASE_NAME = 'sample.db';
 
 export class SQLiteAccessor implements BaseAccessor {
   static pluginId = 'sqlite';
   readonly label = 'SQLite';
-  private _db: SQLiteDatabase | null = null;
-
+  readonly preparedStatementPlaceholderExample = '?';
   readonly connectionStringFormat = 'sqlite://path/to/database.db';
+  private _db: SQLiteDatabase | null = null;
 
   static isAccessor(databaseUrl: string): boolean {
     return databaseUrl.startsWith('sqlite://');
@@ -31,8 +31,8 @@ export class SQLiteAccessor implements BaseAccessor {
   async testConnection(databaseUrl: string): Promise<boolean> {
     try {
       const db = await this._createConnection(databaseUrl);
-      await db.get('SELECT 1');
-      await db.close();
+      db.exec('SELECT 1');
+      db.close();
 
       return true;
     } catch {
@@ -46,7 +46,9 @@ export class SQLiteAccessor implements BaseAccessor {
     }
 
     try {
-      return await this._db.all(query, params);
+      const statement = this._db.prepare(query);
+
+      return params?.length ? statement.all(...params) : statement.all();
     } catch (error) {
       console.error('Error executing SQLite query:', error);
       throw new Error((error as Error)?.message || 'Failed to execute SQLite query');
@@ -82,21 +84,23 @@ export class SQLiteAccessor implements BaseAccessor {
 
     try {
       // Get all tables
-      const tables: TableInfo[] = await this._db.all(
-        `SELECT name as table_name
+      const tables: TableInfo[] = await this._db
+        .prepare<unknown[], TableInfo>(
+          `SELECT name as table_name
          FROM sqlite_master
          WHERE type='table'
          AND name NOT LIKE 'sqlite_%'
          ORDER BY name`,
-      );
+        )
+        .all();
 
       const result: Table[] = [];
 
-      const isExampleDatabase = this._db.config.filename === EXAMPLE_DATABASE_NAME;
+      const isSampleDatabase = this._db.name === SAMPLE_DATABASE_NAME;
 
       // For each table, get its columns
       for (const table of tables) {
-        const columns: SQLiteColumn[] = await this._db.all(`PRAGMA table_info(${table.table_name})`);
+        const columns: SQLiteColumn[] = this._db.pragma(`table_info(${table.table_name})`) as SQLiteColumn[];
         result.push({
           tableName: table.table_name,
           columns: columns.map((col) => {
@@ -107,8 +111,8 @@ export class SQLiteAccessor implements BaseAccessor {
               nullable: !col.notnull,
             } as Column;
 
-            // Only add enum values if this is an example database
-            if (isExampleDatabase) {
+            // Only add enum values if this is the sample database
+            if (isSampleDatabase) {
               column.enumValues = EXAMPLE_DB_ENUM_VALUES[table.table_name]?.[col.name];
             }
 
@@ -124,15 +128,6 @@ export class SQLiteAccessor implements BaseAccessor {
     }
   }
 
-  private async _createConnection(databaseUrl: string): Promise<SQLiteDatabase> {
-    const filename = databaseUrl.startsWith('sqlite://') ? databaseUrl.replace('sqlite://', '') : databaseUrl;
-
-    return open({
-      filename,
-      driver: sqlite3.Database,
-    });
-  }
-
   async initialize(databaseUrl: string): Promise<void> {
     if (this._db) {
       await this.close();
@@ -146,5 +141,11 @@ export class SQLiteAccessor implements BaseAccessor {
       await this._db.close();
       this._db = null;
     }
+  }
+
+  private async _createConnection(databaseUrl: string): Promise<SQLiteDatabase> {
+    const filename = databaseUrl.startsWith('sqlite://') ? databaseUrl.replace('sqlite://', '') : databaseUrl;
+
+    return new Database(filename);
   }
 }
