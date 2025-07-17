@@ -389,7 +389,7 @@ export const Preview = memo(() => {
                   {!isMakingChanges ? (
                     <LoadingAnimation showLogo customText={workbenchStore.previewsStore.loadingText.get()} />
                   ) : (
-                    <NoPreviewAnimation />
+                    <LoadingAnimation showLogo showProgress />
                   )}
                 </div>
               )}
@@ -404,7 +404,7 @@ export const Preview = memo(() => {
               {workbenchStore.previewsStore.isLoading.get() ? (
                 <LoadingAnimation showLogo customText={workbenchStore.previewsStore.loadingText.get()} />
               ) : (
-                <NoPreviewAnimation />
+                <LoadingAnimation showLogo showProgress />
               )}
             </div>
           )}
@@ -492,7 +492,7 @@ function LoadingAnimation({
   const messages = rotatingMessages.length > 0 ? rotatingMessages : defaultMessages;
 
   useEffect(() => {
-    if (rotatingMessages.length > 0) {
+    if (!customText) {
       const messageInterval = setInterval(() => {
         setMessageIndex((prev) => (prev + 1) % messages.length);
       }, 5000);
@@ -503,7 +503,7 @@ function LoadingAnimation({
     }
 
     return undefined;
-  }, [rotatingMessages.length, messages.length]);
+  }, [customText, messages.length]);
 
   return (
     <div className="flex flex-col items-center justify-center h-full space-y-6">
@@ -580,23 +580,5 @@ function LoadingAnimation({
         ))}
       </div>
     </div>
-  );
-}
-
-function NoPreviewAnimation() {
-  return (
-    <LoadingAnimation
-      showLogo
-      showProgress
-      rotatingMessages={[
-        'Analyzing your requirements...',
-        'Generating components...',
-        'Building application structure...',
-        'Setting up routing...',
-        'Configuring styles...',
-        'Optimizing performance...',
-        'Finalizing build...',
-      ]}
-    />
   );
 }

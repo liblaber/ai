@@ -157,10 +157,6 @@ export class WorkbenchStore {
     }
   }
 
-  setDevMode(dev: boolean) {
-    this.devMode.set(dev);
-  }
-
   /**
    * Get the file map from the workbench, without the workdir prefix
    * @returns The file map

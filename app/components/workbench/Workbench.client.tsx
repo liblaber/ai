@@ -37,13 +37,6 @@ interface WorkspaceProps {
 const viewTransition = { ease: cubicEasingFn };
 
 const workbenchVariants = {
-  closed: {
-    width: 0,
-    transition: {
-      duration: 0.2,
-      ease: cubicEasingFn,
-    },
-  },
   open: {
     width: 'var(--workbench-width)',
     transition: {
@@ -341,9 +334,24 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncF
     workbenchStore.currentView.set('diff');
   }, []);
 
+  const diffViewX = useMemo(() => {
+    if (!devMode) {
+      return '-100%';
+    }
+
+    switch (selectedView) {
+      case 'diff':
+        return '0%';
+      case 'code':
+        return '100%';
+      default:
+        return '-100%';
+    }
+  }, [devMode, selectedView]);
+
   return (
     chatStarted && (
-      <motion.div initial="closed" animate={'open'} variants={workbenchVariants} className="z-workbench">
+      <motion.div animate={'open'} variants={workbenchVariants} className="z-workbench">
         <div
           className={classNames(
             'fixed top-[calc(var(--header-height)+1.5rem)] bottom-6 w-[var(--workbench-inner-width)] mr-4 z-0 transition-[left,width] duration-200 liblab-ease-cubic-bezier left-[var(--workbench-left)]',
@@ -426,13 +434,7 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncF
                     onFileReset={onFileReset}
                   />
                 </View>
-                <View
-                  initial={{ x: '100%' }}
-                  animate={{
-                    x:
-                      devMode && selectedView === 'diff' ? '0%' : devMode && selectedView === 'code' ? '100%' : '-100%',
-                  }}
-                >
+                <View initial={{ x: '100%' }} animate={{ x: diffViewX }}>
                   <DiffView fileHistory={fileHistory} setFileHistory={setFileHistory} actionRunner={actionRunner} />
                 </View>
                 <View initial={{ x: '100%' }} animate={{ x: selectedView === 'preview' ? '0%' : '100%' }}>
