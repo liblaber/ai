@@ -1,28 +1,40 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserRole } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function seed() {
-  // Create anonymous user
-  const anonymousUser = {
-    id: 'TYOjutAGl9gxV4b2jbBG2loaohynFnFs',
-    email: 'anonymous@anonymous.com',
+  // Create organization
+  const anonymousOrganization = {
     name: 'Anonymous',
-    emailVerified: false,
-    isAnonymous: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    domain: 'anonymous.com',
   };
 
   try {
-    const existingUser = await prisma.user.findUnique({
-      where: { email: anonymousUser.email },
+    const existingOrganization = await prisma.organization.findUnique({
+      where: { domain: anonymousOrganization.domain },
     });
 
-    if (existingUser) {
-      console.log('✅ Anonymous user already exists');
+    if (existingOrganization) {
+      console.log('✅ Anonymous already exists');
       return;
     }
+
+    const organization = await prisma.organization.create({
+      data: anonymousOrganization,
+    });
+
+    // Create anonymous user
+    const anonymousUser = {
+      id: 'TYOjutAGl9gxV4b2jbBG2loaohynFnFs',
+      email: 'anonymous@anonymous.com',
+      name: 'Anonymous',
+      emailVerified: false,
+      organizationId: organization.id,
+      role: UserRole.ADMIN,
+      isAnonymous: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
     const user = await prisma.user.create({
       data: anonymousUser,

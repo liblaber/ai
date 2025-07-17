@@ -1,8 +1,12 @@
 import { atom, map } from 'nanostores';
 import type { IProviderConfig } from '~/types/model';
-import type { TabVisibilityConfig, TabWindowConfig } from '~/components/@settings/core/types';
+import type {
+  AdminTabConfig,
+  TabVisibilityConfig,
+  TabWindowConfig,
+  UserTabConfig,
+} from '~/components/@settings/core/types';
 import { DEFAULT_TAB_CONFIG } from '~/components/@settings/core/constants';
-import Cookies from 'js-cookie';
 import { create } from 'zustand';
 
 export interface Shortcut {
@@ -155,7 +159,8 @@ export const updatePromptId = (id: string) => {
 // Initialize tab configuration from localStorage or defaults
 const getInitialTabConfiguration = (): TabWindowConfig => {
   const defaultConfig: TabWindowConfig = {
-    userTabs: DEFAULT_TAB_CONFIG,
+    userTabs: DEFAULT_TAB_CONFIG.filter((tab): tab is UserTabConfig => tab.window === 'user'),
+    adminTabs: DEFAULT_TAB_CONFIG.filter((tab): tab is AdminTabConfig => tab.window === 'admin'),
   };
 
   if (!isBrowser) {
@@ -176,7 +181,8 @@ const getInitialTabConfiguration = (): TabWindowConfig => {
     }
 
     return {
-      userTabs: parsed.userTabs,
+      userTabs: parsed.userTabs.filter((tab: TabVisibilityConfig): tab is UserTabConfig => tab.window === 'user'),
+      adminTabs: parsed.adminTabs.filter((tab: TabVisibilityConfig): tab is AdminTabConfig => tab.window === 'admin'),
     };
   } catch (error) {
     console.warn('Failed to parse tab configuration:', error);
@@ -188,40 +194,11 @@ const getInitialTabConfiguration = (): TabWindowConfig => {
 
 export const tabConfigurationStore = map<TabWindowConfig>(getInitialTabConfiguration());
 
-// Helper function to update tab configuration
-export const updateTabConfiguration = (config: TabVisibilityConfig) => {
-  const currentConfig = tabConfigurationStore.get();
-  console.log('Current tab configuration before update:', currentConfig);
-
-  const targetArray = 'userTabs';
-
-  // Only update the tab in its respective window
-  const updatedTabs = currentConfig[targetArray].map((tab) => (tab.id === config.id ? { ...config } : tab));
-
-  // If tab doesn't exist in this window yet, add it
-  if (!updatedTabs.find((tab) => tab.id === config.id)) {
-    updatedTabs.push(config);
-  }
-
-  const newConfig: TabWindowConfig = {
-    ...currentConfig,
-    [targetArray]: updatedTabs,
-  };
-
-  console.log('New tab configuration after update:', newConfig);
-
-  tabConfigurationStore.set(newConfig);
-  Cookies.set('tabConfiguration', JSON.stringify(newConfig), {
-    expires: 365, // Set cookie to expire in 1 year
-    path: '/',
-    sameSite: 'strict',
-  });
-};
-
 // Helper function to reset tab configuration
 export const resetTabConfiguration = () => {
   const defaultConfig: TabWindowConfig = {
-    userTabs: DEFAULT_TAB_CONFIG,
+    userTabs: DEFAULT_TAB_CONFIG.filter((tab): tab is UserTabConfig => tab.window === 'user'),
+    adminTabs: DEFAULT_TAB_CONFIG.filter((tab): tab is AdminTabConfig => tab.window === 'admin'),
   };
 
   tabConfigurationStore.set(defaultConfig);

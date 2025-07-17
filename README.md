@@ -319,6 +319,45 @@ These files are dynamically imported and used in the [`getAppsPrompt`](app/lib/c
 
 ---
 
+## 🔧 Custom User Management
+
+liblab.ai supports custom user management implementations through a plugin system. You can override the default single-user behavior with your own multi-user or custom organization management logic.
+
+### How to Create a Custom Implementation
+
+1. Create a file at `app/lib/plugins/user-management/custom-user-management.ts`
+2. Export a class that implements the `UserManagementPlugin` interface:
+
+```typescript
+import type { UserManagementPlugin } from './user-management-plugin-manager';
+
+export default class CustomUserManagement implements UserManagementPlugin {
+  async createOrganizationFromEmail(email: string, userId: string): Promise<void> {
+    // Your custom logic here
+    // Example: Create multi-user organizations, domain-based grouping, etc.
+    // You can use the provided userService and organizationService to access database resources.
+  }
+}
+```
+
+**Note:** You can use the provided `userService` and `organizationService` classes to access and manage users and organizations in the database.
+
+### Built-in Implementations
+
+liblab.ai includes two built-in user management implementations:
+
+- **Single-User Management**: Default implementation for single-user + single-organization setups
+- **Multi-User Management**: Supports multiple users per organization with domain-based grouping
+
+### Use Cases
+
+- **Multi-User Organizations**: Support teams with multiple members and roles
+- **Domain-Based Grouping**: Automatically group users by email domain (e.g., company.com users join same org)
+- **Advanced Permissions**: Implement custom role-based access control
+- **Organization Management**: Custom logic for creating, managing, and organizing user groups
+
+---
+
 ## 📦 Shared Code and Data Accessors
 
 ### Adding Shared Code

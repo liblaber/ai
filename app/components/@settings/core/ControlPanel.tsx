@@ -19,12 +19,63 @@ import { CloseCircle } from 'iconsax-reactjs';
 import DataTab from '~/components/@settings/tabs/data/DataTab';
 import DeployedAppsTab from '~/components/@settings/tabs/deployed-apps/DeployedAppsTab';
 import GitHubTab from '~/components/@settings/tabs/connections/GitHubTab';
-
-interface TabWithDevType extends TabVisibilityConfig {
-  isExtraDevTab?: boolean;
-}
+import { useUserStore } from '~/lib/stores/user';
+import { UserRole } from '@prisma/client';
+import OrganizationTab from '~/components/@settings/tabs/organization/OrganizationTab';
+import MembersTab from '~/components/@settings/tabs/members/MembersTab';
 
 const LAST_ACCESSED_TAB_KEY = 'control-panel-last-tab';
+
+interface TabSectionProps {
+  title: string;
+  tabs: TabVisibilityConfig[];
+  activeTab: TabType | null;
+  onTabClick: (tabId: TabType) => void;
+}
+
+const TabSection = ({ title, tabs, activeTab, onTabClick }: TabSectionProps) => (
+  <>
+    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 px-3">{title}</div>
+    <AnimatePresence mode="popLayout">
+      {tabs.map((tab: TabVisibilityConfig) => {
+        const tabId = tab.id as TabType;
+        const isActiveTab = activeTab === tabId;
+
+        return (
+          <motion.div
+            key={tabId}
+            layout
+            className={classNames(
+              'flex items-center gap-3 p-3 h-9 rounded-[15px] mb-2 cursor-pointer',
+              'transition-all duration-200',
+              isActiveTab
+                ? 'bg-white dark:bg-white text-black dark:text-black'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-white',
+            )}
+            onClick={() => onTabClick(tabId)}
+          >
+            <div
+              className={classNames(
+                'w-5 h-5',
+                isActiveTab ? 'text-gray-900 dark:text-gray-900' : 'text-gray-600 dark:text-white',
+              )}
+            >
+              {typeof TAB_ICONS[tabId] === 'string' ? (
+                <div className={classNames(TAB_ICONS[tabId] as string, 'w-full h-full')} />
+              ) : (
+                (() => {
+                  const Icon = TAB_ICONS[tabId] as ComponentType<IconProps>;
+                  return <Icon variant="Bold" size={20} />;
+                })()
+              )}
+            </div>
+            <span className="text-sm font-medium">{TAB_LABELS[tabId]}</span>
+          </motion.div>
+        );
+      })}
+    </AnimatePresence>
+  </>
+);
 
 export const ControlPanel = () => {
   const { isOpen, selectedTab } = useStore(settingsPanelStore);
@@ -32,6 +83,7 @@ export const ControlPanel = () => {
 
   // Store values
   const tabConfiguration = useStore(tabConfigurationStore);
+  const { role } = useUserStore();
 
   // Memoize the base tab configurations to avoid recalculation
   const baseTabConfig = useMemo(() => {
@@ -58,6 +110,10 @@ export const ControlPanel = () => {
       })
       .sort((a, b) => a.order - b.order);
   }, [tabConfiguration, baseTabConfig]);
+
+  const adminTabs = useMemo(() => {
+    return tabConfiguration?.adminTabs?.filter((tab) => tab?.id).sort((a, b) => a.order - b.order) || [];
+  }, [tabConfiguration]);
 
   // Reset to default view when modal opens/closes
   useEffect(() => {
@@ -106,6 +162,10 @@ export const ControlPanel = () => {
         return <DeployedAppsTab />;
       case 'github':
         return <GitHubTab />;
+      case 'organization':
+        return <OrganizationTab />;
+      case 'members':
+        return <MembersTab />;
       default:
         return null;
     }
@@ -148,39 +208,13 @@ export const ControlPanel = () => {
               {/* Sidebar */}
               <div className="w-[250px] h-full bg-white dark:bg-black border-r border-[#E5E5E5] dark:border-[#1A1A1A] flex flex-col">
                 <div className="flex-1 overflow-y-auto p-4">
-                  <AnimatePresence mode="popLayout">
-                    {(visibleTabs as TabWithDevType[]).map((tab: TabWithDevType) => (
-                      <motion.div
-                        key={tab.id}
-                        layout
-                        className={classNames(
-                          'flex items-center gap-3 p-3 h-9 rounded-[15px] mb-2 cursor-pointer',
-                          'transition-all duration-200',
-                          activeTab === tab.id
-                            ? 'bg-white dark:bg-white text-black dark:text-black'
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-white',
-                        )}
-                        onClick={() => handleTabClick(tab.id as TabType)}
-                      >
-                        <div
-                          className={classNames(
-                            'w-5 h-5',
-                            activeTab === tab.id ? 'text-gray-900 dark:text-gray-900' : 'text-gray-600 dark:text-white',
-                          )}
-                        >
-                          {typeof TAB_ICONS[tab.id] === 'string' ? (
-                            <div className={classNames(TAB_ICONS[tab.id] as string, 'w-full h-full')} />
-                          ) : (
-                            (() => {
-                              const Icon = TAB_ICONS[tab.id] as ComponentType<IconProps>;
-                              return <Icon variant="Bold" size={20} />;
-                            })()
-                          )}
-                        </div>
-                        <span className="text-sm font-medium">{TAB_LABELS[tab.id]}</span>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
+                  <TabSection title="Workspace" tabs={visibleTabs} activeTab={activeTab} onTabClick={handleTabClick} />
+
+                  {role === UserRole.ADMIN && (
+                    <div className="mt-6">
+                      <TabSection title="Admin" tabs={adminTabs} activeTab={activeTab} onTabClick={handleTabClick} />
+                    </div>
+                  )}
                 </div>
               </div>
 
