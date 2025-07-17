@@ -39,18 +39,19 @@ export async function streamText(props: {
 }) {
   if (MOCK_RESPONSE) {
     const chunks = TEST_ARTIFACT.match(/\S+\s+\S+\s+\S+/g)!
-      .slice(0, 300)
+      .slice(0, 180)
       .map((token) => ({
         type: 'text-delta' as const,
         textDelta: `${token} `,
       }));
 
     return _streamText({
+      maxRetries: 3,
       model: new MockLanguageModelV1({
         doStream: async () => ({
           stream: simulateReadableStream({
-            chunkDelayInMs: 50,
-            initialDelayInMs: 3000,
+            chunkDelayInMs: 20,
+            initialDelayInMs: 1000,
             chunks: [
               ...chunks,
               { type: 'error', error: new Error('Mile making shit') },

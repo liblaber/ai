@@ -53,10 +53,7 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
   const webContainer = await webcontainer;
 
   // Get all unique file paths from both maps
-  const allPaths = new Set([
-    ...Object.keys(currentFileMap),
-    ...Object.keys(previousFileMap)
-  ]);
+  const allPaths = new Set([...Object.keys(currentFileMap), ...Object.keys(previousFileMap)]);
 
   for (const filePath of allPaths) {
     const currentFile = currentFileMap[filePath];
@@ -97,8 +94,8 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
           }
         }
 
-        await webContainer.fs.writeFile(filePath, content, { 
-          encoding: previousFile.isBinary ? undefined : 'utf8' 
+        await webContainer.fs.writeFile(filePath, content, {
+          encoding: previousFile.isBinary ? undefined : 'utf8',
         });
       }
     }

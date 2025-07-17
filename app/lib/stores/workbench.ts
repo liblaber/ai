@@ -143,18 +143,6 @@ export class WorkbenchStore {
 
   setDocuments(files: FileMap) {
     this.#editorStore.setDocuments(files);
-
-    if (this.#filesStore.filesCount > 0 && this.currentDocument.get() === undefined) {
-      const fileEntries = Object.entries(files);
-
-      const selectedFile =
-        fileEntries.find(([path, dirent]) => dirent?.type === 'file' && path.endsWith('routes/_index.tsx'))?.[0] ??
-        fileEntries.find(([path, dirent]) => dirent?.type === 'file' && !path.endsWith('.env'))?.[0];
-
-      if (selectedFile) {
-        this.setSelectedFile(selectedFile);
-      }
-    }
   }
 
   setShowWorkbench(show: boolean) {
@@ -345,11 +333,6 @@ export class WorkbenchStore {
     }
 
     return artifact.runner.addAction(data);
-  }
-
-  restartApp() {
-    if (ActionRunner.isAppRunning()) {
-    }
   }
 
   runAction(data: ActionCallbackData, isStreaming: boolean = false) {
