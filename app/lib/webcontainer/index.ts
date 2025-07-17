@@ -1,3 +1,4 @@
+'use client';
 import {
   type BasePreviewMessage,
   type ConsoleErrorMessage,
@@ -28,7 +29,7 @@ export let webcontainer: Promise<WebContainer> = new Promise(() => {
 let lastRefreshTimestamp = 0;
 const REFRESH_COOLDOWN_MS = 30000; // 30 seconds
 
-if (!import.meta.env.SSR) {
+if (typeof window !== 'undefined') {
   webcontainer =
     import.meta.hot?.data.webcontainer ??
     Promise.resolve()

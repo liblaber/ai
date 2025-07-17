@@ -40,7 +40,7 @@ When you connect your database to liblab.ai, here's exactly what happens:
 
 1. **🏠 Local Connection**: Your database credentials are stored locally on your machine and never sent to external servers
 2. **🔧 App Generation**: When you build an app, it runs in a secure web container that displays live dashboards with your data
-3. **🌐 Secure Tunneling**: Since the web container can't directly access your local database, we use ngrok to create a secure tunnel
+3. **🌐 Secure Tunneling**: Since the web container can't directly access your local database, we use localtunnel to create a secure tunnel
 4. **🔐 End-to-End Encryption**: Every database request, response, query, and data output is encrypted using AES-256 encryption
 
 ### Your Encryption Key
@@ -130,17 +130,27 @@ pnpm --version
 </details>
 
 <details>
-<summary><strong>ngrok</strong> - Free account for local tunneling (one time setup)</summary>
+<summary><strong>localtunnel</strong> - Local tunneling for development (automatic setup)</summary>
 
-#### Step 1: Create ngrok Account
+#### Step 1: Install localtunnel
 
-1. Go to [ngrok.com/signup](https://ngrok.com/signup)
-2. Create a free account
-3. Follow ngrok's [setup instructions](https://dashboard.ngrok.com/get-started/setup)
-   - Install ngrok CLI tool with: `brew install ngrok`
-   - Set your ngrok authtoken with: `ngrok config add-authtoken YOUR_AUTHTOKEN_HERE`
-   - Verify the installation with `ngrok version`
-   </details>
+Localtunnel is automatically installed as a dependency when you run the setup script. No manual configuration required!
+
+If you need to install it manually:
+
+```bash
+npm install -g localtunnel
+```
+
+#### Step 2: Verify Installation
+
+```bash
+lt --version
+```
+
+> **💡 Note:** The setup script handles localtunnel installation automatically, so you don't need to do anything manually.
+
+</details>
 
 <details>
 <summary><strong>Anthropic API Key</strong> - Required for AI model access</summary>
@@ -188,7 +198,7 @@ chmod +x scripts/setup.sh
 
 The script automatically handles:
 
-- Setup ngrok tunnel (macOS/Linux)
+- Setup localtunnel tunnel (macOS/Linux)
 - Configure `.env` file
 - Install all dependencies
 - Setup SQLite database

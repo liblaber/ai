@@ -89,31 +89,6 @@ export class ActionRunner {
     this.#shells = getShells();
   }
 
-  async #availableShellTerminal(): Promise<LiblabShell> {
-    const availableShell = this.#shells.find((shell) => {
-      const state = shell.executionState.get();
-
-      return !state?.active;
-    });
-
-    if (availableShell) {
-      return availableShell;
-    }
-
-    /*
-     * if there are no available instances, we will take the last one and abort the process
-     * ideally, we would create a new terminal instance here, but that requires a lot of refactoring
-     * in most cases, at least one instance will be available for running commands
-     */
-    const lastTerminalInstance = this.#shells.at(this.#shells.length - 1);
-
-    if (!lastTerminalInstance) {
-      unreachable('No available shell terminal found');
-    }
-
-    return lastTerminalInstance;
-  }
-
   addAction(data: ActionCallbackData) {
     const { actionId } = data;
 
@@ -199,6 +174,31 @@ export class ActionRunner {
       content: JSON.stringify(history),
       changeSource: 'auto-save',
     } as any);
+  }
+
+  async #availableShellTerminal(): Promise<LiblabShell> {
+    const availableShell = this.#shells.find((shell) => {
+      const state = shell.executionState.get();
+
+      return !state?.active;
+    });
+
+    if (availableShell) {
+      return availableShell;
+    }
+
+    /*
+     * if there are no available instances, we will take the last one and abort the process
+     * ideally, we would create a new terminal instance here, but that requires a lot of refactoring
+     * in most cases, at least one instance will be available for running commands
+     */
+    const lastTerminalInstance = this.#shells.at(this.#shells.length - 1);
+
+    if (!lastTerminalInstance) {
+      unreachable('No available shell terminal found');
+    }
+
+    return lastTerminalInstance;
   }
 
   async #executeAction(actionId: string, isStreaming: boolean = false) {
@@ -388,15 +388,15 @@ export class ActionRunner {
       let content = action.content;
 
       if (relativePath.endsWith('.env')) {
-        if (import.meta.env.VITE_ENV_NAME === 'local') {
-          const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
+        if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
+          const tunnelForwardingUrl = process.env.NEXT_PUBLIC_TUNNEL_FORWARDING_URL;
           content = injectEnvVariable(
             content,
             'VITE_API_BASE_URL',
             tunnelForwardingUrl ? tunnelForwardingUrl : undefined,
           );
         } else {
-          content = injectEnvVariable(content, 'VITE_API_BASE_URL', window.__ENV__.VITE_BASE_URL);
+          content = injectEnvVariable(content, 'VITE_API_BASE_URL', process.env.VITE_BASE_URL);
         }
       }
 

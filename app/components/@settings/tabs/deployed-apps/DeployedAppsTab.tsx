@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useFetcher } from '@remix-run/react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
@@ -15,13 +15,10 @@ interface Website {
   createdAt: string;
 }
 
-interface FetcherData {
-  websites: Website[];
-}
-
 interface Response {
   success: boolean;
   error?: string;
+  websites?: Website[];
 }
 
 function AppItem({ website, onDelete }: { website: Website; onDelete: () => void }) {
@@ -33,7 +30,7 @@ function AppItem({ website, onDelete }: { website: Website; onDelete: () => void
     >
       <div className="flex items-center justify-between">
         <Link
-          to={`/chat/${website.chatId}`}
+          href={`/chat/${website.chatId}`}
           className="text-lg font-medium text-gray-900 dark:text-white hover:text-accent-500 dark:hover:text-accent-400"
         >
           {website.siteName}
@@ -125,21 +122,26 @@ function EmptyState() {
 }
 
 export default function DeployedAppsTab() {
-  const fetcher = useFetcher<FetcherData>();
   const [websites, setWebsites] = useState<Website[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [websiteToDelete, setWebsiteToDelete] = useState<Website | null>(null);
 
   useEffect(() => {
-    fetcher.load('/api/websites');
-  }, []);
+    const fetchWebsites = async () => {
+      const response = await fetch('/api/websites');
+      const data = (await response.json()) as Response;
 
-  useEffect(() => {
-    if (fetcher.data?.websites) {
-      setWebsites(fetcher.data.websites);
+      if (data.success && data.websites) {
+        setWebsites(data.websites);
+      } else {
+        toast.error('Failed to fetch deployed apps');
+      }
+
       setIsLoading(false);
-    }
-  }, [fetcher.data]);
+    };
+
+    fetchWebsites();
+  }, []);
 
   const handleDelete = async (websiteId: string) => {
     const response = await fetch(`/api/websites?websiteId=${websiteId}`, {
@@ -150,7 +152,10 @@ export default function DeployedAppsTab() {
 
     if (data.success) {
       toast.success('App deleted successfully');
-      fetcher.load('/api/websites');
+
+      const newWebsites = websites.filter((website) => website.id !== websiteId);
+
+      setWebsites(newWebsites);
     } else {
       toast.error('Failed to delete app');
     }

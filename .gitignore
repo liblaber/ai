@@ -53,4 +53,8 @@ ngrok.log
 
 snapshots
 
+!app/**/snapshots
+
 /prisma/liblab.db-journal
+
+.next

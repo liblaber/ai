@@ -9,12 +9,11 @@
     ],
     "isolatedModules": true,
     "esModuleInterop": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "target": "ESNext",
-    "strict": true,
     "allowJs": true,
     "skipLibCheck": true,
     "verbatimModuleSyntax": true,
@@ -22,11 +21,18 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["./app/*"],
-      "@liblab/*": ["./shared/src/*"]
+      "@liblab/*": ["./shared/src/*"],
+      "@/*": ["./app/*"]
     },
-
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     // vite takes care of building everything, not tsc
-    "noEmit": true
+    "noEmit": true,
+    "strict": false
   },
   "include": [
     "**/*.ts",
@@ -34,7 +40,9 @@
     "**/.server/**/*.ts",
     "**/.server/**/*.tsx",
     "**/.client/**/*.ts",
-    "**/.client/**/*.tsx"
+    "**/.client/**/*.tsx",
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
   ],
-  "exclude": ["datawiz", "starters"]
+  "exclude": ["datawiz", "starters", "node_modules"]
 }

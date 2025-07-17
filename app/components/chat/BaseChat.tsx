@@ -4,7 +4,7 @@
  */
 import type { JSONValue, Message } from 'ai';
 import React, { type RefCallback, useEffect, useState } from 'react';
-import { ClientOnly } from 'remix-utils/client-only';
+import { ClientOnly } from '~/components/ui/ClientOnly';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
@@ -234,7 +234,7 @@ export const BaseChat = ({
 
   const baseChat = (
     <div className={classNames('BaseChat relative flex h-full w-full overflow-hidden')} data-chat-visible={showChat}>
-      {session?.user && <ClientOnly>{() => <Menu />}</ClientOnly>}
+      {session?.user && <Menu />}
       <div
         ref={scrollRef}
         className={classNames('flex flex-col lg:flex-row overflow-y-auto w-full h-full', {

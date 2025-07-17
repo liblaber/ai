@@ -1,4 +1,4 @@
-import { useLoaderData, useNavigate } from '@remix-run/react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { atom } from 'nanostores';
 import { type Message } from 'ai';
@@ -30,10 +30,8 @@ export interface ChatHistoryItem {
 export const chatId = atom<string | undefined>(undefined);
 export const description = atom<string | undefined>(undefined);
 
-export function useConversationHistory() {
-  const navigate = useNavigate();
-  const idParam = useLoaderData<{ id?: string }>();
-  const id = idParam?.id;
+export function useConversationHistory(id?: string) {
+  const router = useRouter();
   const { selectedDataSourceId, setSelectedDataSourceId } = useDataSourcesStore();
 
   const [initialMessages, setInitialMessages] = useState<Message[]>([]);
@@ -48,7 +46,7 @@ export function useConversationHistory() {
     getConversation(id)
       .then(async (conversation) => {
         if (!(conversation && conversation.messages.length > 0)) {
-          navigate('/', { replace: true });
+          router.replace('/');
         }
 
         const snapshot = conversation?.snapshot;
@@ -82,7 +80,7 @@ export function useConversationHistory() {
         console.error(error);
         toast.error(error.message);
       });
-  }, [id]);
+  }, [id, router, selectedDataSourceId, setSelectedDataSourceId]);
 
   return {
     ready: !id || ready,

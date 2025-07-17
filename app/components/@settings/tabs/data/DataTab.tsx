@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Dialog, DialogClose, DialogRoot } from '~/components/ui/Dialog';
-import { useFetcher } from '@remix-run/react';
 import AddDataSourceForm from './forms/AddDataSourceForm';
 import EditDataSourceForm from './forms/EditDataSourceForm';
 import { classNames } from '~/utils/classNames';
@@ -29,7 +28,6 @@ export interface TestConnectionResponse {
 }
 
 export default function DataTab() {
-  const fetcher = useFetcher<DataSourcesResponse>();
   const { showAddForm } = useStore(settingsPanelStore);
   const [showAddFormLocal, setShowAddFormLocal] = useState(showAddForm);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -52,12 +50,23 @@ export default function DataTab() {
     }
   }, [selectedTab]);
 
-  // Update data sources store when fetcher data changes
+  // Load data sources on mount
   useEffect(() => {
-    if (fetcher.data?.success) {
-      setDataSources(fetcher.data.dataSources);
-    }
-  }, [fetcher.data, setDataSources]);
+    const loadDataSources = async () => {
+      try {
+        const response = await fetch('/api/data-sources');
+        const data = (await response.json()) as DataSourcesResponse;
+
+        if (data.success) {
+          setDataSources(data.dataSources);
+        }
+      } catch (error) {
+        console.error('Failed to load data sources:', error);
+      }
+    };
+
+    loadDataSources();
+  }, [setDataSources]);
 
   const handleDelete = async () => {
     if (!selectedDataSource) {
@@ -72,7 +81,15 @@ export default function DataTab() {
 
     if (data.success) {
       toast.success('Data source deleted successfully');
-      fetcher.load('/api/data-sources');
+
+      // Reload data sources
+      const reloadResponse = await fetch('/api/data-sources');
+      const reloadData = (await reloadResponse.json()) as DataSourcesResponse;
+
+      if (reloadData.success) {
+        setDataSources(reloadData.dataSources);
+      }
+
       setShowDeleteConfirm(false);
       setShowEditForm(false);
       setSelectedDataSource(null);
@@ -168,7 +185,18 @@ export default function DataTab() {
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
             onSuccess={() => {
-              fetcher.load('/api/data-sources');
+              // Reload data sources
+              const reloadResponse = fetch('/api/data-sources');
+              reloadResponse
+                .then((response) => response.json())
+                .then((data: unknown) => {
+                  const typedData = data as DataSourcesResponse;
+
+                  if (typedData.success) {
+                    setDataSources(typedData.dataSources);
+                  }
+                })
+                .catch((error) => console.error('Failed to reload data sources after add:', error));
               handleBack();
             }}
           />
@@ -200,7 +228,18 @@ export default function DataTab() {
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
             onSuccess={() => {
-              fetcher.load('/api/data-sources');
+              // Reload data sources
+              const reloadResponse = fetch('/api/data-sources');
+              reloadResponse
+                .then((response) => response.json())
+                .then((data: unknown) => {
+                  const typedData = data as DataSourcesResponse;
+
+                  if (typedData.success) {
+                    setDataSources(typedData.dataSources);
+                  }
+                })
+                .catch((error) => console.error('Failed to reload data sources after edit:', error));
               handleBack();
             }}
             onDelete={handleDeleteClick}

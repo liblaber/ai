@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { ClientOnly } from 'remix-utils/client-only';
+import { ClientOnly } from '~/components/ui/ClientOnly';
 import { chatStore } from '~/lib/stores/chat';
 import { classNames } from '~/utils/classNames';
 import { HeaderActionButtons } from './HeaderActionButtons.client';

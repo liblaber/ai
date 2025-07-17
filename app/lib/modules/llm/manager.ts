@@ -1,6 +1,6 @@
 import { BaseProvider } from './base-provider';
 import * as providers from './registry';
-import { env } from '~/lib/config/env';
+import '~/lib/config/env';
 
 export class LLMManager {
   private static _instance: LLMManager;
@@ -26,7 +26,7 @@ export class LLMManager {
 
   static getInstance(): LLMManager {
     if (!LLMManager._instance) {
-      LLMManager._instance = new LLMManager(env as Record<string, string>);
+      LLMManager._instance = new LLMManager(process.env as Record<string, string>);
     }
 
     return LLMManager._instance;

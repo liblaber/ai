@@ -33,6 +33,7 @@ type DatabaseUrlResponse = {
 };
 
 interface ChatProps {
+  id?: string;
   initialMessages: Message[];
   commandMessage?: Message;
   storeConversationHistory: (
@@ -46,10 +47,10 @@ interface ChatProps {
 
 const logger = createScopedLogger('Chat');
 
-export function Chat() {
+export function Chat({ id }: { id?: string }) {
   renderLogger.trace('Chat');
 
-  const { ready, initialMessages, commandMessage, storeConversationHistory, exportChat } = useConversationHistory();
+  const { ready, initialMessages, commandMessage, storeConversationHistory, exportChat } = useConversationHistory(id);
   const title = useStore(description);
   useEffect(() => {
     workbenchStore.setReloadedMessages(initialMessages.map((m) => m.id));

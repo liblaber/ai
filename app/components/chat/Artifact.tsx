@@ -2,7 +2,7 @@ import { useStore } from '@nanostores/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { computed } from 'nanostores';
 import { memo, useEffect, useRef, useState } from 'react';
-import { type BundledLanguage, type BundledTheme, createHighlighter, type HighlighterGeneric } from 'shiki';
+import { createHighlighter, type HighlighterGeneric } from 'shiki';
 import type { ActionState } from '~/lib/runtime/action-runner';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
@@ -14,12 +14,21 @@ const highlighterOptions = {
   themes: ['light-plus', 'dark-plus'],
 };
 
-const shellHighlighter: HighlighterGeneric<BundledLanguage, BundledTheme> =
-  import.meta.hot?.data.shellHighlighter ?? (await createHighlighter(highlighterOptions));
+async function shellHighlighter(): Promise<HighlighterGeneric<any, any>> {
+  return import.meta.hot?.data.shellHighlighter ?? (await createHighlighter(highlighterOptions));
+}
 
 if (import.meta.hot) {
-  import.meta.hot.data.shellHighlighter = shellHighlighter;
+  shellHighlighter().then((hl) => {
+    import.meta.hot.data.shellHighlighter = hl;
+  });
 }
+
+let shellHigh;
+
+shellHighlighter().then((hl) => {
+  shellHigh = hl;
+});
 
 interface ArtifactProps {
   messageId: string;
@@ -128,16 +137,16 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
 });
 
 interface ShellCodeBlockProps {
-  classsName?: string;
+  className?: string;
   code: string;
 }
 
-function ShellCodeBlock({ classsName, code }: ShellCodeBlockProps) {
+function ShellCodeBlock({ className, code }: ShellCodeBlockProps) {
   return (
     <div
-      className={classNames('text-xs', classsName)}
+      className={classNames('text-xs', className)}
       dangerouslySetInnerHTML={{
-        __html: shellHighlighter.codeToHtml(code, {
+        __html: shellHigh?.codeToHtml(code, {
           lang: 'shell',
           theme: 'dark-plus',
         }),
@@ -230,7 +239,7 @@ const ActionList = memo(({ actions }: ActionListProps) => {
               </div>
               {(type === 'shell' || type === 'start') && (
                 <ShellCodeBlock
-                  classsName={classNames('mt-1', {
+                  className={classNames('mt-1', {
                     'mb-3.5': !isLast,
                   })}
                   code={content}

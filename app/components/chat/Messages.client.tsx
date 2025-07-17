@@ -14,7 +14,7 @@ import { rewindToSnapshot } from '~/lib/persistence/snapshots';
 import { Dialog, DialogRoot, DialogTitle, DialogDescription, DialogButton } from '~/components/ui/Dialog';
 import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { useNavigate } from '@remix-run/react';
+import { useRouter } from 'next/navigation';
 
 interface MessagesProps {
   id?: string;
@@ -30,7 +30,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
     ref: ForwardedRef<HTMLDivElement> | undefined,
   ) => {
     const { data } = useSession();
-    const navigate = useNavigate();
+    const router = useRouter();
     const user = data?.user;
     const [rewindDialog, setRewindDialog] = useState<{ isOpen: boolean; snapshotId: string | null }>({
       isOpen: false,
@@ -56,7 +56,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
 
         if (!conversationId) {
           console.error('No conversation ID provided');
-          navigate('/');
+          router.push('/');
 
           return;
         }
@@ -89,7 +89,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
         }
 
         const forkedChatId = await forkConversation(chatId.get()!, messageId);
-        window.location.href = `/chat/${forkedChatId}`;
+        router.push(`/chat/${forkedChatId}`);
       } catch (error) {
         toast.error('Failed to fork chat: ' + (error as Error).message);
       }

@@ -2,6 +2,7 @@ import { MessageRole } from '~/utils/constants';
 import { type Message } from 'ai';
 import type { FileMap } from '~/lib/stores/files';
 import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
+import '~/lib/config/env';
 
 export type RepoFile = { name: string; path: string; content: string };
 
@@ -10,10 +11,16 @@ interface StarterTemplateResponse {
   error?: string;
 }
 
-function writeSensitiveDataToEnvFile(files: FileMap, databaseUrl: string): FileMap {
+async function writeSensitiveDataToEnvFile(files: FileMap, databaseUrl: string): Promise<FileMap> {
   const envPath = Object.keys(files).find((key) => key.includes('.env')) || '.env';
   const encodedDatabaseUrl = encodeURIComponent(databaseUrl);
-  const encryptionKey = process.env.ENCRYPTION_KEY;
+  const encryptionKeyResponse = await fetch('/api/encryption-key');
+
+  if (!encryptionKeyResponse.ok) {
+    throw new Error(`Failed to fetch encryption key: ${encryptionKeyResponse.status}`);
+  }
+
+  const { encryptionKey } = await encryptionKeyResponse.json<{ encryptionKey: string }>();
 
   if (!encryptionKey) {
     throw new Error('ENCRYPTION_KEY environment variable is not set');
@@ -71,7 +78,7 @@ const getStarterTemplateFiles = async (): Promise<FileMap> => {
 
 export async function getStarterTemplateMessages(title: string, databaseUrl: string): Promise<Message[]> {
   const starterFiles = await getStarterTemplateFiles();
-  const updatedFiles = writeSensitiveDataToEnvFile(starterFiles, databaseUrl);
+  const updatedFiles = await writeSensitiveDataToEnvFile(starterFiles, databaseUrl);
 
   await loadFileMapIntoContainer(updatedFiles);
 
