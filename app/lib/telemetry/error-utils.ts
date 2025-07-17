@@ -15,11 +15,7 @@ function isError(error: any): error is Error {
 }
 
 function isExecError(error: any): error is ExecError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    typeof error.status === 'number'
-  );
+  return typeof error === 'object' && error !== null && typeof error.status === 'number';
 }
 
 function isObjectError(error: any): error is Record<string, any> {
