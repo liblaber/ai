@@ -22,7 +22,7 @@ export async function action({ request }: { request: Request }) {
         data: {
           userId,
           name: 'Sample Database',
-          connectionString: 'sqlite://example.db',
+          connectionString: 'sqlite://sample.db',
         },
       });
 

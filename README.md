@@ -68,6 +68,30 @@ Local Machine ← Encrypted Response ← Secure Tunnel ← Preview Dashboard
 
 ---
 
+## 📈 Telemetry
+
+To help us improve liblab.ai, we collect anonymous usage events by default. This includes:
+
+- Whether the setup script completed successfully or with an error (including the actual error message)
+- Whether the development server started successfully or with an error (including the actual error message)
+- A unique, anonymous machine identifier (generated from hardware and OS info, never your name or email)
+
+**No sensitive data, database credentials, or personal information is ever collected.**
+
+Events are sent to [PostHog](https://posthog.com/) for analytics. This helps us understand how the open source project is used and where users encounter issues, so we can improve the experience.
+
+### How to Disable Telemetry
+
+Telemetry is enabled by default. To disable it, set the following in your `.env` file:
+
+```
+DISABLE_TELEMETRY=true
+```
+
+If you do not provide a `POSTHOG_API_KEY` in your `.env`, telemetry will also be disabled automatically.
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
