@@ -131,11 +131,14 @@ export default function DeployedAppsTab() {
       const response = await fetch('/api/websites');
       const data = (await response.json()) as Response;
 
-      if (data.success && data.websites) {
-        setWebsites(data.websites);
-      } else {
+      if (!response.ok) {
         toast.error('Failed to fetch deployed apps');
+        setIsLoading(false);
+
+        return;
       }
+
+      setWebsites(data.websites);
 
       setIsLoading(false);
     };
@@ -144,7 +147,7 @@ export default function DeployedAppsTab() {
   }, []);
 
   const handleDelete = async (websiteId: string) => {
-    const response = await fetch(`/api/websites?websiteId=${websiteId}`, {
+    const response = await fetch(`/api/websites/${websiteId}`, {
       method: 'DELETE',
     });
 
