@@ -12,9 +12,10 @@ import { useSession } from '~/auth/auth-client';
 import { forkConversation, getConversation, getMessageSnapshotId } from '~/lib/persistence/conversations';
 import { rewindToSnapshot } from '~/lib/persistence/snapshots';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
-import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
+import { loadPreviousFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { useNavigate } from '@remix-run/react';
+import { PROJECT_SETUP_ANNOTATION } from '~/utils/constants';
 
 interface MessagesProps {
   id?: string;
@@ -22,11 +23,13 @@ interface MessagesProps {
   isStreaming?: boolean;
   messages?: Message[];
   setMessages: (messages: Message[]) => void;
+  error?: Error;
+  onRetry?: () => Promise<void>;
 }
 
 export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
   (
-    { id, isStreaming = false, messages = [], setMessages, className }: MessagesProps,
+    { id, isStreaming = false, messages = [], setMessages, className, error, onRetry }: MessagesProps,
     ref: ForwardedRef<HTMLDivElement> | undefined,
   ) => {
     const { data } = useSession();
@@ -64,7 +67,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
         const updatedConversation = await getConversation(conversationId);
 
         if (updatedConversation?.messages && updatedConversation?.snapshot) {
-          await loadFileMapIntoContainer(updatedConversation.snapshot.fileMap);
+          await loadPreviousFileMapIntoContainer(updatedConversation.snapshot.fileMap);
 
           setMessages(updatedConversation.messages);
         }
@@ -95,6 +98,10 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
       }
     };
 
+    const shouldShowForkAction = (annotations: Message['annotations']) => {
+      return !isStreaming && !error && !annotations?.includes(PROJECT_SETUP_ANNOTATION);
+    };
+
     return (
       <div id={id} className={className} ref={ref}>
         {messages.length > 0
@@ -107,7 +114,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
               const isHidden = annotations?.includes('hidden');
 
               if (isHidden) {
-                return <Fragment key={index} />;
+                return <Fragment key={message.id} />;
               }
 
               return (
@@ -123,9 +130,15 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                   {isUserMessage && <ProfilePicture user={user} />}
                   <div className="grid grid-col-1 w-full">
                     {isUserMessage ? (
-                      <UserMessage content={content} />
+                      <UserMessage key={message.id} content={content} />
                     ) : (
-                      <AssistantMessage content={content} annotations={message.annotations} />
+                      <AssistantMessage
+                        key={message.id}
+                        content={content}
+                        annotations={message.annotations}
+                        onRetry={onRetry}
+                        error={isLast ? error : undefined}
+                      />
                     )}
                   </div>
                   {!isUserMessage && (
@@ -142,15 +155,17 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                         </WithTooltip>
                       )}
 
-                      <WithTooltip tooltip="Fork chat from this message">
-                        <button
-                          onClick={() => handleFork(messageId)}
-                          key="i-liblab:ic_back-square"
-                          className={classNames(
-                            'i-liblab:ic_back-square text-2xl opacity-50 hover:opacity-100 text-liblab-elements-icon-primary transition-colors',
-                          )}
-                        />
-                      </WithTooltip>
+                      {shouldShowForkAction(message.annotations) && (
+                        <WithTooltip tooltip="Fork chat from this message">
+                          <button
+                            onClick={() => handleFork(messageId)}
+                            key="i-liblab:ic_back-square"
+                            className={classNames(
+                              'i-liblab:ic_back-square text-2xl opacity-50 hover:opacity-100 text-liblab-elements-icon-primary transition-colors',
+                            )}
+                          />
+                        </WithTooltip>
+                      )}
                     </div>
                   )}
                 </div>

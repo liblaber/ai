@@ -14,7 +14,7 @@ type MessageResponse = {
   finishReason?: string;
   createdAt: number;
   annotations: string[];
-  Snapshot?: {
+  snapshot?: {
     id: string;
   } | null;
 };
@@ -25,6 +25,9 @@ type ConversationResponse = {
   id: string;
   description?: string;
   messages: MessageResponse[];
+  snapshots: {
+    id: string;
+  }[];
   createdAt: number;
   updatedAt: number;
   dataSourceId: string;
@@ -59,8 +62,8 @@ export async function getConversation(id: string): Promise<UIConversation> {
     conversation?.messages.map((message) => {
       const annotations = [...(message.annotations ?? []), NO_EXECUTE_ACTION_ANNOTATION];
 
-      if (message.Snapshot?.id) {
-        annotations.push(`snapshotId:${message.Snapshot.id}`);
+      if (message.snapshot?.id) {
+        annotations.push(`snapshotId:${message.snapshot.id}`);
       }
 
       return {

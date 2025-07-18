@@ -44,7 +44,7 @@ function writeSensitiveDataToEnvFile(files: FileMap, databaseUrl: string): FileM
   };
 }
 
-const getStarterTemplateFiles = async (): Promise<FileMap> => {
+export const getStarterTemplateFiles = async (databaseUrl?: string): Promise<FileMap> => {
   try {
     const response = await fetch('/api/starter-template');
 
@@ -62,7 +62,11 @@ const getStarterTemplateFiles = async (): Promise<FileMap> => {
       throw new Error('No files returned from starter template API');
     }
 
-    return data.files;
+    if (!databaseUrl) {
+      return data.files;
+    }
+
+    return writeSensitiveDataToEnvFile(data.files, databaseUrl);
   } catch (error) {
     console.error('Error fetching starter template:', error);
     throw error;
@@ -70,10 +74,9 @@ const getStarterTemplateFiles = async (): Promise<FileMap> => {
 };
 
 export async function getStarterTemplateMessages(title: string, databaseUrl: string): Promise<Message[]> {
-  const starterFiles = await getStarterTemplateFiles();
-  const updatedFiles = writeSensitiveDataToEnvFile(starterFiles, databaseUrl);
+  const starterFiles = await getStarterTemplateFiles(databaseUrl);
 
-  await loadFileMapIntoContainer(updatedFiles);
+  await loadFileMapIntoContainer(starterFiles);
 
   return [
     {
@@ -85,7 +88,7 @@ export async function getStarterTemplateMessages(title: string, databaseUrl: str
     {
       id: `2-${new Date().getTime()}`,
       role: MessageRole.Assistant,
-      content: getStarterTemplateArtifact(title, updatedFiles),
+      content: getStarterTemplateArtifact(title, starterFiles),
       annotations: ['hidden'],
     },
   ];

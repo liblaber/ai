@@ -12,7 +12,7 @@ export type ContextAnnotation =
 export type ProgressAnnotation = {
   type: 'progress';
   label: string;
-  status: 'in-progress' | 'complete' | 'error';
+  status: 'init' | 'in-progress' | 'complete' | 'error';
   order: number;
   message: string;
 };

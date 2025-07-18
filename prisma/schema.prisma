@@ -64,7 +64,7 @@ model Message {
   finishReason   String
   role           String       @default("USER") @map("role")
   createdAt      DateTime     @default(now())
-  Snapshot       Snapshot?
+  snapshot       Snapshot?
   annotations    Json?
 
   @@map("message")
@@ -77,7 +77,7 @@ model Conversation {
   messages     Message[]
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
-  Snapshot     Snapshot[]
+  snapshots    Snapshot[]
   dataSourceId String
   dataSource   DataSource @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
   User         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
