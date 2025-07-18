@@ -97,6 +97,10 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
       }
     };
 
+    const shouldShowForkAction = () => {
+      return !isStreaming && !error;
+    };
+
     return (
       <div id={id} className={className} ref={ref}>
         {messages.length > 0
@@ -149,20 +153,17 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                         </WithTooltip>
                       )}
 
-                      {!isStreaming &&
-                        !annotations?.some(
-                          (annotation: any) => annotation?.type === 'progress' && annotation?.status === 'error',
-                        ) && (
-                          <WithTooltip tooltip="Fork chat from this message">
-                            <button
-                              onClick={() => handleFork(messageId)}
-                              key="i-liblab:ic_back-square"
-                              className={classNames(
-                                'i-liblab:ic_back-square text-2xl opacity-50 hover:opacity-100 text-liblab-elements-icon-primary transition-colors',
-                              )}
-                            />
-                          </WithTooltip>
-                        )}
+                      {shouldShowForkAction() && (
+                        <WithTooltip tooltip="Fork chat from this message">
+                          <button
+                            onClick={() => handleFork(messageId)}
+                            key="i-liblab:ic_back-square"
+                            className={classNames(
+                              'i-liblab:ic_back-square text-2xl opacity-50 hover:opacity-100 text-liblab-elements-icon-primary transition-colors',
+                            )}
+                          />
+                        </WithTooltip>
+                      )}
                     </div>
                   )}
                 </div>

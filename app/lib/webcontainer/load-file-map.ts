@@ -28,7 +28,15 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
 
     const fileName = key.startsWith(webContainer.workdir) ? key.replace(webContainer.workdir, '') : key;
 
-    value.content = injectEnvVariables(key, value.content);
+    if (fileName === '.env' && import.meta.env.VITE_ENV_NAME === 'local') {
+      const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
+      console.log(tunnelForwardingUrl);
+      value.content = injectEnvVariable(
+        value.content,
+        'VITE_API_BASE_URL',
+        tunnelForwardingUrl ? tunnelForwardingUrl : undefined,
+      );
+    }
 
     if (fileName === 'package.json') {
       const projectCommands = detectProjectCommands(value);
@@ -79,7 +87,14 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
       } else if (previousFile.type === 'file') {
         let content = previousFile.content;
 
-        content = injectEnvVariables(filePath, content);
+        if (filePath === '.env' && import.meta.env.VITE_ENV_NAME === 'local') {
+          const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
+          content = injectEnvVariable(
+            content,
+            'VITE_API_BASE_URL',
+            tunnelForwardingUrl ? tunnelForwardingUrl : undefined,
+          );
+        }
 
         if (filePath === 'package.json') {
           const projectCommands = detectProjectCommands(previousFile);
@@ -95,14 +110,4 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
       }
     }
   }
-};
-
-const injectEnvVariables = (filePath: string, content: string): string => {
-  if (!(filePath.endsWith('.env') && import.meta.env.VITE_ENV_NAME === 'local')) {
-    return content;
-  }
-
-  const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
-
-  return injectEnvVariable(content, 'VITE_API_BASE_URL', tunnelForwardingUrl ? tunnelForwardingUrl : undefined);
 };
