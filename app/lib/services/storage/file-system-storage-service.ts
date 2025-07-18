@@ -3,16 +3,13 @@ import { StorageType } from '@prisma/client';
 import fs from 'fs/promises';
 import path from 'path';
 import { decryptData, encryptData } from '@liblab/encryption/encryption';
+import '~/lib/config/env';
 
 export class LocalSystemStorageService implements StorageService {
   private readonly _baseDir: string;
 
   constructor(baseDir: string = process.cwd()) {
     this._baseDir = baseDir;
-  }
-
-  private _getFilePath(key: string): string {
-    return path.join(this._baseDir, key);
   }
 
   getStorageType() {
@@ -51,5 +48,9 @@ export class LocalSystemStorageService implements StorageService {
   async deleteAll(parentKey: string): Promise<void> {
     const filePath = this._getFilePath(parentKey);
     await fs.rm(filePath, { recursive: true });
+  }
+
+  private _getFilePath(key: string): string {
+    return path.join(this._baseDir, key);
   }
 }

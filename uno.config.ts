@@ -1,7 +1,7 @@
 import { globSync } from 'fast-glob';
 import fs from 'node:fs/promises';
 import { basename } from 'node:path';
-import { defineConfig, presetIcons, presetUno, transformerDirectives } from 'unocss';
+import { defineConfig, presetIcons, presetUno, presetWind, transformerDirectives } from 'unocss';
 
 const iconPaths = globSync('./icons/*.svg');
 
@@ -108,6 +108,15 @@ const COLOR_PRIMITIVES = {
 };
 
 export default defineConfig({
+  content: {
+    filesystem: [
+      '**/*.{html,js,ts,jsx,tsx,vue,svelte,astro}',
+      '!**/node_modules/**',
+      '!**/dist/**',
+      '!**/build/**',
+      '!**/starters/**',
+    ],
+  },
   safelist: [...Object.keys(customIconCollection[collectionName] || {}).map((x) => `i-liblab:${x}`)],
   shortcuts: {
     'liblab-ease-cubic-bezier': 'ease-[cubic-bezier(0.4,0,0.2,1)]',
@@ -265,6 +274,7 @@ export default defineConfig({
       },
       unit: 'em',
     }),
+    presetWind(),
   ],
 });
 

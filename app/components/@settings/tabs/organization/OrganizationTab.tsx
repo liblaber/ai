@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useFetcher } from '@remix-run/react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface OrganizationResponse {
@@ -12,33 +11,62 @@ interface OrganizationResponse {
 }
 
 export default function OrganizationTab() {
-  const fetcher = useFetcher<OrganizationResponse>();
   const [organizationName, setOrganizationName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    fetcher.load('/api/organization');
+    const fetchOrganization = async () => {
+      try {
+        setIsLoading(true);
+
+        const response = await fetch('/api/organization');
+        const data: OrganizationResponse = await response.json();
+
+        if (data.success && data.organization) {
+          setOrganizationName(data.organization.name);
+        } else if (data.error) {
+          toast.error('Failed to fetch organization');
+        }
+      } catch (error) {
+        console.error('Error fetching organization:', error);
+        toast.error('Failed to fetch organization');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrganization();
   }, []);
 
-  useEffect(() => {
-    if (fetcher.data?.success && fetcher.data.organization) {
-      setOrganizationName(fetcher.data.organization.name);
-    } else if (fetcher.data?.error) {
-      toast.error('Failed to fetch organization');
-    }
-  }, [fetcher.data]);
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
 
-  const handleSave = () => {
-    fetcher.submit(
-      { name: organizationName },
-      {
+      const response = await fetch('/api/organization', {
         method: 'PUT',
-        action: '/api/organization',
-        encType: 'application/json',
-      },
-    );
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: organizationName }),
+      });
+
+      const data: OrganizationResponse = await response.json();
+
+      if (data.success) {
+        toast.success('Organization updated successfully');
+      } else {
+        toast.error(data.error || 'Failed to update organization');
+      }
+    } catch (error) {
+      console.error('Error updating organization:', error);
+      toast.error('Failed to update organization');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const isLoading = fetcher.state !== 'idle';
+  const isDisabled = isLoading || isSaving;
 
   return (
     <div className="space-y-6">
@@ -58,7 +86,7 @@ export default function OrganizationTab() {
             onChange={(e) => setOrganizationName(e.target.value)}
             className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Enter organization name"
-            disabled={isLoading}
+            disabled={isDisabled}
           />
         </div>
       </div>
@@ -67,10 +95,10 @@ export default function OrganizationTab() {
         <div className="flex justify-end">
           <button
             onClick={handleSave}
-            disabled={isLoading}
+            disabled={isDisabled}
             className="px-4 py-2 bg-accent-500 hover:bg-accent-600 text-gray-950 dark:text-gray-950 rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Saving...' : 'Save'}
+            {isSaving ? 'Saving...' : 'Save'}
           </button>
         </div>
       </div>

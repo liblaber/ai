@@ -1,9 +1,7 @@
 import { hostname, platform } from 'os';
 import { PostHog } from 'posthog-node';
 
-import nodeMachineId from 'node-machine-id';
-
-const { machineIdSync } = nodeMachineId;
+import * as nodeMachineId from 'node-machine-id';
 
 export enum TelemetryEventType {
   APP_START_SUCCESS = 'app_start_success',
@@ -28,7 +26,7 @@ class TelemetryManager {
   static async create(): Promise<TelemetryManager> {
     const instance = new TelemetryManager();
     instance._posthogApiKey = process.env.POSTHOG_API_KEY || null;
-    instance._machineId = machineIdSync();
+    instance._machineId = nodeMachineId.machineIdSync();
 
     if (!instance._posthogApiKey) {
       console.warn('No POSTHOG_API_KEY found. Telemetry not initialized.');

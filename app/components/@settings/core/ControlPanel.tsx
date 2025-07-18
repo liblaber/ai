@@ -191,6 +191,7 @@ export const ControlPanel = () => {
             onPointerDownOutside={handleClose}
             className="relative z-[101] focus-visible:outline-none"
           >
+            <RadixDialog.Title className="sr-only">Control Panel Settings</RadixDialog.Title>
             <motion.div
               className={classNames(
                 'w-[900px] h-[644px]',

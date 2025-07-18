@@ -1,20 +1,14 @@
 {
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "types": [
-      "@remix-run/cloudflare",
-      "vite/client",
-      "@cloudflare/workers-types/2023-07-01",
-      "@types/dom-speech-recognition"
-    ],
+    "types": ["vite/client", "@cloudflare/workers-types/2023-07-01", "@types/dom-speech-recognition"],
     "isolatedModules": true,
     "esModuleInterop": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "target": "ESNext",
-    "strict": true,
     "allowJs": true,
     "skipLibCheck": true,
     "verbatimModuleSyntax": true,
@@ -22,11 +16,18 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["./app/*"],
-      "@liblab/*": ["./shared/src/*"]
+      "@liblab/*": ["./shared/src/*"],
+      "@/*": ["./app/*"]
     },
-
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     // vite takes care of building everything, not tsc
-    "noEmit": true
+    "noEmit": true,
+    "strict": true
   },
   "include": [
     "**/*.ts",
@@ -34,7 +35,9 @@
     "**/.server/**/*.ts",
     "**/.server/**/*.tsx",
     "**/.client/**/*.ts",
-    "**/.client/**/*.tsx"
+    "**/.client/**/*.tsx",
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
   ],
-  "exclude": ["datawiz", "starters"]
+  "exclude": ["datawiz", "starters", "node_modules"]
 }

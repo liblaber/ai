@@ -10,20 +10,10 @@ export const snapshotService = {
     return (tx ?? prisma).snapshot.create({
       data: {
         ...snapshot,
-        conversationId: undefined,
-        messageId: undefined,
-        conversation: {
-          connect: {
-            id: snapshot.conversationId,
-          },
-        },
+        conversationId: snapshot.conversationId,
         ...(snapshot.messageId
           ? {
-              message: {
-                connect: {
-                  id: snapshot.messageId,
-                },
-              },
+              messageId: snapshot.messageId,
             }
           : {}),
       },

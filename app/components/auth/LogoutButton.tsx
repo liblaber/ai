@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { signOut, useSession } from '~/auth/auth-client';
-import { useNavigate } from '@remix-run/react';
+import { useRouter } from 'next/navigation';
 import { ProfilePicture } from './ProfilePicture';
 import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
 import { chatStore } from '~/lib/stores/chat';
@@ -10,14 +10,14 @@ export function LogoutButton() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { data } = useSession();
   const user = data?.user;
-  const navigate = useNavigate();
+  const router = useRouter();
   const { anonymousProvider } = useAuthProvidersPlugin();
 
   const handleLogout = async () => {
     await signOut({
       fetchOptions: {
         onSuccess: () => {
-          navigate('/');
+          router.push('/');
         },
       },
     });

@@ -6,6 +6,7 @@ import PluginManager from '~/lib/plugins/plugin-manager';
 import { readStarterFileMap } from './read-starter-directory';
 import type { FileMap } from '~/lib/stores/files';
 import { StarterNotAvailableError, StarterNotFoundError } from './errors';
+import '~/lib/config/env';
 
 type Starter = {
   instructionsPrompt: string | null;
@@ -46,6 +47,10 @@ export class StarterPluginManager {
 
   static getStarterInstructionsPrompt(starterId?: StarterPluginId): string | null {
     return this._getStarter(starterId).instructionsPrompt;
+  }
+
+  static _isAvailable(starter: StarterPluginId): boolean {
+    return PluginManager.getInstance().isPluginAvailable(PluginType.STARTER, starter);
   }
 
   private static _getStarter(starterId?: StarterPluginId): Starter {
@@ -156,10 +161,6 @@ export class StarterPluginManager {
 
   private static _getSharedImportsToSkip(): string[] {
     return ['crypto'];
-  }
-
-  static _isAvailable(starter: StarterPluginId): boolean {
-    return PluginManager.getInstance().isPluginAvailable(PluginType.STARTER, starter);
   }
 
   private static _checkAvailability(starterId: StarterPluginId): void {

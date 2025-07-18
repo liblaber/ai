@@ -1,31 +1,22 @@
-import type { LoaderFunction, ActionFunction } from '@remix-run/cloudflare';
-import { getSession } from '~/auth/session';
+import { getSession } from './session';
+import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
+import '~/lib/config/env';
 
 /**
  * Middleware function to protect routes that require authentication
- * @param handler The original loader or action function
- * @returns A protected version of the handler
+ * @returns Promise<void> - redirects if not authenticated
  */
-export function requireAuth<T extends LoaderFunction | ActionFunction>(handler: T): T {
-  return (async (args) => {
-    const session = await getSession(args.request);
+export async function requireAuth(): Promise<void> {
+  const headersList = await headers();
+  const session = await getSession(
+    new Request('http://localhost', {
+      headers: Object.fromEntries(headersList.entries()),
+    }),
+  );
 
-    if (!session) {
-      // If it's a GET request, redirect to root
-      if (args.request.method === 'GET') {
-        return Response.redirect((process.env.BASE_URL as string) ?? 'http://localhost:5173');
-      }
-
-      // For other methods, return 401
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Add the user to the context
-    const context = {
-      ...args,
-      user: session.user,
-    };
-
-    return handler(context);
-  }) as T;
+  if (!session) {
+    // Redirect to root if not authenticated
+    redirect((process.env.BASE_URL as string) ?? 'http://localhost:3000');
+  }
 }

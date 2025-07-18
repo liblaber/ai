@@ -76,7 +76,7 @@ export const getLatestSnapshotOrNull = async (conversationId: string): Promise<S
 };
 
 export const rewindToSnapshot = async (conversationId: string, snapshotId: string): Promise<void> => {
-  const response = await fetch(`/api/conversations/${conversationId}/snapshot/${snapshotId}/rewind`, {
+  const response = await fetch(`/api/conversations/${conversationId}/snapshots/${snapshotId}/rewind`, {
     method: 'POST',
   });
 

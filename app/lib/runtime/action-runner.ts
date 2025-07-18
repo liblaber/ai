@@ -443,15 +443,15 @@ export class ActionRunner {
       let content = action.content;
 
       if (relativePath.endsWith('.env')) {
-        if (import.meta.env.VITE_ENV_NAME === 'local') {
-          const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
+        if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
+          const tunnelForwardingUrl = process.env.NEXT_PUBLIC_TUNNEL_FORWARDING_URL;
           content = injectEnvVariable(
             content,
             'VITE_API_BASE_URL',
             tunnelForwardingUrl ? tunnelForwardingUrl : undefined,
           );
         } else {
-          content = injectEnvVariable(content, 'VITE_API_BASE_URL', window.__ENV__.VITE_BASE_URL);
+          content = injectEnvVariable(content, 'VITE_API_BASE_URL', process.env.VITE_BASE_URL);
         }
       }
 

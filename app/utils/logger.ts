@@ -1,5 +1,6 @@
 export type DebugLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error';
 import { Chalk } from 'chalk';
+import '~/lib/config/env';
 
 const chalk = new Chalk({ level: 3 });
 
@@ -14,7 +15,7 @@ interface Logger {
   setLevel: (level: DebugLevel) => void;
 }
 
-let currentLevel: DebugLevel = (import.meta.env.VITE_LOG_LEVEL ?? import.meta.env.DEV) ? 'debug' : 'info';
+let currentLevel: DebugLevel = (process.env.NEXT_PUBLIC_LOG_LEVEL ?? process.env.DEV) ? 'debug' : 'info';
 
 export const logger: Logger = {
   trace: (...messages: any[]) => log('trace', undefined, messages),
@@ -37,7 +38,7 @@ export function createScopedLogger(scope: string): Logger {
 }
 
 function setLevel(level: DebugLevel) {
-  if ((level === 'trace' || level === 'debug') && import.meta.env.PROD) {
+  if ((level === 'trace' || level === 'debug') && process.env.PROD) {
     return;
   }
 
