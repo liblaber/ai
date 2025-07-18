@@ -9,6 +9,8 @@ import PluginManager, { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager'
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import { headers } from 'next/headers';
 import { auth } from '~/auth/auth-config';
+import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
+import { redirect, usePathname } from 'next/navigation';
 
 const inlineThemeCode = `
   setLiblabTheme();
@@ -22,7 +24,7 @@ export const metadata = {
   description: 'Build internal apps using AI',
 };
 
-async function getRootData() {
+async function getRootData(pathname: string) {
   try {
     // Get session from headers
     const headersList = await headers();
@@ -48,6 +50,10 @@ async function getRootData() {
 
       // Get available data source types
       dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
+
+      if (!dataSources.length && !pathname.includes(DATA_SOURCE_CONNECTION_ROUTE)) {
+        return redirect(DATA_SOURCE_CONNECTION_ROUTE);
+      }
     }
 
     return {
@@ -68,7 +74,8 @@ async function getRootData() {
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const rootData = await getRootData();
+  const pathname = usePathname();
+  const rootData = await getRootData(pathname);
 
   return (
     <html lang="en" data-theme="dark">

@@ -5,7 +5,7 @@ import { type Message } from 'ai';
 import { toast } from 'sonner';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { saveSnapshot, type SnapshotResponse } from '~/lib/persistence/snapshots';
-import { createCommandsMessage, detectProjectCommands } from '~/utils/projectCommands';
+import { createCommandsMessage, detectProjectCommandsFromFileMap } from '~/utils/projectCommands';
 import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import { getConversation, updateConversation } from '~/lib/persistence/conversations';
 import { pushToRemote } from '~/lib/stores/git';
@@ -58,17 +58,16 @@ export function useConversationHistory(id?: string) {
 
         await loadFileMapIntoContainer(snapshot.fileMap);
 
-        const projectCommands = await detectProjectCommands(snapshot.fileMap);
-        const projectCommandsMessage = projectCommands ? createCommandsMessage(projectCommands) : null;
-
-        if (projectCommandsMessage) {
-          setCommandMessage(projectCommandsMessage);
-        }
-
         setInitialMessages(conversation.messages);
 
         if (conversation.dataSourceId && conversation.dataSourceId !== selectedDataSourceId) {
           setSelectedDataSourceId(conversation.dataSourceId);
+        }
+
+        const projectCommands = await detectProjectCommandsFromFileMap(snapshot.fileMap);
+
+        if (projectCommands) {
+          setCommandMessage(createCommandsMessage(projectCommands));
         }
 
         chatId.set(conversation.id);
@@ -86,6 +85,7 @@ export function useConversationHistory(id?: string) {
     ready: !id || ready,
     initialMessages,
     commandMessage,
+    setCommandMessage,
     storeConversationHistory: async (
       lastMessageId: string,
       onSnapshotCreated?: (snapshotId: string, messageId: string) => void,

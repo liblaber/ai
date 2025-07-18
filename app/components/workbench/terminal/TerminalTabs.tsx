@@ -21,7 +21,7 @@ export const TerminalTabs = memo(() => {
   const terminalToggledByShortcut = useRef(false);
 
   const [activeTerminal, setActiveTerminal] = useState(0);
-  const [terminalCount, setTerminalCount] = useState(2);
+  const [terminalCount, setTerminalCount] = useState(1);
 
   const addTerminal = () => {
     if (terminalCount < MAX_TERMINALS) {

@@ -68,6 +68,30 @@ Local Machine ← Encrypted Response ← Secure Tunnel ← Preview Dashboard
 
 ---
 
+## 📈 Telemetry
+
+To help us improve liblab.ai, we collect anonymous usage events by default. This includes:
+
+- Whether the setup script completed successfully or with an error (including the actual error message)
+- Whether the development server started successfully or with an error (including the actual error message)
+- A unique, anonymous machine identifier (generated from hardware and OS info, never your name or email)
+
+**No sensitive data, database credentials, or personal information is ever collected.**
+
+Events are sent to [PostHog](https://posthog.com/) for analytics. This helps us understand how the open source project is used and where users encounter issues, so we can improve the experience.
+
+### How to Disable Telemetry
+
+Telemetry is enabled by default. To disable it, set the following in your `.env` file:
+
+```
+DISABLE_TELEMETRY=true
+```
+
+If you do not provide a `POSTHOG_API_KEY` in your `.env`, telemetry will also be disabled automatically.
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -302,6 +326,45 @@ These files are dynamically imported and used in the [`getAppsPrompt`](app/lib/c
 4. Set `STARTER=<your-starter>` in your `.env` file to use your new starter.
 
 > **Tip:** See the [default Next.js starter prompt](starters/next-starter/.liblab/prompt) for a comprehensive example of how to structure your starter's instructions.
+
+---
+
+## 🔧 Custom User Management
+
+liblab.ai supports custom user management implementations through a plugin system. You can override the default single-user behavior with your own multi-user or custom organization management logic.
+
+### How to Create a Custom Implementation
+
+1. Create a file at `app/lib/plugins/user-management/custom-user-management.ts`
+2. Export a class that implements the `UserManagementPlugin` interface:
+
+```typescript
+import type { UserManagementPlugin } from './user-management-plugin-manager';
+
+export default class CustomUserManagement implements UserManagementPlugin {
+  async createOrganizationFromEmail(email: string, userId: string): Promise<void> {
+    // Your custom logic here
+    // Example: Create multi-user organizations, domain-based grouping, etc.
+    // You can use the provided userService and organizationService to access database resources.
+  }
+}
+```
+
+**Note:** You can use the provided `userService` and `organizationService` classes to access and manage users and organizations in the database.
+
+### Built-in Implementations
+
+liblab.ai includes two built-in user management implementations:
+
+- **Single-User Management**: Default implementation for single-user + single-organization setups
+- **Multi-User Management**: Supports multiple users per organization with domain-based grouping
+
+### Use Cases
+
+- **Multi-User Organizations**: Support teams with multiple members and roles
+- **Domain-Based Grouping**: Automatically group users by email domain (e.g., company.com users join same org)
+- **Advanced Permissions**: Implement custom role-based access control
+- **Organization Management**: Custom logic for creating, managing, and organizing user groups
 
 ---
 

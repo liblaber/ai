@@ -1,6 +1,7 @@
 import { logger } from '~/utils/logger';
 import { generateObject, type LanguageModel } from 'ai';
 import { z } from 'zod';
+import { DataAccessor } from '@liblab/data-access/dataAccessor';
 
 const queryDecisionSchema = z.object({
   shouldUpdateSql: z.boolean(),
@@ -74,7 +75,7 @@ To generate the SQL queries, follow these steps:
 6. Use appropriate table joins if necessary.
 7. Optimize the queries for performance.
 8. Avoid using any tables or columns not present in the schema.
-9. If needed, parametrize the query using positional placeholders like $1, $2, etc.
+9. If needed, parametrize the query using positional placeholders like ${DataAccessor.getByDatabaseType(databaseType)?.preparedStatementPlaceholderExample}.
 10. Use the exact format and casing for explicit values in the query (e.g., use "SUPER_ADMIN" if values are {ADMIN, MEMBER, SUPER_ADMIN}).
 11. Provide a brief explanation for each query.
 12. Specify the response schema for each query, including selected column types and any explicit values, if present.

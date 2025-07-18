@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         name: 'Sample Database',
-        connectionString: 'sqlite://example.db',
+        connectionString: 'sqlite://sample.db',
       },
     });
 

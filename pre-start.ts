@@ -1,13 +1,17 @@
-require('dotenv').config();
+import { config } from 'dotenv';
+import { execSync } from 'child_process';
+import fs, { existsSync, readFileSync, unlinkSync } from 'fs';
+import { platform } from 'os';
+import 'dotenv/config';
+import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { normalizeError } from '~/lib/telemetry/error-utils';
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const os = require('os');
+config();
 
 const LOCALTUNNEL_LOG_FILE = './localtunnel.log';
 const LOCALTUNNEL_PROCESS_PORT = 3000;
 
-const setupLocaltunnelTunnel = () => {
+const setupLocaltunnelTunnel = (): string | null => {
   const port = 3000;
 
   try {
@@ -26,28 +30,32 @@ const setupLocaltunnelTunnel = () => {
     execSync('sleep 2');
 
     let attempts = 0;
-    let forwardingUrl;
+    let forwardingUrl: string | undefined;
 
     while (attempts < 10 && !forwardingUrl) {
       try {
-        const logContent = fs.readFileSync(LOCALTUNNEL_LOG_FILE, 'utf8');
+        const logContent = readFileSync(LOCALTUNNEL_LOG_FILE, 'utf8');
 
         const logLines = logContent.trim().split('\n');
 
         for (const line of logLines) {
           try {
-            // Look for the localtunnel URL in the log output
-            // localtunnel typically outputs something like: "your url is: https://abc123.loca.lt"
+            /*
+             * Look for the localtunnel URL in the log output
+             * localtunnel typically outputs something like: "your url is: https://abc123.loca.lt"
+             */
             if (line.includes('your url is:') || line.includes('https://')) {
               const urlMatch = line.match(/https:\/\/[^\s]+/);
+
               if (urlMatch) {
                 forwardingUrl = urlMatch[0];
                 break;
               }
             }
           } catch (e) {
-            console.error('Error parsing log line:', e.message);
-            console.error(e);
+            const error = e as Error;
+            console.error('Error parsing log line:', error.message);
+            console.error(error);
           }
         }
 
@@ -56,8 +64,9 @@ const setupLocaltunnelTunnel = () => {
           return forwardingUrl;
         }
       } catch (err) {
-        console.error('Error reading localtunnel log file:', err.message);
-        console.error(err);
+        const error = err as Error;
+        console.error('Error reading localtunnel log file:', error.message);
+        console.error(error);
       }
 
       console.log('Waiting for localtunnel URL...');
@@ -72,16 +81,18 @@ const setupLocaltunnelTunnel = () => {
 
     return forwardingUrl;
   } catch (error) {
-    console.error('Error setting up localtunnel:', error.message);
+    const err = error as Error;
+    console.error('Error setting up localtunnel:', err.message);
+
     return null;
   }
 };
 
-const killPreviousLocaltunnelProcessAndClearLogFile = () => {
+const killPreviousLocaltunnelProcessAndClearLogFile = (): void => {
   try {
-    let processId = null;
+    let processId: string | null = null;
 
-    if (os.platform() === 'win32') {
+    if (platform() === 'win32') {
       // Windows: Find process ID by port
       const result = execSync(`netstat -ano | findstr :${LOCALTUNNEL_PROCESS_PORT}`, {
         encoding: 'utf-8',
@@ -89,9 +100,12 @@ const killPreviousLocaltunnelProcessAndClearLogFile = () => {
       }).trim();
 
       if (result) {
-        processId = result.split(/\s+/).pop(); // Last column is the PID
-        execSync(`taskkill /PID ${processId} /F`);
-        console.log(`Killed process ${processId} on port ${LOCALTUNNEL_PROCESS_PORT}`);
+        processId = result.split(/\s+/).pop() || null; // Last column is the PID
+
+        if (processId) {
+          execSync(`taskkill /PID ${processId} /F`);
+          console.log(`Killed process ${processId} on port ${LOCALTUNNEL_PROCESS_PORT}`);
+        }
       }
     } else {
       // Unix/macOS: Find process ID and kill
@@ -103,21 +117,23 @@ const killPreviousLocaltunnelProcessAndClearLogFile = () => {
       }
     }
   } catch (error) {
-    console.warn(`No process found on port ${LOCALTUNNEL_PROCESS_PORT} or failed to kill:`, error.message);
+    const err = error as Error;
+    console.warn(`No process found on port ${LOCALTUNNEL_PROCESS_PORT} or failed to kill:`, err.message);
   }
 
   // Remove log file safely
   try {
-    if (fs.existsSync(LOCALTUNNEL_LOG_FILE)) {
-      fs.unlinkSync(LOCALTUNNEL_LOG_FILE);
+    if (existsSync(LOCALTUNNEL_LOG_FILE)) {
+      unlinkSync(LOCALTUNNEL_LOG_FILE);
       console.log(`🗡️ Deleted log file: ${LOCALTUNNEL_LOG_FILE}`);
     }
   } catch (error) {
-    console.error('Error deleting log file:', error.message);
+    const err = error as Error;
+    console.error('Error deleting log file:', err.message);
   }
 };
 
-const updateEnvFile = (localtunnelUrl) => {
+const updateEnvFile = (localtunnelUrl: string) => {
   try {
     let envContent = '';
 
@@ -145,7 +161,7 @@ const updateEnvFile = (localtunnelUrl) => {
   }
 };
 
-const runApp = async () => {
+const runApp = async (): Promise<void> => {
   console.log(`
 ★═══════════════════════════════════════★
           🦙 liblab builder 🦙
@@ -155,40 +171,24 @@ const runApp = async () => {
   // Run Prisma migrations
   console.log('⏳ Running Prisma migrations...');
 
-  try {
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-    console.log('✅ Prisma migrations completed successfully');
-  } catch (error) {
-    console.error('❌ Error running Prisma migrations:', error);
-    process.exit(1);
-  }
+  execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+  console.log('✅ Prisma migrations completed successfully');
 
-  if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
-    console.log('⏳ Setting up example database...');
+  if (process.env.VITE_ENV_NAME === 'local') {
+    console.log('⏳ Setting up sample database...');
 
-    try {
-      execSync('node scripts/setup-db.js', { stdio: 'inherit' });
-    } catch (error) {
-      console.error('❌ Error setting up example database:', error);
-      process.exit(1);
-    }
+    execSync('tsx scripts/setup-sample-db.ts', { stdio: 'inherit' });
 
     console.log('🌱 Running database seed...');
 
-    try {
-      execSync('npm run prisma:seed', { stdio: 'inherit' });
-      console.log('✅ Database seed completed successfully');
-    } catch (error) {
-      console.error('❌ Error running database seed:', error);
-      process.exit(1);
-    }
+    execSync('npm run prisma:seed', { stdio: 'inherit' });
 
-    console.log('⏳  Setting up localtunnel...');
+    console.log('✅ Database seed completed successfully');
 
-    const localtunnelUrl = setupLocaltunnelTunnel();
+    const url = setupLocaltunnelTunnel();
 
-    if (localtunnelUrl) {
-      updateEnvFile(localtunnelUrl);
+    if (url) {
+      updateEnvFile(url);
     }
   }
 
@@ -196,4 +196,38 @@ const runApp = async () => {
   console.log('★═══════════════════════════════════════★');
 };
 
-runApp();
+async function trackAppError(error: any) {
+  const telemetry = await getTelemetry();
+
+  try {
+    const errorInfo = normalizeError(error);
+
+    await telemetry.trackEvent({
+      eventType: TelemetryEventType.APP_ERROR,
+      properties: {
+        errorMessage: errorInfo.message,
+        error: errorInfo,
+      },
+    });
+
+    telemetry.shutdown();
+
+    // Leave some time for telemetry to flush the event before the process exits
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  } catch (telemetryError) {
+    console.warn('Failed to track start error:', (telemetryError as Error).message);
+  }
+}
+
+// Add error handling for the entire runApp function
+const runAppWithErrorHandling = async (): Promise<void> => {
+  try {
+    await runApp();
+  } catch (error) {
+    await trackAppError(error);
+
+    process.exit(1);
+  }
+};
+
+runAppWithErrorHandling();

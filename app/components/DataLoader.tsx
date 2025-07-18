@@ -9,6 +9,7 @@ import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useRouter } from 'next/navigation';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
 import type { PluginAccessMap } from '~/lib/plugins/types';
+import { useUserStore } from '~/lib/stores/user';
 
 export interface RootData {
   user: any;
@@ -33,6 +34,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
   const { setDataSources } = useDataSourcesStore();
   const { setPluginAccess } = usePluginStore();
   const { setDataSourceTypes } = useDataSourceTypesStore();
+  const { setUser } = useUserStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -53,6 +55,10 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     // Set data source types
     if (rootData.dataSourceTypes) {
       setDataSourceTypes(rootData.dataSourceTypes);
+    }
+
+    if (rootData.user) {
+      setUser(rootData.user);
     }
 
     // Redirect to data source connection if no data sources exist

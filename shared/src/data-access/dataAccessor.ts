@@ -15,4 +15,15 @@ export class DataAccessor {
 
     return new accessorClass();
   }
+
+  static getByDatabaseType(databaseType: string): BaseAccessor | null {
+    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor];
+    const accessorClass = allAccessors.find((acc: BaseAccessorConstructor) => acc.pluginId === databaseType);
+
+    if (!accessorClass) {
+      return null;
+    }
+
+    return new accessorClass();
+  }
 }
