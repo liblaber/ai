@@ -164,6 +164,7 @@
     "@types/dom-speech-recognition": "^0.0.4",
     "@types/file-saver": "^2.0.7",
     "@types/js-cookie": "^3.0.6",
+    "@types/node": "24.0.14",
     "@types/path-browserify": "^1.0.3",
     "@types/pg": "^8.11.11",
     "@types/react": "^18.3.12",
@@ -203,7 +204,23 @@
       "vite": "^6.2.7",
       "nanoid": "^3.3.11",
       "esbuild": "^0.25.4"
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "@parcel/watcher",
+      "@prisma/client",
+      "@prisma/engines",
+      "core-js",
+      "esbuild",
+      "netlify-cli",
+      "prisma",
+      "sharp",
+      "unix-dgram",
+      "workerd"
+    ],
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "sqlite3"
+    ]
   },
   "resolutions": {
     "@typescript-eslint/utils": "^8.0.0-alpha.30"

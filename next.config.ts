@@ -12,20 +12,27 @@ const nextConfig: NextConfig = {
       },
     },
   },
+
   // Enable TypeScript
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
+    /*
+     * !! WARN !!
+     * Dangerously allow production builds to successfully complete even if
+     * your project has type errors.
+     * !! WARN !!
+     */
     ignoreBuildErrors: true,
   },
+
   // Enable ESLint
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
+    /*
+     * Warning: This allows production builds to successfully complete even if
+     * your project has ESLint errors.
+     */
     ignoreDuringBuilds: true,
   },
+
   // Webpack configuration for node polyfills and other customizations
   webpack: (config, { isServer }) => {
     // Node polyfills for client-side
@@ -53,14 +60,9 @@ const nextConfig: NextConfig = {
     config.cache = false;
     config.plugins.push(UnoCSS());
 
-    // Handle Node.js built-in modules
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      buffer: require.resolve('buffer/'),
-    };
-
     return config;
   },
+
   // Image optimization
   images: {
     domains: ['localhost'],
@@ -71,10 +73,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
   // Environment variables
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
+
   // Redirects and rewrites
   async redirects() {
     return [
@@ -86,6 +90,7 @@ const nextConfig: NextConfig = {
       // Add any rewrites here
     ];
   },
+
   // Headers
   async headers() {
     return [
