@@ -15,6 +15,7 @@ import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from
 import { loadPreviousFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { useNavigate } from '@remix-run/react';
+import { PROJECT_SETUP_ANNOTATION } from '~/utils/constants';
 
 interface MessagesProps {
   id?: string;
@@ -98,7 +99,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
     };
 
     const shouldShowForkAction = (annotations: Message['annotations']) => {
-      return !isStreaming && !error && !annotations?.includes('project-setup');
+      return !isStreaming && !error && !annotations?.includes(PROJECT_SETUP_ANNOTATION);
     };
 
     return (

@@ -3,6 +3,7 @@ import { generateId } from './fileUtils';
 import type { File, FileMap } from '~/lib/stores/files';
 import { extractRelativePath } from '~/utils/diff';
 import { logger } from './logger';
+import { PROJECT_SETUP_ANNOTATION } from '~/utils/constants';
 
 export interface ProjectCommands {
   type: string;
@@ -76,7 +77,7 @@ ${commandString}
 </liblabArtifact>`,
     id: generateId(),
     createdAt: new Date(),
-    annotations: ['project-setup'],
+    annotations: [PROJECT_SETUP_ANNOTATION],
   };
 }
 
