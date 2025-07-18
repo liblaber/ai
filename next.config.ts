@@ -1,5 +1,24 @@
 import UnoCSS from 'unocss/webpack';
 import type { NextConfig } from 'next';
+import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+
+let hasTrackedStart = false;
+
+// Track app start when the config is loaded (development)
+if (!hasTrackedStart && process.env.NODE_ENV === 'development') {
+  hasTrackedStart = true;
+
+  // Use a small delay to ensure the server is actually starting
+  setTimeout(async () => {
+    try {
+      const telemetry = await getTelemetry();
+      await telemetry.trackEvent({ eventType: TelemetryEventType.APP_START_SUCCESS });
+      console.log('✅ App start tracked successfully');
+    } catch (error) {
+      console.error('❌ Failed to track app start success:', error);
+    }
+  }, 1000);
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
