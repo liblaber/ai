@@ -55,9 +55,6 @@ async function getRootData() {
       dataSources,
       pluginAccess,
       dataSourceTypes,
-      ENV: {
-        VITE_BASE_URL: process.env.VITE_BASE_URL,
-      },
     };
   } catch (error) {
     console.error('Error loading root data:', error);
@@ -66,9 +63,6 @@ async function getRootData() {
       dataSources: [],
       pluginAccess: FREE_PLUGIN_ACCESS,
       dataSourceTypes: [],
-      ENV: {
-        VITE_BASE_URL: process.env.VITE_BASE_URL,
-      },
     };
   }
 }
@@ -79,6 +73,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en" data-theme="dark">
       <head>
+        <title>{metadata.title}</title>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -90,11 +85,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" />
         <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.__ENV__ = ${JSON.stringify(rootData.ENV || {})}`,
-          }}
-        />
       </head>
       <body className="w-full h-full bg-liblab-elements-bg-depth-1">
         <ClientProviders rootData={rootData}>{children}</ClientProviders>

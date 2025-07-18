@@ -10,14 +10,6 @@ import { useRouter } from 'next/navigation';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
 import type { PluginAccessMap } from '~/lib/plugins/types';
 
-declare global {
-  interface Window {
-    __ENV__: {
-      [key: string]: string | undefined;
-    };
-  }
-}
-
 export interface RootData {
   user: any;
   dataSources: Array<{
@@ -29,7 +21,6 @@ export interface RootData {
   }>;
   pluginAccess: PluginAccessMap;
   dataSourceTypes: DataSourceType[];
-  ENV: Record<string, string | undefined>;
 }
 
 interface DataLoaderProps {
@@ -62,11 +53,6 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     // Set data source types
     if (rootData.dataSourceTypes) {
       setDataSourceTypes(rootData.dataSourceTypes);
-    }
-
-    // Set environment variables
-    if (rootData.ENV) {
-      window.__ENV__ = rootData.ENV;
     }
 
     // Redirect to data source connection if no data sources exist
