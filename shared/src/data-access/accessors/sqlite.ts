@@ -40,7 +40,7 @@ export class SQLiteAccessor implements BaseAccessor {
     }
   }
 
-  async executeQuery(query: string, params?: string[]): Promise<any[]> {
+  async executeQuery(query: string, params?: string[]): Promise<any> {
     if (!this._db) {
       throw new Error('Database connection not initialized. Please call initialize() first.');
     }
@@ -48,7 +48,10 @@ export class SQLiteAccessor implements BaseAccessor {
     try {
       const statement = this._db.prepare(query);
 
-      return params?.length ? statement.all(...params) : statement.all();
+      // Sqlite uses `all` method for read queries and `run` method for create/update/delete queries
+      const method = statement.reader ? 'all' : 'run';
+
+      return params?.length ? statement[method](...params) : statement[method]();
     } catch (error) {
       console.error('Error executing SQLite query:', error);
       throw new Error((error as Error)?.message || 'Failed to execute SQLite query');

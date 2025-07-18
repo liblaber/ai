@@ -10,7 +10,7 @@ export async function executeQuery(connectionUrl: string, query: string, params?
 
     return await dataAccessor.executeQuery(query, params);
   } catch (e) {
-    logger.error('Error executing query:', { error: e, query });
+    logger.error('Error executing query:', JSON.stringify(e), query);
     throw e;
   } finally {
     if (dataAccessor) {
