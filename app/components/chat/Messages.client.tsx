@@ -97,8 +97,8 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
       }
     };
 
-    const shouldShowForkAction = () => {
-      return !isStreaming && !error;
+    const shouldShowForkAction = (annotations: Message['annotations']) => {
+      return !isStreaming && !error && !annotations?.includes('project-setup');
     };
 
     return (
@@ -113,7 +113,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
               const isHidden = annotations?.includes('hidden');
 
               if (isHidden) {
-                return <Fragment key={index} />;
+                return <Fragment key={message.id} />;
               }
 
               return (
@@ -129,9 +129,10 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                   {isUserMessage && <ProfilePicture user={user} />}
                   <div className="grid grid-col-1 w-full">
                     {isUserMessage ? (
-                      <UserMessage content={content} />
+                      <UserMessage key={message.id} content={content} />
                     ) : (
                       <AssistantMessage
+                        key={message.id}
                         content={content}
                         annotations={message.annotations}
                         onRetry={onRetry}
@@ -153,7 +154,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                         </WithTooltip>
                       )}
 
-                      {shouldShowForkAction() && (
+                      {shouldShowForkAction(message.annotations) && (
                         <WithTooltip tooltip="Fork chat from this message">
                           <button
                             onClick={() => handleFork(messageId)}

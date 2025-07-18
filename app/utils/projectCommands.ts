@@ -76,6 +76,7 @@ ${commandString}
 </liblabArtifact>`,
     id: generateId(),
     createdAt: new Date(),
+    annotations: ['project-setup'],
   };
 }
 
