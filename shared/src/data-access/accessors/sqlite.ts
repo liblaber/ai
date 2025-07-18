@@ -2,7 +2,7 @@ import type { Database as SQLiteDatabase } from 'better-sqlite3';
 import Database from 'better-sqlite3';
 import type { BaseAccessor } from '../baseAccessor';
 import type { Column, Table } from '../../types';
-import { EXAMPLE_DB_ENUM_VALUES } from '@liblab/utils/example-db-enum-values';
+import { EXAMPLE_DB_ENUM_VALUES } from '../../utils/example-db-enum-values';
 
 interface SQLiteColumn {
   name: string;
