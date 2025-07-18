@@ -11,7 +11,6 @@ const messageParser = new StreamingMessageParser({
     onArtifactOpen: (data) => {
       logger.trace('onArtifactOpen', data);
 
-      workbenchStore.showWorkbench.set(true);
       workbenchStore.addArtifact(data);
     },
     onArtifactClose: (data) => {
