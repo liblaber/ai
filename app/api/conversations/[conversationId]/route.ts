@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       include: {
         messages: {
           include: {
-            Snapshot: {
+            snapshot: {
               select: {
                 id: true,
               },

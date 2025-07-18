@@ -49,12 +49,16 @@ export const conversationService = {
         description: true,
         starterId: true,
         dataSourceId: true,
+        snapshots: true,
         userId: true,
         createdAt: true,
         updatedAt: true,
       },
       where: {
         userId,
+        snapshots: {
+          some: {},
+        },
       },
       orderBy: {
         createdAt: 'desc',

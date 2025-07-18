@@ -24,7 +24,7 @@ export async function POST(
       messages: {
         select: {
           id: true,
-          Snapshot: {
+          snapshot: {
             select: {
               id: true,
             },
@@ -66,7 +66,7 @@ export async function POST(
 
     const messagesToDelete = conversation.messages.slice(messageIndex + 1);
     const messageIds = messagesToDelete.map((msg) => msg.id);
-    const snapshotIds = messagesToDelete.filter((msg) => msg.Snapshot).map((msg) => msg.Snapshot!.id);
+    const snapshotIds = messagesToDelete.filter((msg) => msg.snapshot).map((msg) => msg.snapshot!.id);
 
     if (messageIds.length > 0) {
       await messageService.deleteManyWithSnapshots(messageIds);

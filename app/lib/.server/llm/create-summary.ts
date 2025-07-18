@@ -66,9 +66,10 @@ ${summary.summary}`;
       ? (message.content.find((item) => item.type === 'text')?.text as string) || ''
       : message.content;
 
-  // select files from the list of code file from the project that might be useful for the current request from the user
-  const resp = await generateText({
-    system: `
+  try {
+    // select files from the list of code file from the project that might be useful for the current request from the user
+    const resp = await generateText({
+      system: `
         You are a software engineer. You are working on a project. you need to summarize the work till now and provide a summary of the chat till now.
 
         Please only use the following format to generate the summary:
@@ -126,7 +127,7 @@ Note:
         * DO not need to think too much just start writing imidiately
         * do not write any thing other that the summary with with the provided structure
         `,
-    prompt: `
+      prompt: `
 
 Here is the previous summary of the chat:
 <old_summary>
@@ -146,18 +147,22 @@ ${slicedMessages
 
 Please provide a summary of the chat till now including the hitorical summary of the chat.
 `,
-    model: provider.getModelInstance({
-      model: currentModel,
-      serverEnv,
-      apiKeys,
-    }),
-  });
+      model: provider.getModelInstance({
+        model: currentModel,
+        serverEnv,
+        apiKeys,
+      }),
+    });
 
-  const response = resp.text;
+    const response = resp.text;
 
-  if (onFinish) {
-    onFinish(resp);
+    if (onFinish) {
+      onFinish(resp);
+    }
+
+    return response;
+  } catch (error) {
+    logger.error(error);
+    throw error;
   }
-
-  return response;
 }

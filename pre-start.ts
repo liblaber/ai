@@ -174,7 +174,7 @@ const runApp = async (): Promise<void> => {
   execSync('npx prisma migrate deploy', { stdio: 'inherit' });
   console.log('✅ Prisma migrations completed successfully');
 
-  if (process.env.VITE_ENV_NAME === 'local') {
+  if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
     console.log('⏳ Setting up sample database...');
 
     execSync('tsx scripts/setup-sample-db.ts', { stdio: 'inherit' });

@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import type { ControlProps, OptionProps, StylesConfig } from 'react-select';
 import Select, { components } from 'react-select';
 
@@ -7,6 +9,21 @@ export interface SelectOption {
   label: string;
   icon?: React.ReactNode;
   [key: string]: any;
+}
+
+// Client-only wrapper to prevent hydration mismatches
+function ClientOnly({ children }: { children: React.ReactNode }) {
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  if (!hasMounted) {
+    return null;
+  }
+
+  return <>{children}</>;
 }
 
 const Option = ({ children, ...props }: OptionProps<SelectOption>) => {
@@ -21,7 +38,7 @@ const Option = ({ children, ...props }: OptionProps<SelectOption>) => {
   );
 };
 
-interface ControlWithIconProps extends ControlProps<SelectOption> {
+interface ControlWithIconProps extends ControlProps<any> {
   controlIcon?: React.ReactNode;
 }
 
@@ -198,7 +215,7 @@ export const BaseSelect = <T extends SelectOption = SelectOption>({
   isDisabled = false,
   className = '',
   width = '200px',
-  minWidth,
+  minWidth = '200px',
   menuPlacement = 'auto',
   menuPosition = 'absolute',
   components: customComponents,
@@ -206,47 +223,32 @@ export const BaseSelect = <T extends SelectOption = SelectOption>({
   controlIcon,
 }: SelectProps<T>) => {
   const defaultStyles = createDefaultStyles<T>();
-  const mergedStyles: StylesConfig<T, false> = {
-    ...defaultStyles,
-    ...customStyles,
-    control: (base: any, state: any) => ({
-      ...defaultStyles.control?.(base, state),
-      ...customStyles?.control?.(base, state),
-      minWidth,
-      width,
-    }),
-    menu: (base: any, state: any) => ({
-      ...defaultStyles.menu?.(base, state),
-      ...customStyles?.menu?.(base, state),
-    }),
-    menuList: (base: any, state: any) => ({
-      ...defaultStyles.menuList?.(base, state),
-      ...customStyles?.menuList?.(base, state),
-    }),
-  };
+  const mergedStyles = { ...defaultStyles, ...customStyles };
 
-  const mergedComponents = {
-    Control: (props: ControlWithIconProps) => <Control {...props} controlIcon={controlIcon} />,
+  const defaultComponents = {
     Option,
+    ...(controlIcon && { Control: (props: any) => <Control {...props} controlIcon={controlIcon} /> }),
     ...customComponents,
   };
 
   return (
-    <Select
-      value={value}
-      onChange={onChange}
-      options={options}
-      placeholder={placeholder}
-      isSearchable={isSearchable}
-      isClearable={isClearable}
-      isDisabled={isDisabled}
-      className={className}
-      classNamePrefix="baseSelect"
-      menuPlacement={menuPlacement}
-      menuPosition={menuPosition}
-      components={mergedComponents}
-      styles={mergedStyles}
-      instanceId="data-source-select"
-    />
+    <ClientOnly>
+      <div style={{ width, minWidth }}>
+        <Select<T>
+          value={value}
+          onChange={onChange}
+          options={options}
+          placeholder={placeholder}
+          isSearchable={isSearchable}
+          isClearable={isClearable}
+          isDisabled={isDisabled}
+          className={className}
+          styles={mergedStyles}
+          components={defaultComponents}
+          menuPlacement={menuPlacement}
+          menuPosition={menuPosition}
+        />
+      </div>
+    </ClientOnly>
   );
 };

@@ -61,6 +61,20 @@ export const getLatestSnapshot = async (conversationId: string): Promise<Snapsho
   }
 };
 
+export const getLatestSnapshotOrNull = async (conversationId: string): Promise<SnapshotResponse | null> => {
+  try {
+    const response = await fetch(`/api/conversations/${conversationId}/snapshots/latest`);
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as SnapshotResponse;
+  } catch {
+    return null;
+  }
+};
+
 export const rewindToSnapshot = async (conversationId: string, snapshotId: string): Promise<void> => {
   const response = await fetch(`/api/conversations/${conversationId}/snapshots/${snapshotId}/rewind`, {
     method: 'POST',

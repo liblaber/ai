@@ -1,4 +1,4 @@
-import { requireAuth } from '~//auth/auth-middleware';
+import { requireAuth } from '~/auth/auth-middleware';
 import ChatRoute from '~/chat/page';
 
 interface PageProps {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Dialog, DialogClose, DialogRoot } from '~/components/ui/Dialog';
+import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import AddDataSourceForm from './forms/AddDataSourceForm';
 import EditDataSourceForm from './forms/EditDataSourceForm';
 import { classNames } from '~/utils/classNames';
@@ -300,7 +300,7 @@ export default function DataTab() {
                     <div className="i-ph:trash-duotone text-liblab-elements-textTertiary" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-medium text-liblab-elements-textPrimary">Delete Data Source</h3>
+                    <DialogTitle>Delete Data Source</DialogTitle>
                     <p className="text-sm text-liblab-elements-textSecondary">This action cannot be undone</p>
                   </div>
                 </div>

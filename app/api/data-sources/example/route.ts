@@ -1,6 +1,6 @@
-import { prisma } from '~//lib/prisma';
+import { prisma } from '~/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { requireUserId } from '~//auth/session';
+import { requireUserId } from '~/auth/session';
 
 export async function POST(request: NextRequest) {
   const userId = await requireUserId(request);

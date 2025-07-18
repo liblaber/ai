@@ -10,7 +10,8 @@ import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-p
 import { headers } from 'next/headers';
 import { auth } from '~/auth/auth-config';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
-import { redirect, usePathname } from 'next/navigation';
+import { redirect } from 'next/navigation';
+import { logger } from '~/utils/logger';
 
 const inlineThemeCode = `
   setLiblabTheme();
@@ -24,7 +25,7 @@ export const metadata = {
   description: 'Build internal apps using AI',
 };
 
-async function getRootData(pathname: string) {
+async function getRootData() {
   try {
     // Get session from headers
     const headersList = await headers();
@@ -51,8 +52,16 @@ async function getRootData(pathname: string) {
       // Get available data source types
       dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
 
-      if (!dataSources.length && !pathname.includes(DATA_SOURCE_CONNECTION_ROUTE)) {
-        return redirect(DATA_SOURCE_CONNECTION_ROUTE);
+      const url = headersList.get('x-url');
+
+      if (!dataSources.length && !url?.includes(DATA_SOURCE_CONNECTION_ROUTE)) {
+        try {
+          return redirect(DATA_SOURCE_CONNECTION_ROUTE);
+        } catch (error) {
+          logger.info('Redirecting to data source connection route failed:', error);
+        }
+
+        // return redirect(DATA_SOURCE_CONNECTION_ROUTE);
       }
     }
 
@@ -74,8 +83,8 @@ async function getRootData(pathname: string) {
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const rootData = await getRootData(pathname);
+  // const pathname = usePathname();/
+  const rootData = await getRootData();
 
   return (
     <html lang="en" data-theme="dark">
