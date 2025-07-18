@@ -7,6 +7,7 @@ import type {
   PluginId,
   PluginType,
   StarterPluginId,
+  UserManagementPluginId,
 } from '~/lib/plugins/types';
 import { PluginType as PluginTypeValue } from '~/lib/plugins/types';
 
@@ -26,6 +27,8 @@ export const usePluginStore = create<PluginStoreState>()((set, get) => ({
       return get().pluginAccess[pluginType][pluginId as AuthPluginId];
     } else if (pluginType === PluginTypeValue.STARTER) {
       return get().pluginAccess[pluginType][pluginId as StarterPluginId];
+    } else if (pluginType === PluginTypeValue.USER_MANAGEMENT) {
+      return get().pluginAccess[pluginType][pluginId as UserManagementPluginId];
     }
 
     return false;

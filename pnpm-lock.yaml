@@ -219,6 +219,9 @@ importers:
       framer-motion:
         specifier: ^11.12.0
         version: 11.18.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      free-email-domains-typescript:
+        specifier: ^1.0.13
+        version: 1.0.13
       iconsax-reactjs:
         specifier: ^0.0.8
         version: 0.0.8(react@18.3.1)
@@ -5487,6 +5490,9 @@ packages:
         optional: true
       react-dom:
         optional: true
+
+  free-email-domains-typescript@1.0.13:
+    resolution: {integrity: sha512-FOj5ND0g9ydqan4yjhkxQryIwXnmMrVq1jMHAttcNz7eTjGuS0jsQtjr2GvxUYfppuTwZwlFqK0frAdSSn7O8w==}
 
   fresh@0.5.2:
     resolution: {integrity: sha512-zJ2mQYM18rEFOudeV4GShTGIQ7RbzA7ozbU9I/XBpm7kqgMywgmylMwXHxZJmkVoYkna9d2pVXVXPdYTP9ej8Q==}
@@ -16086,6 +16092,8 @@ snapshots:
     optionalDependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  free-email-domains-typescript@1.0.13: {}
 
   fresh@0.5.2: {}
 
