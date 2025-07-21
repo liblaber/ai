@@ -29,7 +29,7 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
     const fileName = key.startsWith(webContainer.workdir) ? key.replace(webContainer.workdir, '') : key;
 
     if (fileName === '.env' && process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
-      const tunnelForwardingUrl = process.env.NEXT_PUBLIC_ENV_NAME;
+      const tunnelForwardingUrl = process.env.NEXT_PUBLIC_TUNNEL_FORWARDING_URL;
       value.content = injectEnvVariable(
         value.content,
         'VITE_API_BASE_URL',
