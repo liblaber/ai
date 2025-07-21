@@ -3,7 +3,6 @@ import { MultiUserManagement } from './multi-user-management';
 import PluginManager from '~/lib/plugins/plugin-manager';
 import { PluginType, type UserManagementPluginId } from '~/lib/plugins/types';
 
-// const DEFAULT_PLUGIN_PATH = 'fo';
 export interface UserManagementPlugin {
   createOrganizationFromEmail(email: string, userId: string): Promise<void>;
 }
