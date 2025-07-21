@@ -19,7 +19,7 @@ type MessageResponse = {
   } | null;
 };
 
-type MessageRequest = MessageResponse;
+type MessageRequest = Omit<MessageResponse, 'snapshot'>;
 
 type ConversationResponse = {
   id: string;
@@ -159,7 +159,10 @@ export async function forkConversation(conversationId: string, messageId: string
     throw new Error('Message not found');
   }
 
-  const messages = conversation.messagesResponse.slice(0, messageIndex + 1);
+  const messages = conversation.messagesResponse.slice(0, messageIndex + 1).map((message) => ({
+    ...message,
+    snapshot: undefined,
+  }));
 
   return createConversation(conversation.dataSourceId, messages);
 }
