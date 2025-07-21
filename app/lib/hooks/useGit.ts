@@ -1,3 +1,5 @@
+'use client';
+
 import type { WebContainer } from '@webcontainer/api';
 import { type MutableRefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { webcontainer as webcontainerPromise } from '~/lib/webcontainer';

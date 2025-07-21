@@ -1,3 +1,5 @@
+'use client';
+
 import { useStore } from '@nanostores/react';
 import { useEffect } from 'react';
 import { type Shortcuts, shortcutsStore } from '~/lib/stores/settings';

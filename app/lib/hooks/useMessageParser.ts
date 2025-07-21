@@ -1,3 +1,5 @@
+'use client';
+
 import type { Message } from '@ai-sdk/react';
 import { useCallback, useState } from 'react';
 import { NO_EXECUTE_ACTION_ANNOTATION, StreamingMessageParser } from '~/lib/runtime/message-parser';

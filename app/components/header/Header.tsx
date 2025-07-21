@@ -1,3 +1,4 @@
+'use client';
 import { useStore } from '@nanostores/react';
 import { ClientOnly } from '~/components/ui/ClientOnly';
 import { chatStore } from '~/lib/stores/chat';

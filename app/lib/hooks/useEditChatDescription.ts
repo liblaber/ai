@@ -1,3 +1,5 @@
+'use client';
+
 import { useStore } from '@nanostores/react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';

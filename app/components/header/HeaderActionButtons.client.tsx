@@ -1,3 +1,4 @@
+'use client';
 import { useStore } from '@nanostores/react';
 import { toast } from 'sonner';
 import useViewport from '~/lib/hooks';

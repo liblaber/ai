@@ -1,3 +1,4 @@
+'use client';
 import React, { useEffect } from 'react';
 import { signIn, useSession } from '~/auth/auth-client';
 import {

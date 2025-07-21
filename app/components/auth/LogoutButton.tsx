@@ -1,3 +1,4 @@
+'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { signOut, useSession } from '~/auth/auth-client';
 import { useRouter } from 'next/navigation';
