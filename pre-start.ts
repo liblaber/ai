@@ -5,6 +5,7 @@ import { platform } from 'os';
 import 'dotenv/config';
 import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
 import { normalizeError } from '~/lib/telemetry/error-utils';
+import { getInstanceId } from '~/lib/instance-id';
 
 config();
 
@@ -197,7 +198,8 @@ const runApp = async (): Promise<void> => {
 };
 
 async function trackAppError(error: any) {
-  const telemetry = await getTelemetry();
+  const instanceId = getInstanceId();
+  const telemetry = await getTelemetry(instanceId);
 
   try {
     const errorInfo = normalizeError(error);

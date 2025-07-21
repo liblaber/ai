@@ -86,7 +86,7 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
       } else if (previousFile.type === 'file') {
         let content = previousFile.content;
 
-        if (filePath === '.env' && process.env.NEXT_PUBLIC_TUNNEL_FORWARDING_URL === 'local') {
+        if (filePath === '.env' && process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
           const tunnelForwardingUrl = process.env.NEXT_PUBLIC_TUNNEL_FORWARDING_URL;
           content = injectEnvVariable(
             content,

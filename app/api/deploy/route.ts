@@ -397,6 +397,22 @@ export async function POST(request: NextRequest) {
               error: error instanceof Error ? error.message : 'Unknown error',
             }),
           );
+          await writer.write(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                step: 4,
+                totalSteps: 6,
+                message: 'Failed to configure netlify',
+                status: 'error',
+                error: {
+                  code: 'SITE_CONFIGURATION_FAILED',
+                  message: error instanceof Error ? error.message : 'Failed to configure netlify',
+                },
+              })}\n\n`,
+            ),
+          );
+          await safeCloseWriter();
+
           throw new Error('Failed to configure Netlify');
         }
 
