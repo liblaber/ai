@@ -158,8 +158,6 @@ const runApp = async (): Promise<void> => {
 
     execSync('npm run prisma:seed', { stdio: 'inherit' });
 
-    console.log('✅ Database seed completed successfully');
-
     const ngrokUrl = setupNgrokTunnel();
 
     if (ngrokUrl) {
