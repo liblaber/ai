@@ -57,7 +57,7 @@ export class LLMManager {
       }
     }
 
-    const availableProvidersList = availableProviders.join(', ');
+    const availableProvidersList = availableProviders.sort().join(', ');
     throw new Error(
       `The provider "${providerName}" set in DEFAULT_LLM_PROVIDER environment variable is invalid.\n\nPlease use one of the available providers: \n\n${availableProvidersList}`,
     );
