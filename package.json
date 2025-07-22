@@ -7,7 +7,7 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "setup": "tsx setup.ts",
+    "setup": "tsx setup.ts && sh scripts/run-dev-prompt.sh",
     "build": "remix vite:build",
     "dev": "tsx pre-start.ts && remix vite:dev",
     "test": "vitest --run",
