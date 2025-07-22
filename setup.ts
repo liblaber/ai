@@ -20,7 +20,6 @@ const runSetup = async (): Promise<void> => {
     try {
       const telemetry = await getTelemetry(instanceId);
       await telemetry.trackEvent({ eventType: TelemetryEventType.SETUP_SUCCESS });
-      console.log('✅ Setup completed successfully and telemetry event tracked');
     } catch (telemetryError) {
       console.warn('Failed to track setup success:', (telemetryError as Error).message);
     }

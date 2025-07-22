@@ -43,7 +43,7 @@ export function useShortcuts(): void {
       }
 
       // Debug logging in development only
-      if (process.env.DEV) {
+      if (process.env.NODE_ENV === 'development') {
         console.log('Key pressed:', {
           key: event.key,
           code: event.code,
@@ -62,7 +62,7 @@ export function useShortcuts(): void {
 
         // Handle ctrlOrMetaKey based on OS
         const ctrlOrMetaKeyMatches = shortcut.ctrlOrMetaKey
-          ? (isMac && event.metaKey) || (!isMac && event.ctrlKey)
+          ? (isMac() && event.metaKey) || (!isMac() && event.ctrlKey)
           : true;
 
         const modifiersMatch =

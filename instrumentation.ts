@@ -8,7 +8,6 @@ export function register() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ eventType: 'app_start_success' }),
         });
-        console.log('✅ App start tracked successfully');
       } catch (error) {
         console.error('❌ Failed to track app start success:', error);
       }
