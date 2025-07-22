@@ -1,17 +1,21 @@
-import { requireAuth } from '~/auth/auth-middleware';
+'use client';
 import { Background } from '~/components/ui/Background';
 import { Header } from '~/components/header/Header';
 import { Chat } from '~/components/chat/Chat.client';
+import { useSession } from '~/auth/auth-client';
+import { redirect } from 'next/navigation';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function ChatIdPage({ params }: PageProps) {
-  // Ensure authentication
-  await requireAuth();
-
   const { id } = await params;
+  const session = useSession();
+
+  if (!session) {
+    redirect('/');
+  }
 
   // Pass the ID to the main chat component
   return (
