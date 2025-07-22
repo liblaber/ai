@@ -2,8 +2,6 @@
 import { Background } from '~/components/ui/Background';
 import { Header } from '~/components/header/Header';
 import { Chat } from '~/components/chat/Chat.client';
-import { useSession } from '~/auth/auth-client';
-import { redirect } from 'next/navigation';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -11,11 +9,6 @@ interface PageProps {
 
 export default async function ChatIdPage({ params }: PageProps) {
   const { id } = await params;
-  const session = useSession();
-
-  if (!session) {
-    redirect('/');
-  }
 
   // Pass the ID to the main chat component
   return (
