@@ -53,13 +53,13 @@ export abstract class BaseProvider implements ProviderInfo {
       apiKey,
     };
   }
+
   getModelsFromCache(options: {
     apiKeys?: Record<string, string>;
     providerSettings?: Record<string, IProviderSetting>;
     serverEnv?: Record<string, string>;
   }): ModelInfo[] | null {
     if (!this.cachedDynamicModels) {
-      // console.log('no dynamic models',this.name);
       return null;
     }
 
@@ -67,13 +67,13 @@ export abstract class BaseProvider implements ProviderInfo {
     const generatedCacheKey = this.getDynamicModelsCacheKey(options);
 
     if (cacheKey !== generatedCacheKey) {
-      // console.log('cache key mismatch',this.name,cacheKey,generatedCacheKey);
       this.cachedDynamicModels = undefined;
       return null;
     }
 
     return this.cachedDynamicModels.models;
   }
+
   getDynamicModelsCacheKey(options: {
     apiKeys?: Record<string, string>;
     providerSettings?: Record<string, IProviderSetting>;
@@ -85,6 +85,7 @@ export abstract class BaseProvider implements ProviderInfo {
       serverEnv: options.serverEnv,
     });
   }
+
   storeDynamicModels(
     options: {
       apiKeys?: Record<string, string>;
@@ -95,7 +96,6 @@ export abstract class BaseProvider implements ProviderInfo {
   ) {
     const cacheId = this.getDynamicModelsCacheKey(options);
 
-    // console.log('caching dynamic models',this.name,cacheId);
     this.cachedDynamicModels = {
       cacheId,
       models,

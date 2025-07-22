@@ -116,7 +116,7 @@ ${props.summary}
 
   if (
     isFirstUserMessage(processedMessages) ||
-    (await shouldGenerateSqlQueries(lastUserMessage, llm.instance, llm.maxTokens, existingQueries))
+    (await shouldGenerateSqlQueries(lastUserMessage, llm.instance, existingQueries))
   ) {
     const userId = await requireUserId(request);
     const schema = await getDatabaseSchema(currentDataSourceId, userId);
@@ -125,14 +125,7 @@ ${props.summary}
     const connectionDetails = new URL(dataSource.connectionString);
     const type = connectionDetails.protocol.replace(':', '');
 
-    const sqlQueries = await generateSqlQueries(
-      schema,
-      lastUserMessage,
-      llm.instance,
-      llm.maxTokens,
-      type,
-      existingQueries,
-    );
+    const sqlQueries = await generateSqlQueries(schema, lastUserMessage, llm.instance, type, existingQueries);
 
     if (sqlQueries?.length) {
       logger.debug(`Adding SQL queries as the hidden user message`);
@@ -145,12 +138,11 @@ ${props.summary}
     }
   }
 
-  logger.info(`Sending llm call to ${provider.name} with model ${llm.details.name}`);
+  logger.info(`Sending llm call to ${provider.name} with model ${llm.instance.modelId}`);
 
   return _streamText({
     model: llm.instance,
     system: systemPrompt,
-    maxTokens: llm.maxTokens,
     messages: convertToCoreMessages(processedMessages as any),
     ...options,
   });

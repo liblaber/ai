@@ -45,7 +45,6 @@ export async function generateSqlQueries(
   schema: Table[],
   userPrompt: string,
   model: LanguageModel,
-  maxTokens: number,
   databaseType: string,
   existingQueries?: string[],
 ): Promise<SqlQueryOutput | undefined> {
@@ -121,7 +120,6 @@ ${userPrompt}
       schema: sqlQueriesSchema,
       model,
       system: systemPrompt,
-      maxTokens,
       messages: [{ role: 'user', content: userPrompt }],
     });
 
@@ -192,7 +190,6 @@ function formatDbSchemaForLLM(schema: any): string {
 export async function shouldGenerateSqlQueries(
   userPrompt: string,
   model: LanguageModel,
-  maxTokens: number,
   existingQueries?: string[],
 ): Promise<boolean> {
   logger.info(`Deciding should SQL be generated for prompt: ${userPrompt} using model: ${model.modelId}`);
@@ -240,7 +237,6 @@ Remember, your task is to determine if SQL updates are necessary based on the us
       model,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
-      maxTokens,
     });
 
     if (!result?.object) {

@@ -34,7 +34,7 @@ export const action: ActionFunction = async ({ request }) => {
     const connectionDetails = new URL(dataSource.connectionString);
     const type = connectionDetails.protocol.replace(':', '');
 
-    const queries = await generateSqlQueries(schema, prompt, llm.instance, llm.maxTokens, type, existingQueries);
+    const queries = await generateSqlQueries(schema, prompt, llm.instance, type, existingQueries);
 
     if (!queries || queries.length === 0) {
       return json({ error: 'Failed to generate SQL query' }, { status: 500 });
