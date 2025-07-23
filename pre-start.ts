@@ -25,7 +25,7 @@ const setupLocaltunnelTunnel = (): string | null => {
   try {
     console.log(`⚙️ Setting up localtunnel for port ${port}...`);
 
-    execSync(`lt --port ${port} --log=stdout > ${LOCALTUNNEL_LOG_FILE} 2>&1 &`);
+    execSync(`lt -h "http://serverless.social" -p ${port} --log=stdout > ${LOCALTUNNEL_LOG_FILE} 2>&1 &`);
 
     console.log('⏳  Waiting for localtunnel to initialize...');
     execSync('sleep 2');
