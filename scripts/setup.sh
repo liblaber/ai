@@ -189,11 +189,6 @@ if ! grep -q "^ANTHROPIC_API_KEY=." .env; then
     fi
 fi
 
-# Install dependencies
-echo "📋 Installing dependencies..."
-pnpm install
-echo "✅ Dependencies installed successfully."
-
 # Generate Prisma client
 echo "📋 Generating Prisma client..."
 npx prisma generate
