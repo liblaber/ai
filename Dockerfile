@@ -23,8 +23,6 @@ FROM base AS production
 
 WORKDIR /app
 
-# RUN NODE_OPTIONS="--max_old_space_size=4096" pnpm run build
-
 RUN mkdir -p ${WORKDIR}/run
 
 CMD ["pnpm", "run", "prod"]
