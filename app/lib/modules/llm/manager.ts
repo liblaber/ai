@@ -42,11 +42,13 @@ export class LLMManager {
 
   private _initializeProvider() {
     const providerName = this._defaultProvider;
+    const availableProviders: string[] = [];
 
     // Look for the provider in the registry
     for (const exportedItem of Object.values(providers)) {
       if (typeof exportedItem === 'function' && exportedItem.prototype instanceof BaseProvider) {
         const provider = new exportedItem();
+        availableProviders.push(provider.name);
 
         if (provider.name === providerName) {
           this._provider = provider;
@@ -55,6 +57,9 @@ export class LLMManager {
       }
     }
 
-    throw new Error(`Provider ${providerName} not found in registry`);
+    const availableProvidersList = availableProviders.sort().join(', ');
+    throw new Error(
+      `The provider "${providerName}" set in DEFAULT_LLM_PROVIDER environment variable is invalid.\n\nPlease use one of the available providers: \n\n${availableProvidersList}`,
+    );
   }
 }
