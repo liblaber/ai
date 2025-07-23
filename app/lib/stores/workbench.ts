@@ -1,3 +1,4 @@
+'use client';
 import { atom, map, type MapStore, type ReadableAtom, type WritableAtom } from 'nanostores';
 import type { EditorDocument, ScrollPosition } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { ActionRunner } from '~/lib/runtime/action-runner';
@@ -41,14 +42,6 @@ type Artifacts = MapStore<Record<string, ArtifactState>>;
 export type WorkbenchViewType = 'code' | 'diff' | 'preview';
 
 export class WorkbenchStore {
-  #previewsStore = new PreviewsStore(webcontainer);
-  #filesStore = new FilesStore(webcontainer);
-  #editorStore = new EditorStore(this.#filesStore);
-  #terminalStore = new TerminalStore();
-
-  #reloadedMessages = new Set<string>();
-  #mostRecentCommitMessage: string | undefined;
-
   artifacts: Artifacts = import.meta.hot?.data.artifacts ?? map({});
   showWorkbench: WritableAtom<boolean> = import.meta.hot?.data.showWorkbench ?? atom(false);
   currentView: WritableAtom<WorkbenchViewType> = import.meta.hot?.data.currentView ?? atom('code');
@@ -57,33 +50,24 @@ export class WorkbenchStore {
     import.meta.hot?.data.actionAlert ?? atom<ActionAlert | undefined>(undefined);
   modifiedFiles = new Set<string>();
   artifactIdList: string[] = [];
-  #globalExecutionQueue = Promise.resolve();
   startCommand = atom<string>(DEFAULT_START_APP_COMMAND);
+  actionStreamSampler = createSampler(async (data: ActionCallbackData, isStreaming: boolean = false) => {
+    return await this._runAction(data, isStreaming);
+  }, 100);
+  #previewsStore = new PreviewsStore(webcontainer);
+  #filesStore = new FilesStore(webcontainer);
+  #editorStore = new EditorStore(this.#filesStore);
+  #terminalStore = new TerminalStore();
+  #reloadedMessages = new Set<string>();
+  #mostRecentCommitMessage: string | undefined;
+  #globalExecutionQueue = Promise.resolve();
 
   get mostRecentCommitMessage() {
     return this.#mostRecentCommitMessage || 'liblab ai syncing files';
   }
 
-  setMostRecentCommitMessage(message: string) {
-    this.#mostRecentCommitMessage = message;
-  }
-
   get previewsStore() {
     return this.#previewsStore;
-  }
-
-  constructor() {
-    if (import.meta.hot) {
-      import.meta.hot.data.artifacts = this.artifacts;
-      import.meta.hot.data.unsavedFiles = this.unsavedFiles;
-      import.meta.hot.data.showWorkbench = this.showWorkbench;
-      import.meta.hot.data.currentView = this.currentView;
-      import.meta.hot.data.actionAlert = this.actionAlert;
-    }
-  }
-
-  addToExecutionQueue(callback: () => Promise<void>) {
-    this.#globalExecutionQueue = this.#globalExecutionQueue.then(() => callback());
   }
 
   get previews() {
@@ -121,6 +105,25 @@ export class WorkbenchStore {
   get alert() {
     return this.actionAlert;
   }
+
+  constructor() {
+    if (import.meta.hot) {
+      import.meta.hot.data.artifacts = this.artifacts;
+      import.meta.hot.data.unsavedFiles = this.unsavedFiles;
+      import.meta.hot.data.showWorkbench = this.showWorkbench;
+      import.meta.hot.data.currentView = this.currentView;
+      import.meta.hot.data.actionAlert = this.actionAlert;
+    }
+  }
+
+  setMostRecentCommitMessage(message: string) {
+    this.#mostRecentCommitMessage = message;
+  }
+
+  addToExecutionQueue(callback: () => Promise<void>) {
+    this.#globalExecutionQueue = this.#globalExecutionQueue.then(() => callback());
+  }
+
   clearAlert() {
     this.actionAlert.set(undefined);
   }
@@ -266,6 +269,7 @@ export class WorkbenchStore {
   getFileModifcations() {
     return this.#filesStore.getFileModifications();
   }
+
   getModifiedFiles() {
     return this.#filesStore.getModifiedFiles();
   }
@@ -320,9 +324,11 @@ export class WorkbenchStore {
 
     this.artifacts.setKey(messageId, { ...artifact, ...state });
   }
+
   addAction(data: ActionCallbackData) {
     this.addToExecutionQueue(() => this._addAction(data));
   }
+
   async _addAction(data: ActionCallbackData) {
     const { messageId } = data;
 
@@ -346,6 +352,7 @@ export class WorkbenchStore {
       this.addToExecutionQueue(() => this._runAction(data, isStreaming));
     }
   }
+
   async _runAction(data: ActionCallbackData, isStreaming: boolean = false) {
     const { messageId } = data;
 
@@ -388,15 +395,6 @@ export class WorkbenchStore {
     } else {
       await artifact.runner.runAction(data);
     }
-  }
-
-  actionStreamSampler = createSampler(async (data: ActionCallbackData, isStreaming: boolean = false) => {
-    return await this._runAction(data, isStreaming);
-  }, 100);
-
-  #getArtifact(id: string) {
-    const artifacts = this.artifacts.get();
-    return artifacts[id];
   }
 
   async downloadZip() {
@@ -616,6 +614,11 @@ export class WorkbenchStore {
       console.error('Error pushing to GitHub:', error);
       throw error; // Rethrow the error for further handling
     }
+  }
+
+  #getArtifact(id: string) {
+    const artifacts = this.artifacts.get();
+    return artifacts[id];
   }
 }
 

@@ -3,6 +3,7 @@ import { type Message } from 'ai';
 import type { FileMap } from '~/lib/stores/files';
 import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import '~/lib/config/env';
+import { logger } from '~/utils/logger';
 
 export type RepoFile = { name: string; path: string; content: string };
 
@@ -53,13 +54,19 @@ async function writeSensitiveDataToEnvFile(files: FileMap, databaseUrl: string):
 
 export const getStarterTemplateFiles = async (databaseUrl?: string): Promise<FileMap> => {
   try {
+    logger.info('fetching starter template files from API with databaseUrl:', databaseUrl);
+
     const response = await fetch('/api/starter-template');
+
+    logger.info('Fetching starter template files from API', JSON.stringify(response));
 
     if (!response.ok) {
       throw new Error(`Failed to fetch starter template: ${response.status}`);
     }
 
     const data = (await response.json()) as StarterTemplateResponse;
+
+    logger.info('Starter template files from API', JSON.stringify(data));
 
     if (data.error) {
       throw new Error(data.error);

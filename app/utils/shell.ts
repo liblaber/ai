@@ -1,3 +1,4 @@
+'use client';
 import type { WebContainerProcess } from '@webcontainer/api';
 import type { ITerminal } from '~/types/terminal';
 import { withResolvers } from './promises';
@@ -7,11 +8,6 @@ import { webcontainer as webcontainerPromise } from '~/lib/webcontainer';
 export type ExecutionResult = { output: string; exitCode: number } | undefined;
 
 export class LiblabShell {
-  #initialized: (() => void) | undefined;
-  #isInitialized = atom<boolean>(false);
-  #readyPromise: Promise<void>;
-  #terminal: ITerminal | undefined;
-  #process: WebContainerProcess | undefined;
   executionState = atom<
     | {
         active: boolean;
@@ -20,8 +16,21 @@ export class LiblabShell {
       }
     | undefined
   >();
+  #initialized: (() => void) | undefined;
+  #isInitialized = atom<boolean>(false);
+  #readyPromise: Promise<void>;
+  #terminal: ITerminal | undefined;
+  #process: WebContainerProcess | undefined;
   #outputStream: ReadableStreamDefaultReader<string> | undefined;
   #shellInputStream: WritableStreamDefaultWriter<string> | undefined;
+
+  get terminal() {
+    return this.#terminal;
+  }
+
+  get process() {
+    return this.#process;
+  }
 
   constructor() {
     this.#readyPromise = new Promise((resolve) => {
@@ -42,14 +51,6 @@ export class LiblabShell {
     await this.waitTillOscCode('interactive');
     this.#initialized?.();
     this.#isInitialized.set(true);
-  }
-
-  get terminal() {
-    return this.#terminal;
-  }
-
-  get process() {
-    return this.#process;
   }
 
   async executeCommand(command: string, abort?: () => void): Promise<ExecutionResult> {

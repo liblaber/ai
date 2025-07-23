@@ -35,6 +35,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { getLatestSnapshotOrNull } from '~/lib/persistence/snapshots';
 import { loadPreviousFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import type { FileMap } from '~/lib/stores/files';
+import { ClientOnly } from '~/components/ui/ClientOnly';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -69,14 +70,18 @@ export function Chat({ id }: { id?: string }) {
   return (
     <>
       {ready && (
-        <ChatImpl
-          description={title}
-          initialMessages={initialMessages}
-          commandMessage={commandMessage}
-          setCommandMessage={setCommandMessage}
-          exportChatAction={exportChat}
-          storeConversationHistoryAction={storeConversationHistory}
-        />
+        <ClientOnly>
+          {() => (
+            <ChatImpl
+              description={title}
+              initialMessages={initialMessages}
+              commandMessage={commandMessage}
+              setCommandMessage={setCommandMessage}
+              exportChatAction={exportChat}
+              storeConversationHistoryAction={storeConversationHistory}
+            />
+          )}
+        </ClientOnly>
       )}
     </>
   );
@@ -112,7 +117,7 @@ export const ChatImpl = ({
   const files = useStore(workbenchStore.files);
   const actionAlert = useStore(workbenchStore.alert);
   const { contextOptimizationEnabled } = useSettings();
-  const [dataSourceUrl, setDataSourceUrl] = useState<string>();
+  const [dataSourceUrl, setDataSourceUrl] = useState<string>('');
 
   useEffect(() => {
     chatStore.setKey('started', chatStarted);
@@ -276,7 +281,7 @@ export const ChatImpl = ({
 
     if (modifiedFiles !== undefined) {
       const userUpdateArtifact = filesToArtifacts(modifiedFiles, `${Date.now()}`);
-      append(
+      await append(
         {
           role: 'user',
           content: formatMessageWithModelInfo({
@@ -296,7 +301,7 @@ export const ChatImpl = ({
 
       workbenchStore.resetAllFileModifications();
     } else {
-      append(
+      await append(
         {
           role: 'user',
           content: formatMessageWithModelInfo({
@@ -453,7 +458,7 @@ export const ChatImpl = ({
         },
       ]);
 
-      reload({
+      await reload({
         body: {
           conversationId: chatId.get(),
         },
@@ -481,7 +486,7 @@ export const ChatImpl = ({
         }),
       },
     ]);
-    reload({
+    await reload({
       body: {
         conversationId: chatId.get(),
       },
@@ -540,7 +545,7 @@ export const ChatImpl = ({
     setMessages(messagesWithoutLastAssistant);
 
     // Reload the chat to retry the request
-    reload({
+    await reload({
       body: {
         conversationId: chatId.get(),
       },

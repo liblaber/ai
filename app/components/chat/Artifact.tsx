@@ -1,7 +1,7 @@
 import { useStore } from '@nanostores/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { computed } from 'nanostores';
-import { memo, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createHighlighter, type HighlighterGeneric } from 'shiki';
 import type { ActionState } from '~/lib/runtime/action-runner';
 import { workbenchStore } from '~/lib/stores/workbench';
@@ -36,7 +36,7 @@ interface ArtifactProps {
   messageId: string;
 }
 
-export const Artifact = memo(({ messageId }: ArtifactProps) => {
+export const Artifact = ({ messageId }: ArtifactProps) => {
   const userToggledActions = useRef(false);
   const [showActions, setShowActions] = useState(false);
   const [allActionFinished, setAllActionFinished] = useState(false);
@@ -136,7 +136,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
       </AnimatePresence>
     </div>
   );
-});
+};
 
 interface ShellCodeBlockProps {
   className?: string;
@@ -174,7 +174,7 @@ function openArtifactInWorkbench(filePath: any) {
   workbenchStore.setSelectedFile(`${WORK_DIR}/${filePath}`);
 }
 
-const ActionList = memo(({ actions }: ActionListProps) => {
+const ActionList = ({ actions }: ActionListProps) => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
       <ul className="list-none space-y-2.5">
@@ -253,7 +253,7 @@ const ActionList = memo(({ actions }: ActionListProps) => {
       </ul>
     </motion.div>
   );
-});
+};
 
 function getIconColor(status: ActionState['status']) {
   switch (status) {

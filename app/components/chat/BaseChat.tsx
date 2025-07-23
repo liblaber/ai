@@ -257,9 +257,9 @@ export const BaseChat = ({
             })}
             ref={scrollRef}
           >
-            <ClientOnly>
-              {() => {
-                return chatStarted ? (
+            {chatStarted && (
+              <ClientOnly>
+                {() => (
                   <Messages
                     ref={messageRef}
                     className="flex flex-col w-full flex-1 max-w-chat pb-6 mx-auto z-1"
@@ -269,9 +269,10 @@ export const BaseChat = ({
                     error={error}
                     onRetry={onRetry}
                   />
-                ) : null;
-              }}
-            </ClientOnly>
+                )}
+              </ClientOnly>
+            )}
+
             <div
               className={classNames('flex flex-col gap-4 w-full mx-auto z-prompt mb-6', {
                 'sticky bottom-2 max-w-chat': chatStarted,

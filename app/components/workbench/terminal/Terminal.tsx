@@ -1,4 +1,4 @@
-import { forwardRef, memo, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { createScopedLogger } from '~/utils/logger';
 import { getTerminalTheme } from './theme';
 
@@ -16,8 +16,8 @@ export interface TerminalProps {
   onTerminalResize?: (cols: number, rows: number) => void;
 }
 
-export const Terminal = memo(
-  forwardRef<TerminalRef, TerminalProps>(({ className, readonly, id, onTerminalReady, onTerminalResize }, ref) => {
+export const Terminal = forwardRef<TerminalRef, TerminalProps>(
+  ({ className, readonly, id, onTerminalReady, onTerminalResize }, ref) => {
     const terminalElementRef = useRef<HTMLDivElement>(null);
     const terminalRef = useRef<any>();
     const [isLoaded, setIsLoaded] = useState(false);
@@ -98,5 +98,5 @@ export const Terminal = memo(
     }, [readonly]);
 
     return <div className={className} ref={terminalElementRef} />;
-  }),
+  },
 );
