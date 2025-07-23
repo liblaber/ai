@@ -23,8 +23,6 @@ const runSetup = async (): Promise<void> => {
     } catch (telemetryError) {
       console.warn('Failed to track setup success:', (telemetryError as Error).message);
     }
-
-    execSync('sh ./scripts/run-dev-prompt.sh', { stdio: 'inherit' });
   } catch (error) {
     await trackSetupError(error);
 

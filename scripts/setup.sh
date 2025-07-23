@@ -41,6 +41,29 @@ else
     echo "✅ .env file already exists."
 fi
 
+# Copy POSTHOG_API_KEY from .env.example to .env if it exists
+echo "📋 Checking for POSTHOG_API_KEY..."
+if [ -f .env.example ] && grep -q "^POSTHOG_API_KEY=" .env.example; then
+    # Extract POSTHOG_API_KEY value from .env.example
+    POSTHOG_API_KEY_VALUE=$(grep "^POSTHOG_API_KEY=" .env.example | cut -d'=' -f2-)
+
+    # Remove surrounding quotes if present
+    POSTHOG_API_KEY_VALUE=$(echo "$POSTHOG_API_KEY_VALUE" | sed 's/^["'"'"']*//;s/["'"'"']*$//')
+
+    # Check if POSTHOG_API_KEY already exists in .env
+    if grep -q "^POSTHOG_API_KEY=" .env; then
+        # Update existing POSTHOG_API_KEY
+        awk -v key="$POSTHOG_API_KEY_VALUE" '{if ($0 ~ /^POSTHOG_API_KEY=/) print "POSTHOG_API_KEY='"'"'" key "'"'"'"; else print $0}' .env > .env.tmp && mv .env.tmp .env
+        echo "✅ Updated existing POSTHOG_API_KEY in .env file."
+    else
+        # Add new POSTHOG_API_KEY to existing file
+        echo "POSTHOG_API_KEY='$POSTHOG_API_KEY_VALUE'" >> .env
+        echo "✅ Added POSTHOG_API_KEY to .env file."
+    fi
+else
+    echo "⚠️ POSTHOG_API_KEY not found in .env.example file."
+fi
+
 # Generate AES key if not exists
 echo "📋 Checking for encryption key..."
 if [ ! -f .env ] || ! grep -q "^ENCRYPTION_KEY=." .env; then
@@ -112,11 +135,6 @@ if ! grep -q "^ANTHROPIC_API_KEY=." .env; then
         echo "✅ Created .env file with ANTHROPIC_API_KEY."
     fi
 fi
-
-# Install dependencies
-echo "📋 Installing dependencies..."
-pnpm install
-echo "✅ Dependencies installed successfully."
 
 # Generate Prisma client
 echo "📋 Generating Prisma client..."

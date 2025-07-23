@@ -435,7 +435,7 @@ Data accessors provide a standardized way to interact with different database ty
          const [rows] = await this._connection.query(query, params);
          return rows as any[];
        } catch (error) {
-         console.error('Error executing query:', error);
+         console.error('Error executing query:', JSON.stringify(error));
          throw new Error((error as Error)?.message);
        }
      }
