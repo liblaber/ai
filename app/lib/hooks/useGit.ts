@@ -36,7 +36,7 @@ export function useGit() {
   const [fs, setFs] = useState<PromiseFsClient>();
   const fileData = useRef<Record<string, { data: any; encoding?: string }>>({});
   useEffect(() => {
-    webcontainerPromise.then((container) => {
+    webcontainerPromise().then((container) => {
       fileData.current = {};
       setWebcontainer(container);
       setFs(getFs(container, fileData));

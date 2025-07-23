@@ -14,7 +14,7 @@ import { logger } from '~/utils/logger';
 export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> => {
   logger.info('Loading file map into web container:', JSON.stringify(fileMap, null, 2));
 
-  const webContainer = await webcontainer;
+  const webContainer = await webcontainer();
 
   logger.info('WebContainer instance:', JSON.stringify(webContainer));
 
@@ -68,7 +68,7 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
  */
 export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap): Promise<void> => {
   const currentFileMap = workbenchStore.getFileMap();
-  const webContainer = await webcontainer;
+  const webContainer = await webcontainer();
 
   const allUniquePaths = new Set([...Object.keys(currentFileMap), ...Object.keys(previousFileMap)]);
 

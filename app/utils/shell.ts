@@ -104,7 +104,7 @@ export class LiblabShell {
 
   async newLiblabShellProcess(terminal: ITerminal) {
     const args: string[] = [];
-    const webcontainer = await webcontainerPromise;
+    const webcontainer = await webcontainerPromise();
 
     // we spawn a JSH process with a fallback cols and rows in case the process is not attached yet to a visible terminal
     const process = await webcontainer.spawn('/bin/jsh', ['--osc', ...args], {

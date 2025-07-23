@@ -54,8 +54,8 @@ export class WorkbenchStore {
   actionStreamSampler = createSampler(async (data: ActionCallbackData, isStreaming: boolean = false) => {
     return await this._runAction(data, isStreaming);
   }, 100);
-  #previewsStore = new PreviewsStore(webcontainer);
-  #filesStore = new FilesStore(webcontainer);
+  #previewsStore = new PreviewsStore(webcontainer());
+  #filesStore = new FilesStore(webcontainer());
   #editorStore = new EditorStore(this.#filesStore);
   #terminalStore = new TerminalStore();
   #reloadedMessages = new Set<string>();
@@ -266,7 +266,7 @@ export class WorkbenchStore {
     }
   }
 
-  getFileModifcations() {
+  getFileModifications() {
     return this.#filesStore.getFileModifications();
   }
 
@@ -369,7 +369,7 @@ export class WorkbenchStore {
     }
 
     if (data.action.type === 'file') {
-      const wc = await webcontainer;
+      const wc = await webcontainer();
       const fullPath = path.join(wc.workdir, data.action.filePath);
 
       if (this.selectedFile.value !== fullPath) {

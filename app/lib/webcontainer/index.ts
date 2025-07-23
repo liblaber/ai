@@ -26,17 +26,57 @@ if (import.meta.hot) {
 let lastRefreshTimestamp = 0;
 const REFRESH_COOLDOWN_MS = 30000; // 30 seconds
 
-export const webcontainer: Promise<WebContainer> = Promise.resolve()
-  .then(() => {
-    return WebContainer.boot({
+class WebContainerManager {
+  private static _instance: WebContainer | null = null;
+  private static _isCreating = false;
+  private static _initializationPromise: Promise<WebContainer> | null = null;
+
+  static async getInstance(): Promise<WebContainer> {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      logger.warn('Cannot instantiate WebContainer outside the browser environment');
+      throw new Error('WebContainer can only be instantiated in a browser environment');
+    }
+
+    // If _instance already exists, return it
+    if (WebContainerManager._instance) {
+      return WebContainerManager._instance;
+    }
+
+    // If we're currently creating an _instance, wait for it
+    if (WebContainerManager._isCreating && WebContainerManager._initializationPromise) {
+      return WebContainerManager._initializationPromise;
+    }
+
+    // Set semaphore to prevent double instantiation
+    WebContainerManager._isCreating = true;
+
+    // Create the initialization promise
+    WebContainerManager._initializationPromise = WebContainerManager._createInstance();
+
+    try {
+      WebContainerManager._instance = await WebContainerManager._initializationPromise;
+      return WebContainerManager._instance;
+    } finally {
+      WebContainerManager._isCreating = false;
+      WebContainerManager._initializationPromise = null;
+    }
+  }
+
+  static reset(): void {
+    WebContainerManager._instance = null;
+    WebContainerManager._isCreating = false;
+    WebContainerManager._initializationPromise = null;
+  }
+
+  private static async _createInstance(): Promise<WebContainer> {
+    const webcontainer = await WebContainer.boot({
       coep: 'credentialless',
       workdirName: WORK_DIR_NAME,
       forwardPreviewErrors: true, // Enable error forwarding from iframes
     });
-  })
-  .then(async (webcontainer) => {
-    webcontainerContext.loaded = true;
 
+    webcontainerContext.loaded = true;
     logger.info('WebContainer initialized');
 
     const { workbenchStore } = await import('~/lib/stores/workbench');
@@ -144,10 +184,14 @@ export const webcontainer: Promise<WebContainer> = Promise.resolve()
     });
 
     return webcontainer;
-  });
+  }
+}
+
+// Export the singleton instance promise for backward compatibility
+export const webcontainer: () => Promise<WebContainer> = WebContainerManager.getInstance;
 
 if (import.meta.hot) {
-  import.meta.hot.data.webcontainer = webcontainer;
+  import.meta.hot.data.webcontainer = webcontainer();
 }
 
 function isInitialHydrationError(message: PreviewMessage) {
@@ -207,3 +251,6 @@ function getDescriptionAndContent(message: ConsoleErrorMessage & BasePreviewMess
 
   return { description: `${errorArg.name}: ${errorArg.message}`, content: errorArg.stack };
 }
+
+// Export the manager class for advanced usage
+export { WebContainerManager };

@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
       };
     }
 
-    config.cache = false;
+    config.cache = true;
     config.plugins.push(UnoCSS());
 
     return config;

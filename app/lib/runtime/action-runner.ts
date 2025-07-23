@@ -90,7 +90,7 @@ export class ActionRunner {
   }
 
   static async getRunningAppPid() {
-    const webcontainer = await webcontainerPromise;
+    const webcontainer = await webcontainerPromise();
     logger.debug('Getting PID of the running app process');
 
     const { output } = await webcontainer.spawn('ps', ['-ef']);
@@ -201,7 +201,7 @@ export class ActionRunner {
 
   async getFileHistory(filePath: string): Promise<FileHistory | null> {
     try {
-      const webcontainer = await webcontainerPromise;
+      const webcontainer = await webcontainerPromise();
       const historyPath = this.#getHistoryPath(filePath);
       const content = await webcontainer.fs.readFile(historyPath, 'utf-8');
 
@@ -339,7 +339,7 @@ export class ActionRunner {
 
       logger.debug(`Killing PID (${pid})`);
 
-      const webcontainer = await webcontainerPromise;
+      const webcontainer = await webcontainerPromise();
       await webcontainer.spawn('kill', [pid.toString()]);
 
       shell.executionState.set({
@@ -424,7 +424,7 @@ export class ActionRunner {
       unreachable('Expected file action');
     }
 
-    const webcontainer = await webcontainerPromise;
+    const webcontainer = await webcontainerPromise();
     const relativePath = nodePath.relative(webcontainer.workdir, action.filePath);
 
     let folder = nodePath.dirname(relativePath);
@@ -479,7 +479,7 @@ export class ActionRunner {
       unreachable('Expected build action');
     }
 
-    const webcontainer = await webcontainerPromise;
+    const webcontainer = await webcontainerPromise();
 
     // Create a new terminal specifically for the build
     const buildProcess = await webcontainer.spawn('pnpm', ['run', 'build']);
