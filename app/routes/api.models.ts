@@ -8,14 +8,12 @@ export async function loader() {
 
   const providerInfo: ProviderInfo = {
     name: provider.name,
-    staticModels: provider.staticModels,
     getApiKeyLink: provider.getApiKeyLink,
     labelForGetApiKey: provider.labelForGetApiKey,
     icon: provider.icon,
   };
 
   return json({
-    modelList: provider.staticModels,
     providers: [providerInfo],
     defaultProvider: providerInfo,
   });
