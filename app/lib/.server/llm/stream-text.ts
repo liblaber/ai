@@ -30,10 +30,22 @@ export async function streamText(props: {
   contextOptimization?: boolean;
   contextFiles?: FileMap;
   summary?: string;
+  implementationPlan?: string;
   messageSliceId?: number;
   request: Request;
 }) {
-  const { messages, options, files, promptId, starterId, contextOptimization, contextFiles, summary, request } = props;
+  const {
+    messages,
+    options,
+    files,
+    promptId,
+    starterId,
+    contextOptimization,
+    contextFiles,
+    summary,
+    implementationPlan,
+    request,
+  } = props;
   let currentDataSourceId: string | undefined = '';
 
   let processedMessages = messages.map((message) => {
@@ -112,6 +124,14 @@ ${props.summary}
     }
   }
 
+  if (implementationPlan) {
+    systemPrompt = `${systemPrompt}
+    Here is the implementation plan you should consider:
+
+    ${implementationPlan}
+`;
+  }
+
   const existingQueries = extractSqlQueries(codeContext);
 
   if (
@@ -120,12 +140,20 @@ ${props.summary}
   ) {
     const userId = await requireUserId(request);
     const schema = await getDatabaseSchema(currentDataSourceId, userId);
+
     const dataSource = await prisma.dataSource.findUniqueOrThrow({ where: { id: currentDataSourceId, userId } });
 
     const connectionDetails = new URL(dataSource.connectionString);
     const type = connectionDetails.protocol.replace(':', '');
 
-    const sqlQueries = await generateSqlQueries(schema, lastUserMessage, llm.instance, type, existingQueries);
+    const sqlQueries = await generateSqlQueries(
+      schema,
+      lastUserMessage,
+      llm.instance,
+      type,
+      implementationPlan,
+      existingQueries,
+    );
 
     if (sqlQueries?.length) {
       logger.debug(`Adding SQL queries as the hidden user message`);
@@ -139,6 +167,8 @@ ${props.summary}
   }
 
   logger.info(`Sending llm call to ${provider.name} with model ${llm.instance.modelId}`);
+
+  console.log(systemPrompt);
 
   return _streamText({
     model: llm.instance,

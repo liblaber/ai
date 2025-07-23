@@ -13,6 +13,12 @@ import { createId } from '@paralleldrive/cuid2';
 import { conversationService } from '~/lib/services/conversationService';
 import type { StarterPluginId } from '~/lib/plugins/types';
 import type { FileMap } from '~/lib/stores/files';
+import { createImplementationPlan } from '~/lib/.server/llm/create-implementation-plan';
+import fs from 'fs/promises';
+import path from 'path';
+import { getDatabaseSchema } from '~/lib/schema';
+import { requireUserId } from '~/auth/session';
+import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
@@ -210,6 +216,38 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             dataStream.writeData(currentProgressAnnotation);
           }
 
+          // Randomly pick a variant for examples
+          const variants = ['variant-1', 'variant-2'];
+          const chosenVariant = variants[Math.floor(Math.random() * variants.length)];
+          const examplePath = path.join(
+            process.cwd(),
+            'starters/next-starter/app/liblab-examples',
+            chosenVariant,
+            'page.tsx',
+          );
+          let examples = '';
+
+          try {
+            const fileContent = await fs.readFile(examplePath, 'utf8');
+            examples = fileContent.split('\n').slice(0, 100).join('\n');
+          } catch (e) {
+            examples = '';
+          }
+
+          const dataSource = await conversationService.getConversationDataSource(conversationId);
+          const userId = await requireUserId(request);
+          const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
+          console.log({ databaseSchema, userId, dataSource });
+
+          const implementationPlan = await createImplementationPlan({
+            summary,
+            userPrompt: userMessage.content,
+            databaseSchema: formatDbSchemaForLLM(databaseSchema),
+            examples,
+            env: context.cloudflare?.env,
+            apiKeys,
+          });
+
           // Stream the text
           const options: StreamingOptions = {
             experimental_generateMessageId: createId,
@@ -304,6 +342,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             contextOptimization,
             contextFiles: filteredFiles,
             summary,
+            implementationPlan,
             messageSliceId,
             request,
           });

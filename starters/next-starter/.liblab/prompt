@@ -43,6 +43,7 @@ In some cases, you may need to build dynamic, interactive components like tables
 
 Client and Server Components:
 - IT IS VERY IMPORTANT always to add the 'use client' directive at the very top of any file that uses client component only functions (such as useNavigation, useParams, useRouter, useSearchParams, etc.). This is required for these hooks to work in Next.js App Router.
+- Every component that is wrapped by WithErrorHandling should have 'use client' directive
 - NEVER call executeQuery in a client component.
 
 Best Practices:
@@ -76,12 +77,32 @@ Dependencies:
 - NEVER update package.json file to add new dependencies, use pnpm add command!
 - Example: <liblabAction type="shell">pnpm add {example-lib}</liblabAction>
 
-Styling Instructions
-- For any charts like Area Chart, Bar Chart, Line Chart, Pie Chart, Radar Chart, or Radial Chart use the shadcn chart component and follow component principles (https://ui.shadcn.com/docs/components/chart).
-- A chart must not be wider or higher than the container it is in. It should be responsive and adapt to the container's width. Don't set explicit width or height, it produces a chart that is going out of the bounds of the container.
-- Use the correct color variable pattern for charts (var(--chart-{number}) and var(--chart-{number}-stroke)). When displaying success or error data, use var(--chart-success) and var(--chart-success-stroke) or var(--chart-error) and var(--chart-error-stroke)
-- When generating Area component, pay attention to stackId parameter which should be unique to have all values displayed correctly
-- Prefer styling dashboards with grid of charts / cards / tables and avoid having charts taking up the whole width of the page.
+Styling Instructions:
+- Pay attention to stackId parameter which should be unique to have all values displayed correctly
+- Use Tailwind CSS utility classes to create clean, minimal, yet visually rich dashboards. Favor clarity, whitespace, and soft contrast over excessive color or decoration.
+- Use soft rounded corners (rounded-2xl), subtle drop shadows (shadow-md, shadow-sm), and consistent paddings (p-4, px-6, py-8) to maintain a cohesive layout.
+- For all chart components, use shadcn/ui charts and follow responsive container sizing. Never hardcode height/width—let the parent container drive sizing with w-full, h-auto, and aspect-[x/y] when necessary.
+- Status indicators (e.g. Active, Pending, Cancelled) should be styled with badge or badge-variant utility. Use bg-green-100 text-green-800, bg-yellow-100 text-yellow-800, and bg-red-100 text-red-800 for clear visual distinction.
+- Use grid and flex layouts for arranging sections. Dashboards should be structured using grid-cols-2, grid-cols-3, or grid-cols-4 depending on screen size. Use responsive breakpoints like md:grid-cols-2, lg:grid-cols-3 to maintain layout fluidity.
+- For interactivity or hover feedback, use transitions like transition-colors, hover:bg-muted, hover:shadow to enhance user experience without adding noise.
+- Call-to-actions (buttons) must follow shadcn/ui Button component conventions and should be styled with Tailwind color tokens like bg-primary, bg-muted, text-foreground.
+
+Layout Principles For Dashboards:
+- Structure dashboards top-down: from summary metrics to visual insights, then raw data.
+- Top: KPI summary cards (e.g., revenue, active users, churn rate).
+- Middle: A breakdown panel (e.g., conversions by channel, users by plan).
+- Below that: One or more charts (bar, line, pie, etc.) with legends and hover tooltips.
+- Bottom: Filterable, paginated data table showing raw entries or breakdown.
+- If the user explicitly requests a different layout, it must be respected.
+- If the structure of the data source does not support this layout (e.g., no breakdown category exists, or KPIs aren't meaningful), adjust the layout accordingly and justify the change in comments or structure.
+- You should never force a rigid layout if it doesn't match the data context or user’s needs.
+
+Typography:
+- Use varied font sizes: text-2xl/xl for headings, text-sm for labels, and text-base for regular content.
+- Use font-semibold or font-medium for headers and KPIs.
+- Do not mix too many font weights or styles in the same block.
+- Use a consistent spacing scale. Stack elements with space-y-4 or gap-6 to avoid crowding and allow the layout to breathe.
+
 
 STRICTLY FORBIDDEN:
 - It is strictly forbidden to change, modify, or overwrite any files that live /app/lib or /app/db (especially execute-query.ts and execute-query.proxy.ts files). These files are core to the project and must remain untouched by any generated code or edits.

@@ -34,6 +34,7 @@ export interface Column {
   name: string;
   type: string;
   isPrimary: boolean;
+  enumValues: string[];
 }
 
 export interface Table {
@@ -46,6 +47,7 @@ export async function generateSqlQueries(
   userPrompt: string,
   model: LanguageModel,
   databaseType: string,
+  implementationPlan?: string,
   existingQueries?: string[],
 ): Promise<SqlQueryOutput | undefined> {
   const dbSchema = formatDbSchemaForLLM(schema);
@@ -62,6 +64,11 @@ Here is the database schema you should use:
 <dbSchema>
 ${dbSchema}
 </dbSchema>
+
+Here is the implementation plan you should consider:
+<implementationPlan>
+${implementationPlan}
+</implementationPlan>
 
 ${existingQueries ? `Here are the existing SQL queries used by the app the user is building. Use them as context if they need to be updated to fulfill the user's request: <existing_sql_queries>${existingQueries}</existing_sql_queries>` : ''}
 
@@ -169,7 +176,7 @@ ${userPrompt}
 /**
  * Format the database schema in a way that's easy for the LLM to understand
  */
-function formatDbSchemaForLLM(schema: any): string {
+export function formatDbSchemaForLLM(schema: Table[]): string {
   let result = '';
 
   for (const table of schema) {
