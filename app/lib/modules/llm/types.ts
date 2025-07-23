@@ -10,12 +10,6 @@ export interface ModelInfo {
 
 export interface ProviderInfo {
   name: string;
-  staticModels: ModelInfo[];
-  getDynamicModels?: (
-    apiKeys?: Record<string, string>,
-    settings?: IProviderSetting,
-    serverEnv?: Record<string, string>,
-  ) => Promise<ModelInfo[]>;
   getModelInstance: (options: {
     model: string;
     serverEnv: Env;

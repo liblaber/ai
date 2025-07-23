@@ -1,5 +1,4 @@
 import { BaseProvider } from '~/lib/modules/llm/base-provider';
-import type { ModelInfo } from '~/lib/modules/llm/types';
 import type { LanguageModelV1 } from 'ai';
 import type { IProviderSetting } from '~/types/model';
 import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
@@ -14,55 +13,9 @@ interface AWSBedRockConfig {
 export default class AmazonBedrockProvider extends BaseProvider {
   name = 'AmazonBedrock';
   getApiKeyLink = 'https://console.aws.amazon.com/iam/home';
-
   config = {
     apiTokenKey: 'AWS_BEDROCK_CONFIG',
   };
-
-  staticModels: ModelInfo[] = [
-    {
-      name: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
-      label: 'Claude 3.5 Sonnet v2 (Bedrock)',
-      provider: 'AmazonBedrock',
-      maxTokenAllowed: 200000,
-    },
-    {
-      name: 'anthropic.claude-3-5-sonnet-20240620-v1:0',
-      label: 'Claude 3.5 Sonnet (Bedrock)',
-      provider: 'AmazonBedrock',
-      maxTokenAllowed: 4096,
-    },
-    {
-      name: 'anthropic.claude-3-sonnet-20240229-v1:0',
-      label: 'Claude 3 Sonnet (Bedrock)',
-      provider: 'AmazonBedrock',
-      maxTokenAllowed: 4096,
-    },
-    {
-      name: 'anthropic.claude-3-haiku-20240307-v1:0',
-      label: 'Claude 3 Haiku (Bedrock)',
-      provider: 'AmazonBedrock',
-      maxTokenAllowed: 4096,
-    },
-    {
-      name: 'amazon.nova-pro-v1:0',
-      label: 'Amazon Nova Pro (Bedrock)',
-      provider: 'AmazonBedrock',
-      maxTokenAllowed: 5120,
-    },
-    {
-      name: 'amazon.nova-lite-v1:0',
-      label: 'Amazon Nova Lite (Bedrock)',
-      provider: 'AmazonBedrock',
-      maxTokenAllowed: 5120,
-    },
-    {
-      name: 'mistral.mistral-large-2402-v1:0',
-      label: 'Mistral Large 24.02 (Bedrock)',
-      provider: 'AmazonBedrock',
-      maxTokenAllowed: 8192,
-    },
-  ];
 
   private _parseAndValidateConfig(apiKey: string): AWSBedRockConfig {
     let parsedConfig: AWSBedRockConfig;
