@@ -1,7 +1,8 @@
 import { logger } from '~/utils/logger';
-import { generateObject, type LanguageModel } from 'ai';
+import { generateObject } from 'ai';
 import { z } from 'zod';
 import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import type { Llm } from './get-llm';
 
 const queryDecisionSchema = z.object({
   shouldUpdateSql: z.boolean(),
@@ -45,7 +46,7 @@ export interface Table {
 export async function generateSqlQueries(
   schema: Table[],
   userPrompt: string,
-  model: LanguageModel,
+  llm: Llm,
   databaseType: string,
   implementationPlan?: string,
   existingQueries?: string[],
@@ -121,11 +122,12 @@ ${userPrompt}
 </userRequest>`;
 
   try {
-    logger.info(`Generating SQL for prompt: ${userPrompt}, using model: ${model.modelId}`);
+    logger.info(`Generating SQL for prompt: ${userPrompt}, using model: ${llm.instance.modelId}`);
 
     const result = await generateObject({
       schema: sqlQueriesSchema,
-      model,
+      model: llm.instance,
+      maxTokens: llm.maxOutputTokens,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     });
@@ -196,10 +198,10 @@ export function formatDbSchemaForLLM(schema: Table[]): string {
 
 export async function shouldGenerateSqlQueries(
   userPrompt: string,
-  model: LanguageModel,
+  llm: Llm,
   existingQueries?: string[],
 ): Promise<boolean> {
-  logger.info(`Deciding should SQL be generated for prompt: ${userPrompt} using model: ${model.modelId}`);
+  logger.info(`Deciding should SQL be generated for prompt: ${userPrompt} using model: ${llm.instance.modelId}`);
 
   const systemPrompt = `You are an experienced software engineer and an SQL expert tasked with determining whether a user's request requires updating existing SQL queries or not.
 You will be provided with the current SQL queries and the user's prompt. Your goal is to analyze the user's intent and decide if the request requires changes to the SQL queries or if it's related to UI layout and appearance modifications.
@@ -241,7 +243,8 @@ Remember, your task is to determine if SQL updates are necessary based on the us
   try {
     const result = await generateObject({
       schema: queryDecisionSchema,
-      model,
+      model: llm.instance,
+      maxTokens: llm.maxOutputTokens,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     });

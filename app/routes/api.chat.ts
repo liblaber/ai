@@ -26,25 +26,7 @@ export async function action(args: ActionFunctionArgs) {
 
 const logger = createScopedLogger('api.chat');
 
-function parseCookies(cookieHeader: string): Record<string, string> {
-  const cookies: Record<string, string> = {};
-
-  const items = cookieHeader.split(';').map((cookie) => cookie.trim());
-
-  items.forEach((item) => {
-    const [name, ...rest] = item.split('=');
-
-    if (name && rest) {
-      const decodedName = decodeURIComponent(name.trim());
-      const decodedValue = decodeURIComponent(rest.join('=').trim());
-      cookies[decodedName] = decodedValue;
-    }
-  });
-
-  return cookies;
-}
-
-async function chatAction({ context, request }: ActionFunctionArgs) {
+async function chatAction({ request }: ActionFunctionArgs) {
   const body = await request.json<{
     messages: Messages;
     files: any;
@@ -62,9 +44,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       statusText: 'Bad Request',
     });
   }
-
-  const cookieHeader = request.headers.get('Cookie');
-  const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
 
   const conversation = await conversationService.getConversation(conversationId);
 
@@ -118,9 +97,6 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
             summary = await createSummary({
               messages: [...messages],
-              env: context.cloudflare?.env,
-              apiKeys,
-              promptId,
               contextOptimization,
               onFinish(resp) {
                 if (resp.usage) {
@@ -164,10 +140,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             logger.debug(`Messages count: ${messages.length}`);
             filteredFiles = await selectContext({
               messages: [...messages],
-              env: context.cloudflare?.env,
-              apiKeys,
               files,
-              promptId,
               contextOptimization,
               summary,
               onFinish(resp) {
