@@ -1,7 +1,6 @@
 import { type CoreTool, generateText, type GenerateTextResult, type Message } from 'ai';
 import ignore from 'ignore';
 import { type FileMap, IGNORE_PATTERNS } from './constants';
-import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '~/utils/constants';
 import {
   createFilesContext,
   extractCurrentContext,
@@ -9,6 +8,7 @@ import {
   simplifyLiblabActions,
 } from './utils';
 import { createScopedLogger } from '~/utils/logger';
+import { getLlm } from '~/lib/.server/llm/get-llm';
 
 // Common patterns to ignore, similar to .gitignore
 
@@ -17,16 +17,12 @@ const logger = createScopedLogger('select-context');
 
 export async function selectContext(props: {
   messages: Message[];
-  env?: Env;
-  apiKeys?: Record<string, string>;
   files: FileMap;
-  promptId?: string;
   contextOptimization?: boolean;
   summary?: string;
   onFinish?: (resp: GenerateTextResult<Record<string, CoreTool<any, any>>, never>) => void;
 }) {
-  const { messages, env: serverEnv, apiKeys, files, summary, onFinish } = props;
-  const currentModel = DEFAULT_MODEL;
+  const { messages, files, summary, onFinish } = props;
   const processedMessages = messages.map((message) => {
     if (message.role === 'user') {
       const { content } = extractPropertiesFromMessage(message);
@@ -45,8 +41,6 @@ export async function selectContext(props: {
 
     return message;
   });
-
-  const provider = DEFAULT_PROVIDER;
 
   const { codeContext } = extractCurrentContext(processedMessages);
 
@@ -89,6 +83,8 @@ export async function selectContext(props: {
   if (!lastUserMessage) {
     throw new Error('No user message found');
   }
+
+  const llm = await getLlm();
 
   // select files from the list of code file from the project that might be useful for the current request from the user
   const resp = await generateText({
@@ -140,11 +136,8 @@ export async function selectContext(props: {
         * if the buffer is full, you need to exclude files that is not needed and include files that are relevant.
 
         `,
-    model: provider.getModelInstance({
-      model: currentModel,
-      serverEnv,
-      apiKeys,
-    }),
+    model: llm.instance,
+    maxTokens: llm.maxOutputTokens,
   });
 
   const response = resp.text;
