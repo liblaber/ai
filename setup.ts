@@ -4,7 +4,6 @@ import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
 import { config } from 'dotenv';
 import path from 'path';
-import { getInstanceId } from '~/lib/instance-id';
 
 /**
  * Setup for the liblab.ai builder

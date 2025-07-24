@@ -4,7 +4,6 @@ import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
-import { getInstanceId } from '~/lib/instance-id';
 
 const NGROK_LOG_FILE = './ngrok.log';
 const NGROK_PROCESS_PORT = 4040;
