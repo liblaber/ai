@@ -19,6 +19,7 @@ export class PreviewsStore {
   isLoading = atom<boolean>(false);
   loadingText = atom<string>('Loading...');
   readyForFixing = atom<boolean>(false);
+  isMakingChanges = atom<boolean>(false);
   #availablePreviews = new Map<number, PreviewInfo>();
   #webcontainer: Promise<WebContainer>;
 
@@ -31,6 +32,7 @@ export class PreviewsStore {
   finishLoading() {
     this.isLoading.set(false);
     this.readyForFixing.set(true);
+    this.isMakingChanges.set(false);
     this.loadingText.set('Loading...');
   }
 
@@ -49,17 +51,20 @@ export class PreviewsStore {
     this.loadingText.set('Your app is loading...');
     this.isLoading.set(true);
     this.readyForFixing.set(false);
+    this.isMakingChanges.set(false);
   }
 
   makingChanges() {
     this.loadingText.set('Making changes...');
     this.isLoading.set(true);
+    this.isMakingChanges.set(true);
   }
 
   fixingIssues() {
     this.isLoading.set(true);
     this.loadingText.set('Fixing issues... Almost there!');
     this.readyForFixing.set(false);
+    this.isMakingChanges.set(false);
   }
 
   preparingEnvironment() {
