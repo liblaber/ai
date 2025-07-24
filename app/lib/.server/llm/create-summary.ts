@@ -1,20 +1,16 @@
 import { type CoreTool, generateText, type GenerateTextResult, type Message } from 'ai';
-import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '~/utils/constants';
 import { extractCurrentContext, extractPropertiesFromMessage, simplifyLiblabActions } from './utils';
 import { createScopedLogger } from '~/utils/logger';
+import { getLlm } from '~/lib/.server/llm/get-llm';
 
 const logger = createScopedLogger('create-summary');
 
 export async function createSummary(props: {
   messages: Message[];
-  env?: Env;
-  apiKeys?: Record<string, string>;
-  promptId?: string;
   contextOptimization?: boolean;
   onFinish?: (resp: GenerateTextResult<Record<string, CoreTool<any, any>>, never>) => void;
 }) {
-  const { messages, env: serverEnv, apiKeys, onFinish } = props;
-  const currentModel = DEFAULT_MODEL;
+  const { messages, onFinish } = props;
   const processedMessages = messages.map((message) => {
     if (message.role === 'user') {
       const { content } = extractPropertiesFromMessage(message);
@@ -32,8 +28,6 @@ export async function createSummary(props: {
 
     return message;
   });
-
-  const provider = DEFAULT_PROVIDER;
 
   let slicedMessages = processedMessages;
   const { summary } = extractCurrentContext(processedMessages);
@@ -68,6 +62,9 @@ ${summary.summary}`;
 
   try {
     // select files from the list of code file from the project that might be useful for the current request from the user
+
+    const llm = await getLlm();
+
     const resp = await generateText({
       system: `
         You are a software engineer. You are working on a project. you need to summarize the work till now and provide a summary of the chat till now.
@@ -147,11 +144,8 @@ ${slicedMessages
 
 Please provide a summary of the chat till now including the hitorical summary of the chat.
 `,
-      model: provider.getModelInstance({
-        model: currentModel,
-        serverEnv,
-        apiKeys,
-      }),
+      model: llm.instance,
+      maxTokens: llm.maxOutputTokens,
     });
 
     const response = resp.text;
