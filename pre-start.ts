@@ -182,8 +182,7 @@ const runApp = async (): Promise<void> => {
 };
 
 async function trackAppError(error: any) {
-  const instanceId = getInstanceId();
-  const telemetry = await getTelemetry(instanceId);
+  const telemetry = await getTelemetry();
 
   try {
     const errorInfo = normalizeError(error);

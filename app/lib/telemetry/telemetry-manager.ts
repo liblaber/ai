@@ -1,4 +1,5 @@
 import { PostHog } from 'posthog-node';
+import { getInstanceId } from '~/lib/instance-id';
 
 export enum TelemetryEventType {
   APP_START_SUCCESS = 'app_start_success',
@@ -20,10 +21,10 @@ class TelemetryManager {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor() {}
 
-  static async create(instanceId: string): Promise<TelemetryManager> {
+  static async create(): Promise<TelemetryManager> {
     const instance = new TelemetryManager();
     instance._posthogApiKey = process.env.POSTHOG_API_KEY || null;
-    instance._machineId = instanceId;
+    instance._machineId = getInstanceId();
 
     if (!instance._posthogApiKey) {
       console.warn('No POSTHOG_API_KEY found. Telemetry not initialized.');
@@ -101,9 +102,9 @@ class TelemetryManager {
 // Export a singleton instance
 let _telemetryInstance: TelemetryManager | null = null;
 
-export async function getTelemetry(instanceId: string): Promise<TelemetryManager> {
+export async function getTelemetry(): Promise<TelemetryManager> {
   if (!_telemetryInstance) {
-    _telemetryInstance = await TelemetryManager.create(instanceId);
+    _telemetryInstance = await TelemetryManager.create();
   }
 
   return _telemetryInstance;

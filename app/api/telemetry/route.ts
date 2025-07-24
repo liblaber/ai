@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
-import { getInstanceId } from '~/lib/instance-id';
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,8 +11,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing eventType' }, { status: 400 });
     }
 
-    const instanceId = getInstanceId();
-    const telemetry = await getTelemetry(instanceId);
+    const telemetry = await getTelemetry();
     await telemetry.trackEvent({ eventType, properties });
 
     return NextResponse.json({ success: true });
