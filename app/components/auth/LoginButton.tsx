@@ -36,12 +36,22 @@ export function LoginButton() {
 
     try {
       switch (provider) {
-        case 'anonymous':
-          await signIn.anonymous();
+        case 'anonymous': {
+          const { error: signInError } = await signIn.email({
+            email: 'anonymous@anonymous.com',
+            password: 'password1234',
+            rememberMe: true,
+          });
+
+          if (signInError) {
+            console.error('Failed to sign in anonymous user:', signInError);
+            return;
+          }
 
           // Refresh the landing page after login to show data sources connection modal
           window.location.reload();
           break;
+        }
         default:
           await signIn.social({ provider });
           break;
