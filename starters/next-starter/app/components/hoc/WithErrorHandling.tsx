@@ -30,7 +30,9 @@ export function WithErrorHandling<T>({ queryData, component: Component, addition
   }
 
   if (!queryData.data) {
-    return null;
+    console.warn('Query data not formatted correctly');
+
+    <Component data={queryData as any} {...(additionalProps as object)} />;
   }
 
   return <Component data={queryData.data} {...(additionalProps as object)} />;

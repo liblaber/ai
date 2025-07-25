@@ -16,15 +16,17 @@ Component & Page Structure:
 - For new pages, create a folder under /app/[route]/page.tsx.
 - If the homepage (/app/page.tsx) is not implemented, any new page should be created as the homepage (i.e., /app/page.tsx), unless the user is very explicit about a different route. You must always check if the homepage has implementation!
 - If the homepage is implemented, and user's request does not require editing that page, create a new page and add a sidebar link.
+- Do not add sidebar links for the pages you haven't created!
 - For new API endpoints, create a folder under /app/api/[route]/route.ts but always return QueryData type so that data can be wrapped into the WithErrorHandling hoc.
-- Always provide complete, ready-to-use files. Never output partial or incomplete files.
-- When there are multiple pages in the project, add a sidebar for easier navigation between pages.
+
+- When there are multiple pages in the project, add a sidebar for easier navigation between pages, but do not add sidebar links for the pages that do not exist.
 
 WithErrorHandling Usage:
 - Always use the WithErrorHandling HOC from @/components/hoc/WithErrorHandling to wrap any data-fetching component in server components.
 - The wrapped component must accept a 'data' prop, which will receive the data from the HOC.
 - Example usage:
     <WithErrorHandling queryData={data} component={YourComponent} />
+- queryData parameter MUST be of a QueryData<T[]> type and not some composite type
 - If your component requires extra props, pass them using the additionalProps prop:
     <WithErrorHandling queryData={data} component={YourComponent} additionalProps={{ foo: 'bar' }} />
 - This ensures consistent error handling and UI feedback for all async data.
@@ -32,7 +34,8 @@ WithErrorHandling Usage:
 Data Handling:
 - Write raw SQL queries based on already defined guidelines
 - Use executeQuery from app/db/execute-query.ts to execute queries
-   - VERY IMPORTANT is that this function can be run only on server-side runtime.
+   - VERY IMPORTANT is that this function can be run only on server-side runtime (either in page components, or on the API)
+- Simple queries that does not have parameters, can be executed in server components
 
 More Complex Data Handling:
 In some cases, you may need to build dynamic, interactive components like tables with pagination, filtering, or live updates. For these scenarios:
@@ -61,7 +64,7 @@ Sidebar:
 - You can update or style this SidebarNav component as needed to fit new navigation requirements or design changes.
 - Sidebar is displayed by default. DO NOT update /app/layout.tsx unless the user explicitly requests sidebar to be hidden.
 - If the user requests a new page, proactively add the link to the new page into the /app/components/building-blocks/sidebar-nav/sidebar-links.ts SIDEBAR_LINKS array
-- Example type:
+- ALWAYS include the theme switch, with light theme as the default one
 
 Tables:
 - Always implement filtering and pagination in tables to handle large datasets efficiently.
@@ -78,11 +81,10 @@ Dependencies:
 - Example: <liblabAction type="shell">pnpm add {example-lib}</liblabAction>
 
 Styling Instructions:
-- Pay attention to stackId parameter which should be unique to have all values displayed correctly
 - Use Tailwind CSS utility classes to create clean, minimal, yet visually rich dashboards. Favor clarity, whitespace, and soft contrast over excessive color or decoration.
 - Use soft rounded corners (rounded-2xl), subtle drop shadows (shadow-md, shadow-sm), and consistent paddings (p-4, px-6, py-8) to maintain a cohesive layout.
-- For all chart components, use shadcn/ui charts and follow responsive container sizing. Never hardcode height/width—let the parent container drive sizing with w-full, h-auto, and aspect-[x/y] when necessary.
-- Status indicators (e.g. Active, Pending, Cancelled) should be styled with badge or badge-variant utility. Use bg-green-100 text-green-800, bg-yellow-100 text-yellow-800, and bg-red-100 text-red-800 for clear visual distinction.
+- NEVER, UNDER ANY CIRCUMSTANCE wrap CSS variables in hsl function, especially not in chart configs! 
+- Status indicators (e.g. Active, Pending, Cancelled) should be styled with badge or badge-variant utility.
 - Use grid and flex layouts for arranging sections. Dashboards should be structured using grid-cols-2, grid-cols-3, or grid-cols-4 depending on screen size. Use responsive breakpoints like md:grid-cols-2, lg:grid-cols-3 to maintain layout fluidity.
 - For interactivity or hover feedback, use transitions like transition-colors, hover:bg-muted, hover:shadow to enhance user experience without adding noise.
 - Call-to-actions (buttons) must follow shadcn/ui Button component conventions and should be styled with Tailwind color tokens like bg-primary, bg-muted, text-foreground.
@@ -97,12 +99,19 @@ Layout Principles For Dashboards:
 - If the structure of the data source does not support this layout (e.g., no breakdown category exists, or KPIs aren't meaningful), adjust the layout accordingly and justify the change in comments or structure.
 - You should never force a rigid layout if it doesn't match the data context or user’s needs.
 
+Chart Styling Instructions:
+- For charts, pay attention to stackId parameter which should be unique to have all values displayed correctly
+- For any charts like Bar Chart, Line Chart, Pie Chart, Area Chart, Radar Chart, or Radial Chart use the shadcn chart component and follow component principles (https://ui.shadcn.com/docs/components/chart).
+- Use ResponsiveContainer component
+- A chart MUST NOT be wider or higher than the container it is in. It should be responsive and adapt to the container's width. Don't set explicit width or height (i.e. do not add h-[300px] class on the ChartContainer component), it produces a chart that is going out of the bounds of the container.
+- Use the correct color variable pattern for charts (var(--chart-{number}). When displaying success or error data, use var(--chart-success) or var(--chart-error)
+- AVOID defining custom formatter function for ChartTooltip component!
+
 Typography:
 - Use varied font sizes: text-2xl/xl for headings, text-sm for labels, and text-base for regular content.
 - Use font-semibold or font-medium for headers and KPIs.
 - Do not mix too many font weights or styles in the same block.
-- Use a consistent spacing scale. Stack elements with space-y-4 or gap-6 to avoid crowding and allow the layout to breathe.
-
+- Use a consistent spacing scale. Stack elements with space-y-2 or gap-4 to avoid crowding and allow the layout to breathe.
 
 STRICTLY FORBIDDEN:
 - It is strictly forbidden to change, modify, or overwrite any files that live /app/lib or /app/db (especially execute-query.ts and execute-query.proxy.ts files). These files are core to the project and must remain untouched by any generated code or edits.
