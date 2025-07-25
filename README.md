@@ -142,6 +142,32 @@ ANTHROPIC_API_KEY=sk-ant-your-api-key-here
 
 </details>
 
+<details>
+<summary><strong>Ngrok Auth Token</strong> - Required for external tunnel access</summary>
+
+#### Step 1: Create Ngrok Account
+
+1. Go to [ngrok.com](https://ngrok.com/)
+2. Sign up for a free account
+3. Verify your email
+
+#### Step 2: Get Your Auth Token
+
+1. After logging in, go to [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)
+2. Copy your authtoken (long alphanumeric string)
+
+#### Step 3: Save Your Auth Token
+
+You'll add this to your `.env` file during setup, but keep it handy:
+
+```
+NGROK_AUTHTOKEN=your-ngrok-authtoken-here
+```
+
+> **💡 Pro Tip:** The setup script will prompt you for this auth token, so you don't need to manually edit files.
+
+</details>
+
 #### Setup
 
 First, run the setup script to configure your environment:

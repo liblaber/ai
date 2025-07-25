@@ -136,6 +136,33 @@ if ! grep -q "^ANTHROPIC_API_KEY=." .env; then
     fi
 fi
 
+# Check for NGROK_AUTHTOKEN
+echo "📋 Checking for ngrok authentication token..."
+if ! grep -q "^NGROK_AUTHTOKEN=." .env; then
+    echo "⚠️ NGROK_AUTHTOKEN not found or empty in .env file."
+    echo "📖 Get your token from: https://dashboard.ngrok.com/get-started/your-authtoken"
+    read -p "Please enter your ngrok auth token: " ngrok_token
+
+    if [ -n "$ngrok_token" ]; then
+        # Try to update existing empty NGROK_AUTHTOKEN line, otherwise add new one
+        if [ -f .env ] && grep -q "^NGROK_AUTHTOKEN=$" .env; then
+            # Update existing empty key using awk (more reliable than sed for special characters)
+            awk -v key="$ngrok_token" '{if ($0 ~ /^NGROK_AUTHTOKEN=$/) print "NGROK_AUTHTOKEN='"'"'" key "'"'"'"; else print $0}' .env > .env.tmp && mv .env.tmp .env
+            echo "✅ Updated existing NGROK_AUTHTOKEN in .env file."
+        elif [ -f .env ]; then
+            # Add new key to existing file
+            echo "NGROK_AUTHTOKEN='$ngrok_token'" >> .env
+            echo "✅ Added NGROK_AUTHTOKEN to .env file."
+        else
+            # Create new file with key
+            echo "NGROK_AUTHTOKEN='$ngrok_token'" > .env
+            echo "✅ Created .env file with NGROK_AUTHTOKEN."
+        fi
+    else
+        echo "⚠️ Skipped ngrok auth token. External tunneling will be disabled."
+    fi
+fi
+
 # Generate Prisma client
 echo "📋 Generating Prisma client..."
 npx prisma generate

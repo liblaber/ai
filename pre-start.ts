@@ -21,6 +21,14 @@ const setupNgrokTunnel = (): string | null => {
 
   console.log(`⚙️ Setting up ngrok tunnel for port ${port}...`);
 
+  if (!process.env.NGROK_AUTHTOKEN) {
+    console.error('❌ NGROK_AUTHTOKEN is required but not found in environment variables');
+
+    process.exit(1);
+  }
+
+  execSync(`ngrok config add-authtoken ${process.env.NGROK_AUTHTOKEN || ''}`, { stdio: 'pipe' });
+
   execSync(
     `ngrok http ${port} --response-header-add "Access-Control-Allow-Origin: *" --log=stdout --log-format=json > ${NGROK_LOG_FILE} 2>&1 &`,
   );
