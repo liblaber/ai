@@ -30,7 +30,6 @@ Consider the user's prompt:
 <user_prompt>
 ${userPrompt}
 </user_prompt>
-}
 
 Analyze the user's prompt carefully. Consider the following factors:
 

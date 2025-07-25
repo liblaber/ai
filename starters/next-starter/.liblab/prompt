@@ -23,7 +23,7 @@ Component & Page Structure:
 WithErrorHandling Usage:
 - Always use the WithErrorHandling HOC from @/components/hoc/WithErrorHandling to wrap any data-fetching component in server components.
 - WithErrorHandling is complementary to the executeQuery function.
-    - queryData is has the following type: type QueryData<T> = { isError: false; data: T } | { isError: true; errorMessage: string; };
+    - queryData has the following type: type QueryData<T> = { isError: false; data: T } | { isError: true; errorMessage: string; };
     - executeQuery signature: function executeQuery<T>(query: string, params?: string[]): Promise<QueryData<T[]>>
 - Example usage:
     - <WithErrorHandling queryData={data} component={YourComponent} />

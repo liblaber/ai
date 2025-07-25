@@ -185,7 +185,7 @@ export const ChatImpl = memo(
               }
             }
           }
-        }, 3000);
+        }, 2000);
       },
       initialMessages,
       initialInput: Cookies.get(PROMPT_COOKIE_KEY) || '',
