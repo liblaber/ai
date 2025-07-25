@@ -24,7 +24,7 @@ interface MessagesProps {
   messages?: Message[];
   setMessages: (messages: Message[]) => void;
   error?: Error;
-  onRetry?: () => Promise<void>;
+  onRetry: (errorMessage: string) => Promise<void>;
 }
 
 export const Messages = forwardRef<HTMLDivElement, MessagesProps>(

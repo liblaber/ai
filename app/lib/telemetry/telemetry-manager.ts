@@ -2,10 +2,16 @@ import { PostHog } from 'posthog-node';
 import { getInstanceId } from '~/lib/instance-id';
 
 export enum TelemetryEventType {
+  // App start success is tracked in instrumentation.ts on app startup
   APP_START_SUCCESS = 'app_start_success',
   APP_ERROR = 'app_error',
   SETUP_SUCCESS = 'setup_success',
   SETUP_ERROR = 'setup_error',
+  USER_CHAT_RETRY = 'user_chat_retry',
+  USER_CHAT_RESTORE = 'user_chat_restore',
+  USER_CHAT_PROMPT = 'user_prompt',
+  USER_DEPLOY = 'user_deploy',
+  BUILT_APP_ERROR = 'built_app_error',
 }
 
 export interface TelemetryEvent {
@@ -53,6 +59,7 @@ class TelemetryManager {
     };
 
     try {
+      console.log('TelemetryManager trackEvent', event);
       this._posthogClient.capture({
         distinctId: this._machineId!,
         event: event.eventType,

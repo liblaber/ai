@@ -1,16 +1,20 @@
+/**
+ * Sends a telemetry event indicating the app started successfully.
+ *
+ * Next.js calls this after the app initialization.
+ *
+ * Read more about instrumentation here: https://nextjs.org/docs/app/guides/instrumentation
+ */
 export function register() {
-  // Track app start when the config is loaded (development)
-  if (process.env.NODE_ENV === 'development') {
-    setTimeout(async () => {
-      try {
-        await fetch(`${process.env.BASE_URL}/api/telemetry`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ eventType: 'app_start_success' }),
-        });
-      } catch (error) {
-        console.error('❌ Failed to track app start success:', error);
-      }
-    }, 1000);
-  }
+  setTimeout(async () => {
+    try {
+      await fetch(`${process.env.BASE_URL}/api/telemetry`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventType: 'app_start_success' }),
+      });
+    } catch (error) {
+      console.error('❌ Failed to track app start success:', error);
+    }
+  }, 1000);
 }
