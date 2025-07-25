@@ -1,13 +1,14 @@
 import type { BaseAccessor } from '../baseAccessor';
-import type { MySqlColumn, MySqlTable } from '../../types';
+import { type MySqlColumn, type MySqlTable } from '../../types';
 import type { Connection } from 'mysql2/promise';
 import mysql from 'mysql2/promise';
+import type { DataAccessPluginId } from '~/lib/plugins/types';
 
 // Configure type casting for numeric values
 const typesToParse = ['INT', 'BIGINT', 'DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE', 'NEWDECIMAL'];
 
 export class MySQLAccessor implements BaseAccessor {
-  static pluginId = 'mysql';
+  static pluginId: DataAccessPluginId = 'mysql';
   readonly label = 'MySQL';
   readonly connectionStringFormat = 'mysql://username:password@host:port/database';
   readonly preparedStatementPlaceholderExample = '?';
