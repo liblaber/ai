@@ -1,4 +1,5 @@
-import { cloudflareDevProxyVitePlugin as remixCloudflareDevProxy, vitePlugin as remixVitePlugin } from '@remix-run/dev';
+// This file is being used only for tests. We need to remove it in the future.
+
 import UnoCSS from 'unocss/vite';
 import { defineConfig, type ViteDevServer } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
@@ -8,9 +9,6 @@ import * as dotenv from 'dotenv';
 import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-
-// Do not shorten this import to ~ because it won't work
-import { getTelemetry, TelemetryEventType } from './app/lib/telemetry/telemetry-manager';
 
 dotenv.config();
 
@@ -135,20 +133,10 @@ export default defineConfig((config) => {
           return null;
         },
       },
-      config.mode !== 'test' && remixCloudflareDevProxy(),
-      remixVitePlugin({
-        future: {
-          v3_fetcherPersist: true,
-          v3_relativeSplatPath: true,
-          v3_throwAbortReason: true,
-          v3_lazyRouteDiscovery: true,
-        },
-      }),
       UnoCSS(),
       tsconfigPaths(),
       chrome129IssuePlugin(),
       config.mode === 'production' && optimizeCssModules({ apply: 'build' }),
-      telemetryPlugin(),
     ],
     envPrefix: [
       'VITE_',
@@ -188,25 +176,6 @@ function chrome129IssuePlugin() {
         }
 
         next();
-      });
-    },
-  };
-}
-
-function telemetryPlugin() {
-  return {
-    name: 'telemetry-plugin',
-    configureServer(server: ViteDevServer) {
-      // Wait until Vite is fully ready
-      server.httpServer?.once('listening', async () => {
-        console.log('✅ Dev server started successfully');
-
-        try {
-          const telemetry = await getTelemetry();
-          await telemetry.trackEvent({ eventType: TelemetryEventType.APP_START_SUCCESS });
-        } catch (error) {
-          console.error('❌ Failed to track app start success:', error);
-        }
       });
     },
   };

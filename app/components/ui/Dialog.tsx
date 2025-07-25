@@ -1,6 +1,6 @@
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { motion, type Variants } from 'framer-motion';
-import React, { memo, type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { classNames } from '~/utils/classNames';
 import { cubicEasingFn } from '~/utils/easings';
 import { IconButton } from './IconButton';
@@ -14,7 +14,7 @@ interface DialogButtonProps {
   disabled?: boolean;
 }
 
-export const DialogButton = memo(({ type, children, onClick, disabled }: DialogButtonProps) => {
+export const DialogButton = ({ type, children, onClick, disabled }: DialogButtonProps) => {
   return (
     <button
       className={classNames('inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors', {
@@ -29,9 +29,9 @@ export const DialogButton = memo(({ type, children, onClick, disabled }: DialogB
       {children}
     </button>
   );
-});
+};
 
-export const DialogTitle = memo(({ className, children, ...props }: RadixDialog.DialogTitleProps) => {
+export const DialogTitle = ({ className, children, ...props }: RadixDialog.DialogTitleProps) => {
   return (
     <RadixDialog.Title
       className={classNames(
@@ -44,9 +44,9 @@ export const DialogTitle = memo(({ className, children, ...props }: RadixDialog.
       {children}
     </RadixDialog.Title>
   );
-});
+};
 
-export const DialogDescription = memo(({ className, children, ...props }: RadixDialog.DialogDescriptionProps) => {
+export const DialogDescription = ({ className, children, ...props }: RadixDialog.DialogDescriptionProps) => {
   return (
     <RadixDialog.Description
       className={classNames('text-sm text-liblab-elements-textSecondary', 'mt-1', className)}
@@ -55,7 +55,7 @@ export const DialogDescription = memo(({ className, children, ...props }: RadixD
       {children}
     </RadixDialog.Description>
   );
-});
+};
 
 const transition = {
   duration: 0.15,
@@ -98,7 +98,7 @@ interface DialogProps {
   onBackdrop?: () => void;
 }
 
-export const Dialog = memo(({ children, className, showCloseButton = true, onClose, onBackdrop }: DialogProps) => {
+export const Dialog = ({ children, className, showCloseButton = true, onClose, onBackdrop }: DialogProps) => {
   return (
     <RadixDialog.Portal>
       <RadixDialog.Overlay asChild>
@@ -145,4 +145,4 @@ export const Dialog = memo(({ children, className, showCloseButton = true, onClo
       </RadixDialog.Content>
     </RadixDialog.Portal>
   );
-});
+};

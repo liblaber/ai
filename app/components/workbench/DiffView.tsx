@@ -344,52 +344,56 @@ const renderContentWarning = (type: 'binary' | 'error') => (
   </div>
 );
 
-const NoChangesView = memo(
-  ({ beforeCode, language, highlighter }: { beforeCode: string; language: string; highlighter: any }) => (
-    <div className="h-full flex flex-col items-center justify-center p-4">
-      <div className="text-center text-liblab-elements-textTertiary">
-        <div className="i-ph:files text-4xl text-green-400 mb-2 mx-auto" />
-        <p className="font-medium text-liblab-elements-textPrimary">Files are identical</p>
-        <p className="text-sm mt-1">Both versions match exactly</p>
+const NoChangesView = ({
+  beforeCode,
+  language,
+  highlighter,
+}: {
+  beforeCode: string;
+  language: string;
+  highlighter: any;
+}) => (
+  <div className="h-full flex flex-col items-center justify-center p-4">
+    <div className="text-center text-liblab-elements-textTertiary">
+      <div className="i-ph:files text-4xl text-green-400 mb-2 mx-auto" />
+      <p className="font-medium text-liblab-elements-textPrimary">Files are identical</p>
+      <p className="text-sm mt-1">Both versions match exactly</p>
+    </div>
+    <div className="mt-4 w-full max-w-2xl bg-liblab-elements-bg-depth-1 rounded-lg border border-liblab-elements-borderColor overflow-hidden">
+      <div className="p-2 text-xs font-bold text-liblab-elements-textTertiary border-b border-liblab-elements-borderColor">
+        Current Content
       </div>
-      <div className="mt-4 w-full max-w-2xl bg-liblab-elements-bg-depth-1 rounded-lg border border-liblab-elements-borderColor overflow-hidden">
-        <div className="p-2 text-xs font-bold text-liblab-elements-textTertiary border-b border-liblab-elements-borderColor">
-          Current Content
-        </div>
-        <div className="overflow-auto max-h-96">
-          {beforeCode.split('\n').map((line, index) => (
-            <div key={index} className="flex group min-w-fit">
-              <div className={lineNumberStyles}>{index + 1}</div>
-              <div className={lineContentStyles}>
-                <span className="mr-2"> </span>
-                <span
-                  dangerouslySetInnerHTML={{
-                    __html: highlighter
-                      ? highlighter
-                          .codeToHtml(line, {
-                            lang: language,
-                            theme: 'github-dark',
-                          })
-                          .replace(/<\/?pre[^>]*>/g, '')
-                          .replace(/<\/?code[^>]*>/g, '')
-                      : line,
-                  }}
-                />
-              </div>
+      <div className="overflow-auto max-h-96">
+        {beforeCode.split('\n').map((line, index) => (
+          <div key={index} className="flex group min-w-fit">
+            <div className={lineNumberStyles}>{index + 1}</div>
+            <div className={lineContentStyles}>
+              <span className="mr-2"> </span>
+              <span
+                dangerouslySetInnerHTML={{
+                  __html: highlighter
+                    ? highlighter
+                        .codeToHtml(line, {
+                          lang: language,
+                          theme: 'github-dark',
+                        })
+                        .replace(/<\/?pre[^>]*>/g, '')
+                        .replace(/<\/?code[^>]*>/g, '')
+                    : line,
+                }}
+              />
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
-  ),
+  </div>
 );
 
-// Otimização do processamento de diferenças com memoização
 const useProcessChanges = (beforeCode: string, afterCode: string) => {
   return useMemo(() => processChanges(beforeCode, afterCode), [beforeCode, afterCode]);
 };
 
-// Componente otimizado para renderização de linhas de código
 const CodeLine = memo(
   ({
     lineNumber,

@@ -1,4 +1,4 @@
-import { type ForwardedRef, forwardRef, memo } from 'react';
+import { type ForwardedRef, forwardRef } from 'react';
 import { classNames } from '~/utils/classNames';
 
 type IconSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
@@ -25,47 +25,45 @@ type IconButtonWithChildrenProps = {
 
 type IconButtonProps = IconButtonWithoutChildrenProps | IconButtonWithChildrenProps;
 
-export const IconButton = memo(
-  forwardRef(
-    (
-      {
-        icon,
-        size = 'xl',
-        className,
-        iconClassName,
-        disabledClassName,
-        disabled = false,
-        title,
-        onClick,
-        children,
-      }: IconButtonProps,
-      ref: ForwardedRef<HTMLButtonElement>,
-    ) => {
-      return (
-        <button
-          ref={ref}
-          className={classNames(
-            'flex items-center text-liblab-elements-item-contentDefault bg-initial bg-transparent enabled:hover:text-liblab-elements-item-contentActive rounded-md p-1  disabled:cursor-not-allowed',
-            {
-              [classNames('opacity-30', disabledClassName)]: disabled,
-            },
-            className,
-          )}
-          title={title}
-          disabled={disabled}
-          onClick={(event) => {
-            if (disabled) {
-              return;
-            }
+export const IconButton = forwardRef(
+  (
+    {
+      icon,
+      size = 'xl',
+      className,
+      iconClassName,
+      disabledClassName,
+      disabled = false,
+      title,
+      onClick,
+      children,
+    }: IconButtonProps,
+    ref: ForwardedRef<HTMLButtonElement>,
+  ) => {
+    return (
+      <button
+        ref={ref}
+        className={classNames(
+          'flex items-center text-liblab-elements-item-contentDefault bg-initial bg-transparent enabled:hover:text-liblab-elements-item-contentActive rounded-md p-1  disabled:cursor-not-allowed',
+          {
+            [classNames('opacity-30', disabledClassName)]: disabled,
+          },
+          className,
+        )}
+        title={title}
+        disabled={disabled}
+        onClick={(event) => {
+          if (disabled) {
+            return;
+          }
 
-            onClick?.(event);
-          }}
-        >
-          {children ? children : <div className={classNames(icon, getIconSize(size), iconClassName)}></div>}
-        </button>
-      );
-    },
-  ),
+          onClick?.(event);
+        }}
+      >
+        {children ? children : <div className={classNames(icon, getIconSize(size), iconClassName)}></div>}
+      </button>
+    );
+  },
 );
 
 function getIconSize(size: IconSize) {

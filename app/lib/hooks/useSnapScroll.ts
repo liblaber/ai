@@ -1,4 +1,6 @@
-import { useRef, useCallback } from 'react';
+'use client';
+
+import { useCallback, useRef } from 'react';
 
 interface ScrollOptions {
   duration?: number;

@@ -26,59 +26,6 @@ else
     OS_TYPE="unknown"
 fi
 
-# Check if ngrok is installed, otherwise install it
-echo "📋 Checking if ngrok is installed..."
-if ! command -v ngrok &> /dev/null; then
-    echo "⏳ ngrok not found, installing..."
-
-    # Check OS type and install accordingly
-    if [[ "$OS_TYPE" == "macos" ]]; then
-        # macOS
-        if command -v brew &> /dev/null; then
-            brew install ngrok
-        else
-            echo "❌ Homebrew not found. Please install Homebrew first or manually install ngrok from https://ngrok.com/download"
-            exit 1
-        fi
-    elif [[ "$OS_TYPE" == "linux" ]]; then
-        # Linux
-        curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
-        echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list >/dev/null
-        sudo apt update && sudo apt install ngrok
-    elif [[ "$OS_TYPE" == "windows" ]]; then
-        # Windows - provide instructions for manual installation
-        echo "❌ ngrok not found on Windows."
-        echo "📋 Please install ngrok manually:"
-        echo "   1. Download from: https://ngrok.com/download"
-        echo "   2. Extract the zip file"
-        echo "   3. Add ngrok.exe to your PATH or run from the extracted directory"
-        echo "   4. Run: ngrok config add-authtoken YOUR_AUTHTOKEN"
-        echo ""
-        echo "⚠️ After installing ngrok, run this setup script again."
-        exit 1
-    else
-        echo "❌ Unsupported OS. Please install ngrok manually from https://ngrok.com/download"
-        exit 1
-    fi
-
-    if command -v ngrok &> /dev/null; then
-        echo "✅ ngrok installed successfully."
-    else
-        echo "❌ Failed to install ngrok. Please install manually from https://ngrok.com/download"
-        exit 1
-    fi
-else
-    echo "✅ ngrok is already installed."
-fi
-
-# Check if ngrok is authenticated
-echo "📋 Checking ngrok authentication..."
-if ! ngrok config check &> /dev/null; then
-    echo "⚠️ ngrok is not authenticated. Please visit https://dashboard.ngrok.com/get-started/your-authtoken"
-    echo "⚠️ After getting your authtoken, please run: ngrok config add-authtoken YOUR_AUTHTOKEN"
-    exit 1
-fi
-
 # Check for .env file and create if it doesn't exist
 echo "📋 Checking for .env file..."
 if [ ! -f .env ]; then
@@ -186,6 +133,33 @@ if ! grep -q "^ANTHROPIC_API_KEY=." .env; then
         # Create new file with key
         echo "ANTHROPIC_API_KEY='$anthropic_key'" > .env
         echo "✅ Created .env file with ANTHROPIC_API_KEY."
+    fi
+fi
+
+# Check for NGROK_AUTHTOKEN
+echo "📋 Checking for ngrok authentication token..."
+if ! grep -q "^NGROK_AUTHTOKEN=." .env; then
+    echo "⚠️ NGROK_AUTHTOKEN not found or empty in .env file."
+    echo "📖 Get your token from: https://dashboard.ngrok.com/get-started/your-authtoken"
+    read -p "Please enter your ngrok auth token: " ngrok_token
+
+    if [ -n "$ngrok_token" ]; then
+        # Try to update existing empty NGROK_AUTHTOKEN line, otherwise add new one
+        if [ -f .env ] && grep -q "^NGROK_AUTHTOKEN=$" .env; then
+            # Update existing empty key using awk (more reliable than sed for special characters)
+            awk -v key="$ngrok_token" '{if ($0 ~ /^NGROK_AUTHTOKEN=$/) print "NGROK_AUTHTOKEN='"'"'" key "'"'"'"; else print $0}' .env > .env.tmp && mv .env.tmp .env
+            echo "✅ Updated existing NGROK_AUTHTOKEN in .env file."
+        elif [ -f .env ]; then
+            # Add new key to existing file
+            echo "NGROK_AUTHTOKEN='$ngrok_token'" >> .env
+            echo "✅ Added NGROK_AUTHTOKEN to .env file."
+        else
+            # Create new file with key
+            echo "NGROK_AUTHTOKEN='$ngrok_token'" > .env
+            echo "✅ Created .env file with NGROK_AUTHTOKEN."
+        fi
+    else
+        echo "⚠️ Skipped ngrok auth token. External tunneling will be disabled."
     fi
 fi
 

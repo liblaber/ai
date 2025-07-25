@@ -16,7 +16,7 @@ import {
   type Tooltip,
   tooltips,
 } from '@codemirror/view';
-import { memo, type MutableRefObject, useEffect, useRef, useState } from 'react';
+import { type MutableRefObject, useEffect, useRef, useState } from 'react';
 import { classNames } from '~/utils/classNames';
 import { debounce } from '~/utils/debounce';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
@@ -113,141 +113,135 @@ const editableStateField = StateField.define<boolean>({
   },
 });
 
-export const CodeMirrorEditor = memo(
-  ({
-    id,
-    doc,
-    debounceScroll = 100,
-    debounceChange = 150,
-    autoFocusOnDocumentChange = false,
-    editable = true,
-    onScroll,
-    onChange,
-    onSave,
-    settings,
-    className = '',
-  }: Props) => {
-    renderLogger.trace('CodeMirrorEditor');
+export const CodeMirrorEditor = ({
+  id,
+  doc,
+  debounceScroll = 100,
+  debounceChange = 150,
+  autoFocusOnDocumentChange = false,
+  editable = true,
+  onScroll,
+  onChange,
+  onSave,
+  settings,
+  className = '',
+}: Props) => {
+  renderLogger.trace('CodeMirrorEditor');
 
-    const [languageCompartment] = useState(new Compartment());
+  const [languageCompartment] = useState(new Compartment());
 
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    const viewRef = useRef<EditorView>();
-    const docRef = useRef<EditorDocument>();
-    const editorStatesRef = useRef<EditorStates>();
-    const onScrollRef = useRef(onScroll);
-    const onChangeRef = useRef(onChange);
-    const onSaveRef = useRef(onSave);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const viewRef = useRef<EditorView>();
+  const docRef = useRef<EditorDocument>();
+  const editorStatesRef = useRef<EditorStates>();
+  const onScrollRef = useRef(onScroll);
+  const onChangeRef = useRef(onChange);
+  const onSaveRef = useRef(onSave);
 
-    /**
-     * This effect is used to avoid side effects directly in the render function
-     * and instead the refs are updated after each render.
-     */
-    useEffect(() => {
-      onScrollRef.current = onScroll;
-      onChangeRef.current = onChange;
-      onSaveRef.current = onSave;
-      docRef.current = doc;
+  /**
+   * This effect is used to avoid side effects directly in the render function
+   * and instead the refs are updated after each render.
+   */
+  useEffect(() => {
+    onScrollRef.current = onScroll;
+    onChangeRef.current = onChange;
+    onSaveRef.current = onSave;
+    docRef.current = doc;
+  });
+
+  useEffect(() => {
+    const onUpdate = debounce((update: EditorUpdate) => {
+      onChangeRef.current?.(update);
+    }, debounceChange);
+
+    const view = new EditorView({
+      parent: containerRef.current!,
+      dispatchTransactions(transactions) {
+        const previousSelection = view.state.selection;
+
+        view.update(transactions);
+
+        const newSelection = view.state.selection;
+
+        const selectionChanged =
+          newSelection !== previousSelection &&
+          (newSelection === undefined || previousSelection === undefined || !newSelection.eq(previousSelection));
+
+        if (docRef.current && (transactions.some((transaction) => transaction.docChanged) || selectionChanged)) {
+          onUpdate({
+            selection: view.state.selection,
+            content: view.state.doc.toString(),
+          });
+
+          editorStatesRef.current!.set(docRef.current.filePath, view.state);
+        }
+      },
     });
 
-    useEffect(() => {
-      const onUpdate = debounce((update: EditorUpdate) => {
-        onChangeRef.current?.(update);
-      }, debounceChange);
+    viewRef.current = view;
 
-      const view = new EditorView({
-        parent: containerRef.current!,
-        dispatchTransactions(transactions) {
-          const previousSelection = view.state.selection;
+    return () => {
+      viewRef.current?.destroy();
+      viewRef.current = undefined;
+    };
+  }, []);
 
-          view.update(transactions);
+  useEffect(() => {
+    if (!viewRef.current) {
+      return;
+    }
 
-          const newSelection = view.state.selection;
+    viewRef.current.dispatch({
+      effects: [reconfigureTheme()],
+    });
+  }, []);
 
-          const selectionChanged =
-            newSelection !== previousSelection &&
-            (newSelection === undefined || previousSelection === undefined || !newSelection.eq(previousSelection));
+  useEffect(() => {
+    editorStatesRef.current = new Map<string, EditorState>();
+  }, [id]);
 
-          if (docRef.current && (transactions.some((transaction) => transaction.docChanged) || selectionChanged)) {
-            onUpdate({
-              selection: view.state.selection,
-              content: view.state.doc.toString(),
-            });
+  useEffect(() => {
+    const editorStates = editorStatesRef.current!;
+    const view = viewRef.current!;
 
-            editorStatesRef.current!.set(docRef.current.filePath, view.state);
-          }
-        },
-      });
-
-      viewRef.current = view;
-
-      return () => {
-        viewRef.current?.destroy();
-        viewRef.current = undefined;
-      };
-    }, []);
-
-    useEffect(() => {
-      if (!viewRef.current) {
-        return;
-      }
-
-      viewRef.current.dispatch({
-        effects: [reconfigureTheme()],
-      });
-    }, []);
-
-    useEffect(() => {
-      editorStatesRef.current = new Map<string, EditorState>();
-    }, [id]);
-
-    useEffect(() => {
-      const editorStates = editorStatesRef.current!;
-      const view = viewRef.current!;
-
-      if (!doc) {
-        const state = newEditorState('', settings, onScrollRef, debounceScroll, onSaveRef, [
-          languageCompartment.of([]),
-        ]);
-
-        view.setState(state);
-
-        setNoDocument(view);
-
-        return;
-      }
-
-      if (doc.isBinary) {
-        return;
-      }
-
-      if (doc.filePath === '') {
-        logger.warn('File path should not be empty');
-      }
-
-      let state = editorStates.get(doc.filePath);
-
-      if (!state) {
-        state = newEditorState(doc.value, settings, onScrollRef, debounceScroll, onSaveRef, [
-          languageCompartment.of([]),
-        ]);
-
-        editorStates.set(doc.filePath, state);
-      }
+    if (!doc) {
+      const state = newEditorState('', settings, onScrollRef, debounceScroll, onSaveRef, [languageCompartment.of([])]);
 
       view.setState(state);
 
-      setEditorDocument(view, editable, languageCompartment, autoFocusOnDocumentChange, doc as TextEditorDocument);
-    }, [doc?.value, editable, doc?.filePath, autoFocusOnDocumentChange]);
+      setNoDocument(view);
 
-    return (
-      <div className={classNames('relative h-full', className)}>
-        {doc?.isBinary && <BinaryContent />}
-        <div className="h-full overflow-hidden" ref={containerRef} />
-      </div>
-    );
-  },
-);
+      return;
+    }
+
+    if (doc.isBinary) {
+      return;
+    }
+
+    if (doc.filePath === '') {
+      logger.warn('File path should not be empty');
+    }
+
+    let state = editorStates.get(doc.filePath);
+
+    if (!state) {
+      state = newEditorState(doc.value, settings, onScrollRef, debounceScroll, onSaveRef, [languageCompartment.of([])]);
+
+      editorStates.set(doc.filePath, state);
+    }
+
+    view.setState(state);
+
+    setEditorDocument(view, editable, languageCompartment, autoFocusOnDocumentChange, doc as TextEditorDocument);
+  }, [doc?.value, editable, doc?.filePath, autoFocusOnDocumentChange]);
+
+  return (
+    <div className={classNames('relative h-full', className)}>
+      {doc?.isBinary && <BinaryContent />}
+      <div className="h-full overflow-hidden" ref={containerRef} />
+    </div>
+  );
+};
 
 export default CodeMirrorEditor;
 

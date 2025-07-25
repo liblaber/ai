@@ -1,3 +1,4 @@
+'use client';
 import { atom, map, type MapStore, type ReadableAtom, type WritableAtom } from 'nanostores';
 import type { EditorDocument, ScrollPosition } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { ActionRunner } from '~/lib/runtime/action-runner';
@@ -7,7 +8,7 @@ import type { ITerminal } from '~/types/terminal';
 import { unreachable } from '~/utils/unreachable';
 import { EditorStore } from './editor';
 import { type File, type FileMap, FilesStore } from './files';
-import { PreviewsStore } from './previews';
+import { type PreviewInfo, PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
 import JSZip from 'jszip';
 import fileSaver from 'file-saver';
@@ -41,14 +42,6 @@ type Artifacts = MapStore<Record<string, ArtifactState>>;
 export type WorkbenchViewType = 'code' | 'diff' | 'preview';
 
 export class WorkbenchStore {
-  #previewsStore = new PreviewsStore(webcontainer);
-  #filesStore = new FilesStore(webcontainer);
-  #editorStore = new EditorStore(this.#filesStore);
-  #terminalStore = new TerminalStore();
-
-  #reloadedMessages = new Set<string>();
-  #mostRecentCommitMessage: string | undefined;
-
   artifacts: Artifacts = import.meta.hot?.data.artifacts ?? map({});
   showWorkbench: WritableAtom<boolean> = import.meta.hot?.data.showWorkbench ?? atom(false);
   currentView: WritableAtom<WorkbenchViewType> = import.meta.hot?.data.currentView ?? atom('code');
@@ -57,48 +50,60 @@ export class WorkbenchStore {
     import.meta.hot?.data.actionAlert ?? atom<ActionAlert | undefined>(undefined);
   modifiedFiles = new Set<string>();
   artifactIdList: string[] = [];
-  #globalExecutionQueue = Promise.resolve();
   startCommand = atom<string>(DEFAULT_START_APP_COMMAND);
+  actionStreamSampler = createSampler(async (data: ActionCallbackData, isStreaming: boolean = false) => {
+    return await this._runAction(data, isStreaming);
+  }, 100);
+  #previewsStore: PreviewsStore | null = null;
+  #filesStore: FilesStore | null = null;
+  #editorStore: EditorStore | null = null;
+  #terminalStore = new TerminalStore();
+  #reloadedMessages = new Set<string>();
+  #mostRecentCommitMessage: string | undefined;
+  #globalExecutionQueue = Promise.resolve();
+  #initializationPromise: Promise<void> | null = null;
 
   get mostRecentCommitMessage() {
     return this.#mostRecentCommitMessage || 'liblab ai syncing files';
   }
 
-  setMostRecentCommitMessage(message: string) {
-    this.#mostRecentCommitMessage = message;
-  }
-
   get previewsStore() {
+    if (!this.#previewsStore) {
+      throw new Error('WorkbenchStore not initialized. Call initialize() first.');
+    }
+
     return this.#previewsStore;
   }
 
-  constructor() {
-    if (import.meta.hot) {
-      import.meta.hot.data.artifacts = this.artifacts;
-      import.meta.hot.data.unsavedFiles = this.unsavedFiles;
-      import.meta.hot.data.showWorkbench = this.showWorkbench;
-      import.meta.hot.data.currentView = this.currentView;
-      import.meta.hot.data.actionAlert = this.actionAlert;
-    }
-  }
-
-  addToExecutionQueue(callback: () => Promise<void>) {
-    this.#globalExecutionQueue = this.#globalExecutionQueue.then(() => callback());
-  }
-
   get previews() {
+    if (!this.#previewsStore) {
+      return atom<PreviewInfo[]>([]);
+    }
+
     return this.#previewsStore.previews;
   }
 
   get files() {
+    if (!this.#filesStore) {
+      return map<FileMap>({});
+    }
+
     return this.#filesStore.files;
   }
 
   get currentDocument(): ReadableAtom<EditorDocument | undefined> {
+    if (!this.#editorStore) {
+      return atom<EditorDocument | undefined>(undefined);
+    }
+
     return this.#editorStore.currentDocument;
   }
 
   get selectedFile(): ReadableAtom<string | undefined> {
+    if (!this.#editorStore) {
+      return atom<string | undefined>(undefined);
+    }
+
     return this.#editorStore.selectedFile;
   }
 
@@ -107,6 +112,10 @@ export class WorkbenchStore {
   }
 
   get filesCount(): number {
+    if (!this.#filesStore) {
+      return 0;
+    }
+
     return this.#filesStore.filesCount;
   }
 
@@ -121,6 +130,35 @@ export class WorkbenchStore {
   get alert() {
     return this.actionAlert;
   }
+
+  constructor() {
+    if (import.meta.hot) {
+      import.meta.hot.data.artifacts = this.artifacts;
+      import.meta.hot.data.unsavedFiles = this.unsavedFiles;
+      import.meta.hot.data.showWorkbench = this.showWorkbench;
+      import.meta.hot.data.currentView = this.currentView;
+      import.meta.hot.data.actionAlert = this.actionAlert;
+    }
+  }
+
+  async initialize(): Promise<void> {
+    if (this.#initializationPromise) {
+      return this.#initializationPromise;
+    }
+
+    this.#initializationPromise = this.#initializeStores();
+
+    return this.#initializationPromise;
+  }
+
+  setMostRecentCommitMessage(message: string) {
+    this.#mostRecentCommitMessage = message;
+  }
+
+  addToExecutionQueue(callback: () => Promise<void>) {
+    this.#globalExecutionQueue = this.#globalExecutionQueue.then(() => callback());
+  }
+
   clearAlert() {
     this.actionAlert.set(undefined);
   }
@@ -142,7 +180,7 @@ export class WorkbenchStore {
   }
 
   setDocuments(files: FileMap) {
-    this.#editorStore.setDocuments(files);
+    this.#editorStore?.setDocuments(files);
   }
 
   setShowWorkbench(show: boolean) {
@@ -154,6 +192,10 @@ export class WorkbenchStore {
    * @returns The file map
    */
   getFileMap(): FileMap {
+    if (!this.#filesStore) {
+      return {};
+    }
+
     return Object.fromEntries(
       Object.entries(this.#filesStore.files.get())
         .filter(([path]) => !path.includes('.next'))
@@ -162,10 +204,18 @@ export class WorkbenchStore {
   }
 
   async syncPackageJsonFile(): Promise<File> {
+    if (!this.#filesStore) {
+      throw new Error('FilesStore not initialized');
+    }
+
     return this.#filesStore.syncPackageJsonFile();
   }
 
   setCurrentDocumentContent(newContent: string) {
+    if (!this.#filesStore || !this.#editorStore) {
+      return;
+    }
+
     const filePath = this.currentDocument.get()?.filePath;
 
     if (!filePath) {
@@ -207,22 +257,22 @@ export class WorkbenchStore {
 
     const { filePath } = editorDocument;
 
-    this.#editorStore.updateScrollPosition(filePath, position);
+    this.#editorStore?.updateScrollPosition(filePath, position);
   }
 
   setSelectedFile(filePath: string | undefined) {
-    this.#editorStore.setSelectedFile(filePath);
+    this.#editorStore?.setSelectedFile(filePath);
   }
 
   async saveFile(filePath: string) {
-    const documents = this.#editorStore.documents.get();
-    const document = documents[filePath];
+    const documents = this.#editorStore?.documents.get();
+    const document = documents![filePath];
 
     if (document === undefined) {
       return;
     }
 
-    await this.#filesStore.saveFile(filePath, document.value);
+    await this.#filesStore?.saveFile(filePath, document.value);
 
     const newUnsavedFiles = new Set(this.unsavedFiles.get());
     newUnsavedFiles.delete(filePath);
@@ -248,7 +298,7 @@ export class WorkbenchStore {
     }
 
     const { filePath } = currentDocument;
-    const file = this.#filesStore.getFile(filePath);
+    const file = this.#filesStore?.getFile(filePath);
 
     if (!file) {
       return;
@@ -263,15 +313,16 @@ export class WorkbenchStore {
     }
   }
 
-  getFileModifcations() {
-    return this.#filesStore.getFileModifications();
+  getFileModifications() {
+    return this.#filesStore?.getFileModifications();
   }
+
   getModifiedFiles() {
-    return this.#filesStore.getModifiedFiles();
+    return this.#filesStore?.getModifiedFiles();
   }
 
   resetAllFileModifications() {
-    this.#filesStore.resetFileModifications();
+    this.#filesStore?.resetFileModifications();
   }
 
   setReloadedMessages(messages: string[]) {
@@ -320,9 +371,11 @@ export class WorkbenchStore {
 
     this.artifacts.setKey(messageId, { ...artifact, ...state });
   }
+
   addAction(data: ActionCallbackData) {
     this.addToExecutionQueue(() => this._addAction(data));
   }
+
   async _addAction(data: ActionCallbackData) {
     const { messageId } = data;
 
@@ -346,6 +399,7 @@ export class WorkbenchStore {
       this.addToExecutionQueue(() => this._runAction(data, isStreaming));
     }
   }
+
   async _runAction(data: ActionCallbackData, isStreaming: boolean = false) {
     const { messageId } = data;
 
@@ -362,7 +416,7 @@ export class WorkbenchStore {
     }
 
     if (data.action.type === 'file') {
-      const wc = await webcontainer;
+      const wc = await webcontainer();
       const fullPath = path.join(wc.workdir, data.action.filePath);
 
       if (this.selectedFile.value !== fullPath) {
@@ -373,13 +427,13 @@ export class WorkbenchStore {
         this.currentView.set('code');
       }
 
-      const doc = this.#editorStore.documents.get()[fullPath];
+      const doc = this.#editorStore?.documents.get()[fullPath];
 
       if (!doc) {
         await artifact.runner.runAction(data, isStreaming);
       }
 
-      this.#editorStore.updateFile(fullPath, data.action.content);
+      this.#editorStore?.updateFile(fullPath, data.action.content);
 
       if (!isStreaming) {
         await artifact.runner.runAction(data);
@@ -388,15 +442,6 @@ export class WorkbenchStore {
     } else {
       await artifact.runner.runAction(data);
     }
-  }
-
-  actionStreamSampler = createSampler(async (data: ActionCallbackData, isStreaming: boolean = false) => {
-    return await this._runAction(data, isStreaming);
-  }, 100);
-
-  #getArtifact(id: string) {
-    const artifacts = this.artifacts.get();
-    return artifacts[id];
   }
 
   async downloadZip() {
@@ -509,7 +554,7 @@ export class WorkbenchStore {
         throw new Error('No files found to push');
       }
 
-      const gitignoreContent = this.#filesStore.getFile(toAbsoluteFilePath('.gitignore'))?.content;
+      const gitignoreContent = this.#filesStore?.getFile(toAbsoluteFilePath('.gitignore'))?.content;
       const ignoredFiles = gitignoreContent?.split('\n') ?? [];
 
       const ig = ignore();
@@ -616,6 +661,18 @@ export class WorkbenchStore {
       console.error('Error pushing to GitHub:', error);
       throw error; // Rethrow the error for further handling
     }
+  }
+
+  async #initializeStores(): Promise<void> {
+    const webcontainerInstance = await webcontainer();
+    this.#previewsStore = new PreviewsStore(Promise.resolve(webcontainerInstance));
+    this.#filesStore = new FilesStore(Promise.resolve(webcontainerInstance));
+    this.#editorStore = new EditorStore(this.#filesStore);
+  }
+
+  #getArtifact(id: string) {
+    const artifacts = this.artifacts.get();
+    return artifacts[id];
   }
 }
 

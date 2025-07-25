@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useMemo, useState } from 'react';
 import { debounce } from '~/utils/debounce';
 import type { SimpleConversationResponse } from '~/lib/persistence/conversations';

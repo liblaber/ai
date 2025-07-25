@@ -274,6 +274,41 @@ const FileModifiedDropdown = memo(
   },
 );
 
+// WorkbenchProvider component to ensure workbench store is initialized
+export const WorkbenchProvider = ({ children }: { children: React.ReactNode }) => {
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    workbenchStore
+      .initialize()
+      .then(() => {
+        setIsInitialized(true);
+      })
+      .catch((err) => {
+        console.error('Failed to initialize workbench store:', err);
+        setError(err.message);
+      });
+  }, []);
+
+  if (error) {
+    toast.error(`Failed to initialize workbench store. If this error persists, please contact support.`);
+    console.error(JSON.stringify(error, null, 2));
+
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-red-500">Failed to initialize workbench: {error}</div>
+      </div>
+    );
+  }
+
+  if (!isInitialized) {
+    return null;
+  }
+
+  return <>{children}</>;
+};
+
 export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncFiles }: WorkspaceProps) => {
   renderLogger.trace('Workbench');
 

@@ -1,4 +1,4 @@
-import { auth } from '~/auth/auth-config';
+import { auth } from './auth-config';
 
 type Session = Awaited<ReturnType<typeof auth.api.getSession>>;
 

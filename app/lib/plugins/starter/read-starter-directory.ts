@@ -39,7 +39,7 @@ export function readStarterFileMap(options: GetStarterFileMapOptions): FileMap {
         Object.values(sharedFiles).forEach((file) => {
           if (file?.type === 'file') {
             const importMatches = file.content.match(/from ['"]([^'"]+)['"]/g) || [];
-            importMatches.forEach((match) => {
+            importMatches.forEach((match: string) => {
               const importPath = match.match(/from ['"]([^'"]+)['"]/)?.[1];
 
               if (importPath && !importPath.startsWith('.') && !importPath.startsWith('@/')) {

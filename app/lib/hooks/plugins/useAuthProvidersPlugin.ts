@@ -1,3 +1,4 @@
+'use client';
 import { usePluginStore } from '~/lib/plugins/plugin-store';
 import { AuthPluginManager } from '~/lib/plugins/auth/auth-plugin-manager';
 import type { AuthPluginId } from '~/lib/plugins/types';

@@ -277,7 +277,9 @@ export const ModelSelector = ({
               ) : (
                 filteredModels.map((modelOption, index) => (
                   <div
-                    ref={(el) => (optionsRef.current[index] = el)}
+                    ref={(el) => {
+                      optionsRef.current[index] = el;
+                    }}
                     key={index}
                     role="option"
                     aria-selected={model === modelOption.name}

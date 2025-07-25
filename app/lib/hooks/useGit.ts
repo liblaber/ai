@@ -1,3 +1,5 @@
+'use client';
+
 import type { WebContainer } from '@webcontainer/api';
 import { type MutableRefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { webcontainer as webcontainerPromise } from '~/lib/webcontainer';
@@ -34,7 +36,7 @@ export function useGit() {
   const [fs, setFs] = useState<PromiseFsClient>();
   const fileData = useRef<Record<string, { data: any; encoding?: string }>>({});
   useEffect(() => {
-    webcontainerPromise.then((container) => {
+    webcontainerPromise().then((container) => {
       fileData.current = {};
       setWebcontainer(container);
       setFs(getFs(container, fileData));

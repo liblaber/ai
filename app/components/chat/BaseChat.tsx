@@ -4,9 +4,9 @@
  */
 import type { JSONValue, Message } from 'ai';
 import React, { type RefCallback, useEffect, useState } from 'react';
-import { ClientOnly } from 'remix-utils/client-only';
+import { ClientOnly } from '~/components/ui/ClientOnly';
 import { Menu } from '~/components/sidebar/Menu.client';
-import { Workbench } from '~/components/workbench/Workbench.client';
+import { Workbench, WorkbenchProvider } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { Messages } from './Messages.client';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -243,7 +243,7 @@ export const BaseChat = ({
 
   const baseChat = (
     <div className={classNames('BaseChat relative flex h-full w-full overflow-hidden')} data-chat-visible={showChat}>
-      {session?.user && <ClientOnly>{() => <Menu />}</ClientOnly>}
+      {session?.user && <Menu />}
       <div
         ref={scrollRef}
         className={classNames('flex flex-col lg:flex-row overflow-y-auto w-full h-full', {
@@ -257,9 +257,9 @@ export const BaseChat = ({
             })}
             ref={scrollRef}
           >
-            <ClientOnly>
-              {() => {
-                return chatStarted ? (
+            {chatStarted && (
+              <ClientOnly>
+                {() => (
                   <Messages
                     ref={messageRef}
                     className="flex flex-col w-full flex-1 max-w-chat pb-6 mx-auto z-1"
@@ -269,9 +269,10 @@ export const BaseChat = ({
                     error={error}
                     onRetry={onRetry}
                   />
-                ) : null;
-              }}
-            </ClientOnly>
+                )}
+              </ClientOnly>
+            )}
+
             <div
               className={classNames('flex flex-col gap-4 w-full mx-auto z-prompt mb-6', {
                 'sticky bottom-2 max-w-chat': chatStarted,
@@ -366,12 +367,14 @@ export const BaseChat = ({
         </div>
         <ClientOnly>
           {() => (
-            <Workbench
-              actionRunner={actionRunner ?? ({} as ActionRunner)}
-              chatStarted={chatStarted}
-              isStreaming={isStreaming}
-              onSyncFiles={onSyncFiles}
-            />
+            <WorkbenchProvider>
+              <Workbench
+                actionRunner={actionRunner ?? ({} as ActionRunner)}
+                chatStarted={chatStarted}
+                isStreaming={isStreaming}
+                onSyncFiles={onSyncFiles}
+              />
+            </WorkbenchProvider>
           )}
         </ClientOnly>
       </div>

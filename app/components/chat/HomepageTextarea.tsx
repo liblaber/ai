@@ -5,7 +5,7 @@ import FilePreview from './FilePreview';
 import { ScreenshotStateManager } from './ScreenshotStateManager';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { openSettingsPanel } from '~/lib/stores/settings';
-import { ClientOnly } from 'remix-utils/client-only';
+import { ClientOnly } from '~/components/ui/ClientOnly';
 import { processImageFile } from '~/utils/fileUtils';
 
 interface HomepageTextareaProps {

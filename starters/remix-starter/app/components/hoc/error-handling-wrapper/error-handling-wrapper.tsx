@@ -1,7 +1,7 @@
 import { ErrorComponent } from '@/components/building-blocks/error-component/error-component';
 import { ComponentType, ReactElement, ReactNode } from 'react';
 import { useLocation } from '@remix-run/react';
-import { ClientOnly } from 'remix-utils/client-only';
+import { ClientOnly } from '~/components/ui/ClientOnly';
 
 interface WithErrorHandlingProps<T> {
   queryData?: {

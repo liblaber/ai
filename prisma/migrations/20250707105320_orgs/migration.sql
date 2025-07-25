@@ -1,7 +1,3 @@
--- Clear existing users since we're implementing organization structure
-DELETE FROM "user";
-DELETE FROM "schema_cache";
-
 -- CreateTable
 CREATE TABLE "organization" (
     "id" TEXT NOT NULL PRIMARY KEY,
