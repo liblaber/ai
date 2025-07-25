@@ -3,15 +3,16 @@ import { getInstanceId } from '~/lib/instance-id';
 
 export enum TelemetryEventType {
   // App start success is tracked in instrumentation.ts on app startup
-  APP_START_SUCCESS = 'app_start_success',
-  APP_ERROR = 'app_error',
-  SETUP_SUCCESS = 'setup_success',
-  SETUP_ERROR = 'setup_error',
-  USER_CHAT_RETRY = 'user_chat_retry',
-  USER_CHAT_RESTORE = 'user_chat_restore',
-  USER_CHAT_PROMPT = 'user_prompt',
-  USER_DEPLOY = 'user_deploy',
-  BUILT_APP_ERROR = 'built_app_error',
+  APP_START_SUCCESS = 'APP_START_SUCCESS',
+  APP_ERROR = 'APP_ERROR',
+  SETUP_SUCCESS = 'SETUP_SUCCESS',
+  SETUP_ERROR = 'SETUP_ERROR',
+  USER_CHAT_RETRY = 'USER_CHAT_RETRY',
+  USER_CHAT_REVERT = 'USER_CHAT_REVERT',
+  USER_CHAT_FORK = 'USER_CHAT_FORK',
+  USER_CHAT_PROMPT = 'USER_CHAT_PROMPT',
+  USER_DEPLOY = 'USER_DEPLOY',
+  BUILT_APP_ERROR = 'BUILT_APP_ERROR',
 }
 
 export interface TelemetryEvent {

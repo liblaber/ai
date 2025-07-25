@@ -16,6 +16,8 @@ import { loadPreviousFileMapIntoContainer } from '~/lib/webcontainer/load-file-m
 import { workbenchStore } from '~/lib/stores/workbench';
 import { useRouter } from 'next/navigation';
 import { PROJECT_SETUP_ANNOTATION } from '~/utils/constants';
+import { trackTelemetryEvent } from '~/lib/telemetry/client-telemetry';
+import { TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
 
 interface MessagesProps {
   id?: string;
@@ -35,7 +37,10 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
     const { data } = useSession();
     const router = useRouter();
     const user = data?.user;
-    const [rewindDialog, setRewindDialog] = useState<{ isOpen: boolean; snapshotId: string | null }>({
+    const [rewindDialog, setRewindDialog] = useState<{
+      isOpen: boolean;
+      snapshotId: string | null;
+    }>({
       isOpen: false,
       snapshotId: null,
     });
@@ -64,6 +69,11 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
           return;
         }
 
+        await trackTelemetryEvent({
+          eventType: TelemetryEventType.USER_CHAT_REVERT,
+          properties: { conversationId },
+        });
+
         const updatedConversation = await getConversation(conversationId);
 
         if (updatedConversation?.messages && updatedConversation?.snapshot) {
@@ -86,12 +96,20 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
 
     const handleFork = async (messageId: string) => {
       try {
-        if (!chatId.get()) {
+        const conversationId = chatId.get();
+
+        if (!conversationId) {
           toast.error('Invalid chat id');
           return;
         }
 
-        const forkedChatId = await forkConversation(chatId.get()!, messageId);
+        const forkedChatId = await forkConversation(conversationId, messageId);
+
+        await trackTelemetryEvent({
+          eventType: TelemetryEventType.USER_CHAT_FORK,
+          properties: { conversationId, forkedConversationId: forkedChatId },
+        });
+
         router.push(`/chat/${forkedChatId}`);
       } catch (error) {
         toast.error('Failed to fork chat: ' + (error as Error).message);
