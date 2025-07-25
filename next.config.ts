@@ -123,10 +123,6 @@ const nextConfig: NextConfig = {
         source: '/api/execute-query',
         headers: [
           {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
-          },
-          {
             key: 'Access-Control-Allow-Methods',
             value: 'GET, POST, PUT, DELETE, OPTIONS',
           },

@@ -38,7 +38,7 @@ async function fetchProxyApi<T>(endpoint: string, options: RequestInit = {}): Pr
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'bypass-tunnel-reminder': 'true',
+        'ngrok-skip-browser-warning': 'true',
         ...options.headers,
       },
       signal: controller.signal,
