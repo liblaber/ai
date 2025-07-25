@@ -278,6 +278,7 @@ export const ChatImpl = ({
     const modifiedFiles = workbenchStore.getModifiedFiles();
 
     chatStore.setKey('aborted', false);
+    setInput('');
 
     if (modifiedFiles !== undefined) {
       const userUpdateArtifact = filesToArtifacts(modifiedFiles, `${Date.now()}`);
@@ -320,7 +321,6 @@ export const ChatImpl = ({
       );
     }
 
-    setInput('');
     Cookies.remove(PROMPT_COOKIE_KEY);
 
     setUploadedFiles([]);
