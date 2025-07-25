@@ -40,7 +40,7 @@ When you connect your database to liblab.ai, here's exactly what happens:
 
 1. **🏠 Local Connection**: Your database credentials are stored locally on your machine and never sent to external servers
 2. **🔧 App Generation**: When you build an app, it runs in a secure web container that displays live dashboards with your data
-3. **🌐 Secure Tunneling**: Since the web container can't directly access your local database, we use localtunnel to create a secure tunnel
+3. **🌐 Secure Tunneling**: Since the web container can't directly access your local database, we use ngrok to create a secure tunnel
 4. **🔐 End-to-End Encryption**: Every database request, response, query, and data output is encrypted using AES-256 encryption
 
 ### Your Encryption Key
@@ -258,25 +258,25 @@ pnpm --version
 </details>
 
 <details>
-<summary><strong>localtunnel</strong> - Local tunneling for development (automatic setup)</summary>
+<summary><strong>Ngrok</strong> - Local tunneling for development (automatic setup)</summary>
 
-#### Step 1: Install localtunnel
+#### Step 1: Install Ngrok
 
-Localtunnel is automatically installed as a dependency when you run the setup script. No manual configuration required!
+Ngrok is automatically installed as a dependency when you run the setup script. No manual configuration required!
 
 If you need to install it manually:
 
 ```bash
-npm install -g localtunnel
+npm install -g ngrok
 ```
 
 #### Step 2: Verify Installation
 
 ```bash
-lt --version
+ngrok --version
 ```
 
-> **💡 Note:** The setup script handles localtunnel installation automatically, so you don't need to do anything manually.
+> **💡 Note:** The setup script handles ngrok installation automatically, so you don't need to do anything manually.
 
 </details>
 
@@ -326,7 +326,7 @@ chmod +x scripts/setup.sh
 
 The script automatically handles:
 
-- Setup localtunnel tunnel (macOS/Linux)
+- Setup ngrok tunnel (macOS/Linux)
 - Configure `.env` file
 - Install all dependencies
 - Setup SQLite database
