@@ -1,39 +1,46 @@
 import { generateText } from 'ai';
-import { DEFAULT_MODEL, DEFAULT_PROVIDER } from '~/utils/constants';
 import { createScopedLogger } from '~/utils/logger';
+import { getLlm } from '~/lib/.server/llm/get-llm';
+import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
+import type { StarterPluginId } from '~/lib/plugins/types';
 
 const logger = createScopedLogger('create-implementation-plan');
 
 export async function createImplementationPlan(props: {
   summary?: string;
   userPrompt: string;
-  databaseSchema: string;
-  examples: string;
-  env?: Env;
-  apiKeys?: Record<string, string>;
-  onFinish?: (resp: any) => void;
+  schema: string;
+  starterId?: StarterPluginId;
+  onFinish?: (response: Awaited<ReturnType<typeof generateText>>) => void;
 }): Promise<string> {
-  const { summary, userPrompt, databaseSchema, examples, env: serverEnv, apiKeys, onFinish } = props;
-  const currentModel = DEFAULT_MODEL;
-  const provider = DEFAULT_PROVIDER;
+  const { summary, userPrompt, schema, starterId, onFinish } = props;
+  const llm = await getLlm();
+
+  const starterInstructions = StarterPluginManager.getStarterInstructionsPrompt(starterId);
 
   try {
-    const resp = await generateText({
+    const response = await generateText({
       system: `
-You are an expert software architect. Given the following:
+You are an expert software engineer capable of generating an implementation plan for an internal web application. Given the following:
 
 - User Request: {userPrompt}
 - Conversation Summary: {summary}
-- Database Schema: {databaseSchema}
+- Data Source Schema: {schema}
+- Repository instructions: {repositoryInstructions}
 
-Examples for Inspiration:
----
-${examples}
----
+Create a concise, step-by-step implementation plan that will be used to guide the SQL query generation and application code generation.
+The plan should be clear, simple, actionable, and focused on the main tasks required.
+If the user prompt is very broad, expand the plan in accordance with the conversation summary and data source schema.
+The plan should not be expanded beyond the scope of the user's request and should not overcomplicate the solution.
+ - E.g. If user requests a dashboard, the plan should not suggest creating more than 6 different components.
+If the user prompt is very specific, do not expand the plan, but make sure to include all the steps required to fulfill the user's request.
+Briefly describe what the UI components should look like and how they should be connected to the data source.
+The plan should not include verification steps or any other steps that are not related to the main tasks required.
+The plan should not include complex optimization techniques or any other steps that are not related to the main tasks required.
 
-Create a concise, step-by-step implementation plan for fulfilling the user's request. The plan should be clear, actionable, and focused on the main tasks required. Limit the plan to max 5 steps, and avoid unnecessary details. This plan will be used to guide both SQL query generation and application code generation.
+This plan will be used to guide both SQL query generation and application code generation.
 
-Respond ONLY with the implementation plan, without any code snippets.
+Respond ONLY with the implementation plan, without any code snippets and queries.
       `,
       prompt: `
 <userRequest>
@@ -44,28 +51,23 @@ ${userPrompt}
 ${summary}
 </summary>
 
-<databaseSchema>
-${databaseSchema}
-</databaseSchema>
+<schema>
+${schema}
+</schema>
+
+<repositoryInstructions>
+${starterInstructions}
+</repositoryInstructions>
 `,
-      model: provider.getModelInstance({
-        model: currentModel,
-        serverEnv,
-        apiKeys,
-      }),
+      model: llm.instance,
+      maxTokens: llm.maxOutputTokens,
     });
 
-    const response = resp.text;
+    onFinish?.(response);
 
-    console.log('Response text:', response);
-
-    if (onFinish) {
-      onFinish(resp);
-    }
-
-    return response;
+    return response.text;
   } catch (error) {
-    logger.error(error);
+    logger.error(`Error occurred while creating implementation plan`, error);
     throw error;
   }
 }

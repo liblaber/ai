@@ -14,8 +14,6 @@ import { conversationService } from '~/lib/services/conversationService';
 import type { StarterPluginId } from '~/lib/plugins/types';
 import type { FileMap } from '~/lib/stores/files';
 import { createImplementationPlan } from '~/lib/.server/llm/create-implementation-plan';
-import fs from 'fs/promises';
-import path from 'path';
 import { getDatabaseSchema } from '~/lib/schema';
 import { requireUserId } from '~/auth/session';
 import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
@@ -134,8 +132,6 @@ async function chatAction({ request }: ActionFunctionArgs) {
             };
             dataStream.writeData(currentProgressAnnotation);
 
-            // throw new Error('This is some sort of unexpected error');
-
             // Select context files
             logger.debug(`Messages count: ${messages.length}`);
             filteredFiles = await selectContext({
@@ -189,37 +185,42 @@ async function chatAction({ request }: ActionFunctionArgs) {
             dataStream.writeData(currentProgressAnnotation);
           }
 
-          // Randomly pick a variant for examples
-          const variants = ['variant-1', 'variant-2'];
-          const chosenVariant = variants[Math.floor(Math.random() * variants.length)];
-          const examplePath = path.join(
-            process.cwd(),
-            'starters/next-starter/app/liblab-examples',
-            chosenVariant,
-            'page.tsx',
-          );
-          let examples = '';
-
-          try {
-            const fileContent = await fs.readFile(examplePath, 'utf8');
-            examples = fileContent.split('\n').slice(0, 100).join('\n');
-          } catch (e) {
-            examples = '';
-          }
+          logger.debug('Creating Implementation Plan...');
+          currentProgressAnnotation = {
+            type: 'progress',
+            label: 'implementation-plan',
+            status: 'in-progress',
+            order: progressCounter++,
+            message: 'Creating Implementation Plan',
+          };
+          dataStream.writeData(currentProgressAnnotation);
 
           const dataSource = await conversationService.getConversationDataSource(conversationId);
           const userId = await requireUserId(request);
           const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
-          console.log({ databaseSchema, userId, dataSource });
 
           const implementationPlan = await createImplementationPlan({
             summary,
             userPrompt: userMessage.content,
-            databaseSchema: formatDbSchemaForLLM(databaseSchema),
-            examples,
-            env: context.cloudflare?.env,
-            apiKeys,
+            schema: formatDbSchemaForLLM(databaseSchema),
+            onFinish: (response) => {
+              if (response.usage) {
+                logger.debug('createImplementationPlan token usage', JSON.stringify(response.usage));
+                cumulativeUsage.completionTokens += response.usage.completionTokens || 0;
+                cumulativeUsage.promptTokens += response.usage.promptTokens || 0;
+                cumulativeUsage.totalTokens += response.usage.totalTokens || 0;
+              }
+            },
           });
+          logger.debug('Created Implementation Plan:', implementationPlan);
+          currentProgressAnnotation = {
+            type: 'progress',
+            label: 'implementation-plan',
+            status: 'complete',
+            order: progressCounter++,
+            message: 'Created Implementation Plan',
+          };
+          dataStream.writeData(currentProgressAnnotation);
 
           // Stream the text
           const options: StreamingOptions = {

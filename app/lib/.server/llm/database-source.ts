@@ -35,7 +35,7 @@ export interface Column {
   name: string;
   type: string;
   isPrimary: boolean;
-  enumValues: string[];
+  enumValues?: string[];
 }
 
 export interface Table {
@@ -81,11 +81,12 @@ To generate the SQL queries, follow these steps:
 5. Do not use any DDL (Data Definition Language) statements such as CREATE, ALTER, or DROP. Only DML (Data Manipulation Language) queries like SELECT, INSERT, UPDATE, and DELETE are allowed.
 6. Use appropriate table joins if necessary.
 7. Optimize the queries for performance.
-8. Avoid using any tables or columns not present in the schema.
-9. If needed, parametrize the query using positional placeholders like ${DataAccessor.getByDatabaseType(databaseType)?.preparedStatementPlaceholderExample}.
-10. Use the exact format and casing for explicit values in the query (e.g., use "SUPER_ADMIN" if values are {ADMIN, MEMBER, SUPER_ADMIN}).
-11. Provide a brief explanation for each query.
-12. Specify the response schema for each query, including selected column types and any explicit values, if present.
+8. Avoid generating very long and complex queries, application layer will be able to map the results to the UI components in more complex ways.
+9. Avoid using any tables or columns not present in the schema.
+10. If needed, parametrize the query using positional placeholders like ${DataAccessor.getByDatabaseType(databaseType)?.preparedStatementPlaceholderExample}.
+11. Use the exact format and casing for explicit values in the query (e.g., use "SUPER_ADMIN" if values are {ADMIN, MEMBER, SUPER_ADMIN}).
+12. Provide a brief explanation for each query.
+13. Specify the response schema for each query, including selected column types and any explicit values, if present.
 
 Format your response as a JSON array containing objects with the following structure:
 {
