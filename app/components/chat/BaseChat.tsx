@@ -6,7 +6,7 @@ import type { JSONValue, Message } from 'ai';
 import React, { type RefCallback, useEffect, useState } from 'react';
 import { ClientOnly } from '~/components/ui/ClientOnly';
 import { Menu } from '~/components/sidebar/Menu.client';
-import { Workbench } from '~/components/workbench/Workbench.client';
+import { Workbench, WorkbenchProvider } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
 import { Messages } from './Messages.client';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -367,12 +367,14 @@ export const BaseChat = ({
         </div>
         <ClientOnly>
           {() => (
-            <Workbench
-              actionRunner={actionRunner ?? ({} as ActionRunner)}
-              chatStarted={chatStarted}
-              isStreaming={isStreaming}
-              onSyncFiles={onSyncFiles}
-            />
+            <WorkbenchProvider>
+              <Workbench
+                actionRunner={actionRunner ?? ({} as ActionRunner)}
+                chatStarted={chatStarted}
+                isStreaming={isStreaming}
+                onSyncFiles={onSyncFiles}
+              />
+            </WorkbenchProvider>
           )}
         </ClientOnly>
       </div>
