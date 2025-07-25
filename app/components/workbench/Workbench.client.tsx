@@ -292,6 +292,9 @@ export const WorkbenchProvider = ({ children }: { children: React.ReactNode }) =
   }, []);
 
   if (error) {
+    toast.error(`Failed to initialize workbench store. If this error persists, please contact support.`);
+    console.error(JSON.stringify(error, null, 2));
+
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-red-500">Failed to initialize workbench: {error}</div>
@@ -300,11 +303,7 @@ export const WorkbenchProvider = ({ children }: { children: React.ReactNode }) =
   }
 
   if (!isInitialized) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-gray-500">Initializing workbench...</div>
-      </div>
-    );
+    return null;
   }
 
   return <>{children}</>;
