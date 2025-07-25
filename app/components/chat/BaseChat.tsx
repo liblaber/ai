@@ -262,7 +262,7 @@ export const BaseChat = ({
                 return chatStarted ? (
                   <Messages
                     ref={messageRef}
-                    className="flex flex-col w-full flex-1 max-w-chat pb-6 mx-auto z-1"
+                    className="flex flex-col w-full flex-1 max-w-chat mx-auto rounded-xl overflow-y-scroll z-1"
                     messages={messages}
                     isStreaming={isStreaming}
                     setMessages={setMessages}

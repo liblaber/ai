@@ -30,7 +30,7 @@ export async function streamText(props: {
   contextOptimization?: boolean;
   contextFiles?: FileMap;
   summary?: string;
-  implementationPlan: string;
+  implementationPlan?: string;
   messageSliceId?: number;
   request: Request;
 }) {

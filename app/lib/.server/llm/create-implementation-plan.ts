@@ -3,18 +3,24 @@ import { createScopedLogger } from '~/utils/logger';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
 import type { StarterPluginId } from '~/lib/plugins/types';
+import { shouldCreateImplementationPlan } from '~/lib/.server/llm/implementation-plan-decision';
 
 const logger = createScopedLogger('create-implementation-plan');
 
 export async function createImplementationPlan(props: {
-  summary?: string;
   userPrompt: string;
   schema: string;
+  isFirstUserMessage: boolean;
+  summary?: string;
   starterId?: StarterPluginId;
   onFinish?: (response: Awaited<ReturnType<typeof generateText>>) => void;
-}): Promise<string> {
-  const { summary, userPrompt, schema, starterId, onFinish } = props;
+}): Promise<string | undefined> {
   const llm = await getLlm();
+  const { isFirstUserMessage, summary, userPrompt, schema, starterId, onFinish } = props;
+
+  if (!isFirstUserMessage && !(await shouldCreateImplementationPlan(userPrompt, llm))) {
+    return undefined;
+  }
 
   const starterInstructions = StarterPluginManager.getStarterInstructionsPrompt(starterId);
 

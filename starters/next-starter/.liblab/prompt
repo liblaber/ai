@@ -18,17 +18,19 @@ Component & Page Structure:
 - If the homepage is implemented, and user's request does not require editing that page, create a new page and add a sidebar link.
 - Do not add sidebar links for the pages you haven't created!
 - For new API endpoints, create a folder under /app/api/[route]/route.ts but always return QueryData type so that data can be wrapped into the WithErrorHandling hoc.
-
 - When there are multiple pages in the project, add a sidebar for easier navigation between pages, but do not add sidebar links for the pages that do not exist.
 
 WithErrorHandling Usage:
 - Always use the WithErrorHandling HOC from @/components/hoc/WithErrorHandling to wrap any data-fetching component in server components.
-- The wrapped component must accept a 'data' prop, which will receive the data from the HOC.
+- WithErrorHandling is complementary to the executeQuery function.
+    - queryData is has the following type: type QueryData<T> = { isError: false; data: T } | { isError: true; errorMessage: string; };
+    - executeQuery signature: function executeQuery<T>(query: string, params?: string[]): Promise<QueryData<T[]>>
 - Example usage:
-    <WithErrorHandling queryData={data} component={YourComponent} />
-- queryData parameter MUST be of a QueryData<T[]> type and not some composite type
+    - <WithErrorHandling queryData={data} component={YourComponent} />
+- The wrapped component (YourComponent) must accept a 'data' prop, which will receive the data from the HOC.
 - If your component requires extra props, pass them using the additionalProps prop:
     <WithErrorHandling queryData={data} component={YourComponent} additionalProps={{ foo: 'bar' }} />
+- DO NOT CREATE composite objects that consist of multiple QueryData objects. Design the components in a way to use single executeQuery queryData response per WithErrorHandling component.
 - This ensures consistent error handling and UI feedback for all async data.
 
 Data Handling:
@@ -83,7 +85,7 @@ Dependencies:
 Styling Instructions:
 - Use Tailwind CSS utility classes to create clean, minimal, yet visually rich dashboards. Favor clarity, whitespace, and soft contrast over excessive color or decoration.
 - Use soft rounded corners (rounded-2xl), subtle drop shadows (shadow-md, shadow-sm), and consistent paddings (p-4, px-6, py-8) to maintain a cohesive layout.
-- NEVER, UNDER ANY CIRCUMSTANCE wrap CSS variables in hsl function, especially not in chart configs! 
+- DO NOT USE hsl CSS function for colors, especially not in chart configs! Use the CSS variable directly without wrapping it in hsl function!
 - Status indicators (e.g. Active, Pending, Cancelled) should be styled with badge or badge-variant utility.
 - Use grid and flex layouts for arranging sections. Dashboards should be structured using grid-cols-2, grid-cols-3, or grid-cols-4 depending on screen size. Use responsive breakpoints like md:grid-cols-2, lg:grid-cols-3 to maintain layout fluidity.
 - For interactivity or hover feedback, use transitions like transition-colors, hover:bg-muted, hover:shadow to enhance user experience without adding noise.
@@ -99,13 +101,14 @@ Layout Principles For Dashboards:
 - If the structure of the data source does not support this layout (e.g., no breakdown category exists, or KPIs aren't meaningful), adjust the layout accordingly and justify the change in comments or structure.
 - You should never force a rigid layout if it doesn't match the data context or user’s needs.
 
-Chart Styling Instructions:
+Chart Styling Instructions (IMPORTANT):
 - For charts, pay attention to stackId parameter which should be unique to have all values displayed correctly
 - For any charts like Bar Chart, Line Chart, Pie Chart, Area Chart, Radar Chart, or Radial Chart use the shadcn chart component and follow component principles (https://ui.shadcn.com/docs/components/chart).
 - Use ResponsiveContainer component
 - A chart MUST NOT be wider or higher than the container it is in. It should be responsive and adapt to the container's width. Don't set explicit width or height (i.e. do not add h-[300px] class on the ChartContainer component), it produces a chart that is going out of the bounds of the container.
 - Use the correct color variable pattern for charts (var(--chart-{number}). When displaying success or error data, use var(--chart-success) or var(--chart-error)
-- AVOID defining custom formatter function for ChartTooltip component!
+- NEVER use hsl CSS function!
+- NEVER use custom formatter function for ChartTooltip component!
 
 Typography:
 - Use varied font sizes: text-2xl/xl for headings, text-sm for labels, and text-base for regular content.

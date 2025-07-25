@@ -34,7 +34,8 @@ async function chatAction({ request }: ActionFunctionArgs) {
   }>();
   const { messages, files, conversationId, promptId, contextOptimization } = body;
 
-  const userMessage = messages.at(-1);
+  const userMessage = messages[messages.length - 1];
+  const userMessageProperties = extractPropertiesFromMessage(userMessage);
 
   if (!userMessage) {
     throw new Response('Message not specified', {
@@ -200,6 +201,7 @@ async function chatAction({ request }: ActionFunctionArgs) {
           const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
 
           const implementationPlan = await createImplementationPlan({
+            isFirstUserMessage: !!userMessageProperties.isFirstUserMessage,
             summary,
             userPrompt: userMessage.content,
             schema: formatDbSchemaForLLM(databaseSchema),
@@ -243,10 +245,9 @@ async function chatAction({ request }: ActionFunctionArgs) {
               const assistantMessage = messages.find((m) => m.role === 'assistant');
 
               try {
-                const messageProperties = extractPropertiesFromMessage(userMessage);
-                const userMessageContent = Array.isArray(messageProperties.content)
-                  ? messageProperties.content.find((item) => item.type === 'text')?.text || ''
-                  : messageProperties.content;
+                const userMessageContent = Array.isArray(userMessageProperties.content)
+                  ? userMessageProperties.content.find((item) => item.type === 'text')?.text || ''
+                  : userMessageProperties.content;
 
                 await messageService.saveMessage({
                   conversationId,
