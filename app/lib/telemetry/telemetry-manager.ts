@@ -11,7 +11,7 @@ export enum TelemetryEventType {
   USER_CHAT_REVERT = 'USER_CHAT_REVERT',
   USER_CHAT_FORK = 'USER_CHAT_FORK',
   USER_CHAT_PROMPT = 'USER_CHAT_PROMPT',
-  USER_DEPLOY = 'USER_DEPLOY',
+  USER_APP_DEPLOY = 'USER_APP_DEPLOY',
   BUILT_APP_ERROR = 'BUILT_APP_ERROR',
 }
 
@@ -60,7 +60,9 @@ class TelemetryManager {
     };
 
     try {
+      // TODO: @skos remove this later
       console.log('TelemetryManager trackEvent', event);
+
       this._posthogClient.capture({
         distinctId: this._machineId!,
         event: event.eventType,

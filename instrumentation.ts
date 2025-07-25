@@ -11,7 +11,7 @@ export function register() {
       await fetch(`${process.env.BASE_URL}/api/telemetry`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventType: 'app_start_success' }),
+        body: JSON.stringify({ eventType: 'APP_START_SUCCESS' }),
       });
     } catch (error) {
       console.error('❌ Failed to track app start success:', error);

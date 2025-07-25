@@ -7,8 +7,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { eventType, properties } = body as TelemetryEvent;
 
-    // Validate the event type
+    // TODO: @skos remove the logs
+    console.log(`Tracking event ${eventType}`, properties);
+
     if (!Object.values(TelemetryEventType).includes(eventType)) {
+      console.log(`Invalid event ${eventType}`, properties);
+
       return NextResponse.json({ error: 'Invalid event type' }, { status: 400 });
     }
 

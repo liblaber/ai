@@ -1,6 +1,7 @@
 import type { Message } from '@ai-sdk/react';
 import { getLatestSnapshot, type SnapshotResponse } from '~/lib/persistence/snapshots';
 import { NO_EXECUTE_ACTION_ANNOTATION } from '~/lib/runtime/message-parser';
+import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
 
 const CONVERSATIONS_API = '/api/conversations';
 
@@ -164,7 +165,15 @@ export async function forkConversation(conversationId: string, messageId: string
     snapshot: undefined,
   }));
 
-  return createConversation(conversation.dataSourceId, messages);
+  const forkedConversationId = await createConversation(conversation.dataSourceId, messages);
+
+  const telemetry = await getTelemetry();
+  await telemetry.trackEvent({
+    eventType: TelemetryEventType.USER_CHAT_FORK,
+    properties: { conversationId, forkedConversationId },
+  });
+
+  return forkedConversationId;
 }
 
 export function getMessageSnapshotId(message: Message): string | null {

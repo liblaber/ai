@@ -10,6 +10,7 @@ import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
 import '~/lib/config/env';
 import { requireUserId } from '~/auth/session';
+import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
 
 interface CommandResult {
   output: string;
@@ -282,7 +283,13 @@ export async function POST(request: NextRequest) {
             url: existingSite.url,
             chatId,
           };
-          logger.info('Retrieved existing site info', JSON.stringify({ chatId, siteId: targetSiteId }));
+          logger.info(
+            'Retrieved existing site info',
+            JSON.stringify({
+              chatId,
+              siteId: targetSiteId,
+            }),
+          );
         }
       }
 
@@ -483,7 +490,19 @@ export async function POST(request: NextRequest) {
 
         // After successful deployment, save to database
         if (siteInfo) {
-          logger.info('Saving website to database', JSON.stringify({ chatId, siteId: siteInfo.id }));
+          const telemetry = await getTelemetry();
+          await telemetry.trackEvent({
+            eventType: TelemetryEventType.USER_APP_DEPLOY,
+            properties: { websiteInfo: siteInfo },
+          });
+
+          logger.info(
+            'Saving website to database',
+            JSON.stringify({
+              chatId,
+              siteId: siteInfo.id,
+            }),
+          );
 
           try {
             let website;
@@ -501,7 +520,13 @@ export async function POST(request: NextRequest) {
                   siteUrl: latestDeploy.links.permalink,
                 },
               });
-              logger.info('Website updated in database', JSON.stringify({ chatId, siteId: siteInfo.id }));
+              logger.info(
+                'Website updated in database',
+                JSON.stringify({
+                  chatId,
+                  siteId: siteInfo.id,
+                }),
+              );
             } else {
               // Create new website
               website = await prisma.website.create({
@@ -513,7 +538,13 @@ export async function POST(request: NextRequest) {
                   userId,
                 },
               });
-              logger.info('Website saved to database successfully', JSON.stringify({ chatId, siteId: siteInfo.id }));
+              logger.info(
+                'Website saved to database successfully',
+                JSON.stringify({
+                  chatId,
+                  siteId: siteInfo.id,
+                }),
+              );
             }
 
             // Send single success message with website data

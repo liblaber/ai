@@ -5,6 +5,7 @@ import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
 import { messageService } from '~/lib/services/messageService';
 import { requireUserId } from '~/auth/session';
+import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
 
 export async function POST(
   request: NextRequest,
@@ -84,6 +85,12 @@ export async function POST(
         }
       });
     }
+
+    const telemetry = await getTelemetry();
+    await telemetry.trackEvent({
+      eventType: TelemetryEventType.USER_CHAT_REVERT,
+      properties: { conversationId },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
