@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const connectionDetails = new URL(dataSource.connectionString);
     const type = connectionDetails.protocol.replace(':', '');
 
-    const queries = await generateSqlQueries(schema, prompt, llm.instance, type, existingQueries);
+    const queries = await generateSqlQueries(schema, prompt, llm, type, existingQueries);
 
     if (!queries || queries.length === 0) {
       return NextResponse.json({ error: 'Failed to generate SQL query' }, { status: 500 });

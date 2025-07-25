@@ -1,8 +1,10 @@
 import type { LanguageModelV1 } from 'ai';
 import { LLMManager } from '~/lib/modules/llm/manager';
+import { getMaxTokens } from '~/lib/.server/llm/constants';
 
-type Llm = {
+export type Llm = {
   instance: LanguageModelV1;
+  maxOutputTokens: number;
 };
 
 export async function getLlm(): Promise<Llm> {
@@ -15,5 +17,5 @@ export async function getLlm(): Promise<Llm> {
     serverEnv: process.env as any,
   });
 
-  return { instance };
+  return { instance, maxOutputTokens: getMaxTokens(provider.name, modelName) };
 }
