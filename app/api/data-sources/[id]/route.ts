@@ -5,7 +5,7 @@ import {
   getDataSource,
   updateDataSource,
 } from '~/lib/services/datasourceService';
-import { requireUserId } from '~//auth/session';
+import { requireUserId } from '~/auth/session';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await requireUserId(request);
