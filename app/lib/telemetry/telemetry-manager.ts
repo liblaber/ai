@@ -1,10 +1,18 @@
 import { PostHog } from 'posthog-node';
+import { getInstanceId } from '~/lib/instance-id';
 
 export enum TelemetryEventType {
-  APP_START_SUCCESS = 'app_start_success',
-  APP_ERROR = 'app_error',
-  SETUP_SUCCESS = 'setup_success',
-  SETUP_ERROR = 'setup_error',
+  // App start success is tracked in instrumentation.ts on app startup
+  APP_START_SUCCESS = 'APP_START_SUCCESS',
+  APP_ERROR = 'APP_ERROR',
+  SETUP_SUCCESS = 'SETUP_SUCCESS',
+  SETUP_ERROR = 'SETUP_ERROR',
+  USER_CHAT_RETRY = 'USER_CHAT_RETRY',
+  USER_CHAT_REVERT = 'USER_CHAT_REVERT',
+  USER_CHAT_FORK = 'USER_CHAT_FORK',
+  USER_CHAT_PROMPT = 'USER_CHAT_PROMPT',
+  USER_APP_DEPLOY = 'USER_APP_DEPLOY',
+  BUILT_APP_ERROR = 'BUILT_APP_ERROR',
 }
 
 export interface TelemetryEvent {
@@ -20,10 +28,10 @@ class TelemetryManager {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor() {}
 
-  static async create(instanceId: string): Promise<TelemetryManager> {
+  static async create(): Promise<TelemetryManager> {
     const instance = new TelemetryManager();
     instance._posthogApiKey = process.env.POSTHOG_API_KEY || null;
-    instance._machineId = instanceId;
+    instance._machineId = getInstanceId();
 
     if (!instance._posthogApiKey) {
       console.warn('No POSTHOG_API_KEY found. Telemetry not initialized.');
@@ -52,6 +60,9 @@ class TelemetryManager {
     };
 
     try {
+      // TODO: @skos remove this later
+      console.log('TelemetryManager trackEvent', event);
+
       this._posthogClient.capture({
         distinctId: this._machineId!,
         event: event.eventType,
@@ -101,9 +112,9 @@ class TelemetryManager {
 // Export a singleton instance
 let _telemetryInstance: TelemetryManager | null = null;
 
-export async function getTelemetry(instanceId: string): Promise<TelemetryManager> {
+export async function getTelemetry(): Promise<TelemetryManager> {
   if (!_telemetryInstance) {
-    _telemetryInstance = await TelemetryManager.create(instanceId);
+    _telemetryInstance = await TelemetryManager.create();
   }
 
   return _telemetryInstance;

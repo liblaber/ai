@@ -24,7 +24,7 @@ interface MessagesProps {
   messages?: Message[];
   setMessages: (messages: Message[]) => void;
   error?: Error;
-  onRetry?: () => Promise<void>;
+  onRetry: (errorMessage: string) => Promise<void>;
 }
 
 export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
@@ -35,7 +35,10 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
     const { data } = useSession();
     const router = useRouter();
     const user = data?.user;
-    const [rewindDialog, setRewindDialog] = useState<{ isOpen: boolean; snapshotId: string | null }>({
+    const [rewindDialog, setRewindDialog] = useState<{
+      isOpen: boolean;
+      snapshotId: string | null;
+    }>({
       isOpen: false,
       snapshotId: null,
     });
@@ -86,12 +89,15 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
 
     const handleFork = async (messageId: string) => {
       try {
-        if (!chatId.get()) {
+        const conversationId = chatId.get();
+
+        if (!conversationId) {
           toast.error('Invalid chat id');
           return;
         }
 
-        const forkedChatId = await forkConversation(chatId.get()!, messageId);
+        const forkedChatId = await forkConversation(conversationId, messageId);
+
         router.push(`/chat/${forkedChatId}`);
       } catch (error) {
         toast.error('Failed to fork chat: ' + (error as Error).message);

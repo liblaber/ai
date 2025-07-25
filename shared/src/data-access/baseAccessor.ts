@@ -1,4 +1,5 @@
-import type { Table } from '../types';
+import { type Table } from '../types';
+import type { Plugin } from '~/lib/plugins/types';
 
 export interface BaseAccessor {
   /**
@@ -62,10 +63,6 @@ export interface BaseAccessor {
 
   /** A human-readable label identifying this accessor type */
   readonly label: string;
-}
-
-interface Plugin {
-  pluginId: string;
 }
 
 export interface BaseAccessorConstructor extends Plugin {

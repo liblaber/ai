@@ -1,23 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
-import { getInstanceId } from '~/lib/instance-id';
+import type { TelemetryEvent } from '~/lib/telemetry/telemetry-manager';
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body: any = await req.json();
-    const eventType = body.eventType as TelemetryEventType;
-    const properties = body.properties as Record<string, any> | undefined;
+    const body = await request.json();
+    const { eventType, properties } = body as TelemetryEvent;
 
-    if (!eventType) {
-      return NextResponse.json({ error: 'Missing eventType' }, { status: 400 });
+    // TODO: @skos remove the logs
+    console.log(`Tracking event ${eventType}`, properties);
+
+    if (!Object.values(TelemetryEventType).includes(eventType)) {
+      console.log(`Invalid event ${eventType}`, properties);
+
+      return NextResponse.json({ error: 'Invalid event type' }, { status: 400 });
     }
 
-    const instanceId = getInstanceId();
-    const telemetry = await getTelemetry(instanceId);
-    await telemetry.trackEvent({ eventType, properties });
+    const telemetry = await getTelemetry();
+    await telemetry.trackEvent({
+      eventType,
+      properties,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+    console.error('Telemetry API error:', error);
+    return NextResponse.json({ error: 'Failed to track telemetry event' }, { status: 500 });
   }
 }

@@ -64,7 +64,7 @@ interface BaseChatProps {
   actionRunner?: ActionRunner;
   onSyncFiles?: () => Promise<void>;
   setMessages: (messages: Message[]) => void;
-  onRetry?: () => Promise<void>;
+  onRetry: (errorMessage: string) => Promise<void>;
 }
 
 export const BaseChat = ({

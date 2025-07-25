@@ -12,8 +12,11 @@ import { createId } from '@paralleldrive/cuid2';
 import { conversationService } from '~/lib/services/conversationService';
 import type { StarterPluginId } from '~/lib/plugins/types';
 import type { FileMap } from '~/lib/stores/files';
+import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { prisma } from '~/lib/prisma';
+import { LLMManager } from '~/lib/modules/llm/manager';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 
-const DEFAULT_MODEL = 'claude-3-5-sonnet-latest';
 const WORK_DIR = '/home/project';
 
 const logger = createScopedLogger('api.chat');
@@ -211,10 +214,13 @@ async function chatAction(request: NextRequest) {
                   ? messageProperties.content.find((item) => item.type === 'text')?.text || ''
                   : messageProperties.content;
 
+                const llmManager = LLMManager.getInstance();
+                const currentModel = llmManager.defaultModel;
+
                 await messageService.saveMessage({
                   conversationId,
                   content: userMessageContent,
-                  model: DEFAULT_MODEL,
+                  model: currentModel,
                   annotations: userMessage.annotations,
                   id: userMessage?.id,
                 });
@@ -222,7 +228,7 @@ async function chatAction(request: NextRequest) {
                 await messageService.saveMessage({
                   conversationId,
                   content: assistantMessageContent,
-                  model: DEFAULT_MODEL,
+                  model: currentModel,
                   inputTokens: usage?.promptTokens,
                   outputTokens: usage?.completionTokens,
                   finishReason,
@@ -231,6 +237,9 @@ async function chatAction(request: NextRequest) {
                 });
 
                 logger.debug('Prompt saved');
+
+                // Track telemetry event after successful message save
+                await trackChatTelemetry(conversationId, currentModel);
               } catch (error) {
                 logger.error('Failed to save prompt', error);
               }
@@ -369,5 +378,42 @@ async function chatAction(request: NextRequest) {
       status: 500,
       statusText: 'Internal Server Error',
     });
+  }
+}
+
+/**
+ * Tracks telemetry for chat prompts
+ */
+async function trackChatTelemetry(conversationId: string, aiModel: string): Promise<void> {
+  try {
+    const telemetry = await getTelemetry();
+
+    const conversationWithDataSource = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        dataSource: {
+          select: {
+            connectionString: true,
+          },
+        },
+      },
+    });
+
+    if (conversationWithDataSource?.dataSource.connectionString) {
+      const pluginId = DataSourcePluginManager.getAccessorPluginId(
+        conversationWithDataSource.dataSource.connectionString,
+      );
+
+      await telemetry.trackEvent({
+        eventType: TelemetryEventType.USER_CHAT_PROMPT,
+        properties: {
+          conversationId,
+          dataSourceType: pluginId,
+          aiModel,
+        },
+      });
+    }
+  } catch (telemetryError) {
+    logger.error('Failed to track telemetry event', telemetryError);
   }
 }
