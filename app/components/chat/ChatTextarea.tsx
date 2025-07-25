@@ -90,7 +90,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
     }
 
     return (
-      <div className="relative w-full bg-liblab-elements-bg-depth-3 p-3 rounded-xl border-2 border-liblab-elements-borderColorSecondary">
+      <div className="relative w-full bg-liblab-elements-bg-depth-3 p-3 rounded-xl border-liblab-elements-borderColorSecondary">
         <FilePreview
           files={uploadedFiles}
           imageDataList={imageDataList}

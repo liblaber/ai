@@ -9,6 +9,14 @@ export const conversationService = {
     });
   },
 
+  async getConversationDataSource(conversationId: string) {
+    return await prisma.conversation
+      .findUniqueOrThrow({
+        where: { id: conversationId },
+      })
+      .dataSource();
+  },
+
   async createConversation(
     dataSourceId: string,
     userId: string,

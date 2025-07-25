@@ -1,12 +1,12 @@
 import { executeQueryThroughProxy } from './execute-query.proxy';
 import { executeQueryDirectly } from '@/db/execute-query.direct';
 
-export interface ExecuteQueryError {
-  isError: true;
-  errorMessage: string;
-}
-
-export type QueryData<T> = { isError: false; data: T } | ExecuteQueryError;
+export type QueryData<T> =
+  | { isError: false; data: T }
+  | {
+      isError: true;
+      errorMessage: string;
+    };
 
 export async function executeQuery<T>(query: string, params?: string[]): Promise<QueryData<T[]>> {
   let result: { data: T[] };

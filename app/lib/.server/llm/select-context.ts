@@ -1,4 +1,4 @@
-import { type CoreTool, generateText, type GenerateTextResult, type Message } from 'ai';
+import { generateText, type Message } from 'ai';
 import ignore from 'ignore';
 import { type FileMap, IGNORE_PATTERNS } from './constants';
 import {
@@ -20,7 +20,7 @@ export async function selectContext(props: {
   files: FileMap;
   contextOptimization?: boolean;
   summary?: string;
-  onFinish?: (resp: GenerateTextResult<Record<string, CoreTool<any, any>>, never>) => void;
+  onFinish?: (response: Awaited<ReturnType<typeof generateText>>) => void;
 }) {
   const { messages, files, summary, onFinish } = props;
   const processedMessages = messages.map((message) => {
