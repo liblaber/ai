@@ -9,9 +9,6 @@ import PluginManager, { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager'
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import { headers } from 'next/headers';
 import { auth } from '~/auth/auth-config';
-import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
-import { redirect } from 'next/navigation';
-import { logger } from '~/utils/logger';
 
 const inlineThemeCode = `
   setLiblabTheme();
@@ -51,18 +48,6 @@ async function getRootData() {
 
       // Get available data source types
       dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
-
-      const url = headersList.get('x-url');
-
-      if (!dataSources.length && !url?.includes(DATA_SOURCE_CONNECTION_ROUTE)) {
-        try {
-          return redirect(DATA_SOURCE_CONNECTION_ROUTE);
-        } catch (error) {
-          logger.info('Redirecting to data source connection route failed:', error);
-        }
-
-        // return redirect(DATA_SOURCE_CONNECTION_ROUTE);
-      }
     }
 
     return {
