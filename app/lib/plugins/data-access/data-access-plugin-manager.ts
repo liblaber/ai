@@ -3,6 +3,7 @@ import type { BaseAccessor, BaseAccessorConstructor } from '@liblab/data-access/
 import { PostgresAccessor } from '@liblab/data-access/accessors/postgres';
 import { MySQLAccessor } from '@liblab/data-access/accessors/mysql';
 import { SQLiteAccessor } from '@liblab/data-access/accessors/sqlite';
+import { MongoDBAccessor } from '@liblab/data-access/accessors/mongodb';
 import { type PluginId, PluginType } from '~/lib/plugins/types';
 
 export class DataSourcePluginManager {
@@ -13,7 +14,7 @@ export class DataSourcePluginManager {
   }
 
   static getAccessor(databaseUrl: string): BaseAccessor {
-    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor];
+    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor, MongoDBAccessor];
 
     // Only allow accessors that are enabled by the plugin manager
     const enabledAccessors = allAccessors.filter((acc: BaseAccessorConstructor) => {
@@ -37,7 +38,7 @@ export class DataSourcePluginManager {
     connectionStringFormat: string;
     available: boolean;
   }[] {
-    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor];
+    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor, MongoDBAccessor];
     return allAccessors.map((acc) => {
       const instance = new acc();
       const pluginId = acc.pluginId || instance.label.toLowerCase().replace(/\s.*/, '');

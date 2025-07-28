@@ -58,16 +58,28 @@ export const QueryModal = memo(
       }
     }, [isOpen, queryId]);
 
-    const formatSql = (sql: string) => {
+    const formatQuery = (query: string) => {
       if (!dataSource) {
-        return sql;
+        return query;
       }
 
       try {
         const connectionDetails = new URL(dataSource.connectionString);
         const type = connectionDetails.protocol.replace(':', '');
 
-        return format(sql, {
+        // For MongoDB, pretty-print the JSON instead of using SQL formatter
+        if (type === 'mongodb') {
+          try {
+            const parsedQuery = JSON.parse(query);
+            return JSON.stringify(parsedQuery, null, 2);
+          } catch {
+            // If it's not valid JSON, return as-is
+            return query;
+          }
+        }
+
+        // For SQL databases, use the SQL formatter
+        return format(query, {
           language: type as
             | 'bigquery'
             | 'db2'
@@ -95,8 +107,8 @@ export const QueryModal = memo(
           useTabs: false,
         });
       } catch (err) {
-        setError(`Failed to format SQL: ${err}`);
-        return sql;
+        setError(`Failed to format query: ${err}`);
+        return query;
       }
     };
 
@@ -112,7 +124,7 @@ export const QueryModal = memo(
         }
 
         const data = (await response.json()) as string;
-        setQuery(formatSql(data));
+        setQuery(formatQuery(data));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch query');
       } finally {
@@ -124,7 +136,7 @@ export const QueryModal = memo(
       try {
         setError(null);
 
-        const formattedQuery = formatSql(query || '');
+        const formattedQuery = formatQuery(query || '');
         const response = await fetch(`/api/queries/${queryId}`, {
           method: 'PUT',
           headers: {
@@ -138,7 +150,7 @@ export const QueryModal = memo(
         }
 
         const updatedQuery = (await response.json()) as string;
-        setQuery(formatSql(updatedQuery));
+        setQuery(formatQuery(updatedQuery));
 
         if (onUpdateAndRegenerate) {
           onUpdateAndRegenerate(updatedQuery);
@@ -184,7 +196,7 @@ export const QueryModal = memo(
       }
     };
 
-    const handleGenerateSql = async (dataSourceId: string) => {
+    const handleGenerateQuery = async (dataSourceId: string) => {
       if (!userPrompt.trim()) {
         return;
       }
@@ -202,24 +214,24 @@ export const QueryModal = memo(
         });
 
         if (!response.ok) {
-          throw new Error('Failed to generate SQL');
+          throw new Error('Failed to generate query');
         }
 
         const data = (await response.json()) as string;
-        setQuery(formatSql(data));
+        setQuery(formatQuery(data));
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to generate SQL');
+        setError(err instanceof Error ? err.message : 'Failed to generate query');
       } finally {
         setIsGenerating(false);
       }
     };
 
-    const handleFormatSql = () => {
+    const handleFormatQuery = () => {
       if (!query) {
         return;
       }
 
-      setQuery(formatSql(query));
+      setQuery(formatQuery(query));
     };
 
     return (
@@ -240,7 +252,7 @@ export const QueryModal = memo(
                     <QueryEditor
                       query={query}
                       onQueryChange={setQuery}
-                      onFormatQuery={handleFormatSql}
+                      onFormatQuery={handleFormatQuery}
                       onTestQuery={handleTestQuery}
                       isTesting={isTesting}
                       queryId={queryId}
@@ -253,7 +265,7 @@ export const QueryModal = memo(
                     <AiGeneration
                       userPrompt={userPrompt}
                       onPromptChange={setUserPrompt}
-                      onGenerateQuery={() => handleGenerateSql(dataSourceId)}
+                      onGenerateQuery={() => handleGenerateQuery(dataSourceId)}
                       isGenerating={isGenerating}
                     />
 

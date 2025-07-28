@@ -52,7 +52,7 @@ export async function executeQueryDirectly<T>(query: string, params?: string[]):
   try {
     return params && params.length > 0 ? await retryQuery<T>(query, params) : await retryQuery<T>(query);
   } catch (error) {
-    console.error('Error executing SQL query:', { error, queryError: true });
-    throw new Error(`Failed to execute SQL query: ${(error as Error).message}`);
+    console.error('Error executing query:', { error, queryError: true });
+    throw new Error(`Failed to execute query: ${(error as Error).message}`);
   }
 }
