@@ -1,0 +1,91 @@
+This project is implemented in Next.js (App Router) with TypeScript.
+Every generated file must be COMPLETE and follow Next.js conventions.
+
+General Guidelines:
+- Use the /app directory for all routes and pages.
+- API routes must be placed under /app/api/[route]/route.ts and use the Next.js Response helpers.
+- Use functional React components and TypeScript for all files.
+- Use Tailwind CSS for styling. Do not use other CSS frameworks. Do not edit imports in /app/globals.css file.
+- Always use the built-in Next.js routing and data fetching methods (e.g., fetch, async/await, server/client components as appropriate).
+- For icons, use only the lucide-react library if icons are needed.
+
+Component & Page Structure:
+- Place all UI components in /app/components or a relevant subfolder.
+- Pages must be defined as either page.tsx (for UI) or route.ts (for API) in their respective folders.
+- Always export default for page components.
+- For new pages, create a folder under /app/[route]/page.tsx.
+- If the homepage (/app/page.tsx) is not implemented, any new page should be created as the homepage (i.e., /app/page.tsx), unless the user is very explicit about a different route. You must always check if the homepage has implementation!
+- If the homepage is implemented, and user's request does not require editing that page, create a new page and add a sidebar link.
+- For new API endpoints, create a folder under /app/api/[route]/route.ts but always return QueryData type so that data can be wrapped into the WithErrorHandling hoc.
+- Always provide complete, ready-to-use files. Never output partial or incomplete files.
+- When there are multiple pages in the project, add a sidebar for easier navigation between pages.
+
+WithErrorHandling Usage:
+- Always use the WithErrorHandling HOC from @/components/hoc/WithErrorHandling to wrap any data-fetching component in server components.
+- The wrapped component must accept a 'data' prop, which will receive the data from the HOC.
+- Example usage:
+    <WithErrorHandling queryData={data} component={YourComponent} />
+- If your component requires extra props, pass them using the additionalProps prop:
+    <WithErrorHandling queryData={data} component={YourComponent} additionalProps={{ foo: 'bar' }} />
+- This ensures consistent error handling and UI feedback for all async data.
+
+Data Handling:
+- Write raw SQL queries based on already defined guidelines
+- Use executeQuery from app/db/execute-query.ts to execute queries
+   - VERY IMPORTANT is that this function can be run only on server-side runtime.
+
+More Complex Data Handling:
+In some cases, you may need to build dynamic, interactive components like tables with pagination, filtering, or live updates. For these scenarios:
+   - Use a separate resource route (e.g. app/api/[route]/route.ts) to handle the dynamic data fetching logic.
+   - Use the fetch api to interact with the resource route from your component.
+   - Place fetch logic in the parent component, and pass the fetcher's result to the UI via the WithErrorHandling component.
+   - Refetch the data by reacting to the event produced by the child component (e.g. handleBuildsTableFiltersChange)
+
+Client and Server Components:
+- IT IS VERY IMPORTANT always to add the 'use client' directive at the very top of any file that uses client component only functions (such as useNavigation, useParams, useRouter, useSearchParams, etc.). This is required for these hooks to work in Next.js App Router.
+- NEVER call executeQuery in a client component.
+
+Best Practices:
+- Use TypeScript for type safety everywhere.
+- Keep components focused and single-responsibility.
+- Add comments for complex logic.
+- Use async/await for all asynchronous code.
+- Use Next.js conventions for metadata, error boundaries, and loading states (e.g., loading.tsx, error.tsx).
+- Ensure all API responses are typed and return valid JSON.
+- Use Tailwind utility classes for all styling.
+- Do not use useEffect for data fetching in server components.
+
+Sidebar:
+- The project includes a SidebarNav component located at /app/components/building-blocks/sidebar-nav/SidebarNav.tsx.
+- You can update or style this SidebarNav component as needed to fit new navigation requirements or design changes.
+- Sidebar is displayed by default. DO NOT update /app/layout.tsx unless the user explicitly requests sidebar to be hidden.
+- If the user requests a new page, proactively add the link to the new page into the /app/components/building-blocks/sidebar-nav/sidebar-links.ts SIDEBAR_LINKS array
+- Example type:
+
+Tables:
+- Always implement filtering and pagination in tables to handle large datasets efficiently.
+- Prefer using a global filter for tables to allow users to search across all columns easily.
+
+Imports:
+- Use the @/ alias to import from the app directory. For example, instead of importing with './app/', use '@/'.
+- Example: import { executeQuery } from "@/db/execute-query";
+
+Dependencies:
+- Avoid installing new dependencies unless absolutely necessary. Use only the dependencies that are already installed in the project whenever possible.
+- If a new dependency is required, you must include a shell action with pnpm add command inside the response artifact so it can be properly added to the project.
+- NEVER update package.json file to add new dependencies, use pnpm add command!
+- Example: <liblabAction type="shell">pnpm add {example-lib}</liblabAction>
+
+Styling Instructions
+- For any charts like Area Chart, Bar Chart, Line Chart, Pie Chart, Radar Chart, or Radial Chart use the shadcn chart component and follow component principles (https://ui.shadcn.com/docs/components/chart).
+- A chart must not be wider or higher than the container it is in. It should be responsive and adapt to the container's width. Don't set explicit width or height, it produces a chart that is going out of the bounds of the container.
+- Use the correct color variable pattern for charts (var(--chart-{number}) and var(--chart-{number}-stroke)). When displaying success or error data, use var(--chart-success) and var(--chart-success-stroke) or var(--chart-error) and var(--chart-error-stroke)
+- When generating Area component, pay attention to stackId parameter which should be unique to have all values displayed correctly
+- Prefer styling dashboards with grid of charts / cards / tables and avoid having charts taking up the whole width of the page.
+
+STRICTLY FORBIDDEN:
+- It is strictly forbidden to change, modify, or overwrite any files that live /app/lib or /app/db (especially execute-query.ts and execute-query.proxy.ts files). These files are core to the project and must remain untouched by any generated code or edits.
+
+INSTRUCTION REMINDER
+- Follow all guidelines and best practices above.
+- Always write COMPLETE files, even for simple changes. Never truncate output!

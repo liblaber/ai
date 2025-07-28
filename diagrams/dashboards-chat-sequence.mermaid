@@ -1,0 +1,66 @@
+sequenceDiagram
+    participant User
+    participant ChatUI
+    participant API
+    participant LLM
+    participant BuilderDB
+    participant ClientDB
+    participant SecureVault
+    participant TemplateManager
+    participant WebContainer
+    participant OutputApp
+
+    User->>ChatUI: Send Message
+
+    ChatUI->>TemplateManager: Get Starter Template
+    TemplateManager-->>ChatUI: Return Template
+
+    ChatUI->>ChatUI: Process Input
+    ChatUI->>ChatUI: Cache State
+
+    Note over ChatUI,API: Message Processing
+    ChatUI->>API: Send Message
+    API->>API: Resolve system prompt* (dashboards/general)
+    API->>API: Prepare Context
+    API->>API: Select Model
+
+    Note over API,LLM: SQL Decision
+    API->>LLM: Decide should generate SQL for User prompt
+    LLM-->>API: Decision should generate SQL: true / false
+   
+    alt Should generate SQL: true
+        API->>BuilderDB: Get Schema
+        BuilderDB->>BuilderDB: Check Schema Cache
+        alt Cache Hit
+            BuilderDB-->>API: Return Cached Schema
+        else Cache Miss
+            Note over API, ClientDB: Get ClientDB Schema
+            API->>SecureVault: Get DB Connection String
+            SecureVault-->>API: Return Connection String
+            API->>ClientDB: Get schema
+            ClientDB-->>API: Return Schema
+            API-->>BuilderDB: Return Schema
+            API->>API: Map to object model
+            BuilderDB->>BuilderDB: Cache Schema
+        end
+        API->>LLM: Generate SQL
+        LLM-->>API: SQL Queries
+        API->>API: Add SQL queries to the context
+    end
+
+    Note over API,LLM: AI Processing
+    API->>LLM: Send Request
+    LLM-->>API: Stream Response
+    API-->>ChatUI: Stream Updates
+
+    Note over ChatUI,WebContainer: Code Generation
+    ChatUI->>ChatUI: Parse Response
+    Note over ChatUI, WebContainer: File System Actions & Console Commands
+    ChatUI->>WebContainer: Add/replace/delete generated files
+    ChatUI->>WebContainer: Add scripts (install / run)
+    WebContainer->>OutputApp: Run scripts
+    OutputApp->>OutputApp: Hot Module Reload
+    OutputApp-->>WebContainer: Execute Code
+    WebContainer-->>ChatUI: embeded iframe element
+
+    ChatUI-->>User: Show LLM Response Summary

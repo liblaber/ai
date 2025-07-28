@@ -1,0 +1,188 @@
+name: 📋 RFC (Request for Comments)
+description: Propose major changes that need community discussion and approval
+title: '[RFC]: '
+labels: ['rfc', 'needs-discussion']
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for proposing an RFC! This process helps us make thoughtful decisions about major changes.
+
+        RFCs are for significant changes that affect:
+        - Architecture or design decisions
+        - Breaking changes to APIs
+        - New major features
+        - Changes to development processes
+
+        Please review our [Governance Model](https://github.com/liblaber/liblab.ai/blob/main/GOVERNANCE.md) for the RFC process.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One paragraph explanation of the proposal.
+      placeholder: Provide a brief overview of what you're proposing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why are we doing this? What problem does it solve?
+      placeholder: |
+        - What user problems does this solve?
+        - What are the expected outcomes?
+        - Why is this the right time to address this?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      description: What area does this RFC affect?
+      options:
+        - Architecture & Design
+        - API Changes
+        - Development Process
+        - Community & Governance
+        - Infrastructure
+        - Security
+        - Performance
+        - Other (specify below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: detailed_design
+    attributes:
+      label: Detailed Design
+      description: Explain the design in enough detail for someone familiar with the project to understand and implement.
+      placeholder: |
+        - How does it work?
+        - What are the key components?
+        - How does it integrate with existing systems?
+        - Include diagrams, code examples, or mockups if helpful.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What other approaches were considered and why were they not chosen?
+      placeholder: List alternative solutions and explain why this approach is preferred.
+    validations:
+      required: true
+
+  - type: textarea
+    id: breaking_changes
+    attributes:
+      label: Breaking Changes
+      description: Does this introduce any breaking changes? How will they be handled?
+      placeholder: |
+        - List any breaking changes
+        - Migration path for existing users
+        - Deprecation timeline if applicable
+    validations:
+      required: false
+
+  - type: textarea
+    id: implementation_plan
+    attributes:
+      label: Implementation Plan
+      description: How will this be implemented? What are the phases?
+      placeholder: |
+        - Phase 1: ...
+        - Phase 2: ...
+        - Timeline estimates
+        - Dependencies and blockers
+    validations:
+      required: true
+
+  - type: textarea
+    id: testing_strategy
+    attributes:
+      label: Testing Strategy
+      description: How will this be tested? What are the acceptance criteria?
+      placeholder: |
+        - Unit tests
+        - Integration tests
+        - Performance benchmarks
+        - User acceptance criteria
+    validations:
+      required: false
+
+  - type: textarea
+    id: documentation_plan
+    attributes:
+      label: Documentation Plan
+      description: What documentation needs to be created or updated?
+      placeholder: |
+        - User documentation
+        - API documentation
+        - Migration guides
+        - Examples and tutorials
+    validations:
+      required: false
+
+  - type: textarea
+    id: risks_considerations
+    attributes:
+      label: Risks and Considerations
+      description: What are the potential risks or concerns with this approach?
+      placeholder: |
+        - Technical risks
+        - User experience impact
+        - Maintenance burden
+        - Security considerations
+    validations:
+      required: false
+
+  - type: textarea
+    id: success_metrics
+    attributes:
+      label: Success Metrics
+      description: How will we measure if this RFC is successful?
+      placeholder: |
+        - Performance improvements
+        - User adoption metrics
+        - Developer experience measures
+        - Community feedback
+    validations:
+      required: false
+
+  - type: textarea
+    id: prior_art
+    attributes:
+      label: Prior Art
+      description: How do other projects handle this? What can we learn from them?
+      placeholder: Reference similar implementations in other projects or standards.
+    validations:
+      required: false
+
+  - type: textarea
+    id: future_possibilities
+    attributes:
+      label: Future Possibilities
+      description: What future enhancements does this enable?
+      placeholder: How might this proposal be extended or built upon in the future?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have reviewed the governance model and understand the RFC process
+          required: true
+        - label: I have considered alternatives and breaking changes
+          required: true
+        - label: I am prepared to engage in community discussion about this proposal
+          required: true
+        - label: I am willing to help implement this if the RFC is accepted
+          required: false

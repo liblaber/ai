@@ -1,0 +1,144 @@
+:root {
+  --cm-backgroundColor: var(--liblab-elements-editor-backgroundColor, var(--liblab-elements-bg-depth-1));
+  --cm-textColor: var(--liblab-elements-editor-textColor, var(--liblab-elements-textPrimary));
+
+  /* Gutter */
+
+  --cm-gutter-backgroundColor: var(--liblab-elements-editor-gutter-backgroundColor, var(--cm-backgroundColor));
+  --cm-gutter-textColor: var(--liblab-elements-editor-gutter-textColor, var(--liblab-elements-textSecondary));
+  --cm-gutter-activeLineTextColor: var(--liblab-elements-editor-gutter-activeLineTextColor, var(--cm-gutter-textColor));
+
+  /* Fold Gutter */
+
+  --cm-foldGutter-textColor: var(--liblab-elements-editor-foldGutter-textColor, var(--cm-gutter-textColor));
+  --cm-foldGutter-textColorHover: var(--liblab-elements-editor-foldGutter-textColorHover, var(--cm-gutter-textColor));
+
+  /* Active Line */
+
+  --cm-activeLineBackgroundColor: var(--liblab-elements-editor-activeLineBackgroundColor, rgb(224 231 235 / 30%));
+
+  /* Cursor */
+
+  --cm-cursor-width: 2px;
+  --cm-cursor-backgroundColor: var(--liblab-elements-editor-cursorColor, var(--liblab-elements-textSecondary));
+
+  /* Matching Brackets */
+
+  --cm-matching-bracket: var(--liblab-elements-editor-matchingBracketBackgroundColor, rgb(50 140 130 / 0.3));
+
+  /* Selection */
+
+  --cm-selection-backgroundColorFocused: var(--liblab-elements-editor-selection-backgroundColor, #42b4ff);
+  --cm-selection-backgroundOpacityFocused: var(--liblab-elements-editor-selection-backgroundOpacity, 0.3);
+  --cm-selection-backgroundColorBlured: var(--liblab-elements-editor-selection-inactiveBackgroundColor, #c9e9ff);
+  --cm-selection-backgroundOpacityBlured: var(--liblab-elements-editor-selection-inactiveBackgroundOpacity, 0.3);
+
+  /* Panels */
+
+  --cm-panels-borderColor: var(--liblab-elements-editor-panels-borderColor, var(--liblab-elements-borderColor));
+
+  /* Search */
+
+  --cm-search-backgroundColor: var(--liblab-elements-editor-search-backgroundColor, var(--cm-backgroundColor));
+  --cm-search-textColor: var(--liblab-elements-editor-search-textColor, var(--liblab-elements-textSecondary));
+  --cm-search-closeButton-backgroundColor: var(
+    --liblab-elements-editor-search-closeButton-backgroundColor,
+    transparent
+  );
+
+  --cm-search-closeButton-backgroundColorHover: var(
+    --liblab-elements-editor-search-closeButton-backgroundColorHover,
+    var(--liblab-elements-item-backgroundActive)
+  );
+
+  --cm-search-closeButton-textColor: var(
+    --liblab-elements-editor-search-closeButton-textColor,
+    var(--liblab-elements-item-contentDefault)
+  );
+
+  --cm-search-closeButton-textColorHover: var(
+    --liblab-elements-editor-search-closeButton-textColorHover,
+    var(--liblab-elements-item-contentActive)
+  );
+
+  --cm-search-button-backgroundColor: var(
+    --liblab-elements-editor-search-button-backgroundColor,
+    var(--liblab-elements-item-backgroundDefault)
+  );
+
+  --cm-search-button-backgroundColorHover: var(
+    --liblab-elements-editor-search-button-backgroundColorHover,
+    var(--liblab-elements-item-backgroundActive)
+  );
+
+  --cm-search-button-textColor: var(
+    --liblab-elements-editor-search-button-textColor,
+    var(--liblab-elements-textSecondary)
+  );
+
+  --cm-search-button-textColorHover: var(
+    --liblab-elements-editor-search-button-textColorHover,
+    var(--liblab-elements-textPrimary)
+  );
+
+  --cm-search-button-borderColor: var(--liblab-elements-editor-search-button-borderColor, transparent);
+  --cm-search-button-borderColorHover: var(--liblab-elements-editor-search-button-borderColorHover, transparent);
+
+  --cm-search-button-borderColorFocused: var(
+    --liblab-elements-editor-search-button-borderColorFocused,
+    var(--liblab-elements-borderColorActive)
+  );
+
+  --cm-search-input-backgroundColor: var(--liblab-elements-editor-search-input-backgroundColor, transparent);
+  --cm-search-input-textColor: var(--liblab-elements-editor-search-input-textColor, var(--liblab-elements-textPrimary));
+  --cm-search-input-borderColor: var(
+    --liblab-elements-editor-search-input-borderColor,
+    var(--liblab-elements-borderColor)
+  );
+
+  --cm-search-input-borderColorFocused: var(
+    --liblab-elements-editor-search-input-borderColorFocused,
+    var(--liblab-elements-borderColorActive)
+  );
+
+  /* Tooltip */
+
+  --cm-tooltip-backgroundColor: var(--liblab-elements-editor-tooltip-backgroundColor, var(--cm-backgroundColor));
+  --cm-tooltip-textColor: var(--liblab-elements-editor-tooltip-textColor, var(--liblab-elements-textPrimary));
+
+  --cm-tooltip-backgroundColorSelected: var(
+    --liblab-elements-editor-tooltip-backgroundColorSelected,
+    rgba(59, 206, 255, 0.3)
+  );
+
+  --cm-tooltip-textColorSelected: var(
+    --liblab-elements-editor-tooltip-textColorSelected,
+    var(--liblab-elements-textPrimary)
+  );
+
+  --cm-tooltip-borderColor: var(--liblab-elements-editor-tooltip-borderColor, var(--liblab-elements-borderColor));
+
+  --cm-searchMatch-backgroundColor: var(--liblab-elements-editor-searchMatch-backgroundColor, rgba(234, 92, 0, 0.33));
+}
+
+html[data-theme='light'] {
+  --liblab-elements-editor-gutter-textColor: #237893;
+  --liblab-elements-editor-gutter-activeLineTextColor: var(--liblab-elements-textPrimary);
+  --liblab-elements-editor-foldGutter-textColorHover: var(--liblab-elements-textPrimary);
+  --liblab-elements-editor-activeLineBackgroundColor: rgb(50 53 63 / 5%);
+  --liblab-elements-editor-tooltip-backgroundColorSelected: rgba(232, 249, 255, 0.2);
+  --liblab-elements-editor-search-button-backgroundColor: #f7f7f8;
+  --liblab-elements-editor-search-button-backgroundColorHover: #e8e9ec;
+}
+
+html[data-theme='dark'] {
+  --cm-backgroundColor: var(--liblab-elements-bg-depth-2);
+  --liblab-elements-editor-gutter-textColor: var(--liblab-elements-textTertiary);
+  --liblab-elements-editor-gutter-activeLineTextColor: var(--liblab-elements-textSecondary);
+  --liblab-elements-editor-selection-inactiveBackgroundOpacity: 0.3;
+  --liblab-elements-editor-activeLineBackgroundColor: rgb(50 53 63 / 50%);
+  --liblab-elements-editor-foldGutter-textColorHover: var(--liblab-elements-textPrimary);
+  --liblab-elements-editor-matchingBracketBackgroundColor: rgba(66, 180, 255, 0.3);
+  --liblab-elements-editor-search-button-backgroundColor: #33373e;
+  --liblab-elements-editor-search-button-backgroundColorHover: rgba(255, 255, 255, 0.1);
+}
