@@ -2,7 +2,6 @@ import { MessageRole } from '~/utils/constants';
 import { type Message } from 'ai';
 import type { FileMap } from '~/lib/stores/files';
 import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
-import '~/lib/config/env';
 import { logger } from '~/utils/logger';
 
 export type RepoFile = { name: string; path: string; content: string };

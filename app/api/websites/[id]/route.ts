@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
 import { requireUserId } from '~/auth/session';
-import '~/lib/config/env';
+import { env } from '~/lib/config/env';
 
 // Netlify API client
 const NETLIFY_API_URL = 'https://api.netlify.com/api/v1';
-const NETLIFY_ACCESS_TOKEN = process.env.NETLIFY_AUTH_TOKEN;
+const NETLIFY_ACCESS_TOKEN = env.NETLIFY_AUTH_TOKEN;
 
 async function deleteNetlifySite(siteId: string) {
   if (!NETLIFY_ACCESS_TOKEN) {

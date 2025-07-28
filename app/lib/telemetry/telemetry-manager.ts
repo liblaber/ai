@@ -1,3 +1,4 @@
+import { env } from '~/lib/config/env';
 import { PostHog } from 'posthog-node';
 
 export enum TelemetryEventType {
@@ -22,7 +23,7 @@ class TelemetryManager {
 
   static async create(instanceId: string): Promise<TelemetryManager> {
     const instance = new TelemetryManager();
-    instance._posthogApiKey = process.env.POSTHOG_API_KEY || null;
+    instance._posthogApiKey = env.POSTHOG_API_KEY || null;
     instance._machineId = instanceId;
 
     if (!instance._posthogApiKey) {
@@ -48,7 +49,7 @@ class TelemetryManager {
       ...event.properties,
       machine_id: this._machineId,
       node_version: process.version,
-      liblab_version: process.env.npm_package_version || '0.0.1',
+      liblab_version: env.npm_package_version || '0.0.1',
     };
 
     try {
@@ -75,7 +76,7 @@ class TelemetryManager {
 
   private _isTelemetryEnabled(): boolean {
     // Check if telemetry is disabled via environment variable
-    const telemetryDisabled = process.env.DISABLE_TELEMETRY === 'true' || process.env.DISABLE_TELEMETRY === '1';
+    const telemetryDisabled = env.DISABLE_TELEMETRY;
 
     if (telemetryDisabled) {
       console.log('📊 Telemetry disabled via DISABLE_TELEMETRY environment variable');

@@ -1,7 +1,7 @@
 import { getSession } from './session';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import '~/lib/config/env';
+import { env } from '~/lib/config/env';
 
 /**
  * Middleware function to protect routes that require authentication
@@ -17,6 +17,6 @@ export async function requireAuth(): Promise<void> {
 
   if (!session) {
     // Redirect to root if not authenticated
-    redirect((process.env.BASE_URL as string) ?? 'http://localhost:3000');
+    redirect((env.BASE_URL as string) ?? 'http://localhost:3000');
   }
 }
