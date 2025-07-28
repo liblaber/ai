@@ -77,7 +77,7 @@ export function LoginButton() {
   return (
     <DialogRoot open={isLoginModalOpen} onOpenChange={toggleLoginModal}>
       <DialogTrigger asChild>
-        <button className="px-4 py-2 rounded-md font-medium text-sm bg-white border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all shadow-sm hover:shadow">
+        <button className="px-4 py-2 rounded-md font-medium text-sm bg-white border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all shadow-sm hover:shadow text-liblab-elements-button-primary-text">
           Log in
         </button>
       </DialogTrigger>
