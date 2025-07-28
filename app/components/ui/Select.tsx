@@ -1,29 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import type { ControlProps, OptionProps, StylesConfig } from 'react-select';
 import Select, { components } from 'react-select';
+import { ClientOnly } from '~/components/ui/ClientOnly';
 
 export interface SelectOption {
   value: string;
   label: string;
   icon?: React.ReactNode;
   [key: string]: any;
-}
-
-// Client-only wrapper to prevent hydration mismatches
-function ClientOnly({ children }: { children: React.ReactNode }) {
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  if (!hasMounted) {
-    return null;
-  }
-
-  return <>{children}</>;
 }
 
 const Option = ({ children, ...props }: OptionProps<SelectOption>) => {
