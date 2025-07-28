@@ -4,7 +4,6 @@ import { injectEnvVariable } from '~/utils/envUtils';
 import { webcontainer } from '~/lib/webcontainer/index';
 import { detectProjectCommands } from '~/utils/projectCommands';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { logger } from '~/utils/logger';
 
 /**
  * Loads a file map into the web container.
@@ -12,13 +11,7 @@ import { logger } from '~/utils/logger';
  * @param fileMap - The file map to load.
  */
 export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> => {
-  logger.info('Loading file map into web container:', JSON.stringify(fileMap, null, 2));
-
   const webContainer = await webcontainer();
-
-  logger.info('WebContainer instance:', JSON.stringify(webContainer));
-
-  logger.info('Loaded file map into web container:', JSON.stringify(fileMap, null, 2));
 
   for (const [key, value] of Object.entries(fileMap)) {
     if (value?.type !== 'folder') {
