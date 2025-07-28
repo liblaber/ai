@@ -32,4 +32,6 @@ WORKDIR /app
 
 RUN mkdir -p ${WORKDIR}/run
 
-CMD ["pnpm", "run", "prod"]
+RUN pnpm run build
+
+CMD ["pnpm", "run", "start"]
