@@ -7,9 +7,9 @@ import FilePreview from './FilePreview';
 import { ScreenshotStateManager } from './ScreenshotStateManager';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { openSettingsPanel } from '~/lib/stores/settings';
-import { ClientOnly } from 'remix-utils/client-only';
 import { SendButton } from './SendButton.client';
 import { processImageFile } from '~/utils/fileUtils';
+import { ClientOnly } from '~/components/ui/ClientOnly';
 
 interface ChatTextareaProps {
   value: string;

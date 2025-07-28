@@ -2,6 +2,8 @@ import { MessageRole } from '~/utils/constants';
 import { type Message } from 'ai';
 import type { FileMap } from '~/lib/stores/files';
 import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
+import '~/lib/config/env';
+import { logger } from '~/utils/logger';
 
 export type RepoFile = { name: string; path: string; content: string };
 
@@ -10,10 +12,16 @@ interface StarterTemplateResponse {
   error?: string;
 }
 
-function writeSensitiveDataToEnvFile(files: FileMap, databaseUrl: string): FileMap {
+async function writeSensitiveDataToEnvFile(files: FileMap, databaseUrl: string): Promise<FileMap> {
   const envPath = Object.keys(files).find((key) => key.includes('.env')) || '.env';
   const encodedDatabaseUrl = encodeURIComponent(databaseUrl);
-  const encryptionKey = process.env.ENCRYPTION_KEY;
+  const encryptionKeyResponse = await fetch('/api/encryption-key');
+
+  if (!encryptionKeyResponse.ok) {
+    throw new Error(`Failed to fetch encryption key: ${encryptionKeyResponse.status}`);
+  }
+
+  const { encryptionKey } = await encryptionKeyResponse.json<{ encryptionKey: string }>();
 
   if (!encryptionKey) {
     throw new Error('ENCRYPTION_KEY environment variable is not set');
@@ -46,13 +54,19 @@ function writeSensitiveDataToEnvFile(files: FileMap, databaseUrl: string): FileM
 
 export const getStarterTemplateFiles = async (databaseUrl?: string): Promise<FileMap> => {
   try {
+    logger.info('fetching starter template files from API with databaseUrl:', databaseUrl);
+
     const response = await fetch('/api/starter-template');
+
+    logger.info('Fetching starter template files from API', JSON.stringify(response));
 
     if (!response.ok) {
       throw new Error(`Failed to fetch starter template: ${response.status}`);
     }
 
     const data = (await response.json()) as StarterTemplateResponse;
+
+    logger.info('Starter template files from API', JSON.stringify(data));
 
     if (data.error) {
       throw new Error(data.error);

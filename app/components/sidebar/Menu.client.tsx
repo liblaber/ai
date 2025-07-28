@@ -61,7 +61,7 @@ function CurrentDateTime() {
 }
 
 export const Menu = () => {
-  const { exportChat } = useConversationHistory();
+  const { exportChat } = useConversationHistory(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
   const [conversations, setConversations] = useState<SimpleConversationResponse[]>([]);
   const [open, setOpen] = useState(false);

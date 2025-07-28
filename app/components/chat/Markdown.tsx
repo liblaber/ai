@@ -1,8 +1,8 @@
-import { memo, useMemo } from 'react';
+import { useMemo } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import type { BundledLanguage } from 'shiki';
 import { createScopedLogger } from '~/utils/logger';
-import { rehypePlugins, remarkPlugins, allowedHTMLElements } from '~/utils/markdown';
+import { allowedHTMLElements, rehypePlugins, remarkPlugins } from '~/utils/markdown';
 import { Artifact } from './Artifact';
 import { CodeBlock } from './CodeBlock';
 
@@ -16,7 +16,7 @@ interface MarkdownProps {
   limitedMarkdown?: boolean;
 }
 
-export const Markdown = memo(({ children, html = false, limitedMarkdown = false }: MarkdownProps) => {
+export const Markdown = ({ children, html = false, limitedMarkdown = false }: MarkdownProps) => {
   logger.trace('Render');
 
   const components = useMemo(() => {
@@ -75,7 +75,7 @@ export const Markdown = memo(({ children, html = false, limitedMarkdown = false 
       {stripCodeFenceFromArtifact(children)}
     </ReactMarkdown>
   );
-});
+};
 
 /**
  * Removes code fence markers (```) surrounding an artifact element while preserving the artifact content.

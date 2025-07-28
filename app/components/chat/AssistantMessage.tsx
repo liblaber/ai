@@ -1,4 +1,3 @@
-import { memo } from 'react';
 import { Markdown } from './Markdown';
 import type { JSONValue } from 'ai';
 import Popover from '~/components/ui/Popover';
@@ -38,7 +37,7 @@ function normalizedFilePath(path: string) {
   return normalizedPath;
 }
 
-export const AssistantMessage = memo(({ content, annotations, onRetry, error }: AssistantMessageProps) => {
+export const AssistantMessage = ({ content, annotations, onRetry, error }: AssistantMessageProps) => {
   const filteredAnnotations = (annotations?.filter(
     (annotation: JSONValue) => annotation && typeof annotation === 'object' && Object.keys(annotation).includes('type'),
   ) || []) as { type: string; value: any } & { [key: string]: any }[];
@@ -128,4 +127,4 @@ export const AssistantMessage = memo(({ content, annotations, onRetry, error }: 
       </div>
     </div>
   );
-});
+};

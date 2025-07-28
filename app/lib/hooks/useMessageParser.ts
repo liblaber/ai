@@ -1,3 +1,5 @@
+'use client';
+
 import type { Message } from '@ai-sdk/react';
 import { useCallback, useState } from 'react';
 import { NO_EXECUTE_ACTION_ANNOTATION, StreamingMessageParser } from '~/lib/runtime/message-parser';
@@ -56,7 +58,7 @@ export function useMessageParser() {
   const parseMessages = useCallback((messages: Message[], isLoading: boolean) => {
     let reset = false;
 
-    if (import.meta.env.DEV && !isLoading) {
+    if (process.env.NODE_ENV === 'development' && !isLoading) {
       reset = true;
       messageParser.reset();
     }

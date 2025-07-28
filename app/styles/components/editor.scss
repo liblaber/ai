@@ -108,7 +108,7 @@
 
   --cm-tooltip-backgroundColorSelected: var(
     --liblab-elements-editor-tooltip-backgroundColorSelected,
-    theme('colors.alpha.accent.30')
+    rgba(59, 206, 255, 0.3)
   );
 
   --cm-tooltip-textColorSelected: var(
@@ -126,9 +126,9 @@ html[data-theme='light'] {
   --liblab-elements-editor-gutter-activeLineTextColor: var(--liblab-elements-textPrimary);
   --liblab-elements-editor-foldGutter-textColorHover: var(--liblab-elements-textPrimary);
   --liblab-elements-editor-activeLineBackgroundColor: rgb(50 53 63 / 5%);
-  --liblab-elements-editor-tooltip-backgroundColorSelected: theme('colors.alpha.accent.20');
-  --liblab-elements-editor-search-button-backgroundColor: theme('colors.gray.100');
-  --liblab-elements-editor-search-button-backgroundColorHover: theme('colors.alpha.gray.10');
+  --liblab-elements-editor-tooltip-backgroundColorSelected: rgba(232, 249, 255, 0.2);
+  --liblab-elements-editor-search-button-backgroundColor: #f7f7f8;
+  --liblab-elements-editor-search-button-backgroundColorHover: #e8e9ec;
 }
 
 html[data-theme='dark'] {
@@ -139,6 +139,6 @@ html[data-theme='dark'] {
   --liblab-elements-editor-activeLineBackgroundColor: rgb(50 53 63 / 50%);
   --liblab-elements-editor-foldGutter-textColorHover: var(--liblab-elements-textPrimary);
   --liblab-elements-editor-matchingBracketBackgroundColor: rgba(66, 180, 255, 0.3);
-  --liblab-elements-editor-search-button-backgroundColor: theme('colors.gray.800');
-  --liblab-elements-editor-search-button-backgroundColorHover: theme('colors.alpha.white.10');
+  --liblab-elements-editor-search-button-backgroundColor: #33373e;
+  --liblab-elements-editor-search-button-backgroundColorHover: rgba(255, 255, 255, 0.1);
 }

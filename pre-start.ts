@@ -4,12 +4,13 @@ import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
+import { getInstanceId } from '~/lib/instance-id';
 
 const NGROK_LOG_FILE = './ngrok.log';
 const NGROK_PROCESS_PORT = 4040;
 
 const setupNgrokTunnel = (): string | null => {
-  const port = process.env.PORT || '5173';
+  const port = process.env.PORT || '3000';
 
   try {
     killPreviousNgrokProcessAndClearLogFile();
@@ -122,12 +123,15 @@ const updateEnvFile = (ngrokUrl: string): void => {
     envContent = fs.readFileSync('.env', 'utf8');
   }
 
-  // Replace existing VITE_NGROK_FORWARDING_URL or add new one
-  const newEnvContent = envContent.replace(/^VITE_TUNNEL_FORWARDING_URL=.*/m, `VITE_TUNNEL_FORWARDING_URL=${ngrokUrl}`);
+  // Replace existing NEXT_PUBLIC_TUNNEL_FORWARDING_URL or add new one
+  const newEnvContent = envContent.replace(
+    /^NEXT_PUBLIC_TUNNEL_FORWARDING_URL=.*/m,
+    `NEXT_PUBLIC_TUNNEL_FORWARDING_URL=${ngrokUrl}`,
+  );
 
   if (newEnvContent === envContent) {
     // If no replacement was made, append the new variable
-    envContent = `${envContent}\nVITE_TUNNEL_FORWARDING_URL=${ngrokUrl}`;
+    envContent = `${envContent}\nNEXT_PUBLIC_TUNNEL_FORWARDING_URL=${ngrokUrl}`;
   } else {
     envContent = newEnvContent;
   }
@@ -149,7 +153,7 @@ const runApp = async (): Promise<void> => {
   execSync('npx prisma migrate deploy', { stdio: 'inherit' });
   console.log('✅ Prisma migrations completed successfully');
 
-  if (process.env.VITE_ENV_NAME === 'local') {
+  if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
     console.log('⏳ Setting up sample database...');
 
     execSync('tsx scripts/setup-sample-db.ts', { stdio: 'inherit' });
@@ -170,7 +174,8 @@ const runApp = async (): Promise<void> => {
 };
 
 async function trackAppError(error: any) {
-  const telemetry = await getTelemetry();
+  const instanceId = getInstanceId();
+  const telemetry = await getTelemetry(instanceId);
 
   try {
     const errorInfo = normalizeError(error);

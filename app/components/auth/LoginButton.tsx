@@ -1,3 +1,4 @@
+'use client';
 import React, { useEffect } from 'react';
 import { signIn, useSession } from '~/auth/auth-client';
 import {
@@ -35,12 +36,22 @@ export function LoginButton() {
 
     try {
       switch (provider) {
-        case 'anonymous':
-          await signIn.anonymous();
+        case 'anonymous': {
+          const { error: signInError } = await signIn.email({
+            email: 'anonymous@anonymous.com',
+            password: 'password1234',
+            rememberMe: true,
+          });
+
+          if (signInError) {
+            console.error('Failed to sign in anonymous user:', signInError);
+            return;
+          }
 
           // Refresh the landing page after login to show data sources connection modal
           window.location.reload();
           break;
+        }
         default:
           await signIn.social({ provider });
           break;
@@ -66,7 +77,7 @@ export function LoginButton() {
   return (
     <DialogRoot open={isLoginModalOpen} onOpenChange={toggleLoginModal}>
       <DialogTrigger asChild>
-        <button className="px-4 py-2 rounded-md font-medium text-sm bg-white border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all shadow-sm hover:shadow">
+        <button className="px-4 py-2 rounded-md font-medium text-sm bg-white border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all shadow-sm hover:shadow text-liblab-elements-button-primary-text">
           Log in
         </button>
       </DialogTrigger>

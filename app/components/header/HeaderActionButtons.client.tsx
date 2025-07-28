@@ -1,3 +1,4 @@
+'use client';
 import { useStore } from '@nanostores/react';
 import { toast } from 'sonner';
 import useViewport from '~/lib/hooks';
@@ -195,7 +196,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       }
 
       // Get all files recursively, excluding build and .netlify directories
-      const container = await webcontainer;
+      const container = await webcontainer();
       const projectPath = '/home/project';
 
       async function getAllFiles(dirPath: string): Promise<Record<string, string>> {

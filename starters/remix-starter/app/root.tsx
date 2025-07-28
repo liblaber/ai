@@ -17,7 +17,7 @@ export function ErrorBoundary() {
   const loggedErrors = useRef<string[]>([]);
 
   useEffect(() => {
-    if (import.meta.env.VITE_PROD || !error?.stack || loggedErrors.current.includes(error.stack)) {
+    if (process.env.NEXT_PUBLIC_PROD || !error?.stack || loggedErrors.current.includes(error.stack)) {
       return;
     }
 
@@ -25,7 +25,7 @@ export function ErrorBoundary() {
     loggedErrors.current.push(error.stack);
   }, [error]);
 
-  if (import.meta.env.VITE_PROD) {
+  if (process.env.NEXT_PUBLIC_PROD) {
     return <ErrorComponent errorMessage="Something went wrong, please try to refresh the page." />;
   }
 

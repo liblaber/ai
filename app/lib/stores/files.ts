@@ -1,7 +1,7 @@
 import type { PathWatcherEvent, WebContainer } from '@webcontainer/api';
 import { getEncoding } from 'istextorbinary';
 import { map, type MapStore } from 'nanostores';
-import { Buffer } from 'node:buffer';
+import { Buffer } from 'buffer';
 import { path } from '~/utils/path';
 import { bufferWatchEvents } from '~/utils/buffer';
 import { WORK_DIR } from '~/utils/constants';
@@ -30,6 +30,10 @@ type Dirent = File | Folder;
 export type FileMap = Record<string, Dirent | undefined>;
 
 export class FilesStore {
+  /**
+   * Map of files that matches the state of WebContainer.
+   */
+  files: MapStore<FileMap> = import.meta.hot?.data.files ?? map({});
   #webcontainer: Promise<WebContainer>;
 
   /**
@@ -43,11 +47,6 @@ export class FilesStore {
    * for the model to be aware of the changes.
    */
   #modifiedFiles: Map<string, string> = import.meta.hot?.data.modifiedFiles ?? new Map();
-
-  /**
-   * Map of files that matches the state of WebContainer.
-   */
-  files: MapStore<FileMap> = import.meta.hot?.data.files ?? map({});
 
   get filesCount() {
     return this.#size;

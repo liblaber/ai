@@ -4,6 +4,7 @@ import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
 import { config } from 'dotenv';
 import path from 'path';
+import { getInstanceId } from '~/lib/instance-id';
 
 /**
  * Setup for the liblab.ai builder
@@ -12,11 +13,12 @@ const runSetup = async (): Promise<void> => {
   try {
     execSync('sh ./scripts/setup.sh', { stdio: 'inherit' });
 
-    // Reload environment variables after setup script completes
+    const instanceId = getInstanceId();
+
     reloadEnvFile();
 
     try {
-      const telemetry = await getTelemetry();
+      const telemetry = await getTelemetry(instanceId);
       await telemetry.trackEvent({ eventType: TelemetryEventType.SETUP_SUCCESS });
     } catch (telemetryError) {
       console.warn('Failed to track setup success:', (telemetryError as Error).message);
@@ -36,7 +38,7 @@ function reloadEnvFile() {
 }
 
 async function trackSetupError(error: any) {
-  const telemetry = await getTelemetry();
+  const telemetry = await getTelemetry(getInstanceId());
 
   try {
     const errorInfo = normalizeError(error);

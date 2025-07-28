@@ -94,7 +94,111 @@ If you do not provide a `POSTHOG_API_KEY` in your `.env`, telemetry will also be
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Option 1: Docker (Recommended)
+
+**The easiest way to get started!** Just need Docker installed.
+
+#### Prerequisites
+
+<details>
+<summary><strong>Docker</strong> - Required for containerized setup</summary>
+
+Install Docker Desktop from [docker.com/get-started](https://www.docker.com/get-started/)
+
+#### Verify Installation
+
+```bash
+docker --version
+docker-compose --version
+```
+
+</details>
+
+<details>
+<summary><strong>Anthropic API Key</strong> - Required for AI model access</summary>
+
+#### Step 1: Create Anthropic Account
+
+1. Go to [console.anthropic.com/signup](https://console.anthropic.com/signup)
+2. Create an account
+3. Verify your email
+
+#### Step 2: Generate API Key
+
+1. Go to [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
+2. Click "Create Key"
+3. Give it a name (e.g., "liblab-ai")
+4. Copy the API key (starts with `sk-ant-`)
+
+#### Step 3: Save Your API Key
+
+You'll add this to your `.env` file during setup, but keep it handy:
+
+```
+ANTHROPIC_API_KEY=sk-ant-your-api-key-here
+```
+
+> **💡 Pro Tip:** The setup script will prompt you for this API key, so you don't need to manually edit files.
+
+</details>
+
+<details>
+<summary><strong>Ngrok Auth Token</strong> - Required for external tunnel access</summary>
+
+#### Step 1: Create Ngrok Account
+
+1. Go to [ngrok.com](https://ngrok.com/)
+2. Sign up for a free account
+3. Verify your email
+
+#### Step 2: Get Your Auth Token
+
+1. After logging in, go to [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)
+2. Copy your authtoken (long alphanumeric string)
+
+#### Step 3: Save Your Auth Token
+
+You'll add this to your `.env` file during setup, but keep it handy:
+
+```
+NGROK_AUTHTOKEN=your-ngrok-authtoken-here
+```
+
+> **💡 Pro Tip:** The setup script will prompt you for this auth token, so you don't need to manually edit files.
+
+</details>
+
+#### Setup
+
+First, run the setup script to configure your environment:
+
+```bash
+pnpm run setup
+```
+
+If you lack permissions to run `scripts/setup.sh` fix it with:
+
+```bash
+chmod +x scripts/setup.sh
+```
+
+#### Start with Docker
+
+After setup is complete, start the app with Docker:
+
+```bash
+pnpm run dockerstart
+```
+
+**That's it! 🎉** The app will be available at http://localhost:3000
+
+---
+
+### Option 2: Manual Installation
+
+**For developers who prefer full control over their environment.**
+
+#### Prerequisites
 
 Before starting, ensure you have all the following installed and configured:
 
@@ -154,17 +258,27 @@ pnpm --version
 </details>
 
 <details>
-<summary><strong>ngrok</strong> - Free account for local tunneling (one time setup)</summary>
+<summary><strong>Ngrok</strong> - Local tunneling for development (automatic setup)</summary>
 
-#### Step 1: Create ngrok Account
+#### Step 1: Install Ngrok
 
-1. Go to [ngrok.com/signup](https://ngrok.com/signup)
-2. Create a free account
-3. Follow ngrok's [setup instructions](https://dashboard.ngrok.com/get-started/setup)
-   - Install ngrok CLI tool with: `brew install ngrok`
-   - Set your ngrok authtoken with: `ngrok config add-authtoken YOUR_AUTHTOKEN_HERE`
-   - Verify the installation with `ngrok version`
-   </details>
+Ngrok is automatically installed as a dependency when you run the setup script. No manual configuration required!
+
+If you need to install it manually:
+
+```bash
+npm install -g ngrok
+```
+
+#### Step 2: Verify Installation
+
+```bash
+ngrok --version
+```
+
+> **💡 Note:** The setup script handles ngrok installation automatically, so you don't need to do anything manually.
+
+</details>
 
 <details>
 <summary><strong>Anthropic API Key</strong> - Required for AI model access</summary>
@@ -194,7 +308,7 @@ ANTHROPIC_API_KEY=sk-ant-your-api-key-here
 
 </details>
 
-### Setup
+#### Setup
 
 Run the setup:
 
@@ -217,7 +331,7 @@ The script automatically handles:
 - Install all dependencies
 - Setup SQLite database
 
-### Start the app
+#### Start the app
 
 Start the development server with:
 

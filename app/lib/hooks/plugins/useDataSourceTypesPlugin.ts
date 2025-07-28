@@ -1,3 +1,5 @@
+'use client';
+
 import { usePluginStore } from '~/lib/plugins/plugin-store';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useMemo } from 'react';

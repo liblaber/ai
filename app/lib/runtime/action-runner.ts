@@ -1,3 +1,5 @@
+'use client';
+
 import { path as nodePath } from '~/utils/path';
 import { atom, map, type MapStore } from 'nanostores';
 import type { ActionAlert, FileHistory, LiblabAction } from '~/types/actions';
@@ -81,29 +83,53 @@ export class ActionRunner {
     this.#shells = getShells();
   }
 
-  async #availableShellTerminal(): Promise<LiblabShell> {
-    const availableShell = this.#shells.find((shell) => {
-      const state = shell.executionState.get();
+  static async isAppRunning(): Promise<boolean> {
+    const runningAppPid = await ActionRunner.getRunningAppPid();
 
-      return !state?.active;
-    });
+    return !!runningAppPid;
+  }
 
-    if (availableShell) {
-      return availableShell;
+  static async getRunningAppPid() {
+    const webcontainer = await webcontainerPromise();
+    logger.debug('Getting PID of the running app process');
+
+    const { output } = await webcontainer.spawn('ps', ['-ef']);
+    const outputResult = await output.getReader().read();
+    const pid = this.#getCommandPid(workbenchStore.startCommand.get(), outputResult.value);
+
+    if (pid) {
+      logger.debug(`Found PID (${pid}) of the running app process`);
+    } else {
+      logger.debug('No running app process');
     }
 
-    /*
-     * if there are no available instances, we will take the last one and abort the process
-     * ideally, we would create a new terminal instance here, but that requires a lot of refactoring
-     * in most cases, at least one instance will be available for running commands
-     */
-    const lastTerminalInstance = this.#shells.at(this.#shells.length - 1);
+    return pid;
+  }
 
-    if (!lastTerminalInstance) {
-      unreachable('No available shell terminal found');
+  static #getCommandPid(targetCommand: string, psOutput?: string): number | null {
+    if (!psOutput) {
+      return null;
     }
 
-    return lastTerminalInstance;
+    const lines = psOutput.trim().split('\n');
+
+    // Skip the header line
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      const parts = line.split(/\s+/);
+
+      // PID is the second column (index 1)
+      if (parts.length >= 2) {
+        const pid = parseInt(parts[1], 10);
+        const cmd = parts.slice(7).join(' '); // Command starts from column 8
+
+        if (cmd.includes(targetCommand)) {
+          return pid;
+        }
+      }
+    }
+
+    return null;
   }
 
   async addAction(data: ActionCallbackData) {
@@ -175,7 +201,7 @@ export class ActionRunner {
 
   async getFileHistory(filePath: string): Promise<FileHistory | null> {
     try {
-      const webcontainer = await webcontainerPromise;
+      const webcontainer = await webcontainerPromise();
       const historyPath = this.#getHistoryPath(filePath);
       const content = await webcontainer.fs.readFile(historyPath, 'utf-8');
 
@@ -195,6 +221,31 @@ export class ActionRunner {
       content: JSON.stringify(history),
       changeSource: 'auto-save',
     } as any);
+  }
+
+  async #availableShellTerminal(): Promise<LiblabShell> {
+    const availableShell = this.#shells.find((shell) => {
+      const state = shell.executionState.get();
+
+      return !state?.active;
+    });
+
+    if (availableShell) {
+      return availableShell;
+    }
+
+    /*
+     * if there are no available instances, we will take the last one and abort the process
+     * ideally, we would create a new terminal instance here, but that requires a lot of refactoring
+     * in most cases, at least one instance will be available for running commands
+     */
+    const lastTerminalInstance = this.#shells.at(this.#shells.length - 1);
+
+    if (!lastTerminalInstance) {
+      unreachable('No available shell terminal found');
+    }
+
+    return lastTerminalInstance;
   }
 
   async #executeAction(actionId: string, isStreaming: boolean = false) {
@@ -277,38 +328,6 @@ export class ActionRunner {
     }
   }
 
-  static #getCommandPid(targetCommand: string, psOutput?: string): number | null {
-    if (!psOutput) {
-      return null;
-    }
-
-    const lines = psOutput.trim().split('\n');
-
-    // Skip the header line
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i];
-      const parts = line.split(/\s+/);
-
-      // PID is the second column (index 1)
-      if (parts.length >= 2) {
-        const pid = parseInt(parts[1], 10);
-        const cmd = parts.slice(7).join(' '); // Command starts from column 8
-
-        if (cmd.includes(targetCommand)) {
-          return pid;
-        }
-      }
-    }
-
-    return null;
-  }
-
-  static async isAppRunning(): Promise<boolean> {
-    const runningAppPid = await ActionRunner.getRunningAppPid();
-
-    return !!runningAppPid;
-  }
-
   async #killRunningAppProcess(shell: LiblabShell): Promise<boolean> {
     try {
       const pid = await ActionRunner.getRunningAppPid();
@@ -320,7 +339,7 @@ export class ActionRunner {
 
       logger.debug(`Killing PID (${pid})`);
 
-      const webcontainer = await webcontainerPromise;
+      const webcontainer = await webcontainerPromise();
       await webcontainer.spawn('kill', [pid.toString()]);
 
       shell.executionState.set({
@@ -335,23 +354,6 @@ export class ActionRunner {
       logger.error('Error killing process:', error);
       return false;
     }
-  }
-
-  static async getRunningAppPid() {
-    const webcontainer = await webcontainerPromise;
-    logger.debug('Getting PID of the running app process');
-
-    const { output } = await webcontainer.spawn('ps', ['-ef']);
-    const outputResult = await output.getReader().read();
-    const pid = this.#getCommandPid(workbenchStore.startCommand.get(), outputResult.value);
-
-    if (pid) {
-      logger.debug(`Found PID (${pid}) of the running app process`);
-    } else {
-      logger.debug('No running app process');
-    }
-
-    return pid;
   }
 
   async #runShellAction(action: ActionState) {
@@ -422,7 +424,7 @@ export class ActionRunner {
       unreachable('Expected file action');
     }
 
-    const webcontainer = await webcontainerPromise;
+    const webcontainer = await webcontainerPromise();
     const relativePath = nodePath.relative(webcontainer.workdir, action.filePath);
 
     let folder = nodePath.dirname(relativePath);
@@ -443,15 +445,15 @@ export class ActionRunner {
       let content = action.content;
 
       if (relativePath.endsWith('.env')) {
-        if (import.meta.env.VITE_ENV_NAME === 'local') {
-          const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
+        if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
+          const tunnelForwardingUrl = process.env.NEXT_PUBLIC_TUNNEL_FORWARDING_URL;
           content = injectEnvVariable(
             content,
             'VITE_API_BASE_URL',
             tunnelForwardingUrl ? tunnelForwardingUrl : undefined,
           );
         } else {
-          content = injectEnvVariable(content, 'VITE_API_BASE_URL', window.__ENV__.VITE_BASE_URL);
+          content = injectEnvVariable(content, 'VITE_API_BASE_URL', process.env.VITE_BASE_URL);
         }
       }
 
@@ -477,7 +479,7 @@ export class ActionRunner {
       unreachable('Expected build action');
     }
 
-    const webcontainer = await webcontainerPromise;
+    const webcontainer = await webcontainerPromise();
 
     // Create a new terminal specifically for the build
     const buildProcess = await webcontainer.spawn('pnpm', ['run', 'build']);

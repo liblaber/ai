@@ -245,8 +245,8 @@ export default function GitHubTab() {
       if (parsed.user && parsed.token) {
         fetchGitHubStats(parsed.token);
       }
-    } else if (import.meta.env.VITE_GITHUB_ACCESS_TOKEN) {
-      fetchGithubUser(import.meta.env.VITE_GITHUB_ACCESS_TOKEN);
+    } else if (process.env.NEXT_PUBLIC_GITHUB_ACCESS_TOKEN) {
+      fetchGithubUser(process.env.NEXT_PUBLIC_GITHUB_ACCESS_TOKEN);
     }
 
     setIsLoading(false);

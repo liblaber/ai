@@ -1,8 +1,7 @@
 import { create } from 'zustand';
-import { useFetcher, useNavigate } from '@remix-run/react';
-import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { persist } from 'zustand/middleware';
-import { DATA_SOURCE_CONNECTION_ROUTE } from '~/routes/data-source-connection';
+import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
 
 interface DataSource {
   id: string;
@@ -51,25 +50,25 @@ export const useDataSourcesStore = create<DataSourcesState>()(
 );
 
 export const useDataSourceActions = () => {
-  const dataSourcesFetcher = useFetcher<{ success: boolean; dataSources: any[] }>();
   const { setDataSources } = useDataSourcesStore();
-  const navigate = useNavigate();
+  const router = useRouter();
 
-  const refetchDataSources = () => {
-    dataSourcesFetcher.load('/api/data-sources');
+  const refetchDataSources = async () => {
+    try {
+      const response = await fetch('/api/data-sources');
+      const data = (await response.json()) as { success: boolean; dataSources: DataSource[] };
+
+      if (data.success) {
+        setDataSources(data.dataSources);
+
+        if (!data.dataSources?.length) {
+          router.push(DATA_SOURCE_CONNECTION_ROUTE);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch data sources:', error);
+    }
   };
-
-  useEffect(() => {
-    if (dataSourcesFetcher.data?.success) {
-      setDataSources(dataSourcesFetcher.data.dataSources);
-    }
-  }, [dataSourcesFetcher.data]);
-
-  useEffect(() => {
-    if (dataSourcesFetcher.data?.success && !dataSourcesFetcher.data?.dataSources?.length) {
-      navigate(DATA_SOURCE_CONNECTION_ROUTE);
-    }
-  }, [dataSourcesFetcher.data]);
 
   return {
     refetchDataSources,

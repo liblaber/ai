@@ -117,7 +117,7 @@ export const fetchWebsite = async (chatId: string) => {
     setLoading(true);
     setError(null);
 
-    const response = await fetch(`/api/websites?chatId=${chatId}`);
+    const response = await fetch(`/api/chats/${chatId}/website`);
 
     if (response.ok) {
       const data = (await response.json()) as WebsiteResponse;

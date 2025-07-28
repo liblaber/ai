@@ -1,3 +1,4 @@
+'use client';
 import {
   type BasePreviewMessage,
   type ConsoleErrorMessage,
@@ -8,6 +9,7 @@ import { WORK_DIR_NAME } from '~/utils/constants';
 import { cleanStackTrace } from '~/utils/stacktrace';
 import { streamingState } from '~/lib/stores/streaming';
 import { errorHandler } from '~/lib/error-handler';
+import { logger } from '~/utils/logger';
 
 interface WebContainerContext {
   loaded: boolean;
@@ -21,136 +23,175 @@ if (import.meta.hot) {
   import.meta.hot.data.webcontainerContext = webcontainerContext;
 }
 
-export let webcontainer: Promise<WebContainer> = new Promise(() => {
-  // noop for ssr
-});
-
 let lastRefreshTimestamp = 0;
 const REFRESH_COOLDOWN_MS = 30000; // 30 seconds
 
-if (!import.meta.env.SSR) {
-  webcontainer =
-    import.meta.hot?.data.webcontainer ??
-    Promise.resolve()
-      .then(() => {
-        return WebContainer.boot({
-          coep: 'credentialless',
-          workdirName: WORK_DIR_NAME,
-          forwardPreviewErrors: true, // Enable error forwarding from iframes
-        });
-      })
-      .then(async (webcontainer) => {
-        webcontainerContext.loaded = true;
+class WebContainerManager {
+  private static _instance: WebContainer | null = null;
+  private static _isCreating = false;
+  private static _initializationPromise: Promise<WebContainer> | null = null;
 
-        const { workbenchStore } = await import('~/lib/stores/workbench');
+  static async getInstance(): Promise<WebContainer> {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      logger.warn('Cannot instantiate WebContainer outside the browser environment');
+      throw new Error('WebContainer can only be instantiated in a browser environment');
+    }
 
-        // Subscribe to streaming state changes
-        let wasStreaming = false;
-        streamingState.subscribe((isStreaming) => {
-          if (wasStreaming && !isStreaming) {
-            // Streaming just finished, refresh the preview and switch to code view
-            const previewComponent = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement;
+    // If _instance already exists, return it
+    if (WebContainerManager._instance) {
+      return WebContainerManager._instance;
+    }
 
-            if (previewComponent) {
-              workbenchStore.previewsStore.changesLoading();
-              workbenchStore.currentView.set('preview');
+    // If we're currently creating an _instance, wait for it
+    if (WebContainerManager._isCreating && WebContainerManager._initializationPromise) {
+      return WebContainerManager._initializationPromise;
+    }
 
-              setTimeout(() => {
-                previewComponent.src = previewComponent.src;
-              }, 1000);
-            }
-          } else if (!wasStreaming && isStreaming) {
-            workbenchStore.openTerminal();
-          }
+    // Set semaphore to prevent double instantiation
+    WebContainerManager._isCreating = true;
 
-          wasStreaming = isStreaming;
-        });
+    // Create the initialization promise
+    WebContainerManager._initializationPromise = WebContainerManager._createInstance();
 
-        // Listen for preview errors
-        webcontainer.on('preview-message', async (message) => {
-          if (streamingState.get() && !workbenchStore.previewsStore.readyForFixing.get()) {
-            return;
-          }
-
-          if (isInitialHydrationError(message)) {
-            const now = Date.now();
-
-            if (now - lastRefreshTimestamp < REFRESH_COOLDOWN_MS) {
-              return;
-            }
-
-            lastRefreshTimestamp = now;
-
-            // Find the preview component and trigger reload
-            const previewComponent = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement;
-
-            if (previewComponent) {
-              previewComponent.src = previewComponent.src;
-              workbenchStore.previewsStore.almostReadyLoading();
-            }
-
-            return;
-          }
-
-          // Preview reload handles these messages that occur only on the first load
-          if (isUncaughtHydrationError(message)) {
-            return;
-          }
-
-          // Handle both uncaught exceptions and unhandled promise rejections
-          if (message.type === 'PREVIEW_UNCAUGHT_EXCEPTION' || message.type === 'PREVIEW_UNHANDLED_REJECTION') {
-            const isPromise = message.type === 'PREVIEW_UNHANDLED_REJECTION';
-            await errorHandler.handle({
-              type: 'preview',
-              title: isPromise ? 'Unhandled Promise Rejection' : 'Uncaught Exception',
-              description: message.message,
-              content: `Error occurred at ${message.pathname}${message.search}${message.hash}\nPort: ${message.port}\n\nStack trace:\n${cleanStackTrace(message.stack || '')}`,
-              source: 'preview',
-            });
-          }
-
-          if (message.type === 'PREVIEW_CONSOLE_ERROR' && isQueryError(message)) {
-            const error = message.args?.join(' ');
-            await errorHandler.handle({
-              type: 'preview',
-              title: 'Query Error',
-              description: error,
-              content: `The error occurred due to a wrong query: ${error}\n\nStack trace:\n${cleanStackTrace(message.stack || '')}`,
-              source: 'preview',
-            });
-          }
-
-          if (message.type === 'PREVIEW_CONSOLE_ERROR' && isErrorBoundaryError(message)) {
-            const { description, content } = getDescriptionAndContent(message);
-
-            await errorHandler.handle({
-              type: 'preview',
-              title: 'Application Error',
-              description,
-              content,
-              source: 'preview',
-            });
-          }
-
-          if (message.type === 'PREVIEW_CONSOLE_ERROR' && isNextJsError(message)) {
-            const { description, content } = getDescriptionAndContent(message);
-
-            await errorHandler.handle({
-              type: 'preview',
-              title: 'Error',
-              description,
-              content,
-              source: 'preview',
-            });
-          }
-        });
-
-        return webcontainer;
-      });
-
-  if (import.meta.hot) {
-    import.meta.hot.data.webcontainer = webcontainer;
+    try {
+      WebContainerManager._instance = await WebContainerManager._initializationPromise;
+      return WebContainerManager._instance;
+    } finally {
+      WebContainerManager._isCreating = false;
+      WebContainerManager._initializationPromise = null;
+    }
   }
+
+  static reset(): void {
+    WebContainerManager._instance = null;
+    WebContainerManager._isCreating = false;
+    WebContainerManager._initializationPromise = null;
+  }
+
+  private static async _createInstance(): Promise<WebContainer> {
+    const webcontainer = await WebContainer.boot({
+      coep: 'credentialless',
+      workdirName: WORK_DIR_NAME,
+      forwardPreviewErrors: true, // Enable error forwarding from iframes
+    });
+
+    webcontainerContext.loaded = true;
+    logger.info('WebContainer initialized');
+
+    const { workbenchStore } = await import('~/lib/stores/workbench');
+    logger.info('imported workbenchStore');
+
+    // Subscribe to streaming state changes
+    let wasStreaming = false;
+    streamingState.subscribe((isStreaming) => {
+      if (wasStreaming && !isStreaming) {
+        // Streaming just finished, refresh the preview and switch to code view
+        const previewComponent = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement;
+
+        if (previewComponent) {
+          workbenchStore.previewsStore.changesLoading();
+          workbenchStore.currentView.set('preview');
+
+          setTimeout(() => {
+            previewComponent.src = previewComponent.src;
+          }, 1000);
+        }
+      } else if (!wasStreaming && isStreaming) {
+        workbenchStore.openTerminal();
+      }
+
+      wasStreaming = isStreaming;
+    });
+
+    // Listen for preview errors
+    webcontainer.on('preview-message', async (message) => {
+      if (streamingState.get() && !workbenchStore.previewsStore.readyForFixing.get()) {
+        return;
+      }
+
+      if (isInitialHydrationError(message)) {
+        const now = Date.now();
+
+        if (now - lastRefreshTimestamp < REFRESH_COOLDOWN_MS) {
+          return;
+        }
+
+        lastRefreshTimestamp = now;
+
+        // Find the preview component and trigger reload
+        const previewComponent = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement;
+
+        if (previewComponent) {
+          previewComponent.src = previewComponent.src;
+          workbenchStore.previewsStore.almostReadyLoading();
+        }
+
+        return;
+      }
+
+      // Preview reload handles these messages that occur only on the first load
+      if (isUncaughtHydrationError(message)) {
+        return;
+      }
+
+      // Handle both uncaught exceptions and unhandled promise rejections
+      if (message.type === 'PREVIEW_UNCAUGHT_EXCEPTION' || message.type === 'PREVIEW_UNHANDLED_REJECTION') {
+        const isPromise = message.type === 'PREVIEW_UNHANDLED_REJECTION';
+        await errorHandler.handle({
+          type: 'preview',
+          title: isPromise ? 'Unhandled Promise Rejection' : 'Uncaught Exception',
+          description: message.message,
+          content: `Error occurred at ${message.pathname}${message.search}${message.hash}\nPort: ${message.port}\n\nStack trace:\n${cleanStackTrace(message.stack || '')}`,
+          source: 'preview',
+        });
+      }
+
+      if (message.type === 'PREVIEW_CONSOLE_ERROR' && isQueryError(message)) {
+        const error = message.args?.join(' ');
+        await errorHandler.handle({
+          type: 'preview',
+          title: 'Query Error',
+          description: error,
+          content: `The error occurred due to a wrong query: ${error}\n\nStack trace:\n${cleanStackTrace(message.stack || '')}`,
+          source: 'preview',
+        });
+      }
+
+      if (message.type === 'PREVIEW_CONSOLE_ERROR' && isErrorBoundaryError(message)) {
+        const { description, content } = getDescriptionAndContent(message);
+
+        await errorHandler.handle({
+          type: 'preview',
+          title: 'Application Error',
+          description,
+          content,
+          source: 'preview',
+        });
+      }
+
+      if (message.type === 'PREVIEW_CONSOLE_ERROR' && isNextJsError(message)) {
+        const { description, content } = getDescriptionAndContent(message);
+
+        await errorHandler.handle({
+          type: 'preview',
+          title: 'Error',
+          description,
+          content,
+          source: 'preview',
+        });
+      }
+    });
+
+    return webcontainer;
+  }
+}
+
+// Export the singleton instance promise for backward compatibility
+export const webcontainer: () => Promise<WebContainer> = WebContainerManager.getInstance;
+
+if (import.meta.hot) {
+  import.meta.hot.data.webcontainer = webcontainer();
 }
 
 function isInitialHydrationError(message: PreviewMessage) {
@@ -210,3 +251,6 @@ function getDescriptionAndContent(message: ConsoleErrorMessage & BasePreviewMess
 
   return { description: `${errorArg.name}: ${errorArg.message}`, content: errorArg.stack };
 }
+
+// Export the manager class for advanced usage
+export { WebContainerManager };
