@@ -1,15 +1,14 @@
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { UserRole } from '@prisma/client';
 import { useEffect, useMemo, useState } from 'react';
-import { useFetcher } from '@remix-run/react';
 import { useUserStore } from '~/lib/stores/user';
+import { toast } from 'sonner';
 
 interface Member {
   id: string;
   email: string;
   name: string;
-  role: UserRole;
+  role: 'ADMIN' | 'MEMBER';
 }
 
 type LoaderData = {
@@ -17,8 +16,8 @@ type LoaderData = {
 };
 
 interface RoleDropdownProps {
-  value: UserRole;
-  onChange: (role: UserRole) => void;
+  value: 'ADMIN' | 'MEMBER';
+  onChange: (role: 'ADMIN' | 'MEMBER') => void;
   triggerClassName?: string;
 }
 
@@ -32,7 +31,7 @@ function RoleDropdown({ value, onChange, triggerClassName }: RoleDropdownProps) 
             'px-3 py-1.5 text-sm rounded-lg bg-gray-600/70 text-white hover:bg-gray-600 transition-colors flex items-center gap-2 min-w-[102px] justify-between'
           }
         >
-          {value === UserRole.ADMIN ? 'Admin' : 'Member'}
+          {value === 'ADMIN' ? 'Admin' : 'Member'}
           <div className="i-ph:caret-down w-4 h-4" />
         </button>
       </DropdownMenu.Trigger>
@@ -48,10 +47,10 @@ function RoleDropdown({ value, onChange, triggerClassName }: RoleDropdownProps) 
               <Tooltip.Trigger asChild>
                 <DropdownMenu.Item
                   className="text-sm text-white px-3 py-2 rounded hover:bg-gray-600/50 cursor-pointer outline-none flex items-center justify-between group"
-                  onSelect={() => onChange(UserRole.ADMIN)}
+                  onSelect={() => onChange('ADMIN')}
                 >
                   Admin
-                  {value === UserRole.ADMIN && <div className="i-ph:check w-4 h-4" />}
+                  {value === 'ADMIN' && <div className="i-ph:check w-4 h-4" />}
                 </DropdownMenu.Item>
               </Tooltip.Trigger>
               <Tooltip.Portal>
@@ -70,10 +69,10 @@ function RoleDropdown({ value, onChange, triggerClassName }: RoleDropdownProps) 
               <Tooltip.Trigger asChild>
                 <DropdownMenu.Item
                   className="text-sm text-white px-3 py-2 rounded hover:bg-gray-600/50 cursor-pointer outline-none flex items-center justify-between group"
-                  onSelect={() => onChange(UserRole.MEMBER)}
+                  onSelect={() => onChange('MEMBER')}
                 >
                   Member
-                  {value === UserRole.MEMBER && <div className="i-ph:check w-4 h-4" />}
+                  {value === 'MEMBER' && <div className="i-ph:check w-4 h-4" />}
                 </DropdownMenu.Item>
               </Tooltip.Trigger>
               <Tooltip.Portal>
@@ -95,31 +94,63 @@ function RoleDropdown({ value, onChange, triggerClassName }: RoleDropdownProps) 
 }
 
 export default function MembersTab() {
-  const fetcher = useFetcher<LoaderData>();
-  const updateRoleFetcher = useFetcher();
   const { id: currentUserId } = useUserStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [members, setMembers] = useState<Member[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [updatingMemberId, setUpdatingMemberId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetcher.load('/api/organization/member');
+    const fetchMembers = async () => {
+      try {
+        setIsLoading(true);
+
+        const response = await fetch('/api/organization/member');
+        const data: LoaderData = await response.json();
+
+        if (data.members) {
+          setMembers(data.members);
+        }
+      } catch (error) {
+        console.error('Error fetching members:', error);
+        toast.error('Failed to fetch members');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMembers();
   }, []);
 
-  useEffect(() => {
-    if (fetcher.data) {
-      setMembers(fetcher.data.members || []);
-    }
-  }, [fetcher.data]);
+  const handleRoleChange = async (memberId: string, newRole: 'ADMIN' | 'MEMBER') => {
+    try {
+      setUpdatingMemberId(memberId);
 
-  const handleRoleChange = (memberId: string, newRole: UserRole) => {
-    updateRoleFetcher.submit(
-      { memberId, role: newRole },
-      {
+      const response = await fetch('/api/organization/member', {
         method: 'PATCH',
-        action: '/api/organization/member',
-        encType: 'application/json',
-      },
-    );
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ memberId, role: newRole }),
+      });
+
+      const data = (await response.json()) as { success: boolean; error?: string };
+
+      if (data.success) {
+        // Update the member's role in the local state
+        setMembers((prevMembers) =>
+          prevMembers.map((member) => (member.id === memberId ? { ...member, role: newRole } : member)),
+        );
+        toast.success('Member role updated successfully');
+      } else {
+        toast.error(data.error || 'Failed to update member role');
+      }
+    } catch (error) {
+      console.error('Error updating member role:', error);
+      toast.error('Failed to update member role');
+    } finally {
+      setUpdatingMemberId(null);
+    }
   };
 
   const filteredMembers = useMemo(
@@ -131,6 +162,20 @@ export default function MembersTab() {
       ),
     [members, searchQuery],
   );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 p-2">
+          <h2 className="text-lg text-white">Members</h2>
+          <span className="text-lg text-gray-400">Loading...</span>
+        </div>
+        <div className="flex items-center justify-center p-8">
+          <div className="text-gray-400">Loading members...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Tooltip.Provider delayDuration={50}>
@@ -168,9 +213,17 @@ export default function MembersTab() {
                 </div>
                 <div>
                   {member.id !== currentUserId ? (
-                    <RoleDropdown value={member.role} onChange={(newRole) => handleRoleChange(member.id, newRole)} />
+                    <RoleDropdown
+                      value={member.role}
+                      onChange={(newRole) => handleRoleChange(member.id, newRole)}
+                      triggerClassName={
+                        updatingMemberId === member.id
+                          ? 'px-3 py-1.5 text-sm rounded-lg bg-gray-600/70 text-white hover:bg-gray-600 transition-colors flex items-center gap-2 min-w-[102px] justify-between opacity-50 cursor-not-allowed'
+                          : undefined
+                      }
+                    />
                   ) : (
-                    <span className="text-sm text-gray-400">{member.role === UserRole.ADMIN ? 'Admin' : 'Member'}</span>
+                    <span className="text-sm text-gray-400">{member.role === 'ADMIN' ? 'Admin' : 'Member'}</span>
                   )}
                 </div>
               </div>

@@ -1,3 +1,4 @@
+'use client';
 import type { FileMap } from '~/lib/stores/files';
 import { injectEnvVariable } from '~/utils/envUtils';
 import { webcontainer } from '~/lib/webcontainer/index';
@@ -10,7 +11,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
  * @param fileMap - The file map to load.
  */
 export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> => {
-  const webContainer = await webcontainer;
+  const webContainer = await webcontainer();
 
   for (const [key, value] of Object.entries(fileMap)) {
     if (value?.type !== 'folder') {
@@ -28,9 +29,8 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
 
     const fileName = key.startsWith(webContainer.workdir) ? key.replace(webContainer.workdir, '') : key;
 
-    if (fileName === '.env' && import.meta.env.VITE_ENV_NAME === 'local') {
-      const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
-      console.log(tunnelForwardingUrl);
+    if (fileName === '.env' && process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
+      const tunnelForwardingUrl = process.env.NEXT_PUBLIC_TUNNEL_FORWARDING_URL;
       value.content = injectEnvVariable(
         value.content,
         'VITE_API_BASE_URL',
@@ -61,7 +61,7 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
  */
 export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap): Promise<void> => {
   const currentFileMap = workbenchStore.getFileMap();
-  const webContainer = await webcontainer;
+  const webContainer = await webcontainer();
 
   const allUniquePaths = new Set([...Object.keys(currentFileMap), ...Object.keys(previousFileMap)]);
 
@@ -87,8 +87,8 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
       } else if (previousFile.type === 'file') {
         let content = previousFile.content;
 
-        if (filePath === '.env' && import.meta.env.VITE_ENV_NAME === 'local') {
-          const tunnelForwardingUrl = import.meta.env.VITE_TUNNEL_FORWARDING_URL;
+        if (filePath === '.env' && process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
+          const tunnelForwardingUrl = process.env.NEXT_PUBLIC_TUNNEL_FORWARDING_URL;
           content = injectEnvVariable(
             content,
             'VITE_API_BASE_URL',

@@ -1,6 +1,7 @@
 import { StorageType } from '@prisma/client';
 import type { StorageService } from './storage-service';
 import { LocalSystemStorageService } from './file-system-storage-service';
+import '~/lib/config/env';
 
 export class StorageServiceFactory {
   private static _instances: Map<StorageType, StorageService> = new Map();

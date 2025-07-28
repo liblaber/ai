@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+'use client';
+import { useEffect, useState } from 'react';
 import { checkConnection } from '~/lib/api/connection';
 
 const ACKNOWLEDGED_CONNECTION_ISSUE_KEY = 'liblab_acknowledged_connection_issue';

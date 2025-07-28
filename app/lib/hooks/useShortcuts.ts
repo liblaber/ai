@@ -1,6 +1,8 @@
+'use client';
+
 import { useStore } from '@nanostores/react';
 import { useEffect } from 'react';
-import { shortcutsStore, type Shortcuts } from '~/lib/stores/settings';
+import { type Shortcuts, shortcutsStore } from '~/lib/stores/settings';
 import { isMac } from '~/utils/os';
 
 // List of keys that should not trigger shortcuts when typing in input/textarea
@@ -41,7 +43,7 @@ export function useShortcuts(): void {
       }
 
       // Debug logging in development only
-      if (import.meta.env.DEV) {
+      if (process.env.NODE_ENV === 'development') {
         console.log('Key pressed:', {
           key: event.key,
           code: event.code,
@@ -60,7 +62,7 @@ export function useShortcuts(): void {
 
         // Handle ctrlOrMetaKey based on OS
         const ctrlOrMetaKeyMatches = shortcut.ctrlOrMetaKey
-          ? (isMac && event.metaKey) || (!isMac && event.ctrlKey)
+          ? (isMac() && event.metaKey) || (!isMac() && event.ctrlKey)
           : true;
 
         const modifiersMatch =
