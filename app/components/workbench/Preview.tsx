@@ -1,6 +1,8 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { IconButton } from '~/components/ui/IconButton';
+import { Logo } from '~/components/Logo';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
 import { ScreenshotSelector } from './ScreenshotSelector';
@@ -26,6 +28,7 @@ export const Preview = memo(() => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isLoading = useStore(workbenchStore.previewsStore.isLoading);
+  const isMakingChanges = useStore(workbenchStore.previewsStore.isMakingChanges);
   const initialLoadRef = useRef(true);
 
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
@@ -382,20 +385,12 @@ export const Preview = memo(() => {
                 hidden={isLoading}
               />
               {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-liblab-elements-bg-depth-1 bg-opacity-50 backdrop-blur-sm">
-                  <div className="flex flex-col items-center gap-4 p-6 rounded-lg bg-liblab-elements-bg-depth-2 shadow-lg border border-liblab-elements-borderColor">
-                    <div className="relative">
-                      <div className="w-12 h-12 border-4 border-liblab-elements-borderColor rounded-full animate-spin border-t-liblab-elements-item-contentAccent"></div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-3 h-3 bg-liblab-elements-item-contentAccent rounded-full animate-pulse"></div>
-                      </div>
-                    </div>
-                    <div className="text-liblab-elements-textPrimary text-lg font-medium text-center">
-                      <span className="inline-block animate-[fadeIn_0.3s_ease-in-out]">
-                        {workbenchStore.previewsStore.loadingText.get()}
-                      </span>
-                    </div>
-                  </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-liblab-elements-bg-depth-1 z-50">
+                  {!isMakingChanges ? (
+                    <LoadingAnimation showLogo customText={workbenchStore.previewsStore.loadingText.get()} />
+                  ) : (
+                    <LoadingAnimation showLogo showProgress />
+                  )}
                 </div>
               )}
               <ScreenshotSelector
@@ -406,9 +401,11 @@ export const Preview = memo(() => {
             </>
           ) : (
             <div className="flex w-full h-full justify-center items-center bg-liblab-elements-bg-depth-1 text-liblab-elements-textPrimary">
-              {workbenchStore.previewsStore.isLoading.get()
-                ? workbenchStore.previewsStore.loadingText.get()
-                : 'No preview available'}
+              {workbenchStore.previewsStore.isLoading.get() ? (
+                <LoadingAnimation showLogo customText={workbenchStore.previewsStore.loadingText.get()} />
+              ) : (
+                <LoadingAnimation showLogo showProgress />
+              )}
             </div>
           )}
 
@@ -468,3 +465,120 @@ export const Preview = memo(() => {
     </div>
   );
 });
+
+function LoadingAnimation({
+  customText,
+  showLogo = false,
+  showProgress = false,
+  rotatingMessages = [],
+}: {
+  customText?: string;
+  showLogo?: boolean;
+  showProgress?: boolean;
+  rotatingMessages?: string[];
+}) {
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  const defaultMessages = [
+    'Analyzing your requirements...',
+    'Generating components...',
+    'Building application structure...',
+    'Setting up routing...',
+    'Configuring styles...',
+    'Optimizing performance...',
+    'Finalizing build...',
+  ];
+
+  const messages = rotatingMessages.length > 0 ? rotatingMessages : defaultMessages;
+
+  useEffect(() => {
+    if (!customText) {
+      const messageInterval = setInterval(() => {
+        setMessageIndex((prev) => (prev + 1) % messages.length);
+      }, 5000);
+
+      return () => {
+        clearInterval(messageInterval);
+      };
+    }
+
+    return undefined;
+  }, [customText, messages.length]);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full space-y-6">
+      {showLogo && (
+        <motion.div
+          animate={{
+            scale: [1, 1.02, 1],
+            opacity: [0.9, 1, 0.9],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        >
+          <Logo />
+        </motion.div>
+      )}
+
+      <div className="h-8 flex items-center justify-center min-w-[280px]">
+        {customText ? (
+          <div className="text-base font-medium text-liblab-elements-textPrimary text-center">{customText}</div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={messageIndex}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="text-base font-medium text-liblab-elements-textPrimary text-center"
+            >
+              {messages[messageIndex]}
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </div>
+
+      {showProgress && (
+        <div className="w-64 space-y-2">
+          <div className="text-xs text-liblab-elements-textSecondary text-center">Building your app</div>
+          <div className="w-full bg-liblab-elements-bg-depth-3 rounded-full h-2 overflow-hidden">
+            <motion.div
+              className="h-full w-1/3 bg-gradient-to-r from-[#3BCEFF] to-[#1B8FCC] rounded-full"
+              animate={{
+                x: ['-100%', '300%'],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex space-x-1">
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="w-2 h-2 bg-liblab-elements-textSecondary rounded-full"
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.5, 1, 0.5],
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              delay: i * 0.2,
+              ease: 'easeInOut',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

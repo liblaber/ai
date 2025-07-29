@@ -53,11 +53,10 @@ interface WebsitesConfigResponse {
 interface HeaderActionButtonsProps {}
 
 export function HeaderActionButtons({}: HeaderActionButtonsProps) {
-  const showWorkbench = useStore(workbenchStore.showWorkbench);
+  const devMode = useStore(workbenchStore.devMode);
   const { showChat } = useStore(chatStore);
   const { website } = useStore(websiteStore);
   const isSmallViewport = useViewport(1024);
-  const canHideChat = showWorkbench || !showChat;
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -405,24 +404,23 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
         <div className="flex border border-liblab-elements-borderColor rounded-md overflow-hidden">
           <Button
             active={showChat}
-            disabled={!canHideChat || isSmallViewport}
+            disabled={isSmallViewport}
             onClick={() => {
-              if (canHideChat) {
-                chatStore.setKey('showChat', !showChat);
-              }
+              chatStore.setKey('showChat', !showChat);
             }}
           >
             <div className="i-liblab:chat text-sm" />
           </Button>
           <div className="w-[1px] bg-liblab-elements-borderColor" />
           <Button
-            active={showWorkbench}
+            active={devMode}
             onClick={() => {
-              if (showWorkbench && !showChat) {
+              if (!showChat) {
                 chatStore.setKey('showChat', true);
               }
 
-              workbenchStore.showWorkbench.set(!showWorkbench);
+              workbenchStore.currentView.set(!devMode ? 'code' : 'preview');
+              workbenchStore.devMode.set(!devMode);
             }}
           >
             <div className="i-ph:code-bold" />

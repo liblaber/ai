@@ -55,12 +55,14 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
     setShowActions(!showActions);
   };
 
+  const devMode = useStore(workbenchStore.devMode);
+
   useEffect(() => {
     if (actions.length && !showActions && !userToggledActions.current) {
       setShowActions(true);
     }
 
-    if (actions.length !== 0 && artifact.type === 'bundled') {
+    if (actions.length !== 0) {
       const finished = !actions.find((action) => action.status !== 'complete');
 
       if (allActionFinished !== finished) {
@@ -75,8 +77,8 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
         <button
           className="flex items-stretch bg-liblab-elements-artifacts-background hover:bg-liblab-elements-artifacts-backgroundHover w-full overflow-hidden"
           onClick={() => {
-            const showWorkbench = workbenchStore.showWorkbench.get();
-            workbenchStore.showWorkbench.set(!showWorkbench);
+            workbenchStore.devMode.set(true);
+            workbenchStore.currentView.set('code');
           }}
         >
           {artifact.type == 'bundled' && (
@@ -101,24 +103,28 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
           </div>
         </button>
         <AnimatePresence>
-          {actions.length && artifact.type !== 'bundled' && (
+          {actions.length && artifact.type !== 'bundled' && (devMode || !allActionFinished) && (
             <motion.button
               initial={{ width: 0 }}
               animate={{ width: 'auto' }}
               exit={{ width: 0 }}
               transition={{ duration: 0.15, ease: cubicEasingFn }}
               className="bg-liblab-elements-artifacts-background hover:bg-liblab-elements-artifacts-backgroundHover"
-              onClick={toggleActions}
+              onClick={devMode ? toggleActions : undefined}
             >
               <div className="p-4">
-                <div className={showActions ? 'i-ph:caret-up-bold' : 'i-ph:caret-down-bold'}></div>
+                {!devMode && !allActionFinished ? (
+                  <div className="i-svg-spinners:90-ring-with-bg"></div>
+                ) : (
+                  <div className={showActions ? 'i-ph:caret-up-bold' : 'i-ph:caret-down-bold'}></div>
+                )}
               </div>
             </motion.button>
           )}
         </AnimatePresence>
       </div>
       <AnimatePresence>
-        {artifact.type !== 'bundled' && showActions && actions.length > 0 && (
+        {artifact.type !== 'bundled' && showActions && actions.length > 0 && devMode && (
           <motion.div
             className="actions"
             initial={{ height: 0 }}
