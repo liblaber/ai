@@ -1,29 +1,4 @@
-// Test the stripCodeFenceFromArtifact function directly
-// This function is exported from the Markdown component
-const stripCodeFenceFromArtifact = (content: string) => {
-  if (!content || !content.includes('__liblabArtifact__')) {
-    return content;
-  }
-
-  const lines = content.split('\n');
-  const artifactLineIndex = lines.findIndex((line) => line.includes('__liblabArtifact__'));
-
-  // Return original content if artifact line not found
-  if (artifactLineIndex === -1) {
-    return content;
-  }
-
-  // Check previous line for code fence
-  if (artifactLineIndex > 0 && lines[artifactLineIndex - 1]?.trim().match(/^```\w*$/)) {
-    lines[artifactLineIndex - 1] = '';
-  }
-
-  if (artifactLineIndex < lines.length - 1 && lines[artifactLineIndex + 1]?.trim().match(/^```$/)) {
-    lines[artifactLineIndex + 1] = '';
-  }
-
-  return lines.join('\n');
-};
+import { stripCodeFenceFromArtifact } from '~/utils/markdown-utils';
 
 describe('stripCodeFenceFromArtifact', () => {
   it('should remove code fences around artifact element', () => {

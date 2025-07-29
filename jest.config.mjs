@@ -23,7 +23,9 @@ const customJestConfig = {
       },
     ],
   },
-  transformIgnorePatterns: ['node_modules/(?!(react-markdown|chalk|@ai-sdk|eventsource-parser)/)'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(react-markdown|chalk|@ai-sdk|eventsource-parser|react-markdown|remark-.*|rehype-.*|unified|unist-.*|mdast-.*|micromark|decode-named-character-reference|character-entities|property-information|hast-util-.*|space-separated-tokens|comma-separated-tokens|remark-parse|remark-stringify|remark-rehype|rehype-stringify|rehype-parse|rehype-raw|rehype-sanitize|rehype-remark|unist-util-.*|mdast-util-.*|micromark-.*|decode-named-character-reference|character-entities|property-information|hast-util-.*|space-separated-tokens|comma-separated-tokens|react-markdown|remark-gfm|rehype-raw|rehype-sanitize|unified|unist-util-visit|mdast-util-.*|micromark-.*|decode-named-character-reference|character-entities|property-information|hast-util-.*|space-separated-tokens|comma-separated-tokens)/)',
+  ],
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   globals: {
     'ts-jest': {
@@ -33,6 +35,8 @@ const customJestConfig = {
   testEnvironmentOptions: {
     customExportConditions: [''],
   },
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  preset: 'ts-jest/presets/default-esm',
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
