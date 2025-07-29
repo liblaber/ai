@@ -62,7 +62,7 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
   return (
     <div className="overflow-hidden w-full">
       <>
-        <div className="flex gap-2 items-center text-sm text-liblab-elements-textSecondary my-1">
+        <div className="flex gap-2 items-center text-sm text-liblab-elements-textSecondary my-1.5">
           {(codeContext || chatSummary) && !errorMessage && (
             <Popover side="right" align="start" trigger={<div className="i-ph:info" />}>
               {chatSummary && (

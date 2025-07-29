@@ -30,7 +30,10 @@ export function WithErrorHandling<T>({ queryData, component: Component, addition
   }
 
   if (!queryData.data) {
-    return null;
+    const componentName = extractComponentName(Component);
+    console.error(`queryData.data not found in WithErrorHandling for component: ${componentName}`);
+
+    return <ErrorBanner errorMessage={`Error in ${componentName}: query data not found`} />;
   }
 
   return <Component data={queryData.data} {...(additionalProps as object)} />;
