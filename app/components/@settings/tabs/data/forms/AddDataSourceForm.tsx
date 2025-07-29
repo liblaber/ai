@@ -56,7 +56,6 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
         });
 
         const responseText = await response.text();
-        console.log('Raw response text:', responseText);
 
         let data: TestConnectionResponse;
 
