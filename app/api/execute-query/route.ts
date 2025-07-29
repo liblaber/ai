@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-const decryptedData = decryptData(env.ENCRYPTION_KEY, body.encryptedData);
+    const decryptedData = decryptData(env.ENCRYPTION_KEY, body.encryptedData);
     const decryptedBody = JSON.parse(decryptedData.toString());
     const { query, databaseUrl, params } = decryptedBody;
 
@@ -54,7 +54,7 @@ const decryptedData = decryptData(env.ENCRYPTION_KEY, body.encryptedData);
 
     const dataBuffer = Buffer.from(JSON.stringify(resultData));
 
-const encryptedResponse = encryptData(env.ENCRYPTION_KEY, dataBuffer);
+    const encryptedResponse = encryptData(env.ENCRYPTION_KEY, dataBuffer);
 
     return NextResponse.json({ encryptedData: encryptedResponse });
   } catch (error: any) {

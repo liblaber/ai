@@ -2,7 +2,7 @@ import z from 'zod';
 
 export const environmentSchema = z.object({
   NEXT_PUBLIC_ENV_NAME: z.string().default('local'),
-NEXT_PUBLIC_LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error']).optional(),
+  NEXT_PUBLIC_LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error']).optional(),
   NEXT_PUBLIC_TUNNEL_FORWARDING_URL: z.string().optional(),
   BASE_URL: z.string().default('http://localhost:3000'),
   LICENSE_KEY: z.string().default('free'),
@@ -13,7 +13,7 @@ NEXT_PUBLIC_LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error']).optio
     .string()
     .transform((val) => val.toLowerCase() === 'true' || val === '1')
     .default('false'),
-ENCRYPTION_KEY: z.string().length(44, 'Encryption key must be a 44-character base64-encoded 32-byte key'),
+  ENCRYPTION_KEY: z.string().length(44, 'Encryption key must be a 44-character base64-encoded 32-byte key'),
   NGROK_AUTHTOKEN: z.string().optional(),
 
   DEFAULT_LLM_PROVIDER: z.string().default('Anthropic'),
@@ -30,7 +30,7 @@ ENCRYPTION_KEY: z.string().length(44, 'Encryption key must be a 44-character bas
 
   NODE_ENV: z.string().optional(),
   npm_package_version: z.string().optional(),
-DEV: z.coerce.boolean().default(false),
+  DEV: z.coerce.boolean().default(false),
   PROD: z.coerce.boolean().default(false),
   CUSTOM_KEY: z.string().optional(),
   PORT: z.coerce.number().optional(),

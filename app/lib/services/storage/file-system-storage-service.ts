@@ -26,7 +26,7 @@ export class LocalSystemStorageService implements StorageService {
 
     await fs.mkdir(dirPath, { recursive: true });
 
-const encryptedData = encryptData(env.ENCRYPTION_KEY, data);
+    const encryptedData = encryptData(env.ENCRYPTION_KEY, data);
 
     await fs.writeFile(filePath, encryptedData);
   }
@@ -35,7 +35,7 @@ const encryptedData = encryptData(env.ENCRYPTION_KEY, data);
     const filePath = this._getFilePath(key);
     const encryptedData = await fs.readFile(filePath);
 
-return decryptData(env.ENCRYPTION_KEY, encryptedData.toString());
+    return decryptData(env.ENCRYPTION_KEY, encryptedData.toString());
   }
 
   async delete(key: string): Promise<void> {
