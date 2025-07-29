@@ -16,17 +16,12 @@ export async function GET() {
         }
       }
     }
-
-    // Fallback to BASE_URL environment variable
-    const baseUrl = process.env.BASE_URL || '';
-
-    return NextResponse.json({ url: baseUrl });
   } catch (error) {
     console.error('Failed to read tunnel config:', error);
-
-    // Fallback to BASE_URL environment variable
-    const baseUrl = process.env.BASE_URL || '';
-
-    return NextResponse.json({ url: baseUrl });
   }
+
+  // Fallback to BASE_URL environment variable
+  const baseUrl = process.env.BASE_URL || '';
+
+  return NextResponse.json({ url: baseUrl });
 }

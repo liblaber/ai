@@ -29,20 +29,8 @@ services:
         condition: service_healthy
     volumes:
       # Mount source code for hot reloading
-      - ./app:/app/app
-      - ./public:/app/public
-      - ./shared:/app/shared
-      - ./types:/app/types
-      - ./package.json:/app/package.json
-      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
-      - ./next.config.ts:/app/next.config.ts
-      - ./tsconfig.json:/app/tsconfig.json
-      - ./middleware.ts:/app/middleware.ts
-      - ./instrumentation.ts:/app/instrumentation.ts
-      - ./setup.ts:/app/setup.ts
-      - ./pre-start.ts:/app/pre-start.ts
-      - ./prisma:/app/prisma
-      # Exclude node_modules to use container's version
+      - .:/app
+      # Exclude node_modules and .next to use container's version
       - /app/node_modules
       - /app/.next
     environment:

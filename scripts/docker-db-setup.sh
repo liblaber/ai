@@ -16,7 +16,10 @@ docker-compose -f docker-compose.dev.yml up -d postgres
 
 # Wait for database to be ready
 echo "⏳ Waiting for database to be ready..."
-sleep 10
+until docker-compose -f docker-compose.dev.yml exec -T postgres pg_isready -U liblab -d liblab -q; do
+	  echo "Waiting for PostgreSQL to be ready..."
+	  sleep 2
+done
 
 # Run database migrations
 echo "🔄 Running database migrations..."
@@ -34,4 +37,4 @@ fi
 
 echo "✅ Database setup complete!"
 echo "📊 PostgreSQL is running on localhost:5432"
-echo "🔗 Connection: postgresql://liblab:liblab_password@localhost:5432/liblab" 
+echo "🔗 Connection: postgresql://liblab:liblab_password@localhost:5432/liblab"

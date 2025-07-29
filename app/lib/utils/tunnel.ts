@@ -10,7 +10,10 @@ export const getBaseUrl = async (): Promise<string> => {
 
     if (response.ok) {
       const data = (await response.json()) as { url: string };
-      return data.url || '';
+
+      if (data.url) {
+        return data.url;
+      }
     }
   } catch (error) {
     console.warn('Failed to fetch tunnel config:', error);
