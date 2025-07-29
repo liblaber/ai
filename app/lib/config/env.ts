@@ -7,7 +7,7 @@ export const environmentSchema = z.object({
   BASE_URL: z.string().default('http://localhost:3000'),
   LICENSE_KEY: z.string().default('free'),
   STORAGE_TYPE: z.enum(['FILE_SYSTEM', 'DATABASE']).default('FILE_SYSTEM'),
-  STARTER: z.enum(['next', 'react', 'vue', 'svelte']).default('next'),
+  STARTER: z.enum(['next', 'react', 'vue', 'svelte']).optional(),
   POSTHOG_API_KEY: z.string().optional(),
   DISABLE_TELEMETRY: z
     .string()
@@ -37,6 +37,9 @@ export const environmentSchema = z.object({
 });
 
 export const env = environmentSchema.parse(process.env);
+
+// Zod schemas of enum cannot have default values
+env.STARTER = env.STARTER || 'next';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
