@@ -17,6 +17,6 @@ export async function requireAuth(): Promise<void> {
 
   if (!session) {
     // Redirect to root if not authenticated
-    redirect((env.BASE_URL as string) ?? 'http://localhost:3000');
+    redirect(env.BASE_URL);
   }
 }
