@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const decryptedData = decryptData(env.ENCRYPTION_KEY as string, body.encryptedData);
+const decryptedData = decryptData(env.ENCRYPTION_KEY, body.encryptedData);
     const decryptedBody = JSON.parse(decryptedData.toString());
     const { query, databaseUrl, params } = decryptedBody;
 
