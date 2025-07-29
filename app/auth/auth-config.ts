@@ -15,12 +15,12 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: env.GOOGLE_CLIENT_ID || '',
-      clientSecret: env.GOOGLE_CLIENT_SECRET || '',
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
     },
   },
-  baseURL: env.BASE_URL ?? 'http://localhost:3000',
-  trustedOrigins: [(env.BASE_URL as string) ?? 'http://localhost:3000'],
+  baseURL: env.BASE_URL,
+  trustedOrigins: [env.BASE_URL],
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
       if (ctx.path.startsWith('/callback/') || ctx.path.startsWith('/sign-in/email')) {
