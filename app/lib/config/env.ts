@@ -13,8 +13,11 @@ export const environmentSchema = z.object({
   STORAGE_TYPE: z.enum(['FILE_SYSTEM', 'DATABASE']).default('FILE_SYSTEM'),
   STARTER: z.enum(['next', 'react', 'vue', 'svelte']).default('next'),
   POSTHOG_API_KEY: z.string().optional(),
-  DISABLE_TELEMETRY: z.boolean().default(false),
-  ENCRYPTION_KEY: z.string().optional().default(''),
+  DISABLE_TELEMETRY: z
+    .string()
+    .transform((val) => val.toLowerCase() === 'true' || val === '1')
+    .default('false'),
+  ENCRYPTION_KEY: z.string().min(32, 'Encryption key must be at least 32 characters'),
   NGROK_AUTHTOKEN: z.string().optional(),
 
   DEFAULT_LLM_PROVIDER: z.string().default('Anthropic'),
@@ -24,8 +27,8 @@ export const environmentSchema = z.object({
 
   NETLIFY_AUTH_TOKEN: z.string().optional(),
 
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().default(''),
+  GOOGLE_CLIENT_SECRET: z.string().default(''),
 
   NEXT_PUBLIC_GITHUB_ACCESS_TOKEN: z.string().optional(),
 
@@ -34,7 +37,7 @@ export const environmentSchema = z.object({
   DEV: z.boolean().default(false),
   PROD: z.boolean().default(false),
   CUSTOM_KEY: z.string().optional(),
-  PORT: z.string().optional(),
+  PORT: z.coerce.number().optional(),
 });
 
 export const env = environmentSchema.parse(process.env);
