@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Button } from '~/components/ui/Button';
 import { Header } from '~/components/header/Header';
-import { useRouter } from 'next/navigation';
 import { useSession } from '~/auth/auth-client';
 import { useUserStore } from '~/lib/stores/user';
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
@@ -18,7 +17,6 @@ export default function TelemetryConsentPage() {
   const [isAccepting, setIsAccepting] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
   const { data: session } = useSession();
   const { user, setUser } = useUserStore();
 
@@ -64,7 +62,7 @@ export default function TelemetryConsentPage() {
         }
 
         // Redirect to home page after successful consent
-        router.push('/');
+        window.location.replace('/');
       } else {
         setError(result.message || result.error || 'Failed to update telemetry consent');
       }

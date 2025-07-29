@@ -36,7 +36,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
   const { setDataSources } = useDataSourcesStore();
   const { setPluginAccess } = usePluginStore();
   const { setDataSourceTypes } = useDataSourceTypesStore();
-  const { setUser, clearUser } = useUserStore();
+  const { setUser, clearUser, user } = useUserStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -67,6 +67,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       // Redirect to telemetry consent screen if user hasn't answered yet (when telemetryEnabled is null)
       if (rootData.user.telemetryEnabled === null) {
         router.push(TELEMETRY_CONSENT_ROUTE);
+
         return;
       }
 
@@ -78,9 +79,10 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     // Redirect to data source connection if no data sources exist
     if (rootData.dataSources && rootData.dataSources.length === 0) {
       router.push(DATA_SOURCE_CONNECTION_ROUTE);
+
       return;
     }
-  }, [session?.user, rootData, setDataSources, setPluginAccess, setDataSourceTypes, setUser, clearUser, router]);
+  }, [session?.user, rootData, setDataSources, setPluginAccess, setDataSourceTypes, setUser, clearUser, user, router]);
 
   return <>{children}</>;
 }
