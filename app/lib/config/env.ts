@@ -2,7 +2,7 @@ import z from 'zod';
 
 export const environmentSchema = z.object({
   NEXT_PUBLIC_ENV_NAME: z.string().default('local'),
-  NEXT_PUBLIC_LOG_LEVEL: z.string().default('debug'),
+NEXT_PUBLIC_LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error']).optional(),
   NEXT_PUBLIC_TUNNEL_FORWARDING_URL: z.string().optional(),
   BASE_URL: z.string().default('http://localhost:3000'),
   LICENSE_KEY: z.string().default('free'),
