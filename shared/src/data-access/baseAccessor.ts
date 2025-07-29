@@ -1,4 +1,4 @@
-import type { Table } from '../types';
+import { type Table } from '../types';
 
 export interface BaseAccessor {
   /**
@@ -64,7 +64,7 @@ export interface BaseAccessor {
   readonly label: string;
 }
 
-interface Plugin {
+export interface Plugin {
   pluginId: string;
 }
 

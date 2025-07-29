@@ -1,10 +1,19 @@
 import { PostHog } from 'posthog-node';
+import { getInstanceId } from '~/lib/instance-id';
+import { type UserProfile } from '~/lib/services/userService';
 
 export enum TelemetryEventType {
-  APP_START_SUCCESS = 'app_start_success',
-  APP_ERROR = 'app_error',
-  SETUP_SUCCESS = 'setup_success',
-  SETUP_ERROR = 'setup_error',
+  // App start success is tracked in instrumentation.ts on app startup
+  APP_START_SUCCESS = 'APP_START_SUCCESS',
+  APP_ERROR = 'APP_ERROR',
+  SETUP_SUCCESS = 'SETUP_SUCCESS',
+  SETUP_ERROR = 'SETUP_ERROR',
+  USER_CHAT_RETRY = 'USER_CHAT_RETRY',
+  USER_CHAT_REVERT = 'USER_CHAT_REVERT',
+  USER_CHAT_FORK = 'USER_CHAT_FORK',
+  USER_CHAT_PROMPT = 'USER_CHAT_PROMPT',
+  USER_APP_DEPLOY = 'USER_APP_DEPLOY',
+  BUILT_APP_ERROR = 'BUILT_APP_ERROR',
 }
 
 export interface TelemetryEvent {
@@ -13,20 +22,20 @@ export interface TelemetryEvent {
 }
 
 class TelemetryManager {
-  private _machineId: string | null = null;
+  private _instanceId: string | null = null;
   private _posthogApiKey: string | null = null;
   private _posthogClient: PostHog | null = null;
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor() {}
 
-  static async create(instanceId: string): Promise<TelemetryManager> {
+  static async create(): Promise<TelemetryManager> {
     const instance = new TelemetryManager();
-    instance._posthogApiKey = process.env.POSTHOG_API_KEY || null;
-    instance._machineId = instanceId;
+    instance._posthogApiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY || null;
+    instance._instanceId = getInstanceId();
 
     if (!instance._posthogApiKey) {
-      console.warn('No POSTHOG_API_KEY found. Telemetry not initialized.');
+      console.warn('No NEXT_PUBLIC_POSTHOG_KEY found. Telemetry not initialized.');
       return instance;
     }
 
@@ -39,21 +48,24 @@ class TelemetryManager {
     return instance;
   }
 
-  async trackEvent(event: TelemetryEvent): Promise<void> {
-    if (!this._isTelemetryEnabled() || !this._posthogClient) {
+  async trackTelemetryEvent(event: TelemetryEvent, user?: UserProfile): Promise<void> {
+    if (!this._isTelemetryEnabled(user) || !this._posthogClient) {
       return;
     }
 
+    // Machine id is used to uniquely identify events per user
     const eventProperties = {
       ...event.properties,
-      machine_id: this._machineId,
-      node_version: process.version,
-      liblab_version: process.env.npm_package_version || '0.0.1',
+      user,
+      machineId: user?.id || this._instanceId,
+      instanceId: this._instanceId,
+      nodeVersion: process.version,
+      liblabVersion: process.env.npm_package_version || '0.0.1',
     };
 
     try {
       this._posthogClient.capture({
-        distinctId: this._machineId!,
+        distinctId: this._instanceId!,
         event: event.eventType,
         properties: eventProperties,
         timestamp: new Date(),
@@ -73,24 +85,30 @@ class TelemetryManager {
     this._posthogClient.shutdown();
   }
 
-  private _isTelemetryEnabled(): boolean {
+  private _isTelemetryEnabled(user?: UserProfile): boolean {
     // Check if telemetry is disabled via environment variable
-    const telemetryDisabled = process.env.DISABLE_TELEMETRY === 'true' || process.env.DISABLE_TELEMETRY === '1';
+    const telemetryDisabled =
+      process.env.NEXT_PUBLIC_DISABLE_TELEMETRY?.toLowerCase() === 'true' ||
+      process.env.NEXT_PUBLIC_DISABLE_TELEMETRY === '1';
 
     if (telemetryDisabled) {
-      console.log('📊 Telemetry disabled via DISABLE_TELEMETRY environment variable');
+      console.log('📊 Telemetry disabled via NEXT_PUBLIC_DISABLE_TELEMETRY environment variable');
       return false;
     }
 
-    // Check if PostHog API key is configured
     if (!this._posthogApiKey) {
-      console.log('📊 Telemetry disabled: POSTHOG_API_KEY not configured');
+      console.log('📊 Telemetry disabled: NEXT_PUBLIC_POSTHOG_KEY not configured');
       return false;
     }
 
-    // Check if machine ID was generated successfully
-    if (!this._machineId) {
-      console.log('📊 Telemetry disabled: Failed to generate machine ID');
+    if (!this._instanceId) {
+      console.log('📊 Telemetry disabled: Failed to generate instance ID');
+      return false;
+    }
+
+    // Check user's telemetry consent
+    if (user && user.telemetryEnabled === false) {
+      console.log('📊 Telemetry disabled: User has declined telemetry consent');
       return false;
     }
 
@@ -101,9 +119,9 @@ class TelemetryManager {
 // Export a singleton instance
 let _telemetryInstance: TelemetryManager | null = null;
 
-export async function getTelemetry(instanceId: string): Promise<TelemetryManager> {
+export async function getTelemetry(): Promise<TelemetryManager> {
   if (!_telemetryInstance) {
-    _telemetryInstance = await TelemetryManager.create(instanceId);
+    _telemetryInstance = await TelemetryManager.create();
   }
 
   return _telemetryInstance;

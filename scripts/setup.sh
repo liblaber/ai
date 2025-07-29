@@ -41,27 +41,27 @@ else
     echo "✅ .env file already exists."
 fi
 
-# Copy POSTHOG_API_KEY from .env.example to .env if it exists
-echo "📋 Checking for POSTHOG_API_KEY..."
-if [ -f .env.example ] && grep -q "^POSTHOG_API_KEY=" .env.example; then
+# Copy NEXT_PUBLIC_POSTHOG_KEY from .env.example to .env if it exists
+echo "📋 Checking for NEXT_PUBLIC_POSTHOG_KEY..."
+if [ -f .env.example ] && grep -q "^NEXT_PUBLIC_POSTHOG_KEY=" .env.example; then
     # Extract POSTHOG_API_KEY value from .env.example
-    POSTHOG_API_KEY_VALUE=$(grep "^POSTHOG_API_KEY=" .env.example | cut -d'=' -f2-)
+    POSTHOG_API_KEY_VALUE=$(grep "^NEXT_PUBLIC_POSTHOG_KEY=" .env.example | cut -d'=' -f2-)
 
     # Remove surrounding quotes if present
     POSTHOG_API_KEY_VALUE=$(echo "$POSTHOG_API_KEY_VALUE" | sed 's/^["'"'"']*//;s/["'"'"']*$//')
 
-    # Check if POSTHOG_API_KEY already exists in .env
-    if grep -q "^POSTHOG_API_KEY=" .env; then
-        # Update existing POSTHOG_API_KEY
-        awk -v key="$POSTHOG_API_KEY_VALUE" '{if ($0 ~ /^POSTHOG_API_KEY=/) print "POSTHOG_API_KEY='"'"'" key "'"'"'"; else print $0}' .env > .env.tmp && mv .env.tmp .env
-        echo "✅ Updated existing POSTHOG_API_KEY in .env file."
+    # Check if NEXT_PUBLIC_POSTHOG_KEY already exists in .env
+    if grep -q "^NEXT_PUBLIC_POSTHOG_KEY=" .env; then
+        # Update existing NEXT_PUBLIC_POSTHOG_KEY
+        awk -v key="$POSTHOG_API_KEY_VALUE" '{if ($0 ~ /^NEXT_PUBLIC_POSTHOG_KEY=/) print "NEXT_PUBLIC_POSTHOG_KEY='"'"'" key "'"'"'"; else print $0}' .env > .env.tmp && mv .env.tmp .env
+        echo "✅ Updated existing NEXT_PUBLIC_POSTHOG_KEY in .env file."
     else
-        # Add new POSTHOG_API_KEY to existing file
-        echo "POSTHOG_API_KEY='$POSTHOG_API_KEY_VALUE'" >> .env
-        echo "✅ Added POSTHOG_API_KEY to .env file."
+        # Add new NEXT_PUBLIC_POSTHOG_KEY to existing file
+        echo "NEXT_PUBLIC_POSTHOG_KEY='$POSTHOG_API_KEY_VALUE'" >> .env
+        echo "✅ Added NEXT_PUBLIC_POSTHOG_KEY to .env file."
     fi
 else
-    echo "⚠️ POSTHOG_API_KEY not found in .env.example file."
+    echo "⚠️ NEXT_PUBLIC_POSTHOG_KEY not found in .env.example file."
 fi
 
 # Generate AES key if not exists
