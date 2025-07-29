@@ -80,6 +80,7 @@ jobs:
         run: pnpm build
         env:
           NODE_ENV: production
+          ENCRYPTION_KEY: ${{ secrets.DUMMY_ENCRYPTION_KEY }}
 
       - name: 🧪 Run tests
         run: pnpm test
