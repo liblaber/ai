@@ -30,10 +30,22 @@ export async function streamText(props: {
   contextOptimization?: boolean;
   contextFiles?: FileMap;
   summary?: string;
+  implementationPlan?: string;
   messageSliceId?: number;
   request: Request;
 }) {
-  const { messages, options, files, promptId, starterId, contextOptimization, contextFiles, summary, request } = props;
+  const {
+    messages,
+    options,
+    files,
+    promptId,
+    starterId,
+    contextOptimization,
+    contextFiles,
+    summary,
+    implementationPlan,
+    request,
+  } = props;
   let currentDataSourceId: string | undefined = '';
 
   let processedMessages = messages.map((message) => {
@@ -112,6 +124,12 @@ ${props.summary}
     }
   }
 
+  if (implementationPlan) {
+    systemPrompt = `${systemPrompt}
+    Below is the implementation plan that you should follow:\n
+    ${implementationPlan}\n`;
+  }
+
   const existingQueries = extractSqlQueries(codeContext);
 
   if (
@@ -125,7 +143,14 @@ ${props.summary}
     const connectionDetails = new URL(dataSource.connectionString);
     const type = connectionDetails.protocol.replace(':', '');
 
-    const sqlQueries = await generateSqlQueries(schema, lastUserMessage, llm, type, existingQueries);
+    const sqlQueries = await generateSqlQueries({
+      schema,
+      userPrompt: lastUserMessage,
+      llm,
+      databaseType: type,
+      implementationPlan,
+      existingQueries,
+    });
 
     if (sqlQueries?.length) {
       logger.debug(`Adding SQL queries as the hidden user message`);
