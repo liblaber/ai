@@ -55,7 +55,17 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
           body: formData,
         });
 
-        const data = (await response.json()) as TestConnectionResponse;
+        const responseText = await response.text();
+        console.log('Raw response text:', responseText);
+
+        let data: TestConnectionResponse;
+
+        try {
+          data = JSON.parse(responseText) as TestConnectionResponse;
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+        }
         setTestResult(data);
 
         if (!data.success) {

@@ -24,7 +24,7 @@ export async function executeQueryThroughProxy<T>(query: string, params?: string
 }
 
 async function fetchProxyApi<T>(endpoint: string, options: RequestInit = {}): Promise<{ data: T }> {
-  const proxyBaseUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api`;
+  const proxyBaseUrl = `${process.env.VITE_API_BASE_URL}/api`;
 
   if (!proxyBaseUrl) {
     throw new Error(`No proxy baseUrl provided`);

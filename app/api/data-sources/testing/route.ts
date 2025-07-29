@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import PluginManager from '~/lib/plugins/plugin-manager';
+
+export async function GET() {
+  return NextResponse.json({ message: 'Connection testing endpoint is available' });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,19 +16,17 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      /**
-       * Placeholder for DataSourcePluginManager - you'll need to implement this
-       * const accessor = DataSourcePluginManager.getAccessor(databaseUrl);
-       * accessor.validate(databaseUrl);
-       * const isConnected = await accessor.testConnection(databaseUrl);
-       *For now, we'll do basic validation
-       */
-      if (!databaseUrl || databaseUrl.trim() === '') {
-        throw new Error('Invalid connection string');
-      }
+      // Initialize the plugin manager if not already initialized
+      await PluginManager.getInstance().initialize();
 
-      // Placeholder connection test - replace with actual implementation
-      const isConnected = true; // This should be replaced with actual connection testing
+      // Get the appropriate accessor for the database URL
+      const accessor = DataSourcePluginManager.getAccessor(databaseUrl);
+
+      // Validate the connection string format
+      accessor.validate(databaseUrl);
+
+      // Test the actual connection
+      const isConnected = await accessor.testConnection(databaseUrl);
 
       if (isConnected) {
         return NextResponse.json({ success: true, message: 'Connection successful' });

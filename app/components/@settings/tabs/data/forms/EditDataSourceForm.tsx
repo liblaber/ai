@@ -87,7 +87,7 @@ export default function EditDataSourceForm({
         formData.append('name', dbName);
         formData.append('connectionString', connStr);
 
-        const response = await fetch('/api/data-sources/edit/testing', {
+        const response = await fetch('/api/data-sources/testing', {
           method: 'POST',
           body: formData,
         });
