@@ -13,7 +13,7 @@ export const environmentSchema = z.object({
     .string()
     .transform((val) => val.toLowerCase() === 'true' || val === '1')
     .default('false'),
-  ENCRYPTION_KEY: z.string().min(32, 'Encryption key must be at least 32 characters'),
+ENCRYPTION_KEY: z.string().length(44, 'Encryption key must be a 44-character base64-encoded 32-byte key'),
   NGROK_AUTHTOKEN: z.string().optional(),
 
   DEFAULT_LLM_PROVIDER: z.string().default('Anthropic'),
