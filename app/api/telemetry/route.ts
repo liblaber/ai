@@ -9,12 +9,10 @@ import { requireUserId } from '~/auth/session';
 export async function POST(request: NextRequest) {
   try {
     let user: UserProfile | undefined = undefined;
-    let userId: string | undefined = undefined;
 
     // Try to get the user but don't fail, some events like app setup and startup don't require a user to be tracked
     try {
-      userId = await requireUserId(request);
-      user = await userService.getUser(userId);
+      user = await userService.getUser(await requireUserId(request));
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error: any) {
       // noop - no user, continue without user context

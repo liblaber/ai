@@ -63,9 +63,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     // Set user profile
     if (rootData.user) {
       setUser(rootData.user);
-    }
 
-    if (rootData.user) {
       // Redirect to telemetry consent screen if user hasn't answered yet (when telemetryEnabled is null)
       if (rootData.user.telemetryEnabled === null) {
         router.push(TELEMETRY_CONSENT_ROUTE);
