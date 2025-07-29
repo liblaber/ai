@@ -38,9 +38,6 @@ export const environmentSchema = z.object({
 
 export const env = environmentSchema.parse(process.env);
 
-// Zod schemas of enum cannot have default values
-env.STARTER = env.STARTER || 'next';
-
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
