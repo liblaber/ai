@@ -25,7 +25,8 @@ export class MongoDBAccessor implements BaseAccessor {
       await client.db().admin().ping();
       await client.close();
       return true;
-    } catch {
+    } catch (error) {
+      console.error('MongoDB connection test failed:', error);
       await client.close();
       return false;
     }
@@ -93,35 +94,86 @@ export class MongoDBAccessor implements BaseAccessor {
 
       return result;
     } catch (error) {
-      console.error('Error executing MongoDB query:', JSON.stringify(error));
+      console.error('Error executing MongoDB query:', error);
       throw new Error((error as Error)?.message);
     }
   }
 
   private applyParameters(obj: any, params: string[]): void {
-    // Replace parameter placeholders in the query object
-    const jsonString = JSON.stringify(obj);
-    let modifiedString = jsonString;
-
-    params.forEach((param, index) => {
-      const placeholder = `$${index + 1}`;
-      modifiedString = modifiedString.replace(new RegExp(placeholder, 'g'), param);
-    });
-
-    Object.assign(obj, JSON.parse(modifiedString));
+    // Securely replace parameter placeholders by recursively traversing the object
+    this.replaceParametersRecursively(obj, params);
   }
 
   private applyParametersToPipeline(pipeline: any[], params: string[]): void {
-    // Replace parameter placeholders in the aggregation pipeline
-    const jsonString = JSON.stringify(pipeline);
-    let modifiedString = jsonString;
+    // Securely replace parameter placeholders in the aggregation pipeline
+    this.replaceParametersRecursively(pipeline, params);
+  }
 
-    params.forEach((param, index) => {
-      const placeholder = `$${index + 1}`;
-      modifiedString = modifiedString.replace(new RegExp(placeholder, 'g'), param);
-    });
+  private replaceParametersRecursively(obj: any, params: string[]): void {
+    if (obj === null || obj === undefined) {
+      return;
+    }
 
-    pipeline.splice(0, pipeline.length, ...JSON.parse(modifiedString));
+    if (Array.isArray(obj)) {
+      // Handle arrays
+      for (let i = 0; i < obj.length; i++) {
+        if (typeof obj[i] === 'string' && this.isValidParameterPlaceholder(obj[i])) {
+          // Replace placeholder with parameter value
+          const paramIndex = parseInt(obj[i].substring(1)) - 1;
+          if (paramIndex >= 0 && paramIndex < params.length) {
+            obj[i] = this.parseParameterValue(params[paramIndex]);
+          }
+        } else if (typeof obj[i] === 'object') {
+          this.replaceParametersRecursively(obj[i], params);
+        }
+      }
+    } else if (typeof obj === 'object') {
+      // Handle objects
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          if (typeof obj[key] === 'string' && this.isValidParameterPlaceholder(obj[key])) {
+            // Replace placeholder with parameter value
+            const paramIndex = parseInt(obj[key].substring(1)) - 1;
+            if (paramIndex >= 0 && paramIndex < params.length) {
+              obj[key] = this.parseParameterValue(params[paramIndex]);
+            }
+          } else if (typeof obj[key] === 'object') {
+            this.replaceParametersRecursively(obj[key], params);
+          }
+        }
+      }
+    }
+  }
+
+  private isValidParameterPlaceholder(value: string): boolean {
+    // Only accept exact matches for parameter placeholders like $1, $2, etc.
+    return /^\$\d+$/.test(value);
+  }
+
+  private parseParameterValue(param: string): any {
+    // Safely parse parameter values
+    if (param === 'null') return null;
+    if (param === 'undefined') return undefined;
+    if (param === 'true') return true;
+    if (param === 'false') return false;
+
+    // Try to parse as number
+    if (/^-?\d+(\.\d+)?$/.test(param)) {
+      const num = Number(param);
+      if (!isNaN(num)) return num;
+    }
+
+    // Try to parse as JSON for objects/arrays
+    if ((param.startsWith('{') && param.endsWith('}')) || (param.startsWith('[') && param.endsWith(']'))) {
+      try {
+        return JSON.parse(param);
+      } catch {
+        // If JSON parsing fails, treat as string
+      }
+    }
+
+    // Return as string (default)
+    return param;
   }
 
   validate(connectionString: string): void {

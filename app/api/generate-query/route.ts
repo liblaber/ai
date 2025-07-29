@@ -1,6 +1,6 @@
 import { getDatabaseSchema } from '~/lib/schema';
 import { NextRequest, NextResponse } from 'next/server';
-import { generateSqlQueries, detectDatabaseTypeFromPrompt } from '~/lib/.server/llm/database-source';
+import { generateSqlQueries, detectDatabaseTypeFromPrompt, type Table } from '~/lib/.server/llm/database-source';
 import { createScopedLogger } from '~/utils/logger';
 import { z } from 'zod';
 import { getLlm } from '~/lib/.server/llm/get-llm';
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const existingQueries = existingQuery ? [existingQuery] : [];
 
     const llm = await getLlm();
-    let schema: any;
+    let schema: Table[];
     let type: string;
 
     // If dataSourceId is provided, use the existing data source
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateSampleSchema(databaseType: string): any[] {
+function generateSampleSchema(databaseType: string): Table[] {
   // This is a sample schema for demonstration
   // In production, you'd want users to connect their actual databases
   if (databaseType === 'mongodb') {
@@ -106,7 +106,6 @@ function generateSampleSchema(databaseType: string): any[] {
             name: 'amenities',
             type: 'array',
             isPrimary: false,
-            description: 'Array of strings like ["TV", "WiFi", "Kitchen", "Pets allowed", "Smoking allowed"]',
           },
           { name: 'accommodates', type: 'number', isPrimary: false },
           { name: 'bedrooms', type: 'number', isPrimary: false },
