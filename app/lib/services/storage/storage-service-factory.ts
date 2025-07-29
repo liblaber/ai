@@ -6,7 +6,7 @@ import { env } from '~/lib/config/env';
 export class StorageServiceFactory {
   private static _instances: Map<StorageType, StorageService> = new Map();
 
-  private static _storageType: StorageType = (env.STORAGE_TYPE as StorageType) || StorageType.FILE_SYSTEM;
+  private static _storageType: StorageType = env.STORAGE_TYPE;
 
   static get(): StorageService {
     if (!this._instances.has(this._storageType)) {
