@@ -13,7 +13,6 @@ import {
   type OnChangeCallback as OnEditorChange,
   type OnScrollCallback as OnEditorScroll,
 } from '~/components/editor/codemirror/CodeMirrorEditor';
-import { IconButton } from '~/components/ui/IconButton';
 import { PanelHeaderButton } from '~/components/ui/PanelHeaderButton';
 import { Slider } from '~/components/ui/Slider';
 import { workbenchStore, type WorkbenchViewType } from '~/lib/stores/workbench';
@@ -418,7 +417,7 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncF
                         workbenchStore.downloadZip();
                       }}
                     >
-                      <div className="i-ph:code" />
+                      <div className="i-ph:download-simple" />
                       Download Code
                     </PanelHeaderButton>
                     <PanelHeaderButton className="mr-1 text-sm" onClick={() => setIsPushDialogOpen(true)}>
@@ -444,14 +443,16 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncF
                 {devMode && selectedView === 'diff' && (
                   <FileModifiedDropdown fileHistory={fileHistory} onSelectFile={handleSelectFile} />
                 )}
-                <IconButton
-                  icon="i-liblab:ic_close_cross"
-                  className="mr-1 opacity-50 hover:opacity-100"
-                  size="2xl"
+                <PanelHeaderButton
+                  className="mr-1 text-sm"
                   onClick={() => {
-                    workbenchStore.devMode.set(false);
+                    workbenchStore.devMode.set(!devMode);
+                    workbenchStore.currentView.set(devMode ? 'preview' : 'code');
                   }}
-                />
+                >
+                  {devMode ? <div className="i-ph:monitor-play" /> : <div className="i-ph:code" />}
+                  {devMode ? 'Exit Code View' : 'Enter Code View'}
+                </PanelHeaderButton>
               </div>
               <div className="relative flex-1 overflow-hidden">
                 <View initial={{ x: '0%' }} animate={{ x: devMode && selectedView === 'code' ? '0%' : '-100%' }}>

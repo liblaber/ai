@@ -17,7 +17,7 @@ export interface PreviewInfo {
 export class PreviewsStore {
   previews = atom<PreviewInfo[]>([]);
   isLoading = atom<boolean>(false);
-  loadingText = atom<string>('Loading...');
+  loadingText = atom<string>('Initializing environment...');
   readyForFixing = atom<boolean>(false);
   isMakingChanges = atom<boolean>(false);
   #availablePreviews = new Map<number, PreviewInfo>();

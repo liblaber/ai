@@ -98,7 +98,7 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
               {artifact?.title}
             </div>
             <div className="w-full w-full text-liblab-elements-textSecondary text-xs mt-0.5">
-              Click to open Workbench
+              Click for the code view
             </div>
           </div>
         </button>
