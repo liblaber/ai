@@ -2,10 +2,11 @@ import type { BaseAccessor, BaseAccessorConstructor } from './baseAccessor';
 import { PostgresAccessor } from './accessors/postgres';
 import { MySQLAccessor } from './accessors/mysql';
 import { SQLiteAccessor } from './accessors/sqlite';
+import { MongoDBAccessor } from './accessors/mongodb';
 
 export class DataAccessor {
   static getAccessor(databaseUrl: string): BaseAccessor {
-    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor];
+    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor, MongoDBAccessor];
 
     const accessorClass = allAccessors.find((acc: BaseAccessorConstructor) => acc.isAccessor(databaseUrl));
 
@@ -17,7 +18,7 @@ export class DataAccessor {
   }
 
   static getByDatabaseType(databaseType: string): BaseAccessor | null {
-    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor];
+    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor, MongoDBAccessor];
     const accessorClass = allAccessors.find((acc: BaseAccessorConstructor) => acc.pluginId === databaseType);
 
     if (!accessorClass) {

@@ -453,7 +453,7 @@ export class ActionRunner {
             tunnelForwardingUrl ? tunnelForwardingUrl : undefined,
           );
         } else {
-          content = injectEnvVariable(content, 'VITE_API_BASE_URL', process.env.VITE_BASE_URL);
+          content = injectEnvVariable(content, 'VITE_API_BASE_URL', process.env.BASE_URL);
         }
       }
 

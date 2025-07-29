@@ -144,8 +144,8 @@ export default function DataSourceConnectionPage() {
           <h1 className="text-2xl text-liblab-elements-textPrimary mb-6 text-center">Let's connect your data source</h1>
           <div className="mb-6">
             <p className="text-center text-base font-light text-liblab-elements-textPrimary">
-              Continue with a sample database or connect your own database. More options, such as MongoDB and Github are
-              coming soon!
+              Continue with a sample database or connect your own database. More options, such as Github and other
+              integrations are coming soon!
             </p>
           </div>
           <div className="flex gap-2 mb-6 items-end">
