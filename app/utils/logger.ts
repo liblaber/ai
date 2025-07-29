@@ -15,8 +15,7 @@ interface Logger {
   setLevel: (level: DebugLevel) => void;
 }
 
-const fallback: DebugLevel = env.DEV ? 'debug' : 'info';
-let currentLevel: DebugLevel = (env.NEXT_PUBLIC_LOG_LEVEL as DebugLevel | undefined) ?? fallback;
+let currentLevel: DebugLevel = env.NEXT_PUBLIC_LOG_LEVEL;
 
 export const logger: Logger = {
   trace: (...messages: any[]) => log('trace', undefined, messages),
