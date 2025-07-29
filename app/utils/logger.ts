@@ -39,7 +39,7 @@ export function createScopedLogger(scope: string): Logger {
 }
 
 function setLevel(level: DebugLevel) {
-  if ((level === 'trace' || level === 'debug') && Boolean(env.PROD)) {
+  if ((level === 'trace' || level === 'debug') && env.PROD) {
     return;
   }
 
