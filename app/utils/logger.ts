@@ -15,7 +15,8 @@ interface Logger {
   setLevel: (level: DebugLevel) => void;
 }
 
-let currentLevel: DebugLevel = (env.NEXT_PUBLIC_LOG_LEVEL ?? env.DEV) ? 'debug' : 'info';
+const fallback: DebugLevel = env.DEV ? 'debug' : 'info';
+let currentLevel: DebugLevel = (env.NEXT_PUBLIC_LOG_LEVEL as DebugLevel | undefined) ?? fallback;
 
 export const logger: Logger = {
   trace: (...messages: any[]) => log('trace', undefined, messages),
@@ -38,7 +39,7 @@ export function createScopedLogger(scope: string): Logger {
 }
 
 function setLevel(level: DebugLevel) {
-  if ((level === 'trace' || level === 'debug') && env.PROD) {
+  if ((level === 'trace' || level === 'debug') && Boolean(env.PROD)) {
     return;
   }
 
