@@ -12,6 +12,10 @@ import { createId } from '@paralleldrive/cuid2';
 import { conversationService } from '~/lib/services/conversationService';
 import type { StarterPluginId } from '~/lib/plugins/types';
 import type { FileMap } from '~/lib/stores/files';
+import { createImplementationPlan } from '~/lib/.server/llm/create-implementation-plan';
+import { getDatabaseSchema } from '~/lib/schema';
+import { requireUserId } from '~/auth/session';
+import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
 
 const DEFAULT_MODEL = 'claude-3-5-sonnet-latest';
 const WORK_DIR = '/home/project';
@@ -32,7 +36,8 @@ async function chatAction(request: NextRequest) {
   }>();
   const { messages, files, conversationId, promptId, contextOptimization } = body;
 
-  const userMessage = messages.at(-1);
+  const userMessage = messages[messages.length - 1];
+  const userMessageProperties = extractPropertiesFromMessage(userMessage);
 
   if (!userMessage) {
     throw new Response('Message not specified', {
@@ -130,8 +135,6 @@ async function chatAction(request: NextRequest) {
             };
             dataStream.writeData(currentProgressAnnotation);
 
-            // throw new Error('This is some sort of unexpected error');
-
             // Select context files
             logger.debug(`Messages count: ${messages.length}`);
             filteredFiles = await selectContext({
@@ -185,6 +188,44 @@ async function chatAction(request: NextRequest) {
             dataStream.writeData(currentProgressAnnotation);
           }
 
+          logger.debug('Creating Implementation Plan...');
+          currentProgressAnnotation = {
+            type: 'progress',
+            label: 'implementation-plan',
+            status: 'in-progress',
+            order: progressCounter++,
+            message: 'Creating Implementation Plan',
+          };
+          dataStream.writeData(currentProgressAnnotation);
+
+          const dataSource = await conversationService.getConversationDataSource(conversationId);
+          const userId = await requireUserId(request);
+          const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
+
+          const implementationPlan = await createImplementationPlan({
+            isFirstUserMessage: !!userMessageProperties.isFirstUserMessage,
+            summary,
+            userPrompt: userMessage.content,
+            schema: formatDbSchemaForLLM(databaseSchema),
+            onFinish: (response) => {
+              if (response.usage) {
+                logger.debug('createImplementationPlan token usage', JSON.stringify(response.usage));
+                cumulativeUsage.completionTokens += response.usage.completionTokens || 0;
+                cumulativeUsage.promptTokens += response.usage.promptTokens || 0;
+                cumulativeUsage.totalTokens += response.usage.totalTokens || 0;
+              }
+            },
+          });
+          logger.debug('Created Implementation Plan:', implementationPlan);
+          currentProgressAnnotation = {
+            type: 'progress',
+            label: 'implementation-plan',
+            status: 'complete',
+            order: progressCounter++,
+            message: 'Created Implementation Plan',
+          };
+          dataStream.writeData(currentProgressAnnotation);
+
           // Stream the text
           const options: StreamingOptions = {
             experimental_generateMessageId: createId,
@@ -206,10 +247,9 @@ async function chatAction(request: NextRequest) {
               const assistantMessage = messages.find((m) => m.role === 'assistant');
 
               try {
-                const messageProperties = extractPropertiesFromMessage(userMessage);
-                const userMessageContent = Array.isArray(messageProperties.content)
-                  ? messageProperties.content.find((item) => item.type === 'text')?.text || ''
-                  : messageProperties.content;
+                const userMessageContent = Array.isArray(userMessageProperties.content)
+                  ? userMessageProperties.content.find((item) => item.type === 'text')?.text || ''
+                  : userMessageProperties.content;
 
                 await messageService.saveMessage({
                   conversationId,
@@ -279,6 +319,7 @@ async function chatAction(request: NextRequest) {
             contextOptimization,
             contextFiles: filteredFiles,
             summary,
+            implementationPlan,
             messageSliceId,
             request,
           });
