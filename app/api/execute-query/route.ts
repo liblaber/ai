@@ -54,7 +54,7 @@ const decryptedData = decryptData(env.ENCRYPTION_KEY, body.encryptedData);
 
     const dataBuffer = Buffer.from(JSON.stringify(resultData));
 
-    const encryptedResponse = encryptData(env.ENCRYPTION_KEY as string, dataBuffer);
+const encryptedResponse = encryptData(env.ENCRYPTION_KEY, dataBuffer);
 
     return NextResponse.json({ encryptedData: encryptedResponse });
   } catch (error: any) {
