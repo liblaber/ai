@@ -81,12 +81,14 @@ jobs:
         env:
           NODE_ENV: production
           ENCRYPTION_KEY: ${{ secrets.DUMMY_ENCRYPTION_KEY }}
+          STARTER: next
 
       - name: 🧪 Run tests
         run: pnpm test
         env:
           NODE_ENV: production
           ENCRYPTION_KEY: ${{ secrets.DUMMY_ENCRYPTION_KEY }}
+          STARTER: next
 
   all-checks:
     name: ✅ All Checks Passed
