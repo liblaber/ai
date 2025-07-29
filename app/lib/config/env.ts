@@ -30,8 +30,8 @@ ENCRYPTION_KEY: z.string().length(44, 'Encryption key must be a 44-character bas
 
   NODE_ENV: z.string().optional(),
   npm_package_version: z.string().optional(),
-  DEV: z.boolean().default(false),
-  PROD: z.boolean().default(false),
+DEV: z.coerce.boolean().default(false),
+  PROD: z.coerce.boolean().default(false),
   CUSTOM_KEY: z.string().optional(),
   PORT: z.coerce.number().optional(),
 });
