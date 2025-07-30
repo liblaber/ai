@@ -13,9 +13,8 @@ import {
   type OnChangeCallback as OnEditorChange,
   type OnScrollCallback as OnEditorScroll,
 } from '~/components/editor/codemirror/CodeMirrorEditor';
-import { IconButton } from '~/components/ui/IconButton';
 import { PanelHeaderButton } from '~/components/ui/PanelHeaderButton';
-import { Slider, type SliderOptions } from '~/components/ui/Slider';
+import { Slider } from '~/components/ui/Slider';
 import { workbenchStore, type WorkbenchViewType } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
 import { cubicEasingFn } from '~/utils/easings';
@@ -36,29 +35,7 @@ interface WorkspaceProps {
 
 const viewTransition = { ease: cubicEasingFn };
 
-const sliderOptions: SliderOptions<WorkbenchViewType> = {
-  left: {
-    value: 'code',
-    text: 'Code',
-  },
-  middle: {
-    value: 'diff',
-    text: 'Diff',
-  },
-  right: {
-    value: 'preview',
-    text: 'Preview',
-  },
-};
-
 const workbenchVariants = {
-  closed: {
-    width: 0,
-    transition: {
-      duration: 0.2,
-      ease: cubicEasingFn,
-    },
-  },
   open: {
     width: 'var(--workbench-width)',
     transition: {
@@ -323,7 +300,7 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncF
   // const modifiedFiles = Array.from(useStore(workbenchStore.unsavedFiles).keys());
 
   const hasPreview = useStore(computed(workbenchStore.previews, (previews) => previews.length > 0));
-  const showWorkbench = useStore(workbenchStore.showWorkbench);
+  const devMode = useStore(workbenchStore.devMode);
   const selectedFile = useStore(workbenchStore.selectedFile);
   const currentDocument = useStore(workbenchStore.currentDocument);
   const unsavedFiles = useStore(workbenchStore.unsavedFiles);
@@ -391,31 +368,39 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncF
     workbenchStore.currentView.set('diff');
   }, []);
 
+  const diffViewX = useMemo(() => {
+    if (!devMode) {
+      return '-100%';
+    }
+
+    switch (selectedView) {
+      case 'diff':
+        return '0%';
+      case 'code':
+        return '100%';
+      default:
+        return '-100%';
+    }
+  }, [devMode, selectedView]);
+
   return (
     chatStarted && (
-      <motion.div
-        initial="closed"
-        animate={showWorkbench ? 'open' : 'closed'}
-        variants={workbenchVariants}
-        className="z-workbench"
-      >
+      <motion.div animate={'open'} variants={workbenchVariants} className="z-workbench">
         <div
           className={classNames(
-            'fixed top-[calc(var(--header-height)+1.5rem)] bottom-6 w-[var(--workbench-inner-width)] mr-4 z-0 transition-[left,width] duration-200 liblab-ease-cubic-bezier',
+            'fixed top-[calc(var(--header-height)+1.5rem)] bottom-6 w-[var(--workbench-inner-width)] mr-4 z-0 transition-[left,width] duration-200 liblab-ease-cubic-bezier left-[var(--workbench-left)]',
             {
               'w-full': isSmallViewport,
-              'left-0': showWorkbench && isSmallViewport,
-              'left-[var(--workbench-left)]': showWorkbench,
-              'left-[100%]': !showWorkbench,
+              'left-0': isSmallViewport,
             },
           )}
         >
           <div className="absolute inset-0 px-2 lg:px-4">
             <div className="h-full flex flex-col bg-liblab-elements-bg-depth-2 border border-liblab-elements-borderColor shadow-sm rounded-xl overflow-hidden">
               <div className="flex items-center px-3 py-1 h-12 border-b border-liblab-elements-borderColor">
-                <Slider selected={selectedView} options={sliderOptions} setSelected={setSelectedView} />
+                <Slider selected={selectedView} setSelected={setSelectedView} />
                 <div className="ml-auto" />
-                {selectedView === 'code' && (
+                {devMode && selectedView === 'code' && (
                   <div className="flex overflow-y-auto">
                     <PanelHeaderButton
                       className="mr-1 text-sm"
@@ -432,7 +417,7 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncF
                         workbenchStore.downloadZip();
                       }}
                     >
-                      <div className="i-ph:code" />
+                      <div className="i-ph:download-simple" />
                       Download Code
                     </PanelHeaderButton>
                     <PanelHeaderButton className="mr-1 text-sm" onClick={() => setIsPushDialogOpen(true)}>
@@ -455,20 +440,22 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncF
                     )}
                   </div>
                 )}
-                {selectedView === 'diff' && (
+                {devMode && selectedView === 'diff' && (
                   <FileModifiedDropdown fileHistory={fileHistory} onSelectFile={handleSelectFile} />
                 )}
-                <IconButton
-                  icon="i-liblab:ic_close_cross"
-                  className="mr-1 opacity-50 hover:opacity-100"
-                  size="2xl"
+                <PanelHeaderButton
+                  className="mr-1 text-sm"
                   onClick={() => {
-                    workbenchStore.showWorkbench.set(false);
+                    workbenchStore.devMode.set(!devMode);
+                    workbenchStore.currentView.set(devMode ? 'preview' : 'code');
                   }}
-                />
+                >
+                  {devMode ? <div className="i-ph:monitor-play" /> : <div className="i-ph:code" />}
+                  {devMode ? 'Exit Code View' : 'Enter Code View'}
+                </PanelHeaderButton>
               </div>
               <div className="relative flex-1 overflow-hidden">
-                <View initial={{ x: '0%' }} animate={{ x: selectedView === 'code' ? '0%' : '-100%' }}>
+                <View initial={{ x: '0%' }} animate={{ x: devMode && selectedView === 'code' ? '0%' : '-100%' }}>
                   <EditorPanel
                     editorDocument={currentDocument}
                     isStreaming={isStreaming}
@@ -483,10 +470,7 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncF
                     onFileReset={onFileReset}
                   />
                 </View>
-                <View
-                  initial={{ x: '100%' }}
-                  animate={{ x: selectedView === 'diff' ? '0%' : selectedView === 'code' ? '100%' : '-100%' }}
-                >
+                <View initial={{ x: '100%' }} animate={{ x: diffViewX }}>
                   <DiffView fileHistory={fileHistory} setFileHistory={setFileHistory} actionRunner={actionRunner} />
                 </View>
                 <View initial={{ x: '100%' }} animate={{ x: selectedView === 'preview' ? '0%' : '100%' }}>
