@@ -1,6 +1,4 @@
 import 'dotenv/config';
-import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
-import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
 import { config } from 'dotenv';
 import path from 'path';
@@ -15,8 +13,9 @@ const runSetup = async (): Promise<void> => {
     reloadEnvFile();
 
     try {
-      const telemetry = await getTelemetry();
-      await telemetry.trackTelemetryEvent({ eventType: TelemetryEventType.SETUP_SUCCESS });
+      const telemetryModule = await import('~/lib/telemetry/telemetry-manager');
+      const telemetry = await telemetryModule.getTelemetry();
+      await telemetry.trackTelemetryEvent({ eventType: telemetryModule.TelemetryEventType.SETUP_SUCCESS });
     } catch (telemetryError) {
       console.warn('Failed to track setup success:', (telemetryError as Error).message);
     }
@@ -35,13 +34,15 @@ function reloadEnvFile() {
 }
 
 async function trackSetupError(error: any) {
-  const telemetry = await getTelemetry();
-
   try {
-    const errorInfo = normalizeError(error);
+    const telemetryModule = await import('~/lib/telemetry/telemetry-manager');
+    const errorUtilsModule = await import('~/lib/telemetry/error-utils');
+
+    const telemetry = await telemetryModule.getTelemetry();
+    const errorInfo = errorUtilsModule.normalizeError(error);
 
     await telemetry.trackTelemetryEvent({
-      eventType: TelemetryEventType.SETUP_ERROR,
+      eventType: telemetryModule.TelemetryEventType.SETUP_ERROR,
       properties: {
         errorMessage: errorInfo.message,
         error: errorInfo,
