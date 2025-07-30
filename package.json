@@ -20,6 +20,7 @@
     "lint:fix": "pnpm exec prettier --check . --write",
     "docker:start": "docker-compose up -d && sh scripts/docker-start-prompt.sh",
     "docker:dev": "docker-compose -f docker-compose.dev.yml up -d && sh scripts/docker-start-prompt.sh",
+    "docker:stop": "docker-compose down",
     "db:start": "docker-compose -f docker-compose.db.yml up -d",
     "db:stop": "docker-compose -f docker-compose.db.yml down",
     "db:restart": "docker-compose -f docker-compose.db.yml restart",
