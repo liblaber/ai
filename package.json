@@ -7,7 +7,7 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "setup": "pnpm i && tsx setup.ts",
+    "setup": "pnpm i && pnpm run prisma:generate && tsx setup.ts",
     "build": "next build",
     "dev": "node scripts/dev-with-db.js && tsx pre-start.ts && next dev",
     "test": "vitest --run",
