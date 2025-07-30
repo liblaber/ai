@@ -187,7 +187,7 @@ chmod +x scripts/setup.sh
 After setup is complete, start the app with Docker:
 
 ```bash
-pnpm run dockerstart
+pnpm run docker:start
 ```
 
 **That's it! 🎉** The app will be available at http://localhost:3000
