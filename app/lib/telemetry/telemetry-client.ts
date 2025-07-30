@@ -1,6 +1,7 @@
 import type { TelemetryEvent } from './telemetry-manager';
 import type { UserProfile } from '~/lib/services/userService';
 import posthog from 'posthog-js';
+import { logger } from '~/utils/logger';
 
 /**
  * Client-side telemetry utility that tracks custom events.
@@ -17,10 +18,10 @@ export async function trackTelemetryEvent(event: TelemetryEvent): Promise<void> 
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.warn('Telemetry API error:', errorData);
+      logger.warn('Telemetry API error:', errorData);
     }
   } catch (error) {
-    console.warn('Failed to send telemetry event:', error);
+    logger.warn('Failed to send telemetry event:', error);
   }
 }
 
@@ -32,7 +33,7 @@ let isTelemetryInitialized = false;
  */
 export function initializeClientTelemetry(user?: UserProfile): void {
   if (isTelemetryInitialized) {
-    console.log('📊 Telemetry already initialized, skipping...');
+    logger.debug('📊 Telemetry already initialized, skipping...');
     return;
   }
 
@@ -41,19 +42,19 @@ export function initializeClientTelemetry(user?: UserProfile): void {
     process.env.NEXT_PUBLIC_DISABLE_TELEMETRY === '1';
 
   if (telemetryDisabled) {
-    console.log('📊 Telemetry disabled via NEXT_PUBLIC_DISABLE_TELEMETRY environment variable');
+    logger.debug('📊 Telemetry disabled via NEXT_PUBLIC_DISABLE_TELEMETRY environment variable');
     return;
   }
 
   const posthogConfigured = !!process.env.NEXT_PUBLIC_POSTHOG_KEY && !!process.env.NEXT_PUBLIC_POSTHOG_HOST;
 
   if (!posthogConfigured) {
-    console.log('📊 Telemetry disabled: PostHog not configured');
+    logger.debug('📊 Telemetry disabled: PostHog not configured');
     return;
   }
 
   if (user && user.telemetryEnabled === false) {
-    console.log('📊 Telemetry disabled: User has declined telemetry consent');
+    logger.debug('📊 Telemetry disabled: User has declined telemetry consent');
     return;
   }
 
@@ -65,5 +66,5 @@ export function initializeClientTelemetry(user?: UserProfile): void {
   });
 
   isTelemetryInitialized = true;
-  console.log('📊 Telemetry initialized successfully ');
+  logger.debug('📊 Telemetry initialized successfully ');
 }

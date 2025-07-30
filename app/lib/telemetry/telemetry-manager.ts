@@ -1,6 +1,7 @@
 import { PostHog } from 'posthog-node';
 import { getInstanceId } from '~/lib/instance-id';
 import { type UserProfile } from '~/lib/services/userService';
+import { logger } from '~/utils/logger';
 
 export enum TelemetryEventType {
   // App start success is tracked in instrumentation.ts on app startup
@@ -92,23 +93,23 @@ class TelemetryManager {
       process.env.NEXT_PUBLIC_DISABLE_TELEMETRY === '1';
 
     if (telemetryDisabled) {
-      console.log('📊 Telemetry disabled via NEXT_PUBLIC_DISABLE_TELEMETRY environment variable');
+      logger.debug('📊 Telemetry disabled via NEXT_PUBLIC_DISABLE_TELEMETRY environment variable');
       return false;
     }
 
     if (!this._posthogApiKey) {
-      console.log('📊 Telemetry disabled: NEXT_PUBLIC_POSTHOG_KEY not configured');
+      logger.debug('📊 Telemetry disabled: NEXT_PUBLIC_POSTHOG_KEY not configured');
       return false;
     }
 
     if (!this._instanceId) {
-      console.log('📊 Telemetry disabled: Failed to generate instance ID');
+      logger.debug('📊 Telemetry disabled: Failed to generate instance ID');
       return false;
     }
 
     // Check user's telemetry consent
     if (user && user.telemetryEnabled === false) {
-      console.log('📊 Telemetry disabled: User has declined telemetry consent');
+      logger.debug('📊 Telemetry disabled: User has declined telemetry consent');
       return false;
     }
 
