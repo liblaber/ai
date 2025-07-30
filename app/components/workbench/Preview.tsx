@@ -4,6 +4,7 @@ import { IconButton } from '~/components/ui/IconButton';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
 import { ScreenshotSelector } from './ScreenshotSelector';
+import { PreviewLoader } from '~/components/workbench/PreviewLoader';
 
 type ResizeSide = 'left' | 'right' | null;
 
@@ -45,6 +46,8 @@ export const Preview = memo(() => {
   // Use percentage for width
   const [widthPercent, setWidthPercent] = useState<number>(37.5);
 
+  const [loadingText, setLoadingText] = useState(workbenchStore.previewsStore.loadingText.get());
+
   const resizingState = useRef({
     isResizing: false,
     side: null as ResizeSide,
@@ -57,6 +60,16 @@ export const Preview = memo(() => {
 
   const [isWindowSizeDropdownOpen, setIsWindowSizeDropdownOpen] = useState(false);
   const [selectedWindowSize, setSelectedWindowSize] = useState<WindowSize>(WINDOW_SIZES[0]);
+
+  useEffect(() => {
+    workbenchStore.previewsStore.loadingText.subscribe((newLoadingText) => {
+      if (newLoadingText !== loadingText) {
+        setLoadingText(newLoadingText);
+      }
+    });
+
+    return () => workbenchStore.previewsStore.loadingText.off();
+  }, []);
 
   useEffect(() => {
     if (!activePreview) {
@@ -358,7 +371,7 @@ export const Preview = memo(() => {
             width: isDeviceModeOn ? `${widthPercent}%` : '100%',
             height: '100%',
             overflow: 'visible',
-            background: 'var(--liblab-elements-bg-depth-1)',
+            background: 'var(--liblab-elements-bg-depth-2)',
             position: 'relative',
             display: 'flex',
           }}
@@ -382,20 +395,8 @@ export const Preview = memo(() => {
                 hidden={isLoading}
               />
               {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-liblab-elements-bg-depth-1 bg-opacity-50 backdrop-blur-sm">
-                  <div className="flex flex-col items-center gap-4 p-6 rounded-lg bg-liblab-elements-bg-depth-2 shadow-lg border border-liblab-elements-borderColor">
-                    <div className="relative">
-                      <div className="w-12 h-12 border-4 border-liblab-elements-borderColor rounded-full animate-spin border-t-liblab-elements-item-contentAccent"></div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-3 h-3 bg-liblab-elements-item-contentAccent rounded-full animate-pulse"></div>
-                      </div>
-                    </div>
-                    <div className="text-liblab-elements-textPrimary text-lg font-medium text-center">
-                      <span className="inline-block animate-[fadeIn_0.3s_ease-in-out]">
-                        {workbenchStore.previewsStore.loadingText.get()}
-                      </span>
-                    </div>
-                  </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-liblab-elements-bg-depth-2 z-50">
+                  {<PreviewLoader message={loadingText} />}
                 </div>
               )}
               <ScreenshotSelector
@@ -405,10 +406,8 @@ export const Preview = memo(() => {
               />
             </>
           ) : (
-            <div className="flex w-full h-full justify-center items-center bg-liblab-elements-bg-depth-1 text-liblab-elements-textPrimary">
-              {workbenchStore.previewsStore.isLoading.get()
-                ? workbenchStore.previewsStore.loadingText.get()
-                : 'No preview available'}
+            <div className="flex w-full h-full justify-center items-center bg-liblab-elements-bg-depth-2 text-liblab-elements-textPrimary">
+              {<PreviewLoader message={loadingText} />}
             </div>
           )}
 

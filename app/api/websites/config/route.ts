@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import '~/lib/config/env';
+import { env } from '~/env';
 
 export async function GET() {
-  const netlifyEnabled = !!process.env.NETLIFY_AUTH_TOKEN;
+  const netlifyEnabled = !!env.server.NETLIFY_AUTH_TOKEN;
 
   return NextResponse.json({
     netlify: {

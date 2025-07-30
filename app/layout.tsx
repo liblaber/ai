@@ -68,7 +68,6 @@ async function getRootData() {
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  // const pathname = usePathname();/
   const rootData = await getRootData();
 
   return (

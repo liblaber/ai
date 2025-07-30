@@ -8,8 +8,10 @@ import { rimraf } from 'rimraf';
 import AdmZip from 'adm-zip';
 import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
-import '~/lib/config/env';
 import { requireUserId } from '~/auth/session';
+import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { userService } from '~/lib/services/userService';
+import { env as serverEnv } from '~/env/server';
 
 interface CommandResult {
   output: string;
@@ -128,7 +130,7 @@ export async function POST(request: NextRequest) {
     const chatId = formData.get('chatId') as string;
     const description = formData.get('description') as string;
     const zipFile = formData.get('zipFile') as File;
-    const token = process.env.NETLIFY_AUTH_TOKEN;
+    const token = serverEnv.NETLIFY_AUTH_TOKEN;
 
     try {
       logger.info('Starting deployment process', JSON.stringify({ chatId, siteId, websiteId }));
@@ -282,7 +284,13 @@ export async function POST(request: NextRequest) {
             url: existingSite.url,
             chatId,
           };
-          logger.info('Retrieved existing site info', JSON.stringify({ chatId, siteId: targetSiteId }));
+          logger.info(
+            'Retrieved existing site info',
+            JSON.stringify({
+              chatId,
+              siteId: targetSiteId,
+            }),
+          );
         }
       }
 
@@ -483,7 +491,23 @@ export async function POST(request: NextRequest) {
 
         // After successful deployment, save to database
         if (siteInfo) {
-          logger.info('Saving website to database', JSON.stringify({ chatId, siteId: siteInfo.id }));
+          const telemetry = await getTelemetry();
+          const user = await userService.getUser(userId);
+          await telemetry.trackTelemetryEvent(
+            {
+              eventType: TelemetryEventType.USER_APP_DEPLOY,
+              properties: { websiteInfo: siteInfo },
+            },
+            user,
+          );
+
+          logger.info(
+            'Saving website to database',
+            JSON.stringify({
+              chatId,
+              siteId: siteInfo.id,
+            }),
+          );
 
           try {
             let website;
@@ -501,7 +525,13 @@ export async function POST(request: NextRequest) {
                   siteUrl: latestDeploy.links.permalink,
                 },
               });
-              logger.info('Website updated in database', JSON.stringify({ chatId, siteId: siteInfo.id }));
+              logger.info(
+                'Website updated in database',
+                JSON.stringify({
+                  chatId,
+                  siteId: siteInfo.id,
+                }),
+              );
             } else {
               // Create new website
               website = await prisma.website.create({
@@ -513,7 +543,13 @@ export async function POST(request: NextRequest) {
                   userId,
                 },
               });
-              logger.info('Website saved to database successfully', JSON.stringify({ chatId, siteId: siteInfo.id }));
+              logger.info(
+                'Website saved to database successfully',
+                JSON.stringify({
+                  chatId,
+                  siteId: siteInfo.id,
+                }),
+              );
             }
 
             // Send single success message with website data

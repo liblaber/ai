@@ -29,7 +29,6 @@ async function seed() {
     if (!anonUser) {
       // Create anonymous user
       const anonymousUser = {
-        id: 'TYOjutAGl9gxV4b2jbBG2loaohynFnFs',
         email: 'anonymous@anonymous.com',
         name: 'Anonymous',
         emailVerified: false,
@@ -52,7 +51,6 @@ async function seed() {
     if (!account) {
       await prisma.account.create({
         data: {
-          id: 'kOK6L1dtMXjn9I09QtBFDYoX0aIT1ZL6',
           accountId: anonUser.id,
           providerId: 'credential',
           userId: anonUser.id,

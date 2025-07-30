@@ -11,8 +11,8 @@ generator client {
 /// @seed="tsx prisma/seed.ts"
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./liblab.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model DataSource {
@@ -88,6 +88,7 @@ model Conversation {
 
 enum StorageType {
   FILE_SYSTEM
+  DATABASE
 }
 
 model Snapshot {
@@ -109,21 +110,22 @@ enum UserRole {
 }
 
 model User {
-  id             String         @id
-  name           String
-  email          String
-  emailVerified  Boolean
-  image          String?
-  createdAt      DateTime
-  updatedAt      DateTime
-  sessions       Session[]
-  accounts       Account[]
-  dataSources    DataSource[]
-  conversations  Conversation[]
-  websites       Website[]
-  role           UserRole       @default(MEMBER)
-  organizationId String?
-  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id               String         @id @default(uuid())
+  name             String
+  email            String
+  emailVerified    Boolean
+  image            String?
+  createdAt        DateTime
+  updatedAt        DateTime
+  sessions         Session[]
+  accounts         Account[]
+  dataSources      DataSource[]
+  conversations    Conversation[]
+  websites         Website[]
+  role             UserRole       @default(MEMBER)
+  organizationId   String?
+  organization     Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  telemetryEnabled Boolean?
 
   isAnonymous Boolean?
 
@@ -132,7 +134,7 @@ model User {
 }
 
 model Session {
-  id        String   @id
+  id        String   @id @default(uuid())
   expiresAt DateTime
   token     String
   createdAt DateTime
@@ -147,7 +149,7 @@ model Session {
 }
 
 model Account {
-  id                    String    @id
+  id                    String    @id @default(uuid())
   accountId             String
   providerId            String
   userId                String
@@ -166,7 +168,7 @@ model Account {
 }
 
 model Verification {
-  id         String    @id
+  id         String    @id @default(uuid())
   identifier String
   value      String
   expiresAt  DateTime

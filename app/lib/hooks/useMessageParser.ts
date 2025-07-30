@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { NO_EXECUTE_ACTION_ANNOTATION, StreamingMessageParser } from '~/lib/runtime/message-parser';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { createScopedLogger } from '~/utils/logger';
+import { env } from '~/env/client';
 
 const logger = createScopedLogger('useMessageParser');
 
@@ -13,7 +14,6 @@ const messageParser = new StreamingMessageParser({
     onArtifactOpen: (data) => {
       logger.trace('onArtifactOpen', data);
 
-      workbenchStore.showWorkbench.set(true);
       workbenchStore.addArtifact(data);
     },
     onArtifactClose: (data) => {
@@ -58,7 +58,7 @@ export function useMessageParser() {
   const parseMessages = useCallback((messages: Message[], isLoading: boolean) => {
     let reset = false;
 
-    if (process.env.NODE_ENV === 'development' && !isLoading) {
+    if (env.NEXT_PUBLIC_NODE_ENV === 'development' && !isLoading) {
       reset = true;
       messageParser.reset();
     }

@@ -1,19 +1,22 @@
 import { create } from 'zustand';
-import { UserRole } from '@prisma/client';
+import type { UserProfile } from '~/lib/services/userService';
 
 interface UserState {
-  id: string | null;
-  role: UserRole | null;
-  setUser: (data: { id: string; role: UserRole }) => void;
+  user: UserProfile | null;
+  setUser: (user: UserProfile) => void;
+  clearUser: () => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
-  id: null,
-  role: null,
+  user: null,
 
-  setUser: ({ id, role }) =>
+  setUser: (user) =>
     set(() => ({
-      id,
-      role,
+      user,
+    })),
+
+  clearUser: () =>
+    set(() => ({
+      user: null,
     })),
 }));

@@ -85,18 +85,26 @@ Events are sent to [PostHog](https://posthog.com/) for analytics. This helps us 
 Telemetry is enabled by default. To disable it, set the following in your `.env` file:
 
 ```
-DISABLE_TELEMETRY=true
+NEXT_PUBLIC_DISABLE_TELEMETRY=true
 ```
 
-If you do not provide a `POSTHOG_API_KEY` in your `.env`, telemetry will also be disabled automatically.
+If you do not provide a `NEXT_PUBLIC_POSTHOG_KEY` in your `.env`, telemetry will also be disabled automatically.
 
 ---
 
 ## 🚀 Quick Start
 
-### Option 1: Docker (Recommended)
+### Option 1: Docker (Recommended) ⭐
 
-**The easiest way to get started!** Just need Docker installed.
+**The easiest and fastest way to get started!** Docker provides a consistent environment across all platforms and handles all dependencies automatically.
+
+**🚀 Quick Start (Recommended):**
+
+```bash
+pnpm run quickstart
+```
+
+This single command will set up everything you need and start the application.
 
 #### Prerequisites
 
@@ -187,16 +195,180 @@ chmod +x scripts/setup.sh
 After setup is complete, start the app with Docker:
 
 ```bash
-pnpm run dockerstart
+pnpm run docker:start
 ```
 
 **That's it! 🎉** The app will be available at http://localhost:3000
+
+#### Quick Start with Docker (Recommended)
+
+For the fastest setup experience, use our quickstart command:
+
+```bash
+pnpm run quickstart
+```
+
+This single command will:
+
+- Install all dependencies
+- Generate Prisma client
+- Run the setup script
+- Start the production Docker environment
+
+#### Docker Commands
+
+**Production Environment:**
+
+```bash
+# Start production environment
+pnpm run docker:start
+
+# Rebuild and start production environment
+pnpm run docker:rebuild
+
+# Stop all Docker services
+pnpm run docker:stop
+```
+
+**Development Environment:**
+
+```bash
+# Start development environment (app + database in containers)
+pnpm run docker:dev
+
+# Stop all Docker services
+pnpm run docker:stop
+```
+
+**Database Management:**
+
+```bash
+# Start database only (for local development)
+pnpm run db:start
+
+# Stop database
+pnpm run db:stop
+
+# Restart database
+pnpm run db:restart
+```
+
+#### Database Setup
+
+**Initial Database Setup**
+
+Run the database setup script to initialize the PostgreSQL database:
+
+```bash
+./scripts/docker-db-setup.sh
+```
+
+This script will:
+
+- Start the PostgreSQL container
+- Run database migrations
+- Generate the Prisma client
+- Seed the database (if seed script exists)
+
+**Database Connection Details**
+
+- **Host:** localhost
+- **Port:** 5432
+- **Database:** liblab
+- **Username:** liblab
+- **Password:** liblab_password
+- **Connection URL:** `postgresql://liblab:liblab_password@localhost:5432/liblab`
+
+**Database Persistence**
+
+The PostgreSQL data is persisted in a Docker volume named `postgres_data`. This ensures that:
+
+- Database changes survive container restarts
+- Data is not lost when containers are recreated
+- Multiple developers can use the same database setup
+
+#### Docker Environment Variables
+
+Create a `.env` file in the root directory with:
+
+```env
+DATABASE_URL="postgresql://liblab:liblab_password@localhost:5432/liblab"
+NODE_ENV=development
+```
+
+#### Docker Database Operations
+
+```bash
+# Run migrations
+docker-compose -f docker-compose.dev.yml exec ai-app-dev pnpm prisma migrate deploy
+
+# Generate Prisma client
+docker-compose -f docker-compose.dev.yml exec ai-app-dev pnpm prisma generate
+
+# Open Prisma Studio
+docker-compose -f docker-compose.dev.yml exec ai-app-dev pnpm prisma studio
+
+# Reset database
+docker-compose -f docker-compose.dev.yml exec ai-app-dev pnpm prisma migrate reset
+```
+
+#### Docker Container Management
+
+```bash
+# View logs
+docker-compose -f docker-compose.dev.yml logs -f
+
+# Stop all services
+docker-compose -f docker-compose.dev.yml down
+
+# Remove volumes (⚠️ This will delete all data)
+docker-compose -f docker-compose.dev.yml down -v
+```
+
+#### Docker Troubleshooting
+
+**Database Connection Issues**
+
+1. **Check if PostgreSQL is running:**
+
+   ```bash
+   docker-compose -f docker-compose.dev.yml ps
+   ```
+
+2. **Check database logs:**
+
+   ```bash
+   docker-compose -f docker-compose.dev.yml logs postgres
+   ```
+
+3. **Reset the database:**
+   ```bash
+   docker-compose -f docker-compose.dev.yml down -v
+   ./scripts/docker-db-setup.sh
+   ```
+
+**Volume Issues**
+
+If you need to reset the database volume:
+
+```bash
+# Stop all services
+docker-compose -f docker-compose.dev.yml down
+
+# Remove the volume
+docker volume rm ai_postgres_data
+
+# Restart and setup
+./scripts/docker-db-setup.sh
+```
 
 ---
 
 ### Option 2: Manual Installation
 
-**For developers who prefer full control over their environment.**
+**For developers who prefer full control over their environment or need to run without Docker.**
+
+> **💡 Note:** We recommend using Docker (Option 1) for the best experience, as it handles all dependencies and provides a consistent environment.
 
 #### Prerequisites
 
@@ -329,7 +501,6 @@ The script automatically handles:
 - Setup ngrok tunnel (macOS/Linux)
 - Configure `.env` file
 - Install all dependencies
-- Setup SQLite database
 
 #### Start the app
 
@@ -339,21 +510,92 @@ Start the development server with:
 pnpm run dev
 ```
 
+> **💡 Note:** The `dev` command now automatically starts the PostgreSQL database in Docker and runs the Next.js development server locally.
+
+### Development with PostgreSQL Database
+
+For development with a PostgreSQL database running in Docker, you have several options:
+
+#### Option 1: Start Database and App Together (Recommended)
+
+The default `dev` command now automatically starts the PostgreSQL database in Docker and runs the Next.js development server locally:
+
+```bash
+pnpm run dev
+```
+
+This is the easiest way to get started with a PostgreSQL database for development.
+
+#### Option 2: Manage Database Separately
+
+You can also manage the database independently:
+
+```bash
+# Start only the PostgreSQL database
+pnpm run db:start
+
+# Stop the database
+pnpm run db:stop
+
+# Restart the database
+pnpm run db:restart
+
+```
+
+Then run your app normally with `pnpm run dev` (make sure your `.env` has the correct `DATABASE_URL`).
+
+**Alternative Development Commands:**
+
+- `pnpm run dockerdev` - Used internally inside the Docker container to start the app in development mode
+- `pnpm run docker:dev` - Run both app and database in Docker containers
+
+#### Shared Database Data
+
+All three Docker Compose configurations share the same database data:
+
+- **`docker-compose.yml`** - Production setup with full app and database
+- **`docker-compose.dev.yml`** - Development setup with app and database in containers
+- **`docker-compose.db.yml`** - Database-only setup for local development
+
+This means you can:
+
+- Start the database with `pnpm run dev:with-db` (uses `docker-compose.db.yml`)
+- Switch to full Docker development with `pnpm run docker:dev` (uses `docker-compose.dev.yml`)
+- Deploy with `pnpm run docker:start` (uses `docker-compose.yml`)
+
+All configurations will use the same PostgreSQL data volume, so your data persists across different setups.
+
+#### Database Configuration
+
+The PostgreSQL database runs with these default settings:
+
+- **Host**: `localhost:5432`
+- **Database**: `liblab`
+- **Username**: `liblab`
+- **Password**: `liblab_password`
+- **Connection URL**: `postgresql://liblab:liblab_password@localhost:5432/liblab`
+
+Make sure your `.env` file includes:
+
+```
+DATABASE_URL=postgresql://liblab:liblab_password@localhost:5432/liblab
+```
+
 ### LLM Configuration
 
 > **💡 Recommended Providers**  
 > For optimal performance with liblab.ai, we recommend:
 >
-> - **Anthropic Claude-3 Sonnet** (Default) - Best overall performance with excellent code understanding and large context handling
+> - **Anthropic Claude 4 Sonnet** (Default) - Best overall performance with excellent code understanding and large context handling
 > - **Google Gemini Pro** - Strong alternative with robust code generation capabilities
 >
 > These providers consistently deliver the best results for our use cases, handling large system prompts, code modifications, and complex app generation tasks.
 
-By default, liblab.ai uses Anthropic's Claude (claude-3-5-sonnet-latest). Configure your preferred provider:
+By default, liblab.ai uses Anthropic's Claude 4 Sonnet (claude-4-sonnet-20250514). Configure your preferred provider:
 
 ```bash
 DEFAULT_LLM_PROVIDER=<provider_name>  # Default: 'Anthropic'
-DEFAULT_LLM_MODEL=<model_name>        # Default: 'claude-3-5-sonnet-latest'
+DEFAULT_LLM_MODEL=<model_name>        # Default: 'claude-4-sonnet-20250514'
 ```
 
 #### Cloud Providers

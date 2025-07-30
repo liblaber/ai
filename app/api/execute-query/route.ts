@@ -1,7 +1,7 @@
 import { decryptData, encryptData } from '@liblab/encryption/encryption';
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '~/lib/database';
-import '~/lib/config/env';
+import { env } from '~/env';
 
 interface EncryptedRequestBody {
   encryptedData: string;
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as EncryptedRequestBody;
 
-    const encryptionKey = process.env.ENCRYPTION_KEY;
+    const encryptionKey = env.server.ENCRYPTION_KEY;
 
     if (!encryptionKey) {
       return NextResponse.json(
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const decryptedData = decryptData(process.env.ENCRYPTION_KEY as string, body.encryptedData);
+    const decryptedData = decryptData(env.server.ENCRYPTION_KEY, body.encryptedData);
     const decryptedBody = JSON.parse(decryptedData.toString());
     const { query, databaseUrl, params } = decryptedBody;
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     const dataBuffer = Buffer.from(JSON.stringify(resultData));
 
-    const encryptedResponse = encryptData(process.env.ENCRYPTION_KEY as string, dataBuffer);
+    const encryptedResponse = encryptData(env.server.ENCRYPTION_KEY, dataBuffer);
 
     return NextResponse.json({ encryptedData: encryptedResponse });
   } catch (error: any) {

@@ -7,6 +7,7 @@ export interface UserProfile {
   email: string;
   role: UserRole;
   organizationId: string;
+  telemetryEnabled: boolean | null;
 }
 
 export const userService = {
@@ -19,6 +20,7 @@ export const userService = {
         email: true,
         role: true,
         organizationId: true,
+        telemetryEnabled: true,
       },
     });
 
@@ -32,6 +34,7 @@ export const userService = {
       email: user.email,
       role: user.role,
       organizationId: user.organizationId!,
+      telemetryEnabled: user.telemetryEnabled,
     };
   },
 
@@ -47,6 +50,23 @@ export const userService = {
       email: user.email,
       role: user.role,
       organizationId: user.organizationId!,
+      telemetryEnabled: user.telemetryEnabled,
+    };
+  },
+
+  async updateTelemetryConsent(userId: string, telemetryEnabled: boolean): Promise<UserProfile> {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { telemetryEnabled },
+    });
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      organizationId: user.organizationId!,
+      telemetryEnabled: user.telemetryEnabled,
     };
   },
 
@@ -60,6 +80,7 @@ export const userService = {
         id: true,
         name: true,
         email: true,
+        telemetryEnabled: true,
       },
       orderBy: {
         email: 'asc',
@@ -71,16 +92,15 @@ export const userService = {
       name: user.name,
       email: user.email,
       role: user.role,
+      telemetryEnabled: user.telemetryEnabled,
       organizationId,
     }));
   },
 
   async updateUserRole(userId: string, organizationId: string, role: UserRole) {
-    const user = await prisma.user.update({
+    return await prisma.user.update({
       where: { id: userId, organizationId },
       data: { role },
     });
-
-    return user;
   },
 };
