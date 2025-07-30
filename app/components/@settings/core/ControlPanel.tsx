@@ -83,7 +83,8 @@ export const ControlPanel = () => {
 
   // Store values
   const tabConfiguration = useStore(tabConfigurationStore);
-  const { role } = useUserStore();
+  const { user } = useUserStore();
+  const role = user?.role;
 
   // Memoize the base tab configurations to avoid recalculation
   const baseTabConfig = useMemo(() => {
