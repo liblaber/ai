@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
+import { env } from '~/env';
 
 const TUNNEL_CONFIG_FILE = './tunnel.config';
 
 export async function GET() {
   try {
     // Check if we're in local environment
-    if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
+    if (env.client.NEXT_PUBLIC_ENV_NAME === 'local') {
       // Try to read from tunnel.config file
       if (fs.existsSync(TUNNEL_CONFIG_FILE)) {
         const tunnelUrl = fs.readFileSync(TUNNEL_CONFIG_FILE, 'utf8').trim();
@@ -21,7 +22,7 @@ export async function GET() {
   }
 
   // Fallback to BASE_URL environment variable
-  const baseUrl = process.env.BASE_URL || '';
+  const baseUrl = env.server.BASE_URL || '';
 
   return NextResponse.json({ url: baseUrl });
 }

@@ -4,7 +4,7 @@ import { useStore } from '@nanostores/react';
 import { useEffect } from 'react';
 import { type Shortcuts, shortcutsStore } from '~/lib/stores/settings';
 import { isMac } from '~/utils/os';
-import { env as serverEnv } from '~/env/server';
+import { env } from '~/env/client';
 
 // List of keys that should not trigger shortcuts when typing in input/textarea
 const INPUT_ELEMENTS = ['input', 'textarea'];
@@ -44,7 +44,7 @@ export function useShortcuts(): void {
       }
 
       // Debug logging in development only
-      if (serverEnv.NODE_ENV === 'development') {
+      if (env.NEXT_PUBLIC_NODE_ENV === 'development') {
         console.log('Key pressed:', {
           key: event.key,
           code: event.code,
