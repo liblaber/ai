@@ -66,7 +66,11 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
 
       // Redirect to telemetry consent screen if user hasn't answered yet (when telemetryEnabled is null)
       if (rootData.user.telemetryEnabled === null) {
-        router.push(TELEMETRY_CONSENT_ROUTE);
+        const currentPath = window.location.pathname;
+
+        if (currentPath !== TELEMETRY_CONSENT_ROUTE) {
+          router.push(TELEMETRY_CONSENT_ROUTE);
+        }
 
         return;
       }
@@ -78,6 +82,12 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
 
     // Redirect to data source connection if no data sources exist
     if (rootData.dataSources && rootData.dataSources.length === 0) {
+      const currentPath = window.location.pathname;
+
+      if (currentPath !== DATA_SOURCE_CONNECTION_ROUTE) {
+        router.push(DATA_SOURCE_CONNECTION_ROUTE);
+      }
+
       router.push(DATA_SOURCE_CONNECTION_ROUTE);
 
       return;

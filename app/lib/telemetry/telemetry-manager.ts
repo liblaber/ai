@@ -58,7 +58,6 @@ class TelemetryManager {
     const eventProperties = {
       ...event.properties,
       user,
-      machineId: user?.id || this._instanceId,
       instanceId: this._instanceId,
       nodeVersion: process.version,
       liblabVersion: process.env.npm_package_version || '0.0.1',
@@ -66,7 +65,7 @@ class TelemetryManager {
 
     try {
       this._posthogClient.capture({
-        distinctId: this._instanceId!,
+        distinctId: this._getDistinctId(user),
         event: event.eventType,
         properties: eventProperties,
         timestamp: new Date(),
@@ -74,7 +73,7 @@ class TelemetryManager {
 
       await this._posthogClient.flushAsync();
     } catch (error) {
-      console.warn('Failed to send telemetry event:', error);
+      console.warn('Failed to send telemetry event:', event, error);
     }
   }
 
@@ -84,6 +83,17 @@ class TelemetryManager {
     }
 
     this._posthogClient.shutdown();
+  }
+
+  private _getDistinctId(user?: UserProfile): string {
+    const distinctId = user?.id || this._instanceId;
+
+    if (!distinctId) {
+      logger.error('No distinct id for user:', user);
+      throw new Error('No distinct id for telemetry');
+    }
+
+    return distinctId;
   }
 
   private _isTelemetryEnabled(user?: UserProfile): boolean {

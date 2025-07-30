@@ -13,14 +13,13 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID || '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    },
-  },
   baseURL: process.env.BASE_URL ?? 'http://localhost:3000',
   trustedOrigins: [(process.env.BASE_URL as string) ?? 'http://localhost:3000'],
+  advanced: {
+    database: {
+      generateId: false, // Assumes a database handles ID generation
+    },
+  },
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
       if (ctx.path.startsWith('/callback/') || ctx.path.startsWith('/sign-in/email')) {
