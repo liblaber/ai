@@ -94,6 +94,7 @@ CREATE TABLE "user" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "role" "UserRole" NOT NULL DEFAULT 'MEMBER',
     "organizationId" TEXT,
+    "telemetryEnabled" BOOLEAN,
     "isAnonymous" BOOLEAN,
 
     CONSTRAINT "user_pkey" PRIMARY KEY ("id")
