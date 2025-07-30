@@ -7,6 +7,7 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
+    "quickstart": "pnpm run setup && pnpm run docker:start",
     "setup": "pnpm i && pnpm run prisma:generate && tsx setup.ts",
     "build": "next build",
     "dev": "node scripts/dev-with-db.js && tsx pre-start.ts && next dev",
@@ -17,7 +18,7 @@
     "test:watch": "vitest",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint app",
     "lint:fix": "pnpm exec prettier --check . --write",
-    "docker:start": "docker-compose up -d --build && sh scripts/docker-start-prompt.sh",
+    "docker:start": "docker-compose up -d && sh scripts/docker-start-prompt.sh",
     "docker:dev": "docker-compose -f docker-compose.dev.yml up -d && sh scripts/docker-start-prompt.sh",
     "db:start": "docker-compose -f docker-compose.db.yml up -d",
     "db:stop": "docker-compose -f docker-compose.db.yml down",
