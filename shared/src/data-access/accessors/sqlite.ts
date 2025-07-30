@@ -1,7 +1,7 @@
 import type { Database as SQLiteDatabase } from 'better-sqlite3';
 import Database from 'better-sqlite3';
 import type { BaseAccessor } from '../baseAccessor';
-import type { Column, Table } from '../../types';
+import { type Column, type Table } from '../../types';
 import { SAMPLE_DB_ENUM_VALUES } from '../../constants/sample-db-enum-values';
 
 interface SQLiteColumn {
@@ -18,7 +18,7 @@ interface TableInfo {
 const SAMPLE_DATABASE_NAME = 'sample.db';
 
 export class SQLiteAccessor implements BaseAccessor {
-  static pluginId = 'sqlite';
+  static pluginId: string = 'sqlite';
   readonly label = 'SQLite';
   readonly preparedStatementPlaceholderExample = '?';
   readonly connectionStringFormat = 'sqlite://path/to/database.db';

@@ -4,7 +4,6 @@ import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
-import { getInstanceId } from '~/lib/instance-id';
 
 const NGROK_LOG_FILE = './ngrok.log';
 const NGROK_PROCESS_PORT = 4040;
@@ -174,13 +173,12 @@ const runApp = async (): Promise<void> => {
 };
 
 async function trackAppError(error: any) {
-  const instanceId = getInstanceId();
-  const telemetry = await getTelemetry(instanceId);
+  const telemetry = await getTelemetry();
 
   try {
     const errorInfo = normalizeError(error);
 
-    await telemetry.trackEvent({
+    await telemetry.trackTelemetryEvent({
       eventType: TelemetryEventType.APP_ERROR,
       properties: {
         errorMessage: errorInfo.message,

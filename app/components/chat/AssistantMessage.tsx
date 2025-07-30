@@ -10,7 +10,7 @@ interface AssistantMessageProps {
   content: string;
   annotations?: JSONValue[];
   error?: Error;
-  onRetry?: () => Promise<void>;
+  onRetry: (errorMessage: string) => Promise<void>;
 }
 
 function openArtifactInWorkbench(filePath: string) {
@@ -116,7 +116,7 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
             <Card className="mt-4 px-4 py-2 text-sm text-red-300 border-red-500/20 bg-red-500/10">
               <p>{errorMessage}</p>
             </Card>
-            <Button variant="secondary" size="sm" className="mt-4" onClick={onRetry}>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={() => onRetry(errorMessage)}>
               <div className="i-ph:arrow-clockwise w-3 h-3 mr-2" />
               Retry
             </Button>
