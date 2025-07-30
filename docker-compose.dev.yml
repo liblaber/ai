@@ -2,7 +2,8 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:15
+    container_name: liblab-postgres
     environment:
       POSTGRES_DB: liblab
       POSTGRES_USER: liblab
@@ -36,7 +37,7 @@ services:
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://liblab:liblab_password@postgres:5432/liblab
-    command: ['pnpm', 'run', 'dev']
+    command: ['pnpm', 'run', 'dockerdev']
     stdin_open: true
     tty: true
 

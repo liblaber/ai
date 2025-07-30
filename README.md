@@ -339,6 +339,69 @@ Start the development server with:
 pnpm run dev
 ```
 
+### Development with PostgreSQL Database
+
+For development with a PostgreSQL database running in Docker, you have several options:
+
+#### Option 1: Start Database and App Together (Recommended)
+
+This command starts the PostgreSQL database in Docker and then runs the Next.js development server locally:
+
+```bash
+pnpm run dev:with-db
+```
+
+This is the easiest way to get started with a PostgreSQL database for development.
+
+#### Option 2: Manage Database Separately
+
+You can also manage the database independently:
+
+```bash
+# Start only the PostgreSQL database
+pnpm run db:start
+
+# Stop the database
+pnpm run db:stop
+
+# Restart the database
+pnpm run db:restart
+```
+
+Then run your app normally with `pnpm run dev` (make sure your `.env` has the correct `DATABASE_URL`).
+
+#### Shared Database Data
+
+All three Docker Compose configurations share the same database data:
+
+- **`docker-compose.yml`** - Production setup with full app and database
+- **`docker-compose.dev.yml`** - Development setup with app and database in containers
+- **`docker-compose.db.yml`** - Database-only setup for local development
+
+This means you can:
+
+- Start the database with `pnpm run dev:with-db` (uses `docker-compose.db.yml`)
+- Switch to full Docker development with `pnpm run docker:dev` (uses `docker-compose.dev.yml`)
+- Deploy with `pnpm run docker:start` (uses `docker-compose.yml`)
+
+All configurations will use the same PostgreSQL data volume, so your data persists across different setups.
+
+#### Database Configuration
+
+The PostgreSQL database runs with these default settings:
+
+- **Host**: `localhost:5432`
+- **Database**: `liblab`
+- **Username**: `liblab`
+- **Password**: `liblab_password`
+- **Connection URL**: `postgresql://liblab:liblab_password@localhost:5432/liblab`
+
+Make sure your `.env` file includes:
+
+```
+DATABASE_URL=postgresql://liblab:liblab_password@localhost:5432/liblab
+```
+
 ### LLM Configuration
 
 > **💡 Recommended Providers**  
