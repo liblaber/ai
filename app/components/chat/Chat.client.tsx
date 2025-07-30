@@ -38,6 +38,8 @@ import type { FileMap } from '~/lib/stores/files';
 import { ClientOnly } from '~/components/ui/ClientOnly';
 import { useTrackStreamProgress } from '~/components/chat/useTrackStreamProgress';
 import type { ProgressAnnotation } from '~/types/context';
+import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
+import { TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -541,13 +543,22 @@ export const ChatImpl = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedQueryId, setSelectedQueryId] = useState<string | number | null>(null);
 
-  const handleRetry = async () => {
+  const handleRetry = async (errorMessage: string) => {
     const messagesWithoutLastAssistant = messages.filter(
       (message, index) => !(message.role === 'assistant' && index === messages.length - 1),
     );
 
     setData(undefined);
     setMessages(messagesWithoutLastAssistant);
+
+    const currentChatId = chatId.get();
+
+    if (currentChatId) {
+      await trackTelemetryEvent({
+        eventType: TelemetryEventType.USER_CHAT_RETRY,
+        properties: { conversationId: currentChatId, errorMessage },
+      });
+    }
 
     // Reload the chat to retry the request
     await reload({
