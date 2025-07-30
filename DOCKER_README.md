@@ -1,7 +1,3 @@
-# Docker Setup with PostgreSQL
-
-This project now uses PostgreSQL instead of SQLite for better scalability and features.
-
 ## Quick Start
 
 ### Development Environment

@@ -329,7 +329,6 @@ The script automatically handles:
 - Setup ngrok tunnel (macOS/Linux)
 - Configure `.env` file
 - Install all dependencies
-- Setup SQLite database
 
 #### Start the app
 

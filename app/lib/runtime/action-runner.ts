@@ -447,12 +447,8 @@ export class ActionRunner {
 
       if (relativePath.endsWith('.env')) {
         if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
-          const tunnelForwardingUrl = await getBaseUrl();
-          content = injectEnvVariable(
-            content,
-            'VITE_API_BASE_URL',
-            tunnelForwardingUrl ? tunnelForwardingUrl : undefined,
-          );
+          const tunnelUrl = await getBaseUrl();
+          content = injectEnvVariable(content, 'VITE_API_BASE_URL', tunnelUrl ? tunnelUrl : undefined);
         } else {
           content = injectEnvVariable(content, 'VITE_API_BASE_URL', process.env.BASE_URL);
         }

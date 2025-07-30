@@ -120,13 +120,13 @@ const updateTunnelConfigFile = (ngrokUrl: string): void => {
 };
 
 const runTunnelSetup = async (): Promise<void> => {
-  console.log(`
+  if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
+    console.log(`
 ★═══════════════════════════════════════★
         🦙 liblab tunnel setup 🦙
 ★═══════════════════════════════════════★
 `);
 
-  if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
     const ngrokUrl = setupNgrokTunnel();
 
     if (ngrokUrl) {
