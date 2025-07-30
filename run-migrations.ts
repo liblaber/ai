@@ -2,7 +2,6 @@ import 'dotenv/config';
 import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
 import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
-import { getInstanceId } from '~/lib/instance-id';
 
 const runMigrations = async (): Promise<void> => {
   console.log(`
@@ -32,13 +31,12 @@ const runMigrations = async (): Promise<void> => {
 };
 
 async function trackAppError(error: any) {
-  const instanceId = getInstanceId();
-  const telemetry = await getTelemetry(instanceId);
+  const telemetry = await getTelemetry();
 
   try {
     const errorInfo = normalizeError(error);
 
-    await telemetry.trackEvent({
+    await telemetry.trackTelemetryEvent({
       eventType: TelemetryEventType.APP_ERROR,
       properties: {
         errorMessage: errorInfo.message,

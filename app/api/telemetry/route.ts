@@ -1,23 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
-import { getInstanceId } from '~/lib/instance-id';
+import type { TelemetryEvent } from '~/lib/telemetry/telemetry-manager';
+import type { UserProfile } from '~/lib/services/userService';
+import { userService } from '~/lib/services/userService';
+import { logger } from '~/utils/logger';
+import { requireUserId } from '~/auth/session';
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body: any = await req.json();
-    const eventType = body.eventType as TelemetryEventType;
-    const properties = body.properties as Record<string, any> | undefined;
+    let user: UserProfile | undefined = undefined;
 
-    if (!eventType) {
-      return NextResponse.json({ error: 'Missing eventType' }, { status: 400 });
+    // Try to get the user but don't fail, some events like app setup and startup don't require a user to be tracked
+    try {
+      user = await userService.getUser(await requireUserId(request));
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error: any) {
+      // noop - no user, continue without user context
     }
 
-    const instanceId = getInstanceId();
-    const telemetry = await getTelemetry(instanceId);
-    await telemetry.trackEvent({ eventType, properties });
+    const body = await request.json();
+    const { event } = body as { event: TelemetryEvent };
+
+    if (!Object.values(TelemetryEventType).includes(event.eventType)) {
+      logger.error(`Invalid event ${event.eventType}`, event.properties);
+
+      return NextResponse.json({ error: 'Invalid event type' }, { status: 400 });
+    }
+
+    const telemetry = await getTelemetry();
+    await telemetry.trackTelemetryEvent(event, user);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+    logger.error('Telemetry API error:', error);
+    return NextResponse.json({ error: 'Failed to track telemetry event' }, { status: 500 });
   }
 }

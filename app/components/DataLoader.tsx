@@ -7,12 +7,14 @@ import { usePluginStore } from '~/lib/plugins/plugin-store';
 import type { DataSourceType } from '~/lib/stores/dataSourceTypes';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useRouter } from 'next/navigation';
-import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
 import type { PluginAccessMap } from '~/lib/plugins/types';
 import { useUserStore } from '~/lib/stores/user';
+import { DATA_SOURCE_CONNECTION_ROUTE, TELEMETRY_CONSENT_ROUTE } from '~/lib/constants/routes';
+import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
+import type { UserProfile } from '~/lib/services/userService';
 
 export interface RootData {
-  user: any;
+  user: UserProfile | null;
   dataSources: Array<{
     id: string;
     name: string;
@@ -34,11 +36,12 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
   const { setDataSources } = useDataSourcesStore();
   const { setPluginAccess } = usePluginStore();
   const { setDataSourceTypes } = useDataSourceTypesStore();
-  const { setUser } = useUserStore();
+  const { setUser, clearUser, user } = useUserStore();
   const router = useRouter();
 
   useEffect(() => {
     if (!session?.user) {
+      clearUser();
       return;
     }
 
@@ -57,8 +60,24 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       setDataSourceTypes(rootData.dataSourceTypes);
     }
 
+    // Set user profile
     if (rootData.user) {
       setUser(rootData.user);
+
+      // Redirect to telemetry consent screen if user hasn't answered yet (when telemetryEnabled is null)
+      if (rootData.user.telemetryEnabled === null) {
+        const currentPath = window.location.pathname;
+
+        if (currentPath !== TELEMETRY_CONSENT_ROUTE) {
+          router.push(TELEMETRY_CONSENT_ROUTE);
+        }
+
+        return;
+      }
+
+      if (rootData.user.telemetryEnabled) {
+        initializeClientTelemetry(rootData.user);
+      }
     }
 
     // Redirect to data source connection if no data sources exist
@@ -68,8 +87,12 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       if (currentPath !== DATA_SOURCE_CONNECTION_ROUTE) {
         router.push(DATA_SOURCE_CONNECTION_ROUTE);
       }
+
+      router.push(DATA_SOURCE_CONNECTION_ROUTE);
+
+      return;
     }
-  }, [session?.user, rootData, setDataSources, setPluginAccess, setDataSourceTypes, router]);
+  }, [session?.user, rootData, setDataSources, setPluginAccess, setDataSourceTypes, setUser, clearUser, user, router]);
 
   return <>{children}</>;
 }

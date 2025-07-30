@@ -24,7 +24,7 @@ interface MessagesProps {
   messages?: Message[];
   setMessages: (messages: Message[]) => void;
   error?: Error;
-  onRetry?: () => Promise<void>;
+  onRetry: (errorMessage: string) => Promise<void>;
 }
 
 export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
@@ -35,7 +35,10 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
     const { data } = useSession();
     const router = useRouter();
     const user = data?.user;
-    const [rewindDialog, setRewindDialog] = useState<{ isOpen: boolean; snapshotId: string | null }>({
+    const [rewindDialog, setRewindDialog] = useState<{
+      isOpen: boolean;
+      snapshotId: string | null;
+    }>({
       isOpen: false,
       snapshotId: null,
     });
@@ -86,12 +89,15 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
 
     const handleFork = async (messageId: string) => {
       try {
-        if (!chatId.get()) {
+        const conversationId = chatId.get();
+
+        if (!conversationId) {
           toast.error('Invalid chat id');
           return;
         }
 
-        const forkedChatId = await forkConversation(chatId.get()!, messageId);
+        const forkedChatId = await forkConversation(conversationId, messageId);
+
         router.push(`/chat/${forkedChatId}`);
       } catch (error) {
         toast.error('Failed to fork chat: ' + (error as Error).message);
@@ -120,29 +126,15 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
               return (
                 <div
                   key={index}
-                  className={classNames('flex gap-4 p-6 w-full rounded-xl', {
+                  className={classNames('flex gap-4 p-6 w-full rounded-xl relative', {
                     'bg-liblab-elements-messages-background': isUserMessage || !isStreaming || (isStreaming && !isLast),
                     'bg-gradient-to-b from-liblab-elements-messages-background from-30% to-transparent':
                       isStreaming && isLast,
-                    'mt-4': !isFirst,
+                    'mt-2': !isFirst,
                   })}
                 >
-                  {isUserMessage && <ProfilePicture user={user} />}
-                  <div className="grid grid-col-1 w-full">
-                    {isUserMessage ? (
-                      <UserMessage key={message.id} content={content} />
-                    ) : (
-                      <AssistantMessage
-                        key={message.id}
-                        content={content}
-                        annotations={message.annotations}
-                        onRetry={onRetry}
-                        error={isLast ? error : undefined}
-                      />
-                    )}
-                  </div>
                   {!isUserMessage && (
-                    <div className="flex gap-2 flex-col lg:flex-row h-6">
+                    <div className="absolute top-3 right-3 flex gap-1 flex-col lg:flex-row h-6">
                       {messageId && snapshotId && (
                         <WithTooltip tooltip="Revert to this message">
                           <button
@@ -161,13 +153,27 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                             onClick={() => handleFork(messageId)}
                             key="i-liblab:ic_back-square"
                             className={classNames(
-                              'i-liblab:ic_back-square text-2xl opacity-50 hover:opacity-100 text-liblab-elements-icon-primary transition-colors',
+                              'i-liblab:ic_back-square text-2xl opacity-50 hover:opacity-100 text-liblab-elements-icon-primary bg-transparent! transition-colors',
                             )}
                           />
                         </WithTooltip>
                       )}
                     </div>
                   )}
+                  {isUserMessage && <ProfilePicture user={user} />}
+                  <div className="grid grid-col-1 w-full relative">
+                    {isUserMessage ? (
+                      <UserMessage key={message.id} content={content} />
+                    ) : (
+                      <AssistantMessage
+                        key={message.id}
+                        content={content}
+                        annotations={message.annotations}
+                        onRetry={onRetry}
+                        error={isLast ? error : undefined}
+                      />
+                    )}
+                  </div>
                 </div>
               );
             })

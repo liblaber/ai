@@ -85,10 +85,10 @@ Events are sent to [PostHog](https://posthog.com/) for analytics. This helps us 
 Telemetry is enabled by default. To disable it, set the following in your `.env` file:
 
 ```
-DISABLE_TELEMETRY=true
+NEXT_PUBLIC_DISABLE_TELEMETRY=true
 ```
 
-If you do not provide a `POSTHOG_API_KEY` in your `.env`, telemetry will also be disabled automatically.
+If you do not provide a `NEXT_PUBLIC_POSTHOG_KEY` in your `.env`, telemetry will also be disabled automatically.
 
 ---
 
@@ -406,16 +406,16 @@ DATABASE_URL=postgresql://liblab:liblab_password@localhost:5432/liblab
 > **💡 Recommended Providers**  
 > For optimal performance with liblab.ai, we recommend:
 >
-> - **Anthropic Claude-3 Sonnet** (Default) - Best overall performance with excellent code understanding and large context handling
+> - **Anthropic Claude 4 Sonnet** (Default) - Best overall performance with excellent code understanding and large context handling
 > - **Google Gemini Pro** - Strong alternative with robust code generation capabilities
 >
 > These providers consistently deliver the best results for our use cases, handling large system prompts, code modifications, and complex app generation tasks.
 
-By default, liblab.ai uses Anthropic's Claude (claude-3-5-sonnet-latest). Configure your preferred provider:
+By default, liblab.ai uses Anthropic's Claude 4 Sonnet (claude-4-sonnet-20250514). Configure your preferred provider:
 
 ```bash
 DEFAULT_LLM_PROVIDER=<provider_name>  # Default: 'Anthropic'
-DEFAULT_LLM_MODEL=<model_name>        # Default: 'claude-3-5-sonnet-latest'
+DEFAULT_LLM_MODEL=<model_name>        # Default: 'claude-4-sonnet-20250514'
 ```
 
 #### Cloud Providers

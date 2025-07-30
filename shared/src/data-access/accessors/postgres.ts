@@ -1,6 +1,6 @@
 import { Pool, types } from 'pg';
 import type { BaseAccessor } from '../baseAccessor';
-import type { Table } from '../../types';
+import { type Table } from '../../types';
 
 const typesToParse = [types.builtins.INT4, types.builtins.INT8, types.builtins.NUMERIC];
 typesToParse.forEach((type) => {
@@ -8,7 +8,7 @@ typesToParse.forEach((type) => {
 });
 
 export class PostgresAccessor implements BaseAccessor {
-  static pluginId = 'postgres';
+  static pluginId: string = 'postgres';
   readonly label = 'PostgreSQL';
   readonly preparedStatementPlaceholderExample = '$1, $2, $3';
   readonly connectionStringFormat = 'postgres(ql)://username:password@host:port/database';

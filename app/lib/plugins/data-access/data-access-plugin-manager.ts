@@ -3,13 +3,13 @@ import type { BaseAccessor, BaseAccessorConstructor } from '@liblab/data-access/
 import { PostgresAccessor } from '@liblab/data-access/accessors/postgres';
 import { MySQLAccessor } from '@liblab/data-access/accessors/mysql';
 import { SQLiteAccessor } from '@liblab/data-access/accessors/sqlite';
-import { type PluginId, PluginType } from '~/lib/plugins/types';
+import { type DataAccessPluginId, PluginType } from '~/lib/plugins/types';
 
 export class DataSourcePluginManager {
   static isAvailable(type: string): boolean {
     // Normalize type (e.g., 'postgresql' -> 'postgres')
     const normalized = type.replace('postgresql', 'postgres');
-    return PluginManager.getInstance().isPluginAvailable(PluginType.DATA_ACCESS, normalized as PluginId);
+    return PluginManager.getInstance().isPluginAvailable(PluginType.DATA_ACCESS, normalized as DataAccessPluginId);
   }
 
   static getAccessor(databaseUrl: string): BaseAccessor {
@@ -29,6 +29,18 @@ export class DataSourcePluginManager {
     }
 
     return new accessorClass();
+  }
+
+  static getAccessorPluginId(databaseUrl: string): DataAccessPluginId {
+    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor];
+
+    const accessorClass = allAccessors.find((acc: BaseAccessorConstructor) => acc.isAccessor(databaseUrl));
+
+    if (!accessorClass) {
+      throw new Error(`No accessor found for database URL: ${databaseUrl}`);
+    }
+
+    return accessorClass.pluginId as DataAccessPluginId;
   }
 
   static getAvailableDatabaseTypes(): {

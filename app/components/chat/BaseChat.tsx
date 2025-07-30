@@ -64,7 +64,7 @@ interface BaseChatProps {
   actionRunner?: ActionRunner;
   onSyncFiles?: () => Promise<void>;
   setMessages: (messages: Message[]) => void;
-  onRetry?: () => Promise<void>;
+  onRetry: (errorMessage: string) => Promise<void>;
 }
 
 export const BaseChat = ({
@@ -262,7 +262,7 @@ export const BaseChat = ({
                 {() => (
                   <Messages
                     ref={messageRef}
-                    className="flex flex-col w-full flex-1 max-w-chat pb-6 mx-auto z-1"
+                    className="flex flex-col w-full flex-1 max-w-chat mx-auto rounded-xl overflow-y-scroll z-1"
                     messages={messages}
                     isStreaming={isStreaming}
                     setMessages={setMessages}
