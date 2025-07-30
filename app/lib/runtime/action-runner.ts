@@ -10,6 +10,7 @@ import { LiblabShell } from '~/utils/shell';
 import { injectEnvVariable } from '~/utils/envUtils';
 import { webcontainer as webcontainerPromise } from '~/lib/webcontainer';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { env } from '~/env/client';
 import { getBaseUrl } from '~/lib/utils/tunnel';
 
 const logger = createScopedLogger('ActionRunner');
@@ -446,11 +447,11 @@ export class ActionRunner {
       let content = action.content;
 
       if (relativePath.endsWith('.env')) {
-        if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
+        if (env.NEXT_PUBLIC_ENV_NAME === 'local') {
           const tunnelUrl = await getBaseUrl();
           content = injectEnvVariable(content, 'VITE_API_BASE_URL', tunnelUrl ? tunnelUrl : undefined);
         } else {
-          content = injectEnvVariable(content, 'VITE_API_BASE_URL', process.env.BASE_URL);
+          content = injectEnvVariable(content, 'VITE_API_BASE_URL', env.NEXT_PUBLIC_BASE_URL);
         }
       }
 

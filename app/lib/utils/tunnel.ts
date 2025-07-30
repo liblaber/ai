@@ -1,8 +1,10 @@
+import { env } from '~/env/server';
+
 export const getBaseUrl = async (): Promise<string> => {
   // Only make fetch call on client side
   if (typeof window === 'undefined') {
     // Server-side: fallback to BASE_URL environment variable
-    return process.env.BASE_URL || '';
+    return env.BASE_URL || '';
   }
 
   try {
@@ -20,5 +22,5 @@ export const getBaseUrl = async (): Promise<string> => {
   }
 
   // Fallback to BASE_URL environment variable
-  return process.env.BASE_URL || '';
+  return env.BASE_URL || '';
 };

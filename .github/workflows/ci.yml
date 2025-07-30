@@ -76,13 +76,20 @@ jobs:
       - name: 🗄️ Generate Prisma client
         run: pnpm prisma:generate
 
+      - name: 📄 Copy .env.example to .env
+        run: cp .env.example .env
+
       - name: 🏗️ Build application
         run: pnpm build
         env:
           NODE_ENV: production
+          ENCRYPTION_KEY: ${{ secrets.DUMMY_ENCRYPTION_KEY }}
 
       - name: 🧪 Run tests
         run: pnpm test
+        env:
+          NODE_ENV: production
+          ENCRYPTION_KEY: ${{ secrets.DUMMY_ENCRYPTION_KEY }}
 
   all-checks:
     name: ✅ All Checks Passed

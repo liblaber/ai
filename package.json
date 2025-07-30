@@ -89,6 +89,7 @@
     "@radix-ui/react-switch": "^1.1.1",
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.4",
+    "@t3-oss/env-nextjs": "^0.13.8",
     "@tanstack/react-virtual": "^3.13.0",
     "@uiw/codemirror-theme-tokyo-night": "^4.23.11",
     "@unocss/webpack": "^66.3.3",

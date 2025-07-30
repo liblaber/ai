@@ -88,6 +88,7 @@ model Conversation {
 
 enum StorageType {
   FILE_SYSTEM
+  DATABASE
 }
 
 model Snapshot {

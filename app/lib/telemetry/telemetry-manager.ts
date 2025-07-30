@@ -1,3 +1,5 @@
+import { env as clientEnv } from '~/env/client';
+import { env } from '~/env/server';
 import { PostHog } from 'posthog-node';
 import { getInstanceId } from '~/lib/instance-id';
 import { type UserProfile } from '~/lib/services/userService';
@@ -32,7 +34,7 @@ class TelemetryManager {
 
   static async create(): Promise<TelemetryManager> {
     const instance = new TelemetryManager();
-    instance._posthogApiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY || null;
+    instance._posthogApiKey = clientEnv.NEXT_PUBLIC_POSTHOG_KEY || null;
     instance._instanceId = getInstanceId();
 
     if (!instance._posthogApiKey) {
@@ -60,7 +62,7 @@ class TelemetryManager {
       user,
       instanceId: this._instanceId,
       nodeVersion: process.version,
-      liblabVersion: process.env.npm_package_version || '0.0.1',
+      liblabVersion: env.npm_package_version || '0.0.1',
     };
 
     try {
@@ -98,9 +100,7 @@ class TelemetryManager {
 
   private _isTelemetryEnabled(user?: UserProfile): boolean {
     // Check if telemetry is disabled via environment variable
-    const telemetryDisabled =
-      process.env.NEXT_PUBLIC_DISABLE_TELEMETRY?.toLowerCase() === 'true' ||
-      process.env.NEXT_PUBLIC_DISABLE_TELEMETRY === '1';
+    const telemetryDisabled = clientEnv.NEXT_PUBLIC_DISABLE_TELEMETRY;
 
     if (telemetryDisabled) {
       logger.debug('📊 Telemetry disabled via NEXT_PUBLIC_DISABLE_TELEMETRY environment variable');

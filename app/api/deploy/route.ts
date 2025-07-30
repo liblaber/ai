@@ -8,10 +8,10 @@ import { rimraf } from 'rimraf';
 import AdmZip from 'adm-zip';
 import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
-import '~/lib/config/env';
 import { requireUserId } from '~/auth/session';
 import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
 import { userService } from '~/lib/services/userService';
+import { env as serverEnv } from '~/env/server';
 
 interface CommandResult {
   output: string;
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     const chatId = formData.get('chatId') as string;
     const description = formData.get('description') as string;
     const zipFile = formData.get('zipFile') as File;
-    const token = process.env.NETLIFY_AUTH_TOKEN;
+    const token = serverEnv.NETLIFY_AUTH_TOKEN;
 
     try {
       logger.info('Starting deployment process', JSON.stringify({ chatId, siteId, websiteId }));

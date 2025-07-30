@@ -1,6 +1,5 @@
 import { BaseProvider } from './base-provider';
 import * as providers from './registry';
-import '~/lib/config/env';
 
 export class LLMManager {
   private static _instance: LLMManager;
