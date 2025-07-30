@@ -162,3 +162,7 @@ if ! grep -q "^NGROK_AUTHTOKEN=." .env; then
         echo "⚠️ Skipped ngrok auth token. External tunneling will be disabled."
     fi
 fi
+
+echo "★═══════════════════════════════════════★"
+echo "      🦙 liblab AI Builder Setup Complete 🦙"
+echo "★═══════════════════════════════════════★"

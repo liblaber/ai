@@ -4,6 +4,7 @@ import { injectEnvVariable } from '~/utils/envUtils';
 import { webcontainer } from '~/lib/webcontainer/index';
 import { detectProjectCommands } from '~/utils/projectCommands';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { getBaseUrl } from '~/lib/utils/tunnel';
 
 /**
  * Loads a file map into the web container.
@@ -30,7 +31,7 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
     const fileName = key.startsWith(webContainer.workdir) ? key.replace(webContainer.workdir, '') : key;
 
     if (fileName === '.env' && process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
-      const tunnelForwardingUrl = process.env.NEXT_PUBLIC_TUNNEL_FORWARDING_URL;
+      const tunnelForwardingUrl = await getBaseUrl();
       value.content = injectEnvVariable(
         value.content,
         'VITE_API_BASE_URL',
@@ -88,7 +89,7 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
         let content = previousFile.content;
 
         if (filePath === '.env' && process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
-          const tunnelForwardingUrl = process.env.NEXT_PUBLIC_TUNNEL_FORWARDING_URL;
+          const tunnelForwardingUrl = await getBaseUrl();
           content = injectEnvVariable(
             content,
             'VITE_API_BASE_URL',
