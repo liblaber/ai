@@ -223,6 +223,9 @@ This single command will:
 # Start production environment
 pnpm run docker:start
 
+# Rebuild and start production environment
+pnpm run docker:rebuild
+
 # Stop all Docker services
 pnpm run docker:stop
 ```
@@ -536,6 +539,7 @@ pnpm run db:stop
 
 # Restart the database
 pnpm run db:restart
+
 ```
 
 Then run your app normally with `pnpm run dev` (make sure your `.env` has the correct `DATABASE_URL`).
