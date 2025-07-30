@@ -162,13 +162,3 @@ if ! grep -q "^NGROK_AUTHTOKEN=." .env; then
         echo "⚠️ Skipped ngrok auth token. External tunneling will be disabled."
     fi
 fi
-
-# Generate Prisma client
-echo "📋 Generating Prisma client..."
-npx prisma generate
-echo "✅ Prisma client generated successfully."
-
-echo ""
-echo "★═══════════════════════════════════════★"
-echo "   🎉 Setup completed successfully! 🎉"
-echo "★═══════════════════════════════════════★"
