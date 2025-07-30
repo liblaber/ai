@@ -163,12 +163,6 @@ if ! grep -q "^NGROK_AUTHTOKEN=." .env; then
     fi
 fi
 
-# Generate Prisma client
-echo "📋 Generating Prisma client..."
-npx prisma generate
-echo "✅ Prisma client generated successfully."
-
-echo ""
 echo "★═══════════════════════════════════════★"
-echo "   🎉 Setup completed successfully! 🎉"
+echo "      🦙 liblab AI Builder Setup Complete 🦙"
 echo "★═══════════════════════════════════════★"

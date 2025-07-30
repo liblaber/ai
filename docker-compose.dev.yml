@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: liblab-postgres
+    environment:
+      POSTGRES_DB: liblab
+      POSTGRES_USER: liblab
+      POSTGRES_PASSWORD: liblab_password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U liblab -d liblab']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ai-app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: base # Use the base stage for development (no build step)
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Mount source code for hot reloading
+      - .:/app
+      # Exclude node_modules and .next to use container's version
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://liblab:liblab_password@postgres:5432/liblab
+    command: ['pnpm', 'run', 'dockerdev']
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:

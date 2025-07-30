@@ -93,7 +93,7 @@ async function chatAction(request: NextRequest) {
               label: 'summary',
               status: 'in-progress',
               order: progressCounter++,
-              message: 'Analysing Request',
+              message: 'Analyzing your requirements...',
             };
             dataStream.writeData(currentProgressAnnotation);
 
@@ -117,7 +117,7 @@ async function chatAction(request: NextRequest) {
               label: 'summary',
               status: 'complete',
               order: progressCounter++,
-              message: 'Analysis Complete',
+              message: 'Requirements analyzed',
             };
             dataStream.writeData(currentProgressAnnotation);
 
@@ -135,7 +135,7 @@ async function chatAction(request: NextRequest) {
               label: 'context',
               status: 'in-progress',
               order: progressCounter++,
-              message: 'Determining Files to Read',
+              message: 'Preparing context...',
             };
             dataStream.writeData(currentProgressAnnotation);
 
@@ -171,23 +171,15 @@ async function chatAction(request: NextRequest) {
                   return path;
                 }),
               } as ContextAnnotation);
-
-              currentProgressAnnotation = {
-                type: 'progress',
-                label: 'context',
-                status: 'complete',
-                order: progressCounter++,
-                message: 'Code Files Selected',
-              };
-            } else {
-              currentProgressAnnotation = {
-                type: 'progress',
-                label: 'context',
-                status: 'complete',
-                order: progressCounter++,
-                message: 'No Code Files Selected',
-              };
             }
+
+            currentProgressAnnotation = {
+              type: 'progress',
+              label: 'context',
+              status: 'complete',
+              order: progressCounter++,
+              message: 'Context prepared',
+            };
 
             dataStream.writeData(currentProgressAnnotation);
           }
@@ -198,7 +190,7 @@ async function chatAction(request: NextRequest) {
             label: 'implementation-plan',
             status: 'in-progress',
             order: progressCounter++,
-            message: 'Creating Implementation Plan',
+            message: 'Creating implementation plan...',
           };
           dataStream.writeData(currentProgressAnnotation);
 
@@ -226,7 +218,7 @@ async function chatAction(request: NextRequest) {
             label: 'implementation-plan',
             status: 'complete',
             order: progressCounter++,
-            message: 'Created Implementation Plan',
+            message: 'Implementation plan created',
           };
           dataStream.writeData(currentProgressAnnotation);
 
@@ -304,7 +296,7 @@ async function chatAction(request: NextRequest) {
                 label: 'response',
                 status: 'complete',
                 order: progressCounter++,
-                message: 'Response Generated',
+                message: 'App code generated',
               };
               dataStream.writeData(currentProgressAnnotation);
               await new Promise((resolve) => setTimeout(resolve, 0));
@@ -318,7 +310,7 @@ async function chatAction(request: NextRequest) {
             label: 'response',
             status: 'in-progress',
             order: progressCounter++,
-            message: 'Generating Response',
+            message: 'Generating application code...',
           };
           dataStream.writeData(currentProgressAnnotation);
 

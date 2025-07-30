@@ -9,7 +9,7 @@ const { BASE_URL } = env.server;
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: 'sqlite',
+    provider: 'postgresql',
   }),
   plugins: [anonymous()],
   emailAndPassword: {

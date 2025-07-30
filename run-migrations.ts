@@ -3,24 +3,30 @@ import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-mana
 import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
 
-const runApp = async (): Promise<void> => {
+const runMigrations = async (): Promise<void> => {
   console.log(`
 ★═══════════════════════════════════════★
-          🦙 liblab builder 🦙
+        🦙 liblab migrations 🦙
 ★═══════════════════════════════════════★
 `);
 
-  // Run migrations first
-  console.log('⏳ Running database migrations...');
-  execSync('tsx run-migrations.ts', { stdio: 'inherit' });
+  // Run Prisma migrations
+  console.log('⏳ Running Prisma migrations...');
 
-  // Setup tunnel if in local environment
+  execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+  console.log('✅ Prisma migrations completed successfully');
+
   if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
-    console.log('⏳ Setting up tunnel...');
-    execSync('tsx setup-tunnel.ts', { stdio: 'inherit' });
+    console.log('⏳ Setting up sample database...');
+
+    execSync('tsx scripts/setup-sample-db.ts', { stdio: 'inherit' });
+
+    console.log('🌱 Running database seed...');
+
+    execSync('npm run prisma:seed', { stdio: 'inherit' });
   }
 
-  console.log('⏳  Please wait until the URL appears here');
+  console.log('⏳  Migrations completed successfully');
   console.log('★═══════════════════════════════════════★');
 };
 
@@ -47,10 +53,10 @@ async function trackAppError(error: any) {
   }
 }
 
-// Add error handling for the entire runApp function
-const runAppWithErrorHandling = async (): Promise<void> => {
+// Add error handling for the entire runMigrations function
+const runMigrationsWithErrorHandling = async (): Promise<void> => {
   try {
-    await runApp();
+    await runMigrations();
   } catch (error) {
     await trackAppError(error);
 
@@ -58,4 +64,4 @@ const runAppWithErrorHandling = async (): Promise<void> => {
   }
 };
 
-runAppWithErrorHandling();
+runMigrationsWithErrorHandling();

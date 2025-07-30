@@ -23,3 +23,5 @@ README.md
 logs
 dist-ssr
 .DS_Store
+
+tunnel.config

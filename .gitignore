@@ -60,3 +60,4 @@ snapshots
 .next
 tsconfig.tsbuildinfo
 .instanceid
+tunnel.config
