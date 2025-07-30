@@ -7,7 +7,7 @@ import { UserManagementPluginManager } from '~/lib/plugins/user-management/user-
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: 'sqlite',
+    provider: 'postgresql',
   }),
   plugins: [anonymous()],
   emailAndPassword: {
