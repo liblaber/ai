@@ -4,6 +4,7 @@ import type { FileMap } from '~/lib/stores/files';
 import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import '~/lib/config/env';
 import { logger } from '~/utils/logger';
+import { workbenchStore } from '~/lib/stores/workbench';
 
 export type RepoFile = { name: string; path: string; content: string };
 
@@ -55,6 +56,8 @@ async function writeSensitiveDataToEnvFile(files: FileMap, databaseUrl: string):
 export const getStarterTemplateFiles = async (databaseUrl?: string): Promise<FileMap> => {
   try {
     logger.info('fetching starter template files from API with databaseUrl:', databaseUrl);
+
+    workbenchStore.previewsStore.loadingText.set('Fetching project assets...');
 
     const response = await fetch('/api/starter-template');
 
