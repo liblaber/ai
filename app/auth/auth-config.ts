@@ -1,9 +1,11 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '~/lib/prisma';
-import { env } from '~/lib/config/env';
+import { env } from '~/env';
 import { anonymous, createAuthMiddleware } from 'better-auth/plugins';
 import { UserManagementPluginManager } from '~/lib/plugins/user-management/user-management-plugin-manager';
+
+const { BASE_URL } = env.server;
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -13,8 +15,8 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  baseURL: env.BASE_URL,
-  trustedOrigins: [env.BASE_URL],
+  baseURL: BASE_URL,
+  trustedOrigins: [BASE_URL],
   advanced: {
     database: {
       generateId: false, // Assumes a database handles ID generation

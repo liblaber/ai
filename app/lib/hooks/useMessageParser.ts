@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { NO_EXECUTE_ACTION_ANNOTATION, StreamingMessageParser } from '~/lib/runtime/message-parser';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { createScopedLogger } from '~/utils/logger';
+import { env } from '~/env/server';
 
 const logger = createScopedLogger('useMessageParser');
 
@@ -58,7 +59,7 @@ export function useMessageParser() {
   const parseMessages = useCallback((messages: Message[], isLoading: boolean) => {
     let reset = false;
 
-    if (process.env.NODE_ENV === 'development' && !isLoading) {
+    if (env.NODE_ENV === 'development' && !isLoading) {
       reset = true;
       messageParser.reset();
     }

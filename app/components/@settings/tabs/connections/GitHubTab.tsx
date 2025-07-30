@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 import { LockSlash } from 'iconsax-reactjs';
 import { useGitStore } from '~/lib/stores/git';
+import { env } from '~/env/client';
 
 interface GitHubUserResponse {
   login: string;
@@ -245,8 +246,8 @@ export default function GitHubTab() {
       if (parsed.user && parsed.token) {
         fetchGitHubStats(parsed.token);
       }
-    } else if (process.env.NEXT_PUBLIC_GITHUB_ACCESS_TOKEN) {
-      fetchGithubUser(process.env.NEXT_PUBLIC_GITHUB_ACCESS_TOKEN);
+    } else if (env.NEXT_PUBLIC_GITHUB_ACCESS_TOKEN) {
+      fetchGithubUser(env.NEXT_PUBLIC_GITHUB_ACCESS_TOKEN);
     }
 
     setIsLoading(false);

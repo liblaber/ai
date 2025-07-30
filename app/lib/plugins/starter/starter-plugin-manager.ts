@@ -6,7 +6,7 @@ import PluginManager from '~/lib/plugins/plugin-manager';
 import { readStarterFileMap } from './read-starter-directory';
 import type { FileMap } from '~/lib/stores/files';
 import { StarterNotAvailableError, StarterNotFoundError } from './errors';
-import { env } from '~/lib/config/env';
+import { env } from '~/env';
 
 type Starter = {
   instructionsPrompt: string | null;
@@ -21,7 +21,7 @@ export class StarterPluginManager {
 
   static defaultTechnologies: string = 'React, Typescript, TailwindCSS';
   static readonly defaultStarter: StarterPluginId = 'next';
-  static starterId: StarterPluginId = `${env.STARTER || this.defaultStarter}` as StarterPluginId;
+  static starterId: StarterPluginId = `${env.server.STARTER || this.defaultStarter}` as StarterPluginId;
 
   static async getStarterFileMap(): Promise<FileMap> {
     const starter = this._getStarter();

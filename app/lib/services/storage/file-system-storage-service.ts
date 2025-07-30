@@ -3,13 +3,15 @@ import { StorageType } from '@prisma/client';
 import fs from 'fs/promises';
 import path from 'path';
 import { decryptData, encryptData } from '@liblab/encryption/encryption';
-import { env } from '~/lib/config/env';
+import { env } from '~/env';
+
+const { ENCRYPTION_KEY } = env.server;
 
 export class LocalSystemStorageService implements StorageService {
   private readonly _baseDir: string;
 
   constructor(baseDir: string = process.cwd()) {
-    if (!env.ENCRYPTION_KEY) {
+    if (!ENCRYPTION_KEY) {
       throw new Error('ENCRYPTION_KEY is required for file system storage but is not defined');
     }
 
@@ -26,7 +28,7 @@ export class LocalSystemStorageService implements StorageService {
 
     await fs.mkdir(dirPath, { recursive: true });
 
-    const encryptedData = encryptData(env.ENCRYPTION_KEY, data);
+    const encryptedData = encryptData(ENCRYPTION_KEY, data);
 
     await fs.writeFile(filePath, encryptedData);
   }
@@ -35,7 +37,7 @@ export class LocalSystemStorageService implements StorageService {
     const filePath = this._getFilePath(key);
     const encryptedData = await fs.readFile(filePath);
 
-    return decryptData(env.ENCRYPTION_KEY, encryptedData.toString());
+    return decryptData(ENCRYPTION_KEY, encryptedData.toString());
   }
 
   async delete(key: string): Promise<void> {

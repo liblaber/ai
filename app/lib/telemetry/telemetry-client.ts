@@ -2,6 +2,7 @@ import type { TelemetryEvent } from './telemetry-manager';
 import type { UserProfile } from '~/lib/services/userService';
 import posthog from 'posthog-js';
 import { logger } from '~/utils/logger';
+import { env } from '~/env/client';
 
 /**
  * Client-side telemetry utility that tracks custom events.
@@ -37,16 +38,14 @@ export function initializeClientTelemetry(user?: UserProfile): void {
     return;
   }
 
-  const telemetryDisabled =
-    process.env.NEXT_PUBLIC_DISABLE_TELEMETRY?.toLowerCase() === 'true' ||
-    process.env.NEXT_PUBLIC_DISABLE_TELEMETRY === '1';
+  const telemetryDisabled = env.NEXT_PUBLIC_DISABLE_TELEMETRY;
 
   if (telemetryDisabled) {
     logger.debug('📊 Telemetry disabled via NEXT_PUBLIC_DISABLE_TELEMETRY environment variable');
     return;
   }
 
-  const posthogConfigured = !!process.env.NEXT_PUBLIC_POSTHOG_KEY && !!process.env.NEXT_PUBLIC_POSTHOG_HOST;
+  const posthogConfigured = !!env.NEXT_PUBLIC_POSTHOG_KEY && !!env.NEXT_PUBLIC_POSTHOG_HOST;
 
   if (!posthogConfigured) {
     logger.debug('📊 Telemetry disabled: PostHog not configured');
@@ -59,8 +58,8 @@ export function initializeClientTelemetry(user?: UserProfile): void {
   }
 
   // Initialize PostHog if all conditions are met
-  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
+  posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY!, {
+    api_host: env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
     defaults: '2025-05-24',
     disable_session_recording: true,
   });

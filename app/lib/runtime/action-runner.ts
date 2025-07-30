@@ -10,6 +10,7 @@ import { LiblabShell } from '~/utils/shell';
 import { injectEnvVariable } from '~/utils/envUtils';
 import { webcontainer as webcontainerPromise } from '~/lib/webcontainer';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { env } from '~/env/client';
 
 const logger = createScopedLogger('ActionRunner');
 
@@ -445,8 +446,8 @@ export class ActionRunner {
       let content = action.content;
 
       if (relativePath.endsWith('.env')) {
-        if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
-          const tunnelForwardingUrl = process.env.NEXT_PUBLIC_TUNNEL_FORWARDING_URL;
+        if (env.NEXT_PUBLIC_ENV_NAME === 'local') {
+          const tunnelForwardingUrl = env.NEXT_PUBLIC_TUNNEL_FORWARDING_URL;
           content = injectEnvVariable(
             content,
             'VITE_API_BASE_URL',

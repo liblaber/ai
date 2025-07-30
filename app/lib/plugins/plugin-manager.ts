@@ -1,4 +1,4 @@
-import { env } from '~/lib/config/env';
+import { env } from '~/env';
 import {
   type AuthPluginId,
   type DataAccessPluginId,
@@ -99,7 +99,7 @@ class PluginManager {
 
   // Mock API call until we implement the backend
   private async _fetchPluginAccess(): Promise<PluginAccessMap> {
-    const license = env.LICENSE_KEY;
+    const license = env.server.LICENSE_KEY;
 
     if (!license || license !== 'premium') {
       return FREE_PLUGIN_ACCESS;
