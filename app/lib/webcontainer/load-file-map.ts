@@ -30,10 +30,10 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
     }
 
     const fileName = key.startsWith(webContainer.workdir) ? key.replace(webContainer.workdir, '') : key;
-    
+
     if (fileName === '.env' && env.NEXT_PUBLIC_ENV_NAME === 'local') {
       const tunnelForwardingUrl = await getBaseUrl();
-      
+
       value.content = injectEnvVariable(
         value.content,
         'VITE_API_BASE_URL',
@@ -89,10 +89,10 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
         await webContainer.fs.mkdir(filePath, { recursive: true });
       } else if (previousFile.type === 'file') {
         let content = previousFile.content;
-        
+
         if (filePath === '.env' && env.NEXT_PUBLIC_ENV_NAME === 'local') {
           const tunnelForwardingUrl = await getBaseUrl();
-          
+
           content = injectEnvVariable(
             content,
             'VITE_API_BASE_URL',
