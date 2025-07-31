@@ -24,10 +24,12 @@ export class MongoDBAccessor implements BaseAccessor {
       await client.connect();
       await client.db().admin().ping();
       await client.close();
+
       return true;
     } catch (error) {
       console.error('MongoDB connection test failed:', error);
       await client.close();
+
       return false;
     }
   }
@@ -39,7 +41,27 @@ export class MongoDBAccessor implements BaseAccessor {
 
     try {
       // Parse the query which should be a MongoDB aggregation pipeline or find query
-      const parsedQuery = JSON.parse(query);
+      // Handle both regular JSON and escaped JSON strings from LLM
+      let parsedQuery: any;
+
+      try {
+        parsedQuery = JSON.parse(query);
+      } catch (parseError) {
+        // Try to handle escaped JSON strings from LLM generation
+        try {
+          const cleanedQuery = query.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+          parsedQuery = JSON.parse(cleanedQuery);
+        } catch (secondParseError) {
+          console.error('Failed to parse MongoDB query:', {
+            original: query,
+            firstError: parseError,
+            secondError: secondParseError,
+          });
+          throw new Error(
+            `Invalid JSON format for MongoDB query: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`,
+          );
+        }
+      }
 
       console.log('MongoDB: Executing query:', JSON.stringify(parsedQuery, null, 2));
 
@@ -58,7 +80,7 @@ export class MongoDBAccessor implements BaseAccessor {
 
         // Apply parameters if provided
         if (params && params.length > 0) {
-          this.applyParameters(filter, params);
+          this._applyParameters(filter, params);
         }
 
         console.log('MongoDB: Find operation with filter:', JSON.stringify(filter, null, 2));
@@ -68,15 +90,16 @@ export class MongoDBAccessor implements BaseAccessor {
         result = await cursor.toArray();
 
         console.log(`MongoDB: Query returned ${result.length} documents`);
+
         if (result.length > 0) {
-          console.log('MongoDB: Sample result:', JSON.stringify(result[0], null, 2));
+          console.log('MongoDB: Sample result:', this._safeStringify(result[0]));
         }
       } else if (parsedQuery.operation === 'aggregate') {
         const pipeline = parsedQuery.pipeline || [];
 
         // Apply parameters if provided
         if (params && params.length > 0) {
-          this.applyParametersToPipeline(pipeline, params);
+          this._applyParametersToPipeline(pipeline, params);
         }
 
         console.log('MongoDB: Aggregate operation with pipeline:', JSON.stringify(pipeline, null, 2));
@@ -85,8 +108,9 @@ export class MongoDBAccessor implements BaseAccessor {
         result = await cursor.toArray();
 
         console.log(`MongoDB: Aggregation returned ${result.length} documents`);
+
         if (result.length > 0) {
-          console.log('MongoDB: Sample result:', JSON.stringify(result[0], null, 2));
+          console.log('MongoDB: Sample result:', this._safeStringify(result[0]));
         }
       } else {
         throw new Error(`Unsupported MongoDB operation: ${parsedQuery.operation}`);
@@ -99,68 +123,93 @@ export class MongoDBAccessor implements BaseAccessor {
     }
   }
 
-  private applyParameters(obj: any, params: string[]): void {
+  private _applyParameters(obj: any, params: string[]): void {
     // Securely replace parameter placeholders by recursively traversing the object
-    this.replaceParametersRecursively(obj, params);
+    this._replaceParametersRecursively(obj, params);
   }
 
-  private applyParametersToPipeline(pipeline: any[], params: string[]): void {
+  private _applyParametersToPipeline(pipeline: any[], params: string[]): void {
     // Securely replace parameter placeholders in the aggregation pipeline
-    this.replaceParametersRecursively(pipeline, params);
+    this._replaceParametersRecursively(pipeline, params);
   }
 
-  private replaceParametersRecursively(obj: any, params: string[]): void {
+  private _replaceParametersRecursively(obj: any, params: string[], visited = new WeakSet()): void {
     if (obj === null || obj === undefined) {
       return;
+    }
+
+    // Prevent infinite recursion from circular references
+    if (typeof obj === 'object' && visited.has(obj)) {
+      return;
+    }
+
+    if (typeof obj === 'object') {
+      visited.add(obj);
     }
 
     if (Array.isArray(obj)) {
       // Handle arrays
       for (let i = 0; i < obj.length; i++) {
-        if (typeof obj[i] === 'string' && this.isValidParameterPlaceholder(obj[i])) {
+        if (typeof obj[i] === 'string' && this._isValidParameterPlaceholder(obj[i])) {
           // Replace placeholder with parameter value
           const paramIndex = parseInt(obj[i].substring(1)) - 1;
+
           if (paramIndex >= 0 && paramIndex < params.length) {
-            obj[i] = this.parseParameterValue(params[paramIndex]);
+            obj[i] = this._parseParameterValue(params[paramIndex]);
           }
         } else if (typeof obj[i] === 'object') {
-          this.replaceParametersRecursively(obj[i], params);
+          this._replaceParametersRecursively(obj[i], params, visited);
         }
       }
     } else if (typeof obj === 'object') {
       // Handle objects
       for (const key in obj) {
         if (obj.hasOwnProperty(key)) {
-          if (typeof obj[key] === 'string' && this.isValidParameterPlaceholder(obj[key])) {
+          if (typeof obj[key] === 'string' && this._isValidParameterPlaceholder(obj[key])) {
             // Replace placeholder with parameter value
             const paramIndex = parseInt(obj[key].substring(1)) - 1;
+
             if (paramIndex >= 0 && paramIndex < params.length) {
-              obj[key] = this.parseParameterValue(params[paramIndex]);
+              obj[key] = this._parseParameterValue(params[paramIndex]);
             }
           } else if (typeof obj[key] === 'object') {
-            this.replaceParametersRecursively(obj[key], params);
+            this._replaceParametersRecursively(obj[key], params, visited);
           }
         }
       }
     }
   }
 
-  private isValidParameterPlaceholder(value: string): boolean {
+  private _isValidParameterPlaceholder(value: string): boolean {
     // Only accept exact matches for parameter placeholders like $1, $2, etc.
     return /^\$\d+$/.test(value);
   }
 
-  private parseParameterValue(param: string): any {
+  private _parseParameterValue(param: string): any {
     // Safely parse parameter values
-    if (param === 'null') return null;
-    if (param === 'undefined') return undefined;
-    if (param === 'true') return true;
-    if (param === 'false') return false;
+    if (param === 'null') {
+      return null;
+    }
+
+    if (param === 'undefined') {
+      return undefined;
+    }
+
+    if (param === 'true') {
+      return true;
+    }
+
+    if (param === 'false') {
+      return false;
+    }
 
     // Try to parse as number
     if (/^-?\d+(\.\d+)?$/.test(param)) {
       const num = Number(param);
-      if (!isNaN(num)) return num;
+
+      if (!isNaN(num)) {
+        return num;
+      }
     }
 
     // Try to parse as JSON for objects/arrays
@@ -194,7 +243,48 @@ export class MongoDBAccessor implements BaseAccessor {
     }
 
     try {
-      const parsedQuery = JSON.parse(query);
+      // Try to parse the query, handling both regular JSON and escaped JSON strings
+      let parsedQuery: any;
+
+      try {
+        parsedQuery = JSON.parse(query);
+      } catch (firstParseError) {
+        // If first parse fails, it might be an escaped JSON string
+        // Try to parse it as a string first, then parse the result
+        try {
+          const unescapedQuery = JSON.parse(`"${query.replace(/"/g, '\\"')}"`).replace(/\\"/g, '"');
+          parsedQuery = JSON.parse(unescapedQuery);
+        } catch (secondParseError) {
+          // If both attempts fail, try treating it as an already-unescaped string
+          try {
+            const cleanedQuery = query.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+            parsedQuery = JSON.parse(cleanedQuery);
+          } catch (thirdParseError) {
+            console.error('MongoDB query parsing attempts:', {
+              original: query,
+              firstError: firstParseError instanceof Error ? firstParseError.message : String(firstParseError),
+              secondError: secondParseError instanceof Error ? secondParseError.message : String(secondParseError),
+              thirdError: thirdParseError instanceof Error ? thirdParseError.message : String(thirdParseError),
+            });
+            throw new Error(
+              `Invalid JSON format for MongoDB query: ${firstParseError instanceof Error ? firstParseError.message : String(firstParseError)}`,
+            );
+          }
+        }
+      }
+
+      // Validate that we have a proper MongoDB query structure
+      if (!parsedQuery || typeof parsedQuery !== 'object') {
+        throw new Error('MongoDB query must be a valid JSON object');
+      }
+
+      if (!parsedQuery.collection) {
+        throw new Error('MongoDB query must specify a collection name');
+      }
+
+      if (!parsedQuery.operation || !['find', 'aggregate'].includes(parsedQuery.operation)) {
+        throw new Error('MongoDB query must specify a valid operation (find or aggregate)');
+      }
 
       // Check for potentially dangerous operations
       const forbiddenOperations = ['drop', 'dropDatabase', 'createUser', 'dropUser', '$where'];
@@ -209,11 +299,12 @@ export class MongoDBAccessor implements BaseAccessor {
       if (queryString.includes('$where') || queryString.includes('eval')) {
         throw new Error('Query contains potentially dangerous operators');
       }
-    } catch (parseError) {
-      if (parseError instanceof SyntaxError) {
-        throw new Error('Invalid JSON format for MongoDB query');
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith('MongoDB query')) {
+        throw error;
       }
-      throw parseError;
+
+      throw new Error(`Query validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -242,6 +333,7 @@ export class MongoDBAccessor implements BaseAccessor {
             if (!fieldTypes[field]) {
               fieldTypes[field] = new Set();
             }
+
             fieldTypes[field].add(typeof doc[field]);
           });
         });
@@ -315,6 +407,44 @@ export class MongoDBAccessor implements BaseAccessor {
       await this._client.close();
       this._client = null;
       this._db = null;
+    }
+  }
+
+  private _safeStringify(obj: any, maxDepth = 3): string {
+    const seen = new WeakSet();
+
+    const replacer = (key: string, value: any, depth = 0): any => {
+      if (depth > maxDepth) {
+        return '[Max Depth Reached]';
+      }
+
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular Reference]';
+        }
+
+        seen.add(value);
+
+        if (Array.isArray(value)) {
+          return value.map((item, index) => replacer(String(index), item, depth + 1));
+        } else {
+          const result: any = {};
+
+          for (const [k, v] of Object.entries(value)) {
+            result[k] = replacer(k, v, depth + 1);
+          }
+
+          return result;
+        }
+      }
+
+      return value;
+    };
+
+    try {
+      return JSON.stringify(replacer('', obj), null, 2);
+    } catch (error) {
+      return '[Serialization Error: ' + (error as Error).message + ']';
     }
   }
 }

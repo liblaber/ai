@@ -156,22 +156,29 @@ export const ChatImpl = ({
       contextOptimization: contextOptimizationEnabled,
     },
     sendExtraMessageFields: true,
-    onError: async (e) => {
+    onError: (e) => {
       logger.error('Request failed', e);
       toast.error(
         'There was an error processing your request: ' + (e.message ? e.message : 'No details were returned'),
       );
 
-      const latestSnapshot = await getLatestSnapshotOrNull(chatId.get()!);
-      let fileMapToRevertTo: FileMap;
+      // Handle error recovery asynchronously to avoid Suspense issues
+      setTimeout(async () => {
+        try {
+          const latestSnapshot = await getLatestSnapshotOrNull(chatId.get()!);
+          let fileMapToRevertTo: FileMap;
 
-      if (latestSnapshot) {
-        fileMapToRevertTo = latestSnapshot.fileMap;
-      } else {
-        fileMapToRevertTo = await getStarterTemplateFiles(dataSourceUrl);
-      }
+          if (latestSnapshot) {
+            fileMapToRevertTo = latestSnapshot.fileMap;
+          } else {
+            fileMapToRevertTo = await getStarterTemplateFiles(dataSourceUrl);
+          }
 
-      await loadPreviousFileMapIntoContainer(fileMapToRevertTo);
+          await loadPreviousFileMapIntoContainer(fileMapToRevertTo);
+        } catch (error) {
+          logger.error('Error during error recovery:', error);
+        }
+      }, 0);
     },
     onFinish: async ({ id, content }) => {
       setData(undefined);

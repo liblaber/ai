@@ -50,13 +50,24 @@ export const getLatestSnapshot = async (conversationId: string): Promise<Snapsho
 
     if (!response.ok) {
       const error: any = await response.json();
+
+      // Handle the specific "No snapshots found" case
+      if (response.status === 404 && error.error === 'No snapshots found') {
+        throw new Error('No snapshots found for this conversation');
+      }
+
       throw new Error(error.error || 'Failed to fetch latest snapshot');
     }
 
     return (await response.json()) as SnapshotResponse;
   } catch (error: any) {
     console.error('Error fetching latest snapshot', error);
-    toast.error('Failed to fetch latest snapshot');
+
+    // Don't show toast for "No snapshots found" - this is expected behavior
+    if (!error.message?.includes('No snapshots found')) {
+      toast.error('Failed to fetch latest snapshot');
+    }
+
     throw error;
   }
 };

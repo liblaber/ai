@@ -25,7 +25,8 @@
     "db:start": "docker-compose -f docker-compose.db.yml up -d",
     "db:stop": "docker-compose -f docker-compose.db.yml down",
     "db:restart": "docker-compose -f docker-compose.db.yml restart",
-    "typecheck": "tsc",
+    "typecheck": "tsc --noEmit --skipLibCheck",
+    "lint-staged": "lint-staged",
     "preview": "pnpm run build && pnpm run start",
     "prepare": "husky",
     "prisma:generate": "prisma generate",
@@ -119,7 +120,6 @@
     "jspdf": "^3.0.1",
     "jszip": "^3.10.1",
     "mime": "^4.0.4",
-    "mongodb": "^6.18.0",
     "mysql2": "^3.14.1",
     "nanostores": "^0.10.3",
     "netlify": "^13.3.4",
@@ -174,7 +174,6 @@
     "@types/file-saver": "^2.0.7",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "24.0.14",
-    "@types/mongodb": "^4.0.7",
     "@types/path-browserify": "^1.0.3",
     "@types/pg": "^8.11.11",
     "@types/react": "^18.3.12",
@@ -193,6 +192,7 @@
     "husky": "9.1.7",
     "is-ci": "^3.0.1",
     "jsdom": "^26.0.0",
+    "lint-staged": "^16.1.2",
     "netlify-cli": "^21.1.0",
     "node-fetch": "^3.3.2",
     "prettier": "^3.4.1",
@@ -222,6 +222,15 @@
   },
   "resolutions": {
     "@typescript-eslint/utils": "^8.0.0-alpha.30"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css,scss}": [
+      "prettier --write"
+    ]
   },
   "packageManager": "pnpm@10.10.0"
 }

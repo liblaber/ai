@@ -1,5 +1,5 @@
 import type { Message } from '@ai-sdk/react';
-import { getLatestSnapshot, type SnapshotResponse } from '~/lib/persistence/snapshots';
+import { getLatestSnapshotOrNull, type SnapshotResponse } from '~/lib/persistence/snapshots';
 import { NO_EXECUTE_ACTION_ANNOTATION } from '~/lib/runtime/message-parser';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
 import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
@@ -43,7 +43,7 @@ export type UpdateConversationRequest = {
 
 type UIConversation = Omit<ConversationResponse, 'messages'> & {
   messages: Message[];
-  snapshot: SnapshotResponse;
+  snapshot: SnapshotResponse | null;
   messagesResponse: MessageResponse[];
 };
 
@@ -77,7 +77,7 @@ export async function getConversation(id: string): Promise<UIConversation> {
       };
     }) ?? [];
 
-  const snapshot: SnapshotResponse = await getLatestSnapshot(id);
+  const snapshot: SnapshotResponse | null = await getLatestSnapshotOrNull(id);
 
   return {
     ...conversation,

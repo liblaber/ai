@@ -274,24 +274,24 @@ Format your response as a JSON array containing objects with the following struc
 Here's an example of a valid response:
 [
   {
-    "query": "{\\"collection\\": \\"airbnb\\", \\"operation\\": \\"find\\", \\"filter\\": {\\"amenities\\": \\"Pets allowed\\"}, \\"options\\": {}}",
+    "query": "{\"collection\": \"airbnb\", \"operation\": \"find\", \"filter\": {\"amenities\": \"Pets allowed\"}, \"options\": {}}",
     "explanation": "Finds all listings that allow pets by searching the amenities array",
     "responseSchema": "_id (string), name (string), amenities (array), room_type (string)"
   },
   {
-    "query": "{\\"collection\\": \\"airbnb\\", \\"operation\\": \\"find\\", \\"filter\\": {\\"room_type\\": \\"Entire home/apt\\"}, \\"options\\": {}}",
+    "query": "{\"collection\": \"airbnb\", \"operation\": \"find\", \"filter\": {\"room_type\": \"Entire home/apt\"}, \"options\": {}}",
     "explanation": "Retrieves all entire apartment listings",
     "responseSchema": "_id (string), name (string), room_type (string), price (object)"
   },
   {
-    "query": "{\\"collection\\": \\"airbnb\\", \\"operation\\": \\"aggregate\\", \\"pipeline\\": [{\\"$group\\": {\\"_id\\": \\"$room_type\\", \\"count\\": {\\"$sum\\": 1}}}]}",
+    "query": "{\"collection\": \"airbnb\", \"operation\": \"aggregate\", \"pipeline\": [{\"$group\": {\"_id\": \"$room_type\", \"count\": {\"$sum\": 1}}}]}",
     "explanation": "Groups listings by room type and counts each type",
     "responseSchema": "_id (string), count (number)"
   }
 ]
 
 IMPORTANT: Your output should consist ONLY of the JSON array containing the query objects. Do not include any additional text or explanations outside of this JSON structure.
-IMPORTANT: The query field should contain a JSON string (properly escaped) representing the MongoDB query object.
+IMPORTANT: The query field should contain a properly formatted JSON string representing the MongoDB query object. Use standard JSON escaping (not double-escaped).
 
 Now, generate MongoDB queries based on the following user request:
 <userRequest>

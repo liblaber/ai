@@ -10,7 +10,23 @@ export async function executeQuery(connectionUrl: string, query: string, params?
 
     return await dataAccessor.executeQuery(query, params);
   } catch (e) {
-    logger.error('Error executing query:', JSON.stringify(e), query);
+    // Enhanced error logging for MongoDB JSON parsing issues
+    const isMongoError = connectionUrl.startsWith('mongodb');
+    const isJsonError = e instanceof Error && e.message.includes('Invalid JSON format');
+
+    if (isMongoError && isJsonError) {
+      logger.error('MongoDB JSON parsing error:', {
+        error: e instanceof Error ? e.message : String(e),
+        query,
+        queryLength: query.length,
+        queryType: typeof query,
+        firstChars: query.substring(0, 100),
+        lastChars: query.substring(Math.max(0, query.length - 100)),
+      });
+    } else {
+      logger.error('Error executing query:', JSON.stringify(e), query);
+    }
+
     throw e;
   } finally {
     if (dataAccessor) {
