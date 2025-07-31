@@ -10,9 +10,9 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
     NEXT_PUBLIC_POSTHOG_HOST: z.string().optional(),
     NEXT_PUBLIC_DISABLE_TELEMETRY: z
-      .boolean({
-        coerce: true,
-      })
+      .preprocess((value) => {
+        return typeof value === 'string' ? JSON.parse(value) : value;
+      }, z.boolean())
       .default(false),
     NEXT_PUBLIC_GITHUB_ACCESS_TOKEN: z.string().optional(),
   },
