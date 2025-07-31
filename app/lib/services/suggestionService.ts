@@ -85,8 +85,7 @@ Make sure that the suggestions are not too long, at most 6-7 words.
 
       const suggestions = result.object.suggestions;
 
-      // Cache the suggestions
-      await setSuggestionsCache(dataSource.connectionString, suggestions);
+      await setSuggestionsCache(dataSource.connectionString, suggestions, schema);
 
       logger.info(`Generated and cached schema-based suggestions for data source ${dataSource.id}`);
 

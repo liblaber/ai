@@ -105,12 +105,22 @@ export async function getSuggestionsCache(connectionUrl: string, ttlSeconds: num
   return cached.suggestions;
 }
 
-export async function setSuggestionsCache(connectionUrl: string, suggestions: string[]): Promise<string> {
+export async function setSuggestionsCache(
+  connectionUrl: string,
+  suggestions: string[],
+  schema: Table[],
+): Promise<string> {
   const hash = hashConnectionUrl(connectionUrl);
 
-  const result = await prisma.schemaCache.update({
+  const result = await prisma.schemaCache.upsert({
     where: { connectionHash: hash },
-    data: {
+    update: {
+      schemaData: JSON.stringify(schema),
+      suggestions,
+    },
+    create: {
+      connectionHash: hash,
+      schemaData: JSON.stringify(schema),
       suggestions,
     },
   });
