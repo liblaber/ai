@@ -22,25 +22,59 @@ model DataSource {
   createdAt        DateTime       @default(now()) @map("created_at")
   updatedAt        DateTime       @updatedAt @map("updated_at")
   conversations    Conversation[]
-  User             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId           String
+  environments     EnvironmentDataSource[]
+
+  directPermissions Permission[]
 
   @@map("data_source")
 }
 
 model Website {
-  id        String   @id @default(cuid())
-  siteId    String?  @map("site_id")
-  siteName  String?  @map("site_name")
-  siteUrl   String?  @map("site_url")
-  chatId    String   @map("chat_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  isPublic  Boolean  @default(false) @map("is_public")
-  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
+  id            String      @id @default(cuid())
+  siteId        String?     @map("site_id")
+  siteName      String?     @map("site_name")
+  siteUrl       String?     @map("site_url")
+  chatId        String      @map("chat_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  isPublic      Boolean     @default(false) @map("is_public")
+  environmentId String      @default("cmdnnks1k000507jvgic8fqeb") @map("environment_id")
+  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  directPermissions Permission[]
 
   @@map("website")
+}
+
+model Environment {
+  id             String         @id @default(cuid())
+  name           String
+  description    String?
+  organizationId String?        @map("organization_id")
+  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dataSources    EnvironmentDataSource[]
+  websites       Website[]
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  directPermissions  Permission[]
+
+  @@unique([name, organizationId])
+  @@index([organizationId], name: "idx_environment_organization_id")
+  @@map("environment")
+}
+
+model EnvironmentDataSource {
+  environmentId String      @map("environment_id")
+  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  dataSourceId  String      @map("data_source_id")
+  dataSource    DataSource  @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@id([environmentId, dataSourceId])
+  @@index([environmentId], name: "idx_environment_data_source_environment_id")
+  @@index([dataSourceId], name: "idx_environment_data_source_data_source_id")
+  @@map("environment_data_source")
 }
 
 model SchemaCache {
@@ -105,33 +139,95 @@ model Snapshot {
   @@map("snapshot")
 }
 
-enum UserRole {
-  ADMIN
-  MEMBER
+model Role {
+  id             String       @id @default(cuid())
+  name           String
+  description    String?
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users          UserRole[]
+  permissions    Permission[]
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@unique([organizationId, name])
+  @@map("role")
 }
 
 model User {
-  id               String         @id @default(uuid())
-  name             String
-  email            String
-  emailVerified    Boolean
-  image            String?
-  createdAt        DateTime
-  updatedAt        DateTime
-  sessions         Session[]
-  accounts         Account[]
-  dataSources      DataSource[]
-  conversations    Conversation[]
-  websites         Website[]
-  role             UserRole       @default(MEMBER)
-  organizationId   String?
-  organization     Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String         @id @default(uuid())
+  name           String
+  email          String
+  emailVerified  Boolean
+  image          String?
+  createdAt      DateTime
+  updatedAt      DateTime
+  sessions       Session[]
+  accounts       Account[]
+  conversations  Conversation[]
+  roles          UserRole[]
+  organizationId String?
+  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   telemetryEnabled Boolean?
 
   isAnonymous Boolean?
 
   @@unique([email])
   @@map("user")
+}
+
+model UserRole {
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String   @map("role_id")
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, roleId])
+  @@index([roleId], name: "idx_user_role_role_id")
+  @@index([userId], name: "idx_user_role_user_id")
+  @@map("user_role")
+}
+
+enum PermissionAction {
+  MANAGE // Full permission action
+  ACCESS
+  CREATE
+  READ
+  UPDATE
+  DELETE
+}
+
+enum PermissionResource {
+  ALL // Full resource access
+  ENVIRONMENT
+  DATA_SOURCE
+  WEBSITE
+  BUILDER
+  ROLE
+  USER
+  ORGANIZATION
+}
+
+model Permission {
+  id            String             @id @default(cuid())
+  roleId        String             @map("role_id")
+  role          Role               @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  action        PermissionAction
+  resource      PermissionResource
+  environmentId String?            @map("environment_id")
+  environment   Environment?       @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  dataSourceId  String?            @map("data_source_id")
+  dataSource    DataSource?        @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
+  websiteId     String?            @map("website_id")
+  website       Website?           @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  createdAt     DateTime           @default(now())
+
+  @@index([roleId], name: "idx_permission_role_id")
+  @@index([environmentId], name: "idx_permission_environment_id")
+  @@index([dataSourceId], name: "idx_permission_data_source_id")
+  @@index([websiteId], name: "idx_permission_website_id")
+  @@map("permission")
 }
 
 model Session {
@@ -185,7 +281,10 @@ model Organization {
   domain    String?  @unique
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  users     User[]
+
+  users        User[]
+  roles        Role[]
+  environments Environment[]
 
   @@map("organization")
 }
