@@ -281,7 +281,7 @@ This script will:
 
 **Database Persistence**
 
-The PostgreSQL data is persisted in a Docker volume named `postgres_data`. This ensures that:
+The PostgreSQL data is persisted in a Docker volume named `liblab_postgres_data`. This ensures that:
 
 - Database changes survive container restarts
 - Data is not lost when containers are recreated
@@ -356,7 +356,7 @@ If you need to reset the database volume:
 docker-compose -f docker-compose.dev.yml down
 
 # Remove the volume
-docker volume rm ai_postgres_data
+docker volume rm liblab_postgres_data
 
 # Restart and setup
 ./scripts/docker-db-setup.sh

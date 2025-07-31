@@ -5,12 +5,14 @@ import ignore from 'ignore';
 import type { ContextAnnotation } from '~/types/context';
 import { freeEmailDomains } from 'free-email-domains-typescript';
 
-export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
+interface UserMessage {
   isFirstUserMessage?: boolean;
   dataSourceId?: string;
   content: string;
   askLiblab?: boolean;
-} {
+}
+
+export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): UserMessage {
   const textContent = Array.isArray(message.content)
     ? message.content.find((item) => item.type === 'text')?.text || ''
     : message.content;
