@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDataSource } from '~/lib/services/datasourceService';
 import { generateSchemaBasedSuggestions } from '~/lib/services/suggestionService';
 import { requireUserId } from '~/auth/session';
+import { SAMPLE_DATABASE_NAME } from '@liblab/data-access/accessors/sqlite';
+import { logger } from '~/utils/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if it's the sample database
-    const isSampleDatabase = dataSource.connectionString === 'sqlite://sample.db';
+    const isSampleDatabase = dataSource.connectionString === `sqlite://${SAMPLE_DATABASE_NAME}`;
 
     let suggestions: string[];
 
@@ -40,7 +42,7 @@ export async function POST(request: NextRequest) {
       suggestions,
     });
   } catch (error) {
-    console.error('Error generating suggestions:', error);
+    logger.error('Error generating suggestions:', error);
     return NextResponse.json({ success: false, error: 'Failed to generate suggestions' }, { status: 500 });
   }
 }

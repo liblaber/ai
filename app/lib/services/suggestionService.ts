@@ -76,7 +76,7 @@ Make sure that the suggestions are not too long, at most 6-7 words.
         model: llm.instance,
         maxTokens: llm.maxOutputTokens,
         system: systemPrompt,
-        messages: [{ role: 'user', content: 'Generate 3 dashboard suggestions based on this schema.' }],
+        messages: [{ role: 'user', content: 'Generate 3 suggestions based on this schema.' }],
       });
 
       if (!result?.object) {

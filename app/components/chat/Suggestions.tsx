@@ -14,9 +14,9 @@ export const Suggestions: React.FC<SuggestionsProps> = ({ suggestions, onSuggest
 
   return (
     <div className="flex flex-wrap gap-2 mt-3 justify-center">
-      {suggestions.map((suggestion, index) => (
+      {suggestions.map((suggestion) => (
         <button
-          key={index}
+          key={suggestion}
           onClick={() => onSuggestionClick(suggestion)}
           className={classNames(
             'px-3 py-1.5 text-sm font-medium rounded-full transition-all',

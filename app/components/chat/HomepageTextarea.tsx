@@ -9,6 +9,7 @@ import { ClientOnly } from '~/components/ui/ClientOnly';
 import { processImageFile } from '~/utils/fileUtils';
 import { Suggestions } from './Suggestions';
 import { toast } from 'sonner';
+import { logger } from '~/utils/logger';
 
 interface HomepageTextareaProps {
   value: string;
@@ -76,10 +77,10 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
           setShowSuggestions(true);
         } else {
           toast.error(`Failed to fetch suggestions: ${data.error}`);
-          console.error('Failed to fetch suggestions:', data.error);
+          logger.error('Failed to fetch suggestions:', data.error);
         }
       } catch (error) {
-        console.error('Error fetching suggestions:', error);
+        logger.error('Error fetching suggestions:', error);
       } finally {
         setIsLoadingSuggestions(false);
       }
