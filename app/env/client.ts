@@ -9,11 +9,7 @@ export const env = createEnv({
     NEXT_PUBLIC_LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error']).default('info'),
     NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
     NEXT_PUBLIC_POSTHOG_HOST: z.string().optional(),
-    NEXT_PUBLIC_DISABLE_TELEMETRY: z
-      .preprocess((value) => {
-        return typeof value === 'string' ? JSON.parse(value) : value;
-      }, z.boolean())
-      .default(false),
+    NEXT_PUBLIC_DISABLE_TELEMETRY: z.stringbool().default(false),
     NEXT_PUBLIC_GITHUB_ACCESS_TOKEN: z.string().optional(),
   },
   runtimeEnv: {
