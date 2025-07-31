@@ -6,6 +6,7 @@ import { getLlm } from '~/lib/.server/llm/get-llm';
 
 import { logger } from '~/utils/logger';
 import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
+import { getSuggestionsCache, setSuggestionsCache } from '~/lib/schema';
 
 const suggestionResponseSchema = z.object({
   suggestions: z.array(z.string().max(128)).length(3),
@@ -18,6 +19,14 @@ const suggestionResponseSchema = z.object({
  */
 export async function generateSchemaBasedSuggestions(dataSource: DataSource): Promise<string[]> {
   try {
+    // Check cache first (31 days TTL)
+    const cachedSuggestions = await getSuggestionsCache(dataSource.connectionString, 60 * 60 * 24 * 31);
+
+    if (cachedSuggestions) {
+      logger.info(`Found cached suggestions for data source ${dataSource.id}`);
+      return cachedSuggestions;
+    }
+
     const accessor = DataAccessor.getAccessor(dataSource.connectionString);
 
     await accessor.initialize(dataSource.connectionString);
@@ -74,9 +83,14 @@ Make sure that the suggestions are not too long, at most 6-7 words.
         throw new Error('Failed to create suggestions');
       }
 
-      logger.info(`Generated schema-based suggestions for data source ${dataSource}`);
+      const suggestions = result.object.suggestions;
 
-      return result.object.suggestions;
+      // Cache the suggestions
+      await setSuggestionsCache(dataSource.connectionString, suggestions);
+
+      logger.info(`Generated and cached schema-based suggestions for data source ${dataSource.id}`);
+
+      return suggestions;
     } finally {
       await accessor.close();
     }

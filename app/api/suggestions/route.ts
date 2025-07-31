@@ -25,7 +25,11 @@ export async function POST(request: NextRequest) {
     let suggestions: string[];
 
     if (isSampleDatabase) {
-      suggestions = ['create a revenue dashboard', 'build a sales table'];
+      suggestions = suggestions = [
+        'create a revenue dashboard',
+        'make user management app',
+        'build a sales overview page',
+      ];
     } else {
       // Generate schema-based suggestions for non-sample databases
       suggestions = await generateSchemaBasedSuggestions(dataSource);

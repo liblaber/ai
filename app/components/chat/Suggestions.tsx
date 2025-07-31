@@ -13,7 +13,7 @@ export const Suggestions: React.FC<SuggestionsProps> = ({ suggestions, onSuggest
   }
 
   return (
-    <div className="flex flex-wrap gap-2 mt-3">
+    <div className="flex flex-wrap gap-2 mt-3 justify-center">
       {suggestions.map((suggestion, index) => (
         <button
           key={index}
