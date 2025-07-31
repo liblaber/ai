@@ -6,6 +6,8 @@ import { Header } from '~/components/header/Header';
 import { useSession } from '~/auth/auth-client';
 import { useUserStore } from '~/lib/stores/user';
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
+import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
+import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
 
 interface TelemetryConsentApiResponse {
   success: boolean;
@@ -19,6 +21,7 @@ export default function TelemetryConsentPage() {
   const [error, setError] = useState<string | null>(null);
   const { data: session } = useSession();
   const { user, setUser } = useUserStore();
+  const { dataSourceTypes } = useDataSourceTypesStore();
 
   const handleTelemetryConsent = async (telemetryEnabled: boolean) => {
     if (!session?.user) {
@@ -61,8 +64,11 @@ export default function TelemetryConsentPage() {
           }
         }
 
-        // Redirect to home page after successful consent
-        window.location.replace('/');
+        if (dataSourceTypes && dataSourceTypes.length === 0) {
+          window.location.replace(DATA_SOURCE_CONNECTION_ROUTE);
+        } else {
+          window.location.replace('/');
+        }
       } else {
         setError(result.message || result.error || 'Failed to update telemetry consent');
       }
