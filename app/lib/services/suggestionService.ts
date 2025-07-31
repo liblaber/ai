@@ -6,7 +6,7 @@ import { getLlm } from '~/lib/.server/llm/get-llm';
 
 import { logger } from '~/utils/logger';
 import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
-import { getSuggestionsCache, setSuggestionsCache } from '~/lib/schema';
+import { getSchemaCache, getSuggestionsCache, setSuggestionsCache } from '~/lib/schema';
 
 const suggestionResponseSchema = z.object({
   suggestions: z.array(z.string().max(128)).length(3),
@@ -32,7 +32,7 @@ export async function generateSchemaBasedSuggestions(dataSource: DataSource): Pr
     await accessor.initialize(dataSource.connectionString);
 
     try {
-      const schema = await accessor.getSchema();
+      const schema = (await getSchemaCache(dataSource.connectionString)) || (await accessor.getSchema());
 
       const llm = await getLlm();
 
