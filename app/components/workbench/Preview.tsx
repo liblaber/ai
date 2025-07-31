@@ -211,6 +211,21 @@ export const Preview = memo(() => {
     };
   }, []);
 
+  // Listen for messages from the iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data === 'LOADED SIGNAL') {
+        alert('Iframe is ready! Components have been generated.');
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);
+
   const GripIcon = () => (
     <div
       style={{

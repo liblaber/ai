@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import SidebarNav from '@/components/building-blocks/sidebar-nav/SidebarNav';
+import PageReadyLogger from './components/PageReadyLogger';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -26,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <PageReadyLogger />
         <SidebarProvider defaultOpen={false}>
           <SidebarNav />
           <main className="flex-1 w-full px-10 py-3 relative md:pt-3 pt-16">
