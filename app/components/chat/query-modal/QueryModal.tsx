@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { Button } from '~/components/ui/Button';
-import { format } from 'sql-formatter';
 import type { ApiError } from '~/types/api-error';
 import { AiGeneration } from '~/components/chat/query-modal/AiGeneration';
 import { QueryResults } from '~/components/chat/query-modal/QueryResults';
@@ -57,56 +56,34 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
     }
   }, [isOpen, queryId]);
 
-  const formatQuery = (query: string) => {
-    if (!dataSource) {
+  const formatQuery = async (query: string): Promise<string> => {
+    if (!dataSource || !query) {
       return query;
     }
 
     try {
-      const connectionDetails = new URL(dataSource.connectionString);
-      const type = connectionDetails.protocol.replace(':', '');
+      const response = await fetch('/api/format-query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          dataSourceId: dataSource.id,
+        }),
+      });
 
-      // For MongoDB, pretty-print the JSON instead of using SQL formatter
-      if (type === 'mongodb') {
-        try {
-          const parsedQuery = JSON.parse(query);
-          return JSON.stringify(parsedQuery, null, 2);
-        } catch {
-          // If it's not valid JSON, return as-is
-          return query;
-        }
+      if (!response.ok) {
+        throw new Error('Failed to format query');
       }
 
-      // For SQL databases, use the SQL formatter
-      return format(query, {
-        language: type as
-          | 'bigquery'
-          | 'db2'
-          | 'db2i'
-          | 'duckdb'
-          | 'hive'
-          | 'mariadb'
-          | 'mysql'
-          | 'tidb'
-          | 'n1ql'
-          | 'plsql'
-          | 'postgresql'
-          | 'redshift'
-          | 'spark'
-          | 'sqlite'
-          | 'sql'
-          | 'trino'
-          | 'transactsql'
-          | 'singlestoredb'
-          | 'snowflake'
-          | 'tsql',
-        keywordCase: 'upper',
-        linesBetweenQueries: 1,
-        tabWidth: 2,
-        useTabs: false,
-      });
+      const { formattedQuery } = (await response.json()) as { formattedQuery: string };
+
+      return formattedQuery;
     } catch (err) {
-      setError(`Failed to format query: ${err}`);
+      console.error('Failed to format query:', err);
+
+      // Return unformatted query on error
       return query;
     }
   };
@@ -123,7 +100,8 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
       }
 
       const data = (await response.json()) as string;
-      setQuery(formatQuery(data));
+      const formatted = await formatQuery(data);
+      setQuery(formatted);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch query');
     } finally {
@@ -135,7 +113,7 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
     try {
       setError(null);
 
-      const formattedQuery = formatQuery(query || '');
+      const formattedQuery = await formatQuery(query || '');
       const response = await fetch(`/api/queries/${queryId}`, {
         method: 'PUT',
         headers: {
@@ -149,7 +127,8 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
       }
 
       const updatedQuery = (await response.json()) as string;
-      setQuery(formatQuery(updatedQuery));
+      const formatted = await formatQuery(updatedQuery);
+      setQuery(formatted);
 
       if (onUpdateAndRegenerate) {
         onUpdateAndRegenerate(updatedQuery);
@@ -217,7 +196,8 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
       }
 
       const data = (await response.json()) as string;
-      setQuery(formatQuery(data));
+      const formatted = await formatQuery(data);
+      setQuery(formatted);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate query');
     } finally {
@@ -225,12 +205,17 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
     }
   };
 
-  const handleFormatQuery = () => {
+  const handleFormatQuery = async () => {
     if (!query) {
       return;
     }
 
-    setQuery(formatQuery(query));
+    try {
+      const formatted = await formatQuery(query);
+      setQuery(formatted);
+    } catch (err) {
+      console.error('Failed to format query:', err);
+    }
   };
 
   return (

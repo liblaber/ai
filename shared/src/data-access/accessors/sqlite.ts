@@ -3,6 +3,7 @@ import Database from 'better-sqlite3';
 import type { BaseAccessor } from '../baseAccessor';
 import { type Column, type Table } from '../../types';
 import { SAMPLE_DB_ENUM_VALUES } from '../../constants/sample-db-enum-values';
+import { format } from 'sql-formatter';
 
 interface SQLiteColumn {
   name: string;
@@ -139,6 +140,40 @@ export class SQLiteAccessor implements BaseAccessor {
     }
 
     this._db = await this._createConnection(databaseUrl);
+  }
+
+  generateSampleSchema(): Table[] {
+    return [
+      {
+        tableName: 'users',
+        columns: [
+          { name: 'id', type: 'integer', isPrimary: true },
+          { name: 'name', type: 'varchar', isPrimary: false },
+          { name: 'email', type: 'varchar', isPrimary: false },
+          { name: 'role', type: 'varchar', isPrimary: false },
+          { name: 'created_at', type: 'timestamp', isPrimary: false },
+        ],
+      },
+      {
+        tableName: 'orders',
+        columns: [
+          { name: 'id', type: 'integer', isPrimary: true },
+          { name: 'user_id', type: 'integer', isPrimary: false },
+          { name: 'amount', type: 'decimal', isPrimary: false },
+          { name: 'status', type: 'varchar', isPrimary: false },
+          { name: 'created_at', type: 'timestamp', isPrimary: false },
+        ],
+      },
+    ];
+  }
+
+  formatQuery(query: string): string {
+    try {
+      return format(query, { language: 'sqlite' });
+    } catch {
+      // If formatting fails, return as-is
+      return query;
+    }
   }
 
   async close(): Promise<void> {

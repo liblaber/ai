@@ -1,7 +1,8 @@
 import type { BaseAccessor } from '../baseAccessor';
-import { type MySqlColumn, type MySqlTable } from '../../types';
+import { type MySqlColumn, type MySqlTable, type Table } from '../../types';
 import type { Connection } from 'mysql2/promise';
 import mysql from 'mysql2/promise';
+import { format } from 'sql-formatter';
 
 // Configure type casting for numeric values
 const typesToParse = ['INT', 'BIGINT', 'DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE', 'NEWDECIMAL'];
@@ -175,6 +176,40 @@ export class MySQLAccessor implements BaseAccessor {
         return next();
       },
     });
+  }
+
+  generateSampleSchema(): Table[] {
+    return [
+      {
+        tableName: 'users',
+        columns: [
+          { name: 'id', type: 'integer', isPrimary: true },
+          { name: 'name', type: 'varchar', isPrimary: false },
+          { name: 'email', type: 'varchar', isPrimary: false },
+          { name: 'role', type: 'varchar', isPrimary: false },
+          { name: 'created_at', type: 'timestamp', isPrimary: false },
+        ],
+      },
+      {
+        tableName: 'orders',
+        columns: [
+          { name: 'id', type: 'integer', isPrimary: true },
+          { name: 'user_id', type: 'integer', isPrimary: false },
+          { name: 'amount', type: 'decimal', isPrimary: false },
+          { name: 'status', type: 'varchar', isPrimary: false },
+          { name: 'created_at', type: 'timestamp', isPrimary: false },
+        ],
+      },
+    ];
+  }
+
+  formatQuery(query: string): string {
+    try {
+      return format(query, { language: 'mysql' });
+    } catch {
+      // If formatting fails, return as-is
+      return query;
+    }
   }
 
   async close(): Promise<void> {

@@ -9,11 +9,19 @@ const queryDecisionSchema = z.object({
   explanation: z.string(),
 });
 
-const databaseTypeDetectionSchema = z.object({
-  detectedType: z.enum(['postgres', 'mysql', 'sqlite', 'mongodb']),
-  confidence: z.number().min(0).max(1),
-  reasoning: z.string(),
-});
+// Create dynamic database type detection schema based on available database types
+const getDatabaseTypeDetectionSchema = () => {
+  const availableTypes = DataAccessor.getAvailableDatabaseTypes();
+
+  // Ensure we have at least one type for the enum, and cast to the correct tuple type
+  const typesArray = availableTypes.length > 0 ? availableTypes : ['postgres'];
+
+  return z.object({
+    detectedType: z.enum(typesArray as [string, ...string[]]),
+    confidence: z.number().min(0).max(1),
+    reasoning: z.string(),
+  });
+};
 
 const sqlQuerySchema = z.object({
   query: z.string(),
@@ -346,7 +354,7 @@ If the prompt doesn't contain enough information to make a confident determinati
 
   try {
     const result = await generateObject({
-      schema: databaseTypeDetectionSchema,
+      schema: getDatabaseTypeDetectionSchema(),
       model: llm.instance,
       maxTokens: llm.maxOutputTokens,
       system: systemPrompt,

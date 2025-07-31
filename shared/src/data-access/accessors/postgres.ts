@@ -1,6 +1,7 @@
 import { Pool, types } from 'pg';
 import type { BaseAccessor } from '../baseAccessor';
 import { type Table } from '../../types';
+import { format } from 'sql-formatter';
 
 const typesToParse = [types.builtins.INT4, types.builtins.INT8, types.builtins.NUMERIC];
 typesToParse.forEach((type) => {
@@ -178,6 +179,40 @@ export class PostgresAccessor implements BaseAccessor {
           databaseUrl.toLowerCase().includes('sslmode=verify-full') || databaseUrl.includes('sslmode=verify-ca'),
       },
     });
+  }
+
+  generateSampleSchema(): Table[] {
+    return [
+      {
+        tableName: 'users',
+        columns: [
+          { name: 'id', type: 'integer', isPrimary: true },
+          { name: 'name', type: 'varchar', isPrimary: false },
+          { name: 'email', type: 'varchar', isPrimary: false },
+          { name: 'role', type: 'varchar', isPrimary: false },
+          { name: 'created_at', type: 'timestamp', isPrimary: false },
+        ],
+      },
+      {
+        tableName: 'orders',
+        columns: [
+          { name: 'id', type: 'integer', isPrimary: true },
+          { name: 'user_id', type: 'integer', isPrimary: false },
+          { name: 'amount', type: 'decimal', isPrimary: false },
+          { name: 'status', type: 'varchar', isPrimary: false },
+          { name: 'created_at', type: 'timestamp', isPrimary: false },
+        ],
+      },
+    ];
+  }
+
+  formatQuery(query: string): string {
+    try {
+      return format(query, { language: 'postgresql' });
+    } catch {
+      // If formatting fails, return as-is
+      return query;
+    }
   }
 
   async close(): Promise<void> {

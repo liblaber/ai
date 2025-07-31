@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 import { prisma } from '~/lib/prisma';
 import { requireUserId } from '~/auth/session';
+import { getConnectionProtocol } from '@liblab/data-access/utils/connection';
+import { DataAccessor } from '@liblab/data-access/dataAccessor';
 
 const logger = createScopedLogger('generate-sql');
 
@@ -36,11 +38,10 @@ export async function POST(request: NextRequest) {
         where: { id: dataSourceId, userId },
       });
 
-      const connectionDetails = new URL(dataSource.connectionString);
-      type = connectionDetails.protocol.replace(':', '');
+      type = getConnectionProtocol(dataSource.connectionString);
     } else {
       // Use AI to determine database type from prompt
-      const availableTypes = ['postgres', 'mysql', 'sqlite', 'mongodb'];
+      const availableTypes = DataAccessor.getAvailableDatabaseTypes();
       const detectedType = suggestedDatabaseType || (await detectDatabaseTypeFromPrompt(prompt, llm, availableTypes));
 
       if (!detectedType) {
@@ -58,7 +59,13 @@ export async function POST(request: NextRequest) {
 
       // For demonstration purposes, create a sample schema based on common patterns
       // In a real implementation, you might want to ask the user to specify their schema
-      schema = generateSampleSchema(type);
+      const sampleSchema = DataAccessor.getSampleSchema(type);
+
+      if (!sampleSchema) {
+        return NextResponse.json({ error: 'Unsupported database type' }, { status: 400 });
+      }
+
+      schema = sampleSchema;
     }
 
     const queries = await generateSqlQueries({
@@ -80,87 +87,5 @@ export async function POST(request: NextRequest) {
       { error: error instanceof Error ? error.message : 'Failed to generate SQL query' },
       { status: 500 },
     );
-  }
-}
-
-function generateSampleSchema(databaseType: string): Table[] {
-  // This is a sample schema for demonstration
-  // In production, you'd want users to connect their actual databases
-  if (databaseType === 'mongodb') {
-    return [
-      {
-        tableName: 'airbnb',
-        columns: [
-          { name: '_id', type: 'string', isPrimary: true },
-          { name: 'name', type: 'string', isPrimary: false },
-          { name: 'summary', type: 'string', isPrimary: false },
-          {
-            name: 'room_type',
-            type: 'string',
-            isPrimary: false,
-            enumValues: ['Entire home/apt', 'Private room', 'Shared room'],
-          },
-          { name: 'property_type', type: 'string', isPrimary: false },
-          { name: 'price', type: 'object', isPrimary: false },
-          {
-            name: 'amenities',
-            type: 'array',
-            isPrimary: false,
-          },
-          { name: 'accommodates', type: 'number', isPrimary: false },
-          { name: 'bedrooms', type: 'number', isPrimary: false },
-          { name: 'beds', type: 'number', isPrimary: false },
-          { name: 'bathrooms', type: 'object', isPrimary: false },
-          { name: 'number_of_reviews', type: 'number', isPrimary: false },
-          { name: 'host', type: 'object', isPrimary: false },
-          { name: 'address', type: 'object', isPrimary: false },
-        ],
-      },
-      {
-        tableName: 'reviews',
-        columns: [
-          { name: '_id', type: 'ObjectId', isPrimary: true },
-          { name: 'listing_id', type: 'string', isPrimary: false },
-          { name: 'reviewer_id', type: 'string', isPrimary: false },
-          { name: 'reviewer_name', type: 'string', isPrimary: false },
-          { name: 'comments', type: 'string', isPrimary: false },
-          { name: 'date', type: 'Date', isPrimary: false },
-        ],
-      },
-      {
-        tableName: 'hosts',
-        columns: [
-          { name: '_id', type: 'ObjectId', isPrimary: true },
-          { name: 'host_id', type: 'string', isPrimary: false },
-          { name: 'host_name', type: 'string', isPrimary: false },
-          { name: 'host_since', type: 'Date', isPrimary: false },
-          { name: 'host_listings_count', type: 'number', isPrimary: false },
-        ],
-      },
-    ];
-  } else {
-    // SQL databases
-    return [
-      {
-        tableName: 'users',
-        columns: [
-          { name: 'id', type: 'integer', isPrimary: true },
-          { name: 'name', type: 'varchar', isPrimary: false },
-          { name: 'email', type: 'varchar', isPrimary: false },
-          { name: 'role', type: 'varchar', isPrimary: false },
-          { name: 'created_at', type: 'timestamp', isPrimary: false },
-        ],
-      },
-      {
-        tableName: 'orders',
-        columns: [
-          { name: 'id', type: 'integer', isPrimary: true },
-          { name: 'user_id', type: 'integer', isPrimary: false },
-          { name: 'amount', type: 'decimal', isPrimary: false },
-          { name: 'status', type: 'varchar', isPrimary: false },
-          { name: 'created_at', type: 'timestamp', isPrimary: false },
-        ],
-      },
-    ];
   }
 }

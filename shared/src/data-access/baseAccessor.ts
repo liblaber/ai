@@ -60,6 +60,19 @@ export interface BaseAccessor {
    */
   close: () => Promise<void>;
 
+  /**
+   * Generates a sample schema for demonstration purposes when no real data source is connected
+   * @returns Array of Table objects representing a sample schema for this database type
+   */
+  generateSampleSchema: () => Table[];
+
+  /**
+   * Formats a query string for display purposes
+   * @param query - The raw query string to format
+   * @returns The formatted query string
+   */
+  formatQuery: (query: string) => string;
+
   /** A human-readable label identifying this accessor type */
   readonly label: string;
 }

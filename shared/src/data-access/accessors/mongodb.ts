@@ -410,6 +410,70 @@ export class MongoDBAccessor implements BaseAccessor {
     }
   }
 
+  generateSampleSchema(): Table[] {
+    return [
+      {
+        tableName: 'airbnb',
+        columns: [
+          { name: '_id', type: 'string', isPrimary: true },
+          { name: 'name', type: 'string', isPrimary: false },
+          { name: 'summary', type: 'string', isPrimary: false },
+          {
+            name: 'room_type',
+            type: 'string',
+            isPrimary: false,
+            enumValues: ['Entire home/apt', 'Private room', 'Shared room'],
+          },
+          { name: 'property_type', type: 'string', isPrimary: false },
+          { name: 'price', type: 'object', isPrimary: false },
+          {
+            name: 'amenities',
+            type: 'array',
+            isPrimary: false,
+          },
+          { name: 'accommodates', type: 'number', isPrimary: false },
+          { name: 'bedrooms', type: 'number', isPrimary: false },
+          { name: 'beds', type: 'number', isPrimary: false },
+          { name: 'bathrooms', type: 'object', isPrimary: false },
+          { name: 'number_of_reviews', type: 'number', isPrimary: false },
+          { name: 'host', type: 'object', isPrimary: false },
+          { name: 'address', type: 'object', isPrimary: false },
+        ],
+      },
+      {
+        tableName: 'reviews',
+        columns: [
+          { name: '_id', type: 'ObjectId', isPrimary: true },
+          { name: 'listing_id', type: 'string', isPrimary: false },
+          { name: 'reviewer_id', type: 'string', isPrimary: false },
+          { name: 'reviewer_name', type: 'string', isPrimary: false },
+          { name: 'comments', type: 'string', isPrimary: false },
+          { name: 'date', type: 'Date', isPrimary: false },
+        ],
+      },
+      {
+        tableName: 'hosts',
+        columns: [
+          { name: '_id', type: 'ObjectId', isPrimary: true },
+          { name: 'host_id', type: 'string', isPrimary: false },
+          { name: 'host_name', type: 'string', isPrimary: false },
+          { name: 'host_since', type: 'Date', isPrimary: false },
+          { name: 'host_listings_count', type: 'number', isPrimary: false },
+        ],
+      },
+    ];
+  }
+
+  formatQuery(query: string): string {
+    try {
+      const parsedQuery = JSON.parse(query);
+      return JSON.stringify(parsedQuery, null, 2);
+    } catch {
+      // If it's not valid JSON, return as-is
+      return query;
+    }
+  }
+
   private _safeStringify(obj: any, maxDepth = 3): string {
     const seen = new WeakSet();
 
