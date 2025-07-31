@@ -328,7 +328,7 @@ export class MongoDBAccessor implements BaseAccessor {
         const fieldTypes: { [key: string]: Set<string> } = {};
 
         // Analyze sample documents to infer field types
-        sampleDocs.forEach((doc) => {
+        sampleDocs.forEach((doc: any) => {
           Object.keys(doc).forEach((field) => {
             if (!fieldTypes[field]) {
               fieldTypes[field] = new Set();
@@ -388,7 +388,7 @@ export class MongoDBAccessor implements BaseAccessor {
       const collections = await this._db.listCollections().toArray();
       console.log(
         'MongoDB: Available collections:',
-        collections.map((c) => c.name),
+        collections.map((c: any) => c.name),
       );
 
       if (collections.length === 0) {

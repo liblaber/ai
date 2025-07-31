@@ -274,7 +274,7 @@ async function chatAction(request: NextRequest) {
                 // Track telemetry event after successful message save
                 const userId = await requireUserId(request);
                 const user = await userService.getUser(userId);
-                await trackChatPrompt(conversationId, currentModel, user);
+                await trackChatPrompt(conversationId, currentModel, user, userMessageProperties.content);
               } catch (error) {
                 logger.error('Failed to save prompt', error);
               }
@@ -420,7 +420,12 @@ async function chatAction(request: NextRequest) {
 /**
  * Tracks telemetry for chat prompts
  */
-async function trackChatPrompt(conversationId: string, llmModel: string, user: UserProfile): Promise<void> {
+async function trackChatPrompt(
+  conversationId: string,
+  llmModel: string,
+  user: UserProfile,
+  userMessage: string,
+): Promise<void> {
   try {
     const conversationWithDataSource = await prisma.conversation.findUnique({
       where: { id: conversationId },
@@ -446,6 +451,7 @@ async function trackChatPrompt(conversationId: string, llmModel: string, user: U
             conversationId,
             dataSourceType: pluginId,
             llmModel,
+            userMessage,
           },
         },
         user,

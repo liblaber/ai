@@ -15,7 +15,7 @@ interface TableInfo {
   table_name: string;
 }
 
-const SAMPLE_DATABASE_NAME = 'sample.db';
+export const SAMPLE_DATABASE_NAME = 'sample.db';
 
 export class SQLiteAccessor implements BaseAccessor {
   static pluginId: string = 'sqlite';

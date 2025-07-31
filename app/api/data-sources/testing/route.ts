@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const databaseUrl = formData.get('connectionString') as string;
 
-    if (!databaseUrl) {
+    if (!databaseUrl || databaseUrl.trim() === '') {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
       // Validate the connection string format
       accessor.validate(databaseUrl);
 
-      // Test the actual connection
       const isConnected = await accessor.testConnection(databaseUrl);
 
       if (isConnected) {
