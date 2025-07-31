@@ -47,6 +47,7 @@ model SchemaCache {
   id             String   @id @default(cuid())
   connectionHash String   @unique @map("connection_hash")
   schemaData     String   @map("schema_data")
+  suggestions    String[] @map("suggestions")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
