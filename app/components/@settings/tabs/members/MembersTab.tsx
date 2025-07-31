@@ -94,7 +94,8 @@ function RoleDropdown({ value, onChange, triggerClassName }: RoleDropdownProps) 
 }
 
 export default function MembersTab() {
-  const { id: currentUserId } = useUserStore();
+  const { user } = useUserStore();
+  const currentUserId = user?.id;
   const [searchQuery, setSearchQuery] = useState('');
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(false);

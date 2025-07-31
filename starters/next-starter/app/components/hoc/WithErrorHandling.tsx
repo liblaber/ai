@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ComponentType } from 'react';
-import { ErrorBanner } from '../ui/errorBanner';
+import { ErrorBanner } from '@/components/ui/errorBanner';
 import { QueryData } from '@/db/execute-query';
 
 export interface WithErrorHandlingProps<T> {
@@ -18,6 +18,7 @@ function extractComponentName<T>(component: ComponentType<ComponentData<T>>) {
   return component.displayName || component.name || 'Anonymous Component';
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function WithErrorHandling<T>({ queryData, component: Component, additionalProps }: WithErrorHandlingProps<T>) {
   if (!queryData) {
     return null;
@@ -26,11 +27,15 @@ export function WithErrorHandling<T>({ queryData, component: Component, addition
   if (queryData.isError) {
     const componentName = extractComponentName(Component);
     console.error(`Failed to execute query in ${componentName}: ${queryData.errorMessage}`);
+
     return <ErrorBanner errorMessage={`Error in ${componentName}: ${queryData.errorMessage}`} />;
   }
 
   if (!queryData.data) {
-    return null;
+    const componentName = extractComponentName(Component);
+    console.error(`queryData.data not found in WithErrorHandling for component: ${componentName}`);
+
+    return <ErrorBanner errorMessage={`Error in ${componentName}: query data not found`} />;
   }
 
   return <Component data={queryData.data} {...(additionalProps as object)} />;

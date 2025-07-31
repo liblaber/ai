@@ -2,6 +2,9 @@ import { atom } from 'nanostores';
 import type { ActionAlert } from '~/types/actions';
 import { streamingState } from './stores/streaming';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
+import { TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { chatId } from '~/lib/persistence';
 
 interface ErrorState {
   lastError?: ActionAlert;
@@ -24,6 +27,15 @@ export class ErrorHandler {
   }
 
   async handle(currentError: ActionAlert): Promise<void> {
+    const conversationId = chatId.get();
+
+    if (conversationId) {
+      await trackTelemetryEvent({
+        eventType: TelemetryEventType.BUILT_APP_ERROR,
+        properties: { conversationId, error: currentError },
+      });
+    }
+
     if (streamingState.get() && !workbenchStore.previewsStore.readyForFixing.get()) {
       console.debug('[ErrorHandler] Streaming or loading in progress, skipping error handling...');
       return;

@@ -35,6 +35,7 @@ export interface Column {
   name: string;
   type: string;
   isPrimary: boolean;
+  enumValues?: string[];
 }
 
 export interface Table {
@@ -42,13 +43,23 @@ export interface Table {
   columns: Column[];
 }
 
-export async function generateSqlQueries(
-  schema: Table[],
-  userPrompt: string,
-  llm: Llm,
-  databaseType: string,
-  existingQueries?: string[],
-): Promise<SqlQueryOutput | undefined> {
+export type GenerateSqlQueriesOptions = {
+  schema: Table[];
+  userPrompt: string;
+  llm: Llm;
+  databaseType: string;
+  implementationPlan?: string;
+  existingQueries?: string[];
+};
+
+export async function generateSqlQueries({
+  schema,
+  userPrompt,
+  llm,
+  databaseType,
+  implementationPlan,
+  existingQueries,
+}: GenerateSqlQueriesOptions): Promise<SqlQueryOutput | undefined> {
   const dbSchema = formatDbSchemaForLLM(schema);
 
   const systemPrompt = `You are a SQL expert tasked with generating SQL queries based on a given database schema and user requirements.
@@ -64,6 +75,11 @@ Here is the database schema you should use:
 ${dbSchema}
 </dbSchema>
 
+Here is the implementation plan you should consider:
+<implementationPlan>
+${implementationPlan}
+</implementationPlan>
+
 ${existingQueries ? `Here are the existing SQL queries used by the app the user is building. Use them as context if they need to be updated to fulfill the user's request: <existing_sql_queries>${existingQueries}</existing_sql_queries>` : ''}
 
 To generate the SQL queries, follow these steps:
@@ -74,11 +90,12 @@ To generate the SQL queries, follow these steps:
 5. Do not use any DDL (Data Definition Language) statements such as CREATE, ALTER, or DROP. Only DML (Data Manipulation Language) queries like SELECT, INSERT, UPDATE, and DELETE are allowed.
 6. Use appropriate table joins if necessary.
 7. Optimize the queries for performance.
-8. Avoid using any tables or columns not present in the schema.
-9. If needed, parametrize the query using positional placeholders like ${DataAccessor.getByDatabaseType(databaseType)?.preparedStatementPlaceholderExample}.
-10. Use the exact format and casing for explicit values in the query (e.g., use "SUPER_ADMIN" if values are {ADMIN, MEMBER, SUPER_ADMIN}).
-11. Provide a brief explanation for each query.
-12. Specify the response schema for each query, including selected column types and any explicit values, if present.
+8. Avoid generating very long and complex queries, application layer will be able to map the results to the UI components in more complex ways.
+9. Avoid using any tables or columns not present in the schema.
+10. If needed, parametrize the query using positional placeholders like ${DataAccessor.getByDatabaseType(databaseType)?.preparedStatementPlaceholderExample}.
+11. Use the exact format and casing for explicit values in the query (e.g., use "SUPER_ADMIN" if values are {ADMIN, MEMBER, SUPER_ADMIN}).
+12. Provide a brief explanation for each query.
+13. Specify the response schema for each query, including selected column types and any explicit values, if present.
 
 Format your response as a JSON array containing objects with the following structure:
 {
@@ -171,7 +188,7 @@ ${userPrompt}
 /**
  * Format the database schema in a way that's easy for the LLM to understand
  */
-function formatDbSchemaForLLM(schema: any): string {
+export function formatDbSchemaForLLM(schema: Table[]): string {
   let result = '';
 
   for (const table of schema) {

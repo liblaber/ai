@@ -1,3 +1,9 @@
+# This script starts the Docker container for the liblab AI application.
+# Wait two seconds for migrations to complete and to setup the tunnel
+echo "Starting..."
+
+sleep 3
+
 echo ""
 echo "        ┬  ┬┌┐ ┬  ┌─┐┌┐   ┌─┐┬"
 echo "        │  │├┴┐│  ├─┤├┴┐  ├─┤│"

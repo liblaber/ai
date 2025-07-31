@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
-import '~/lib/config/env';
 import { requireUserId } from '~/auth/session';
 
 export async function GET(request: NextRequest) {

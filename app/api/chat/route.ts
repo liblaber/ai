@@ -12,8 +12,16 @@ import { createId } from '@paralleldrive/cuid2';
 import { conversationService } from '~/lib/services/conversationService';
 import type { StarterPluginId } from '~/lib/plugins/types';
 import type { FileMap } from '~/lib/stores/files';
+import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { prisma } from '~/lib/prisma';
+import { LLMManager } from '~/lib/modules/llm/manager';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { type UserProfile, userService } from '~/lib/services/userService';
+import { createImplementationPlan } from '~/lib/.server/llm/create-implementation-plan';
+import { getDatabaseSchema } from '~/lib/schema';
+import { requireUserId } from '~/auth/session';
+import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
 
-const DEFAULT_MODEL = 'claude-3-5-sonnet-latest';
 const WORK_DIR = '/home/project';
 
 const logger = createScopedLogger('api.chat');
@@ -32,7 +40,8 @@ async function chatAction(request: NextRequest) {
   }>();
   const { messages, files, conversationId, promptId, contextOptimization } = body;
 
-  const userMessage = messages.at(-1);
+  const userMessage = messages[messages.length - 1];
+  const userMessageProperties = extractPropertiesFromMessage(userMessage);
 
   if (!userMessage) {
     throw new Response('Message not specified', {
@@ -84,7 +93,7 @@ async function chatAction(request: NextRequest) {
               label: 'summary',
               status: 'in-progress',
               order: progressCounter++,
-              message: 'Analysing Request',
+              message: 'Analyzing your requirements...',
             };
             dataStream.writeData(currentProgressAnnotation);
 
@@ -108,7 +117,7 @@ async function chatAction(request: NextRequest) {
               label: 'summary',
               status: 'complete',
               order: progressCounter++,
-              message: 'Analysis Complete',
+              message: 'Requirements analyzed',
             };
             dataStream.writeData(currentProgressAnnotation);
 
@@ -126,11 +135,9 @@ async function chatAction(request: NextRequest) {
               label: 'context',
               status: 'in-progress',
               order: progressCounter++,
-              message: 'Determining Files to Read',
+              message: 'Preparing context...',
             };
             dataStream.writeData(currentProgressAnnotation);
-
-            // throw new Error('This is some sort of unexpected error');
 
             // Select context files
             logger.debug(`Messages count: ${messages.length}`);
@@ -164,26 +171,56 @@ async function chatAction(request: NextRequest) {
                   return path;
                 }),
               } as ContextAnnotation);
-
-              currentProgressAnnotation = {
-                type: 'progress',
-                label: 'context',
-                status: 'complete',
-                order: progressCounter++,
-                message: 'Code Files Selected',
-              };
-            } else {
-              currentProgressAnnotation = {
-                type: 'progress',
-                label: 'context',
-                status: 'complete',
-                order: progressCounter++,
-                message: 'No Code Files Selected',
-              };
             }
+
+            currentProgressAnnotation = {
+              type: 'progress',
+              label: 'context',
+              status: 'complete',
+              order: progressCounter++,
+              message: 'Context prepared',
+            };
 
             dataStream.writeData(currentProgressAnnotation);
           }
+
+          logger.debug('Creating Implementation Plan...');
+          currentProgressAnnotation = {
+            type: 'progress',
+            label: 'implementation-plan',
+            status: 'in-progress',
+            order: progressCounter++,
+            message: 'Creating implementation plan...',
+          };
+          dataStream.writeData(currentProgressAnnotation);
+
+          const dataSource = await conversationService.getConversationDataSource(conversationId);
+          const userId = await requireUserId(request);
+          const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
+
+          const implementationPlan = await createImplementationPlan({
+            isFirstUserMessage: !!userMessageProperties.isFirstUserMessage,
+            summary,
+            userPrompt: userMessage.content,
+            schema: formatDbSchemaForLLM(databaseSchema),
+            onFinish: (response) => {
+              if (response.usage) {
+                logger.debug('createImplementationPlan token usage', JSON.stringify(response.usage));
+                cumulativeUsage.completionTokens += response.usage.completionTokens || 0;
+                cumulativeUsage.promptTokens += response.usage.promptTokens || 0;
+                cumulativeUsage.totalTokens += response.usage.totalTokens || 0;
+              }
+            },
+          });
+          logger.debug('Created Implementation Plan:', implementationPlan);
+          currentProgressAnnotation = {
+            type: 'progress',
+            label: 'implementation-plan',
+            status: 'complete',
+            order: progressCounter++,
+            message: 'Implementation plan created',
+          };
+          dataStream.writeData(currentProgressAnnotation);
 
           // Stream the text
           const options: StreamingOptions = {
@@ -206,15 +243,17 @@ async function chatAction(request: NextRequest) {
               const assistantMessage = messages.find((m) => m.role === 'assistant');
 
               try {
-                const messageProperties = extractPropertiesFromMessage(userMessage);
-                const userMessageContent = Array.isArray(messageProperties.content)
-                  ? messageProperties.content.find((item) => item.type === 'text')?.text || ''
-                  : messageProperties.content;
+                const userMessageContent = Array.isArray(userMessageProperties.content)
+                  ? userMessageProperties.content.find((item) => item.type === 'text')?.text || ''
+                  : userMessageProperties.content;
+
+                const llmManager = LLMManager.getInstance();
+                const currentModel = llmManager.defaultModel;
 
                 await messageService.saveMessage({
                   conversationId,
                   content: userMessageContent,
-                  model: DEFAULT_MODEL,
+                  model: currentModel,
                   annotations: userMessage.annotations,
                   id: userMessage?.id,
                 });
@@ -222,7 +261,7 @@ async function chatAction(request: NextRequest) {
                 await messageService.saveMessage({
                   conversationId,
                   content: assistantMessageContent,
-                  model: DEFAULT_MODEL,
+                  model: currentModel,
                   inputTokens: usage?.promptTokens,
                   outputTokens: usage?.completionTokens,
                   finishReason,
@@ -231,6 +270,11 @@ async function chatAction(request: NextRequest) {
                 });
 
                 logger.debug('Prompt saved');
+
+                // Track telemetry event after successful message save
+                const userId = await requireUserId(request);
+                const user = await userService.getUser(userId);
+                await trackChatPrompt(conversationId, currentModel, user);
               } catch (error) {
                 logger.error('Failed to save prompt', error);
               }
@@ -252,7 +296,7 @@ async function chatAction(request: NextRequest) {
                 label: 'response',
                 status: 'complete',
                 order: progressCounter++,
-                message: 'Response Generated',
+                message: 'App code generated',
               };
               dataStream.writeData(currentProgressAnnotation);
               await new Promise((resolve) => setTimeout(resolve, 0));
@@ -266,7 +310,7 @@ async function chatAction(request: NextRequest) {
             label: 'response',
             status: 'in-progress',
             order: progressCounter++,
-            message: 'Generating Response',
+            message: 'Generating application code...',
           };
           dataStream.writeData(currentProgressAnnotation);
 
@@ -279,6 +323,7 @@ async function chatAction(request: NextRequest) {
             contextOptimization,
             contextFiles: filteredFiles,
             summary,
+            implementationPlan,
             messageSliceId,
             request,
           });
@@ -369,5 +414,44 @@ async function chatAction(request: NextRequest) {
       status: 500,
       statusText: 'Internal Server Error',
     });
+  }
+}
+
+/**
+ * Tracks telemetry for chat prompts
+ */
+async function trackChatPrompt(conversationId: string, llmModel: string, user: UserProfile): Promise<void> {
+  try {
+    const conversationWithDataSource = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        dataSource: {
+          select: {
+            connectionString: true,
+          },
+        },
+      },
+    });
+
+    if (conversationWithDataSource?.dataSource.connectionString) {
+      const pluginId = DataSourcePluginManager.getAccessorPluginId(
+        conversationWithDataSource.dataSource.connectionString,
+      );
+
+      const telemetry = await getTelemetry();
+      await telemetry.trackTelemetryEvent(
+        {
+          eventType: TelemetryEventType.USER_CHAT_PROMPT,
+          properties: {
+            conversationId,
+            dataSourceType: pluginId,
+            llmModel,
+          },
+        },
+        user,
+      );
+    }
+  } catch (telemetryError) {
+    logger.error('Failed to track telemetry event', telemetryError);
   }
 }

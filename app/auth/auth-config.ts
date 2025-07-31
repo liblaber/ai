@@ -1,26 +1,27 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '~/lib/prisma';
-import '~/lib/config/env';
+import { env } from '~/env';
 import { anonymous, createAuthMiddleware } from 'better-auth/plugins';
 import { UserManagementPluginManager } from '~/lib/plugins/user-management/user-management-plugin-manager';
 
+const { BASE_URL } = env.server;
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: 'sqlite',
+    provider: 'postgresql',
   }),
   plugins: [anonymous()],
   emailAndPassword: {
     enabled: true,
   },
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID || '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+  baseURL: BASE_URL,
+  trustedOrigins: [BASE_URL],
+  advanced: {
+    database: {
+      generateId: false, // Assumes a database handles ID generation
     },
   },
-  baseURL: process.env.BASE_URL ?? 'http://localhost:3000',
-  trustedOrigins: [(process.env.BASE_URL as string) ?? 'http://localhost:3000'],
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
       if (ctx.path.startsWith('/callback/') || ctx.path.startsWith('/sign-in/email')) {

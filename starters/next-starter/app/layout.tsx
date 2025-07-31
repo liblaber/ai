@@ -26,10 +26,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <SidebarProvider>
+        <SidebarProvider defaultOpen={false}>
           <SidebarNav />
-          <main className="flex-1 w-full px-10 py-3 relative">
-            <SidebarTrigger className="absolute left-1 top-2" />
+          <main className="flex-1 w-full px-10 py-3 relative md:pt-3 pt-16">
+            <div className="block md:hidden fixed top-4 left-4 z-50">
+              <SidebarTrigger />
+            </div>
             {children}
           </main>
         </SidebarProvider>

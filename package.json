@@ -7,21 +7,27 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "setup": "pnpm i && tsx setup.ts",
-    "build": "tsx pre-start.ts && next build",
-    "dev": "tsx pre-start.ts && next dev",
+    "quickstart": "pnpm run setup && pnpm run docker:start",
+    "setup": "pnpm i && pnpm run prisma:generate && tsx setup.ts",
+    "build": "next build",
+    "dev": "node scripts/dev-with-db.js && tsx pre-start.ts && next dev",
     "test": "jest",
-    "start": "next start",
+    "start": "tsx setup-tunnel.ts && tsx run-migrations.ts && next start",
     "prod": "tsx pre-start.ts && next build && next start -H 0.0.0.0",
+    "dockerdev": "tsx pre-start.ts && next dev",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint app",
     "lint:fix": "pnpm exec prettier --check . --write",
-    "dockerclean": "docker rm -f liblab-ai-live 2>/dev/null || true",
-    "dockerbuild": "docker build -t liblab-ai:latest .",
-    "dockerrun": "pnpm run dockerclean && docker run -it -d --name liblab-ai-live -p 3000:3000 liblab-ai && sh scripts/docker-start-prompt.sh",
-    "dockerstart": "pnpm run dockerbuild && pnpm run dockerrun",
-    "typecheck": "tsc",
+    "docker:start": "docker-compose up -d && sh scripts/docker-start-prompt.sh",
+    "docker:rebuild": "docker-compose up -d --build && sh scripts/docker-start-prompt.sh",
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up -d && sh scripts/docker-start-prompt.sh",
+    "docker:stop": "docker-compose down",
+    "db:start": "docker-compose -f docker-compose.db.yml up -d",
+    "db:stop": "docker-compose -f docker-compose.db.yml down",
+    "db:restart": "docker-compose -f docker-compose.db.yml restart",
+    "typecheck": "tsc --noEmit --skipLibCheck",
+    "lint-staged": "lint-staged",
     "preview": "pnpm run build && pnpm run start",
     "prepare": "husky",
     "prisma:generate": "prisma generate",
@@ -85,6 +91,7 @@
     "@radix-ui/react-switch": "^1.1.1",
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.4",
+    "@t3-oss/env-nextjs": "^0.13.8",
     "@tanstack/react-virtual": "^3.13.0",
     "@uiw/codemirror-theme-tokyo-night": "^4.23.11",
     "@unocss/webpack": "^66.3.3",
@@ -119,10 +126,10 @@
     "netlify": "^13.3.4",
     "next": "^15.0.0",
     "nextjs-cors": "^2.2.0",
-    "node-machine-id": "^1.1.12",
     "ollama-ai-provider": "^0.15.2",
     "path-browserify": "^1.0.1",
     "pg": "^8.14.1",
+    "posthog-js": "^1.258.2",
     "posthog-node": "^3.1.8",
     "react": "^18.3.1",
     "react-beautiful-dnd": "^13.1.1",
@@ -189,6 +196,7 @@
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
     "jsdom": "^26.0.0",
+    "lint-staged": "^16.1.2",
     "netlify-cli": "^21.1.0",
     "node-fetch": "^3.3.2",
     "prettier": "^3.4.1",
@@ -218,6 +226,15 @@
   },
   "resolutions": {
     "@typescript-eslint/utils": "^8.0.0-alpha.30"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css,scss}": [
+      "prettier --write"
+    ]
   },
   "packageManager": "pnpm@10.10.0"
 }

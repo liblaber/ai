@@ -28,7 +28,7 @@ export function LoginButton() {
       return;
     }
 
-    autoLoginAnonymous();
+    loginAnonymous();
   }, [anonymousProvider]);
 
   const handleProviderLogin = async (provider: AuthProviderType) => {
@@ -37,19 +37,7 @@ export function LoginButton() {
     try {
       switch (provider) {
         case 'anonymous': {
-          const { error: signInError } = await signIn.email({
-            email: 'anonymous@anonymous.com',
-            password: 'password1234',
-            rememberMe: true,
-          });
-
-          if (signInError) {
-            console.error('Failed to sign in anonymous user:', signInError);
-            return;
-          }
-
-          // Refresh the landing page after login to show data sources connection modal
-          window.location.reload();
+          await loginAnonymous();
           break;
         }
         default:
@@ -121,7 +109,7 @@ export function LoginButton() {
   );
 }
 
-const autoLoginAnonymous = async () => {
+const loginAnonymous = async () => {
   try {
     // Sign in the anonymous user (should be pre-created by seed)
     const { error: signInError } = await signIn.email({
