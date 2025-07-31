@@ -1,4 +1,4 @@
-import { type ChangeEvent, forwardRef, type KeyboardEvent } from 'react';
+import { type ChangeEvent, forwardRef, type KeyboardEvent, useState } from 'react';
 import { classNames } from '~/utils/classNames';
 import { DataSourcePicker } from './DataSourcePicker';
 import FilePreview from './FilePreview';
@@ -7,6 +7,8 @@ import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { openSettingsPanel } from '~/lib/stores/settings';
 import { ClientOnly } from '~/components/ui/ClientOnly';
 import { processImageFile } from '~/utils/fileUtils';
+import { Suggestions } from './Suggestions';
+import { toast } from 'sonner';
 
 interface HomepageTextareaProps {
   value: string;
@@ -39,10 +41,58 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
     },
     ref,
   ) => {
-    const { dataSources } = useDataSourcesStore();
+    const { dataSources, selectedDataSourceId } = useDataSourcesStore();
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
     const handleConnectDataSource = () => {
       openSettingsPanel('data', true, true);
+    };
+
+    const fetchSuggestions = async () => {
+      if (!selectedDataSourceId) {
+        console.warn('No data source selected');
+        return;
+      }
+
+      setIsLoadingSuggestions(true);
+
+      try {
+        const response = await fetch('/api/suggestions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ dataSourceId: selectedDataSourceId }),
+        });
+
+        const data = await response.json<
+          { suggestions: string[]; success: true } | { success: false; error: string }
+        >();
+
+        if (data.success) {
+          setSuggestions(data.suggestions);
+          setShowSuggestions(true);
+        } else {
+          toast.error(`Failed to fetch suggestions: ${data.error}`);
+          console.error('Failed to fetch suggestions:', data.error);
+        }
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
+    };
+
+    const handleSuggestionClick = (suggestion: string) => {
+      // Create a synthetic event to update the textarea value
+      const syntheticEvent = {
+        target: { value: suggestion },
+      } as ChangeEvent<HTMLTextAreaElement>;
+
+      onChange(syntheticEvent);
+      setShowSuggestions(false);
     };
 
     const fileUploadButton = (
@@ -108,7 +158,24 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
           >
             <div className="absolute bottom-6 left-6">
               <div className="flex items-center text-sm mt-2">
-                <div className="flex items-center gap-4">{fileUploadButton}</div>
+                <div className="flex items-center gap-4">
+                  {selectedDataSourceId && (
+                    <button
+                      className="flex justify-center items-center text-white opacity-80 hover:opacity-100 bg-transparent p-1 transition-all"
+                      onClick={fetchSuggestions}
+                      disabled={isLoadingSuggestions}
+                    >
+                      <div
+                        className={classNames(
+                          'i-liblab:ic_magic text-2xl mr-2 transition-all',
+                          isLoadingSuggestions ? 'opacity-30 animate-spin' : 'opacity-80 hover:opacity-100',
+                        )}
+                      />
+                      <span className="font-thick">{isLoadingSuggestions ? 'Loading...' : 'Suggestions'}</span>
+                    </button>
+                  )}
+                  {fileUploadButton}
+                </div>
               </div>
             </div>
             <div className="absolute bottom-6 right-6 flex">
@@ -149,6 +216,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
             />
           </div>
         </div>
+        <Suggestions suggestions={suggestions} onSuggestionClick={handleSuggestionClick} visible={showSuggestions} />
         <FilePreview
           files={uploadedFiles}
           imageDataList={imageDataList}
