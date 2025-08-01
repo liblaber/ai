@@ -1,0 +1,74 @@
+import { PureAbility, AbilityBuilder } from '@casl/ability';
+import { createPrismaAbility } from '@casl/prisma';
+import { PermissionResource, PermissionAction } from '@prisma/client';
+import type { PrismaQuery, Subjects } from '@casl/prisma';
+import type { DataSource, Environment, Permission, Website } from '@prisma/client';
+import type { PrismaResources } from './prisma-helpers';
+
+type PrismaSubjects = Subjects<{
+  Environment: Environment;
+  DataSource: DataSource;
+  Website: Website;
+}>;
+
+type NonPrismaSubjects = Exclude<PermissionResource, PrismaResources>;
+type AppSubjects = PrismaSubjects | NonPrismaSubjects;
+
+export type AppAbility = PureAbility<[PermissionAction, AppSubjects], PrismaQuery>;
+
+export function createAbilityForUser(permissions: Permission[]): AppAbility {
+  const { can, build } = new AbilityBuilder<AppAbility>(createPrismaAbility);
+
+  permissions.forEach((permission) => {
+    const { action, resource, environmentId, dataSourceId, websiteId } = permission as Permission;
+
+    // Handle different permission scenarios
+    switch (resource) {
+      case PermissionResource.all:
+      case PermissionResource.BuilderApp:
+      case PermissionResource.AdminApp:
+        can(action, resource);
+        break;
+
+      case PermissionResource.Environment:
+        if (environmentId) {
+          can(action, PermissionResource.Environment, { id: environmentId });
+        } else {
+          can(action, PermissionResource.Environment);
+        }
+
+        // TODO: associate data source and website permissions with the environment
+
+        break;
+
+      case PermissionResource.DataSource:
+        if (dataSourceId) {
+          can(action, PermissionResource.DataSource, { id: dataSourceId });
+        } else {
+          can(action, PermissionResource.DataSource);
+        }
+
+        break;
+
+      case PermissionResource.Website:
+        if (websiteId) {
+          can(action, PermissionResource.Website, { id: websiteId });
+        } else {
+          can(action, PermissionResource.Website);
+        }
+
+        break;
+
+      // Add other resource types as needed...
+      default:
+        console.warn(`Unknown resource type: ${resource}`);
+        break;
+    }
+  });
+
+  return build();
+}
+
+export function checkPermission(ability: AppAbility, action: PermissionAction, resource: PermissionResource): boolean {
+  return ability.can(action, resource);
+}
