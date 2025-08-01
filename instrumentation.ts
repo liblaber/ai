@@ -1,3 +1,6 @@
+import { logger } from '~/utils/logger';
+import { env } from '~/env/server';
+
 /**
  * Sends a telemetry event indicating the app started successfully.
  *
@@ -8,13 +11,13 @@
 export function register() {
   setTimeout(async () => {
     try {
-      await fetch(`${process.env.BASE_URL}/api/telemetry`, {
+      await fetch(`${env.BASE_URL}/api/telemetry`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event: { eventType: 'APP_START_SUCCESS' } }),
       });
     } catch (error) {
-      console.error('❌ Failed to track app start success:', error);
+      logger.warn('Failed to track app start success:', error);
     }
   }, 1000);
 }

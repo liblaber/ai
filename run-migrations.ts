@@ -27,7 +27,6 @@ const runMigrations = async (): Promise<void> => {
   }
 
   console.log('⏳  Migrations completed successfully');
-  console.log('★═══════════════════════════════════════★');
 };
 
 async function trackAppError(error: any) {
