@@ -188,15 +188,15 @@ async function seedAdminUserRole(userId: string, adminRoleId: string): Promise<v
 async function seedAdminPermissions(roleId: string): Promise<void> {
   try {
     const existingPermission = await prisma.permission.findFirst({
-      where: { roleId, resource: PermissionResource.ALL, action: PermissionAction.MANAGE },
+      where: { roleId, resource: PermissionResource.all, action: PermissionAction.manage },
     });
 
     if (!existingPermission) {
       await prisma.permission.create({
         data: {
           roleId,
-          resource: PermissionResource.ALL,
-          action: PermissionAction.MANAGE,
+          resource: PermissionResource.all,
+          action: PermissionAction.manage,
           createdAt: new Date(),
         },
       });

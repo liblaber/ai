@@ -190,23 +190,20 @@ model UserRole {
 }
 
 enum PermissionAction {
-  MANAGE // Full permission action
-  ACCESS
-  CREATE
-  READ
-  UPDATE
-  DELETE
+  manage // Full permission action
+  create
+  read
+  update
+  delete
 }
 
 enum PermissionResource {
-  ALL // Full resource access
-  ENVIRONMENT
-  DATA_SOURCE
-  WEBSITE
-  BUILDER
-  ROLE
-  USER
-  ORGANIZATION
+  all // Full resource access
+  Environment
+  DataSource
+  Website
+  BuilderApp
+  AdminApp
 }
 
 model Permission {
