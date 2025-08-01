@@ -6,13 +6,8 @@ import { coloredText } from '~/utils/terminal';
 export class TerminalStore {
   #shells: Array<LiblabShell> = [];
 
-  showTerminal: WritableAtom<boolean> = import.meta.hot?.data.showTerminal ?? atom(true);
+  showTerminal: WritableAtom<boolean> = atom(true);
 
-  constructor() {
-    if (import.meta.hot) {
-      import.meta.hot.data.showTerminal = this.showTerminal;
-    }
-  }
   get getShells() {
     return this.#shells;
   }

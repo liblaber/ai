@@ -15,15 +15,7 @@ const highlighterOptions = {
 };
 
 async function shellHighlighter(): Promise<HighlighterGeneric<any, any>> {
-  return import.meta.hot?.data.shellHighlighter ?? (await createHighlighter(highlighterOptions));
-}
-
-if (import.meta.hot) {
-  shellHighlighter().then((hl) => {
-    if (import.meta.hot?.data) {
-      import.meta.hot.data.shellHighlighter = hl;
-    }
-  });
+  return await createHighlighter(highlighterOptions);
 }
 
 let shellHigh: any;

@@ -15,13 +15,9 @@ interface WebContainerContext {
   loaded: boolean;
 }
 
-export const webcontainerContext: WebContainerContext = import.meta.hot?.data.webcontainerContext ?? {
+export const webcontainerContext: WebContainerContext = {
   loaded: false,
 };
-
-if (import.meta.hot) {
-  import.meta.hot.data.webcontainerContext = webcontainerContext;
-}
 
 let lastRefreshTimestamp = 0;
 const REFRESH_COOLDOWN_MS = 30000; // 30 seconds
@@ -189,10 +185,6 @@ class WebContainerManager {
 
 // Export the singleton instance promise for backward compatibility
 export const webcontainer: () => Promise<WebContainer> = WebContainerManager.getInstance;
-
-if (import.meta.hot) {
-  import.meta.hot.data.webcontainer = webcontainer();
-}
 
 function isInitialHydrationError(message: PreviewMessage) {
   if (message.type !== 'PREVIEW_CONSOLE_ERROR') {
