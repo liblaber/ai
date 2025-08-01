@@ -47,9 +47,12 @@ export function useConversationHistory(id?: string) {
 
     getConversation(id)
       .then(async (conversation) => {
-        if (!(conversation && conversation.messages.length > 0)) {
+        if (!conversation) {
           router.replace('/');
+          return;
         }
+
+        setInitialMessages(conversation.messages || []);
 
         const snapshot = conversation?.snapshot;
 
@@ -59,8 +62,6 @@ export function useConversationHistory(id?: string) {
         }
 
         await loadFileMapIntoContainer(snapshot.fileMap);
-
-        setInitialMessages(conversation.messages);
 
         if (conversation.dataSourceId && conversation.dataSourceId !== selectedDataSourceId) {
           setSelectedDataSourceId(conversation.dataSourceId);
@@ -80,6 +81,9 @@ export function useConversationHistory(id?: string) {
       .catch((error) => {
         console.error(error);
         toast.error(error.message);
+
+        // Redirect to main chat page if conversation not found
+        router.replace('/chat');
       });
   }, [id, router, selectedDataSourceId, setSelectedDataSourceId]);
 

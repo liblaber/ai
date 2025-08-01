@@ -134,6 +134,27 @@ export const ChatImpl = ({
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const messagesRef = useRef<Message[]>([]);
 
+  // Update URL when component unmounts or page unloads
+  useEffect(() => {
+    const updateUrlOnExit = () => {
+      const currentChatId = chatId.get();
+
+      if (currentChatId && window.location.pathname === '/chat') {
+        const newPath = `/chat/${currentChatId}`;
+        window.history.replaceState(null, '', newPath);
+      }
+    };
+
+    // Update URL when page is about to unload (user refreshing/leaving)
+    window.addEventListener('beforeunload', updateUrlOnExit);
+
+    // Update URL when component unmounts
+    return () => {
+      window.removeEventListener('beforeunload', updateUrlOnExit);
+      updateUrlOnExit();
+    };
+  }, []);
+
   const {
     messages,
     input,
@@ -212,6 +233,16 @@ export const ChatImpl = ({
           }
         }
       }, 2000);
+
+      // Update URL safely after streaming completes and components are stable
+      setTimeout(() => {
+        const currentChatId = chatId.get();
+
+        if (currentChatId && window.location.pathname === '/chat') {
+          const newPath = `/chat/${currentChatId}`;
+          window.history.replaceState(null, '', newPath);
+        }
+      }, 3000); // Wait 3 seconds after streaming completes to ensure stability
     },
     initialMessages,
     initialInput: Cookies.get(PROMPT_COOKIE_KEY) || '',
@@ -436,8 +467,8 @@ export const ChatImpl = ({
       conversationId = await createConversation(datasourceId);
       chatId.set(conversationId);
 
-      // TODO: FIX THIS
-      // navigateChat(conversationId);
+      // Don't update URL during active chat - causes component unmounting
+      // Store the conversation ID for potential future navigation
     }
 
     const dataSourceUrlResponse = await fetch(`/api/data-sources/${datasourceId}/url`);
