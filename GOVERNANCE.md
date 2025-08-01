@@ -133,13 +133,11 @@ For significant changes that affect users or the overall architecture:
 ### Path to Core Maintainer Status
 
 1. **Demonstrate Expertise**
-
    - Make significant contributions over 6+ months
    - Show deep understanding of the codebase
    - Provide thoughtful code reviews
 
 2. **Show Leadership**
-
    - Help onboard new contributors
    - Participate actively in technical discussions
    - Demonstrate good judgment in contentious situations
