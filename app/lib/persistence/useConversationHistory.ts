@@ -54,7 +54,7 @@ export function useConversationHistory(id?: string) {
         const snapshot = conversation?.snapshot;
 
         if (!snapshot) {
-          toast.error('Failed to load chat history');
+          setReady(true);
           return;
         }
 
@@ -141,13 +141,9 @@ export function useConversationHistory(id?: string) {
 }
 
 export function navigateChat(nextId: string) {
-  /**
-   * FIXME: Using the intended navigate function causes a rerender for <Chat /> that breaks the app.
-   *
-   * `navigate(`/chat/${nextId}`, { replace: true });`
-   */
-  const url = new URL(window.location.href);
-  url.pathname = `/chat/${nextId}`;
+  const newPath = `/chat/${nextId}`;
 
-  window.history.replaceState({}, '', url);
+  if (window.location.pathname !== newPath) {
+    window.history.replaceState(null, '', newPath);
+  }
 }

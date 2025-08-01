@@ -8,7 +8,7 @@ import { useStore } from '@nanostores/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useMessageParser, useShortcuts, useSnapScroll } from '~/lib/hooks';
-import { chatId, description, navigateChat, useConversationHistory } from '~/lib/persistence';
+import { chatId, description, useConversationHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { MessageRole, PROMPT_COOKIE_KEY } from '~/utils/constants';
@@ -158,6 +158,7 @@ export const ChatImpl = ({
     sendExtraMessageFields: true,
     onError: (e) => {
       logger.error('Request failed', e);
+      setFakeLoading(false); // Reset loading state on error
       toast.error(
         'There was an error processing your request: ' + (e.message ? e.message : 'No details were returned'),
       );
@@ -171,7 +172,13 @@ export const ChatImpl = ({
           if (latestSnapshot) {
             fileMapToRevertTo = latestSnapshot.fileMap;
           } else {
-            fileMapToRevertTo = await getStarterTemplateFiles(dataSourceUrl);
+            // For new conversations, try to get starter template but don't fail if it doesn't work
+            try {
+              fileMapToRevertTo = await getStarterTemplateFiles(dataSourceUrl);
+            } catch (starterError) {
+              logger.warn('Could not load starter template during error recovery, using empty file map:', starterError);
+              fileMapToRevertTo = {};
+            }
           }
 
           await loadPreviousFileMapIntoContainer(fileMapToRevertTo);
@@ -182,6 +189,7 @@ export const ChatImpl = ({
     },
     onFinish: async ({ id, content }) => {
       setData(undefined);
+      setFakeLoading(false);
 
       logger.debug('Finished streaming');
 
@@ -422,10 +430,14 @@ export const ChatImpl = ({
     setFakeLoading(true);
 
     // Generate a new chat ID right away to use in the request
-    if (!chatId.get()) {
-      const conversationId = await createConversation(datasourceId);
+    let conversationId = chatId.get();
+
+    if (!conversationId) {
+      conversationId = await createConversation(datasourceId);
       chatId.set(conversationId);
-      navigateChat(conversationId);
+
+      // TODO: FIX THIS
+      // navigateChat(conversationId);
     }
 
     const dataSourceUrlResponse = await fetch(`/api/data-sources/${datasourceId}/url`);
@@ -450,27 +462,23 @@ export const ChatImpl = ({
         toast.warning('Failed to import starter template\n Continuing with blank template');
       }
 
-      return null;
+      return [];
     });
 
-    // wait for 1.5 second to let the terminal shell be ready
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const userMessage = {
+      id: createId(),
+      role: 'user' as const,
+      content: formatMessageWithModelInfo({
+        messageContent,
+        firstUserMessage: true,
+        dataSourceId: selectedDataSourceId!,
+        dataList,
+      }),
+      experimental_attachments: createExperimentalAttachments(dataList, files),
+    };
 
-    if (starterTemplateMessages) {
-      setMessages([
-        ...starterTemplateMessages,
-        {
-          id: createId(),
-          role: 'user',
-          content: formatMessageWithModelInfo({
-            messageContent,
-            firstUserMessage: true,
-            dataSourceId: selectedDataSourceId!,
-            dataList,
-          }),
-          experimental_attachments: createExperimentalAttachments(dataList, files),
-        },
-      ]);
+    if (starterTemplateMessages && starterTemplateMessages.length > 0) {
+      setMessages([...starterTemplateMessages, userMessage]);
 
       await reload({
         body: {
@@ -484,28 +492,17 @@ export const ChatImpl = ({
       setImageDataList([]);
 
       textareaRef.current?.blur();
-      setFakeLoading(false);
 
       return;
     }
 
     // If template selection failed, proceed with normal conversation without a template
-    setMessages([
-      {
-        id: createId(),
-        role: 'user',
-        content: formatMessageWithModelInfo({
-          messageContent,
-          dataSourceId: selectedDataSourceId!,
-        }),
-      },
-    ]);
+    setMessages([userMessage]);
     await reload({
       body: {
         conversationId: chatId.get(),
       },
     });
-    setFakeLoading(false);
     setInput('');
     Cookies.remove(PROMPT_COOKIE_KEY);
 
