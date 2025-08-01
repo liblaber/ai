@@ -116,6 +116,12 @@ export const BaseChat = ({
 
   useEffect(() => {
     onStreamingChange?.(isStreaming);
+
+    if (isStreaming && input) {
+      handleInputChange?.({
+        target: { value: '' },
+      } as React.ChangeEvent<HTMLTextAreaElement>);
+    }
   }, [isStreaming, onStreamingChange]);
 
   const handleSendMessage = async (

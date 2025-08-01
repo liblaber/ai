@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { atom } from 'nanostores';
 import { type Message } from 'ai';
 import { toast } from 'sonner';
@@ -12,6 +12,7 @@ import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import { getConversation, updateConversation } from '~/lib/persistence/conversations';
 import { pushToRemote } from '~/lib/stores/git';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { logger } from '~/utils/logger';
 
 export interface IChatMetadata {
   gitUrl?: string;
@@ -40,10 +41,14 @@ export function useConversationHistory(id?: string) {
   const [commandMessage, setCommandMessage] = useState<Message>();
   const [ready, setReady] = useState<boolean>(false);
 
+  const initializedId = useRef<string>();
+
   useEffect(() => {
-    if (!id) {
+    if (!id || initializedId.current === id) {
       return;
     }
+
+    initializedId.current = id;
 
     getConversation(id)
       .then(async (conversation) => {
@@ -58,18 +63,25 @@ export function useConversationHistory(id?: string) {
           return;
         }
 
-        await loadFileMapIntoContainer(snapshot.fileMap);
+        loadFileMapIntoContainer(snapshot.fileMap)
+          .then(async () => {
+            logger.debug('Snapshot loaded successfully');
+
+            const projectCommands = await detectProjectCommandsFromFileMap(snapshot.fileMap);
+
+            if (projectCommands) {
+              setCommandMessage(createCommandsMessage(projectCommands));
+            }
+          })
+          .catch((reason) => {
+            toast.error('Failed to load snapshot into container');
+            logger.error('Failed to load snapshot into container', reason);
+          });
 
         setInitialMessages(conversation.messages);
 
         if (conversation.dataSourceId && conversation.dataSourceId !== selectedDataSourceId) {
           setSelectedDataSourceId(conversation.dataSourceId);
-        }
-
-        const projectCommands = await detectProjectCommandsFromFileMap(snapshot.fileMap);
-
-        if (projectCommands) {
-          setCommandMessage(createCommandsMessage(projectCommands));
         }
 
         chatId.set(conversation.id);

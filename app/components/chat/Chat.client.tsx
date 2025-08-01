@@ -35,7 +35,6 @@ import { createId } from '@paralleldrive/cuid2';
 import { getLatestSnapshotOrNull } from '~/lib/persistence/snapshots';
 import { loadPreviousFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import type { FileMap } from '~/lib/stores/files';
-import { ClientOnly } from '~/components/ui/ClientOnly';
 import { useTrackStreamProgress } from '~/components/chat/useTrackStreamProgress';
 import type { ProgressAnnotation } from '~/types/context';
 import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
@@ -74,18 +73,14 @@ export function Chat({ id }: { id?: string }) {
   return (
     <>
       {ready && (
-        <ClientOnly>
-          {() => (
-            <ChatImpl
-              description={title}
-              initialMessages={initialMessages}
-              commandMessage={commandMessage}
-              setCommandMessage={setCommandMessage}
-              exportChatAction={exportChat}
-              storeConversationHistoryAction={storeConversationHistory}
-            />
-          )}
-        </ClientOnly>
+        <ChatImpl
+          description={title}
+          initialMessages={initialMessages}
+          commandMessage={commandMessage}
+          setCommandMessage={setCommandMessage}
+          exportChatAction={exportChat}
+          storeConversationHistoryAction={storeConversationHistory}
+        />
       )}
     </>
   );
@@ -209,7 +204,7 @@ export const ChatImpl = ({
 
     setTimeout(() => {
       setMessages([...messagesRef.current, commandMessage]);
-    }, 500);
+    }, 2000);
   }, [commandMessage]);
 
   const isLoading = status === 'streaming';
