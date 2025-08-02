@@ -1,11 +1,9 @@
 import { prisma } from '~/lib/prisma';
-import type { UserRole } from '@prisma/client';
 
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
   organizationId: string;
   telemetryEnabled: boolean | null;
 }
@@ -18,7 +16,6 @@ export const userService = {
         id: true,
         name: true,
         email: true,
-        role: true,
         organizationId: true,
         telemetryEnabled: true,
       },
@@ -32,7 +29,6 @@ export const userService = {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
       organizationId: user.organizationId!,
       telemetryEnabled: user.telemetryEnabled,
     };
@@ -48,7 +44,6 @@ export const userService = {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
       organizationId: user.organizationId!,
       telemetryEnabled: user.telemetryEnabled,
     };
@@ -64,7 +59,6 @@ export const userService = {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
       organizationId: user.organizationId!,
       telemetryEnabled: user.telemetryEnabled,
     };
@@ -76,7 +70,6 @@ export const userService = {
         organizationId,
       },
       select: {
-        role: true,
         id: true,
         name: true,
         email: true,
@@ -91,16 +84,8 @@ export const userService = {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
       telemetryEnabled: user.telemetryEnabled,
       organizationId,
     }));
-  },
-
-  async updateUserRole(userId: string, organizationId: string, role: UserRole) {
-    return await prisma.user.update({
-      where: { id: userId, organizationId },
-      data: { role },
-    });
   },
 };

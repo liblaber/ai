@@ -1,6 +1,6 @@
 import { Prisma, PermissionAction } from '@prisma/client';
 import { accessibleBy } from '@casl/prisma';
-import type { AppAbility } from './abilities';
+import type { AppAbility } from './user-ability';
 
 export type PrismaResources = 'Environment' | 'DataSource' | 'Website';
 
