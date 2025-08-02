@@ -4,6 +4,9 @@ import { PermissionResource, PermissionAction } from '@prisma/client';
 import type { PrismaQuery, Subjects } from '@casl/prisma';
 import type { DataSource, Environment, Permission, Website } from '@prisma/client';
 import type { PrismaResources } from './prisma-helpers';
+import { getUserPermissions } from '~/lib/services/permissionService';
+
+const ABILITY_CACHE: Record<string, AppAbility> = {};
 
 type PrismaSubjects = Subjects<{
   Environment: Environment;
@@ -69,6 +72,15 @@ export function createAbilityForUser(permissions: Permission[]): AppAbility {
   return build();
 }
 
-export function checkPermission(ability: AppAbility, action: PermissionAction, resource: PermissionResource): boolean {
-  return ability.can(action, resource);
+export async function getUserAbility(userId: string): Promise<AppAbility> {
+  if (ABILITY_CACHE[userId]) {
+    return ABILITY_CACHE[userId];
+  }
+
+  const permissions = await getUserPermissions(userId);
+  const userAbility = createAbilityForUser(permissions);
+
+  ABILITY_CACHE[userId] = userAbility;
+
+  return userAbility;
 }
