@@ -1,9 +1,11 @@
 import { prisma } from '~/lib/prisma';
+import { DeprecatedRole } from '@prisma/client';
 
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  role: DeprecatedRole;
   organizationId: string;
   telemetryEnabled: boolean | null;
 }
@@ -16,6 +18,7 @@ export const userService = {
         id: true,
         name: true,
         email: true,
+        role: true,
         organizationId: true,
         telemetryEnabled: true,
       },
@@ -29,6 +32,7 @@ export const userService = {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
       organizationId: user.organizationId!,
       telemetryEnabled: user.telemetryEnabled,
     };
@@ -44,6 +48,7 @@ export const userService = {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
       organizationId: user.organizationId!,
       telemetryEnabled: user.telemetryEnabled,
     };
@@ -59,6 +64,7 @@ export const userService = {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
       organizationId: user.organizationId!,
       telemetryEnabled: user.telemetryEnabled,
     };
@@ -73,6 +79,7 @@ export const userService = {
         id: true,
         name: true,
         email: true,
+        role: true,
         telemetryEnabled: true,
       },
       orderBy: {
@@ -84,8 +91,16 @@ export const userService = {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
       telemetryEnabled: user.telemetryEnabled,
       organizationId,
     }));
+  },
+
+  async updateUserRole(userId: string, organizationId: string, role: DeprecatedRole) {
+    return await prisma.user.update({
+      where: { id: userId, organizationId },
+      data: { role },
+    });
   },
 };
