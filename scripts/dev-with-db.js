@@ -3,33 +3,9 @@
 import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { getDockerComposeCommand, execDockerCompose } from './docker-compose-utils.js';
 
 const execAsync = promisify(exec);
-
-// Detect which Docker Compose command is available
-async function detectDockerCompose() {
-  try {
-    await execAsync('command -v docker-compose');
-    return 'docker-compose';
-  } catch {
-    try {
-      await execAsync('docker compose version');
-      return 'docker compose';
-    } catch {
-      throw new Error('❌ Neither "docker-compose" nor "docker compose" is available!');
-    }
-  }
-}
-
-let dockerComposeCmd = null;
-
-async function getDockerComposeCommand() {
-  if (!dockerComposeCmd) {
-    dockerComposeCmd = await detectDockerCompose();
-    console.log(`📦 Using Docker Compose command: ${dockerComposeCmd}`);
-  }
-  return dockerComposeCmd;
-}
 
 async function runCommand(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
@@ -53,11 +29,10 @@ async function runCommand(command, args = [], options = {}) {
 
 async function waitForDatabase() {
   console.log('⏳ Waiting for database to be ready...');
-  const dockerCompose = await getDockerComposeCommand();
 
   while (true) {
     try {
-      await execAsync(`${dockerCompose} -f docker-compose.db.yml exec -T postgres pg_isready -U liblab -d liblab`);
+      await execDockerCompose(['-f', 'docker-compose.db.yml', 'exec', '-T', 'postgres', 'pg_isready', '-U', 'liblab', '-d', 'liblab']);
       console.log('✅ Database is ready!');
       break;
     } catch (error) {
@@ -97,21 +72,14 @@ async function updateEnvFile() {
 async function main() {
   try {
     console.log('🚀 Starting PostgreSQL database in Docker...');
-    const dockerCompose = await getDockerComposeCommand();
 
-    // Split the command in case it contains spaces (e.g., "docker compose")
-    const cmdParts = dockerCompose.split(' ');
-    const command = cmdParts[0];
-    const args = [...cmdParts.slice(1), '-f', 'docker-compose.db.yml', 'up', '-d'];
-
-    await runCommand(command, args);
+    // Use shared utility to start Docker Compose
+    await execDockerCompose(['-f', 'docker-compose.db.yml', 'up', '-d']);
 
     await waitForDatabase();
 
     // Update .env file with DATABASE_URL
-    await updateEnvFile();
-
-    console.log('🔧 Starting Next.js development server...');
+    await updateEnvFile();    console.log('🔧 Starting Next.js development server...');
     console.log('   Database URL: postgresql://liblab:liblab_password@localhost:5432/liblab');
   } catch (error) {
     console.error('❌ Error:', error.message);
