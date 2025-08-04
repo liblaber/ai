@@ -1,12 +1,27 @@
 #!/bin/bash
 
+# Enable strict error handling
+set -euo pipefail
+
 # Development script for running the AI app in Docker with volume mounting
 
+# Check if docker-compose-utils.sh exists and is readable
+UTILS_PATH="$(dirname "$0")/docker-compose-utils.sh"
+if [ ! -f "$UTILS_PATH" ] || [ ! -r "$UTILS_PATH" ]; then
+    echo "❌ Error: Cannot find or read docker-compose-utils.sh at $UTILS_PATH"
+    echo "   Please ensure the file exists and is readable."
+    exit 1
+fi
+
 # Source shared Docker Compose utilities
-source "$(dirname "$0")/docker-compose-utils.sh"
+source "$UTILS_PATH"
 
 # Set the Docker Compose command
-DOCKER_COMPOSE_CMD=$(get_docker_compose_cmd)
+if ! DOCKER_COMPOSE_CMD=$(get_docker_compose_cmd); then
+    echo "   Failed to detect Docker Compose. Please install Docker Compose and try again."
+    exit 1
+fi
+readonly DOCKER_COMPOSE_CMD
 
 echo "🚀 Starting AI app in Docker with volume mounting..."
 
