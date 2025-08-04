@@ -3,14 +3,14 @@ name: Build and Push Docker Image
 on:
   push:
     branches:
-      - stevan/eng-494
+      - main
   pull_request:
     branches:
       - main
 
 env:
   DOCKER_REGISTRY: docker.io
-  DOCKER_IMAGE_NAME: stevankapicic/liblab-ai-app
+  DOCKER_IMAGE_NAME: liblab/liblab-ai
 
 jobs:
   build:
