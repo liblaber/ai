@@ -4,19 +4,11 @@ import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
 
 const runApp = async (): Promise<void> => {
-  console.log(`
-★═══════════════════════════════════════★
-          🦙 liblab builder 🦙
-★═══════════════════════════════════════★
-`);
-
   // Run migrations first
-  console.log('⏳ Running database migrations...');
   execSync('tsx run-migrations.ts', { stdio: 'inherit' });
 
   // Setup tunnel if in local environment
   if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
-    console.log('⏳ Setting up tunnel...');
     execSync('tsx setup-tunnel.ts', { stdio: 'inherit' });
   }
 

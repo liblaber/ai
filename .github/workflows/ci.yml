@@ -84,12 +84,14 @@ jobs:
         env:
           NODE_ENV: production
           ENCRYPTION_KEY: ${{ secrets.DUMMY_ENCRYPTION_KEY }}
+          AUTH_SECRET: ${{ secrets.DUMMY_AUTH_SECRET }}
 
       - name: 🧪 Run tests
         run: pnpm test
         env:
           NODE_ENV: production
           ENCRYPTION_KEY: ${{ secrets.DUMMY_ENCRYPTION_KEY }}
+          AUTH_SECRET: ${{ secrets.DUMMY_AUTH_SECRET }}
 
   all-checks:
     name: ✅ All Checks Passed

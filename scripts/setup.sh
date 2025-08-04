@@ -8,7 +8,7 @@
 set -e
 
 echo "★═══════════════════════════════════════★"
-echo "      🦙 liblab AI Builder Setup 🦙"
+echo "        🦙 liblab AI Setup 🦙"
 echo "★═══════════════════════════════════════★"
 
 # Detect OS and set appropriate commands
@@ -27,6 +27,7 @@ else
 fi
 
 # Check for .env file and create if it doesn't exist
+echo ""
 echo "📋 Checking for .env file..."
 if [ ! -f .env ]; then
     echo "⏳ .env file not found, creating from .env.example..."
@@ -42,6 +43,7 @@ else
 fi
 
 # Copy NEXT_PUBLIC_POSTHOG_KEY from .env.example to .env if it exists
+echo ""
 echo "📋 Checking for NEXT_PUBLIC_POSTHOG_KEY..."
 if [ -f .env.example ] && grep -q "^NEXT_PUBLIC_POSTHOG_KEY=" .env.example; then
     # Extract POSTHOG_API_KEY value from .env.example
@@ -64,8 +66,60 @@ else
     echo "⚠️ NEXT_PUBLIC_POSTHOG_KEY not found in .env.example file."
 fi
 
+# Generate AUTH_SECRET if not exists
+echo ""
+echo "📋 Checking for AUTH_SECRET..."
+if [ ! -f .env ] || ! grep -q "^AUTH_SECRET=." .env; then
+    echo "⏳ Generating auth secret..."
+    # Generate a cryptographically secure random 32-byte (256-bit) key
+    # Use different methods based on OS for better compatibility
+    if [[ "$OS_TYPE" == "windows" ]]; then
+        # Windows - try PowerShell first, fallback to other methods
+        if command -v powershell &> /dev/null; then
+            AUTH_SECRET=$(powershell -Command "[System.Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))")
+        elif command -v openssl &> /dev/null; then
+            AUTH_SECRET=$(openssl rand -base64 32)
+        else
+            # Fallback for Windows without PowerShell or OpenSSL
+            echo "❌ Unable to generate auth secret. Please install OpenSSL or ensure PowerShell is available."
+            exit 1
+        fi
+    else
+        # Unix-like systems (macOS, Linux)
+        if command -v openssl &> /dev/null; then
+            AUTH_SECRET=$(openssl rand -base64 32)
+        else
+            # Fallback to dd method
+            AUTH_SECRET=$(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64)
+        fi
+    fi
+
+    # Verify the key length (base64 encoding of 32 bytes should be 44 characters)
+    if [ ${#AUTH_SECRET} -ne 44 ]; then
+        echo "❌ Failed to generate proper auth secret"
+        exit 1
+    fi
+
+    # Try to update existing empty AUTH_SECRET line, otherwise add new one
+    if [ -f .env ] && grep -q "^AUTH_SECRET=$" .env; then
+        # Update existing empty key using awk (more reliable than sed for special characters)
+        awk -v key="$AUTH_SECRET" '{if ($0 ~ /^AUTH_SECRET=$/) print "AUTH_SECRET='"'"'" key "'"'"'"; else print $0}' .env > .env.tmp && mv .env.tmp .env
+        echo "✅ Updated existing AUTH_SECRET in .env file."
+    elif [ -f .env ]; then
+        # Add new key to existing file
+        echo "AUTH_SECRET='$AUTH_SECRET'" >> .env
+        echo "✅ Added AUTH_SECRET to .env file."
+    else
+        # Create new file with key
+        echo "AUTH_SECRET='$AUTH_SECRET'" > .env
+        echo "✅ Created .env file with AUTH_SECRET."
+    fi
+    echo "✅ Generated and stored auth secret."
+fi
+
 # Generate AES key if not exists
-echo "📋 Checking for encryption key..."
+echo ""
+echo "📋 Checking for ENCRYPTION_KEY..."
 if [ ! -f .env ] || ! grep -q "^ENCRYPTION_KEY=." .env; then
     echo "⏳ Generating AES-256-GCM key..."
     # Generate a cryptographically secure random 32-byte (256-bit) key
@@ -114,8 +168,9 @@ if [ ! -f .env ] || ! grep -q "^ENCRYPTION_KEY=." .env; then
     echo "✅ Generated and stored AES-256-GCM encryption key."
 fi
 
-# Check for required environment variables
-echo "📋 Validating environment variables..."
+# Check for ANTHROPIC_API_KEY
+echo ""
+echo "📋 Checking for ANTHROPIC_API_KEY..."
 if ! grep -q "^ANTHROPIC_API_KEY=." .env; then
     echo "⚠️ ANTHROPIC_API_KEY not found or empty in .env file."
     read -p "Please enter your Anthropic API key: " anthropic_key
@@ -137,7 +192,8 @@ if ! grep -q "^ANTHROPIC_API_KEY=." .env; then
 fi
 
 # Check for NGROK_AUTHTOKEN
-echo "📋 Checking for ngrok authentication token..."
+echo ""
+echo "📋 Checking for NGROK_AUTHTOKEN..."
 if ! grep -q "^NGROK_AUTHTOKEN=." .env; then
     echo "⚠️ NGROK_AUTHTOKEN not found or empty in .env file."
     echo "📖 Get your token from: https://dashboard.ngrok.com/get-started/your-authtoken"
@@ -163,6 +219,7 @@ if ! grep -q "^NGROK_AUTHTOKEN=." .env; then
     fi
 fi
 
+echo ""
 echo "★═══════════════════════════════════════★"
-echo "      🦙 liblab AI Builder Setup Complete 🦙"
+echo "    🦙 liblab AI Setup Complete 🦙"
 echo "★═══════════════════════════════════════★"
