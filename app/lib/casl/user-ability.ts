@@ -5,6 +5,7 @@ import type { PrismaQuery, Subjects } from '@casl/prisma';
 import type { DataSource, Environment, Permission, Website } from '@prisma/client';
 import type { PrismaResources } from './prisma-helpers';
 import { getUserPermissions } from '~/lib/services/permissionService';
+import { logger } from '~/utils/logger';
 
 const ABILITY_CACHE: Record<string, AppAbility> = {};
 
@@ -64,7 +65,7 @@ export function createAbilityForUser(permissions: Permission[]): AppAbility {
 
       // Add other resource types as needed...
       default:
-        console.warn(`Unknown resource type: ${resource}`);
+        logger.warn(`User ability: Unknown resource type '${resource}' for action '${action}'`);
         break;
     }
   });
