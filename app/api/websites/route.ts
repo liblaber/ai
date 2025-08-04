@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   const websites = await prisma.website.findMany({
     where: {
-      userId,
+      createdById: userId,
     },
     orderBy: {
       createdAt: 'desc',
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const website = await prisma.website.create({
       data: {
         chatId,
-        userId,
+        createdById: userId,
         siteId: '',
         siteName: '',
         siteUrl: '',

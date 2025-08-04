@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const website = await prisma.website.findFirst({
       where: {
         chatId,
-        userId,
+        createdById: userId,
       },
     });
 
