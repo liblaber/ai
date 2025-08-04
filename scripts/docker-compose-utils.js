@@ -31,6 +31,7 @@ export async function getDockerComposeCommand() {
     dockerComposeCmd = await detectDockerCompose();
     console.log(`📦 Using Docker Compose command: ${dockerComposeCmd}`);
   }
+
   return dockerComposeCmd;
 }
 
@@ -47,7 +48,7 @@ export async function execDockerCompose(args, options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, allArgs, {
       stdio: 'pipe',
-      ...options
+      ...options,
     });
 
     let stdout = '';
@@ -96,7 +97,7 @@ export async function execDockerComposeInherited(args, options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, allArgs, {
       stdio: 'inherit',
-      ...options
+      ...options,
     });
 
     child.on('close', (code) => {

@@ -32,7 +32,18 @@ async function waitForDatabase() {
 
   while (true) {
     try {
-      await execDockerCompose(['-f', 'docker-compose.db.yml', 'exec', '-T', 'postgres', 'pg_isready', '-U', 'liblab', '-d', 'liblab']);
+      await execDockerCompose([
+        '-f',
+        'docker-compose.db.yml',
+        'exec',
+        '-T',
+        'postgres',
+        'pg_isready',
+        '-U',
+        'liblab',
+        '-d',
+        'liblab',
+      ]);
       console.log('✅ Database is ready!');
       break;
     } catch (error) {
@@ -79,7 +90,8 @@ async function main() {
     await waitForDatabase();
 
     // Update .env file with DATABASE_URL
-    await updateEnvFile();    console.log('🔧 Starting Next.js development server...');
+    await updateEnvFile();
+    console.log('🔧 Starting Next.js development server...');
     console.log('   Database URL: postgresql://liblab:liblab_password@localhost:5432/liblab');
   } catch (error) {
     console.error('❌ Error:', error.message);
