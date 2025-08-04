@@ -21,6 +21,8 @@ model DataSource {
   connectionString String         @map("connection_string")
   createdAt        DateTime       @default(now()) @map("created_at")
   updatedAt        DateTime       @updatedAt @map("updated_at")
+  createdBy        User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdById      String         @map("created_by_id")
   conversations    Conversation[]
   environments     EnvironmentDataSource[]
 
@@ -30,16 +32,18 @@ model DataSource {
 }
 
 model Website {
-  id            String      @id @default(cuid())
-  siteId        String?     @map("site_id")
-  siteName      String?     @map("site_name")
-  siteUrl       String?     @map("site_url")
-  chatId        String      @map("chat_id")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  isPublic      Boolean     @default(false) @map("is_public")
-  environmentId String      @default("cmdnnks1k000507jvgic8fqeb") @map("environment_id")
-  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  id            String        @id @default(cuid())
+  siteId        String?       @map("site_id")
+  siteName      String?       @map("site_name")
+  siteUrl       String?       @map("site_url")
+  chatId        String        @map("chat_id")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  isPublic      Boolean       @default(false) @map("is_public")
+  createdBy     User          @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdById   String        @map("created_by_id")
+  environment   Environment?  @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  environmentId String?       @map("environment_id")
 
   directPermissions Permission[]
 
@@ -154,8 +158,13 @@ model Role {
   @@map("role")
 }
 
+enum DeprecatedRole {
+  ADMIN
+  MEMBER
+}
+
 model User {
-  id             String         @id @default(uuid())
+  id             String          @id @default(uuid())
   name           String
   email          String
   emailVerified  Boolean
@@ -166,8 +175,11 @@ model User {
   accounts       Account[]
   conversations  Conversation[]
   roles          UserRole[]
+  role           DeprecatedRole  @default(MEMBER)
+  dataSources    DataSource[]
+  websites       Website[]
   organizationId String?
-  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   telemetryEnabled Boolean?
 
   isAnonymous Boolean?
