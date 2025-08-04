@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
 
         const newSnapshot = {
           ...snapshot,
-          conversation,
           messageId: saveMessageModels.at(-1)?.id ?? null,
           conversationId: conversation.id,
           createdAt: undefined,

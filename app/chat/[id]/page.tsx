@@ -1,4 +1,3 @@
-'use client';
 import { Background } from '~/components/ui/Background';
 import { Header } from '~/components/header/Header';
 import { Chat } from '~/components/chat/Chat.client';
