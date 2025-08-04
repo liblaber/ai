@@ -1,5 +1,5 @@
 import { type Message } from 'ai';
-import { DATA_SOURCE_ID_REGEX, FIRST_USER_MESSAGE_REGEX, ASK_LIBLAB_REGEX, FILES_REGEX } from '~/utils/constants';
+import { DATA_SOURCE_ID_REGEX, FILES_REGEX, FIRST_USER_MESSAGE_REGEX, FIX_ANNOTATION } from '~/utils/constants';
 import { type FileMap, IGNORE_PATTERNS } from './constants';
 import ignore from 'ignore';
 import type { ContextAnnotation } from '~/types/context';
@@ -9,7 +9,7 @@ export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
   isFirstUserMessage?: boolean;
   dataSourceId?: string;
   content: string;
-  askLiblab?: boolean;
+  isFixMessage: boolean;
 } {
   const textContent = Array.isArray(message.content)
     ? message.content.find((item) => item.type === 'text')?.text || ''
@@ -17,11 +17,11 @@ export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
 
   const isFirstUserMessageMatch = textContent.match(FIRST_USER_MESSAGE_REGEX);
   const dataSourceIdMatch = textContent.match(DATA_SOURCE_ID_REGEX);
-  const askLiblabMatch = textContent.match(ASK_LIBLAB_REGEX);
+
+  const isFixMessage = !!message.annotations?.includes(FIX_ANNOTATION);
 
   const isFirstUserMessage = isFirstUserMessageMatch ? isFirstUserMessageMatch[1] === 'true' : false;
   const dataSourceId = dataSourceIdMatch ? dataSourceIdMatch[1] : undefined;
-  const askLiblab = askLiblabMatch ? askLiblabMatch[1] === 'true' : false;
   const cleanedContent = Array.isArray(message.content)
     ? message.content.map((item) => {
         if (item.type === 'text') {
@@ -30,24 +30,19 @@ export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
             text: item.text
               ?.replace(FIRST_USER_MESSAGE_REGEX, '')
               .replace(DATA_SOURCE_ID_REGEX, '')
-              .replace(ASK_LIBLAB_REGEX, '')
               .replace(FILES_REGEX, ''),
           };
         }
 
         return item; // Preserve image_url and other types as is
       })
-    : textContent
-        .replace(FIRST_USER_MESSAGE_REGEX, '')
-        .replace(DATA_SOURCE_ID_REGEX, '')
-        .replace(ASK_LIBLAB_REGEX, '')
-        .replace(FILES_REGEX, '');
+    : textContent.replace(FIRST_USER_MESSAGE_REGEX, '').replace(DATA_SOURCE_ID_REGEX, '').replace(FILES_REGEX, '');
 
   return {
     content: cleanedContent,
     isFirstUserMessage,
     dataSourceId,
-    askLiblab,
+    isFixMessage,
   };
 }
 

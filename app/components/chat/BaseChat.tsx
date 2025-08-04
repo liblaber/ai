@@ -46,7 +46,7 @@ interface BaseChatProps {
   sendMessage?: (
     event: React.UIEvent,
     messageInput?: string,
-    askLiblab?: boolean,
+    isFixMessage?: boolean,
     pendingUploadedFiles?: File[],
     pendingImageDataList?: string[],
   ) => Promise<void>;
@@ -228,15 +228,19 @@ export const BaseChat = ({
   }, [dataSources]);
 
   useEffect(() => {
-    const handleAutofixAttempt = ({ detail: { error } }: CustomEvent<{ error: ActionAlert }>) => {
+    const handleAutofixAttempt = ({ detail: { errors } }: CustomEvent<{ errors: ActionAlert[] }>) => {
       if (isStreaming || !sendAutofixMessage) {
         return;
       }
 
-      const isPreview = error.type === 'preview';
-      const message = `*Fix this ${isPreview ? 'preview' : 'terminal'} error* \n\`\`\`${isPreview ? 'js' : 'sh'}\n${error.content}\n\`\`\`\n`;
+      let message = `*Fix errors*`;
 
-      console.debug('Autofix attempt:', message);
+      errors.forEach((error, index) => {
+        message += `\n\n**Error ${index + 1}:** ${error.content}`;
+      });
+
+      console.log('Will send', message);
+
       void sendAutofixMessage?.(message);
     };
 

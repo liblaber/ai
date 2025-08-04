@@ -1,5 +1,6 @@
 import type { WebContainer } from '@webcontainer/api';
 import { atom } from 'nanostores';
+import { errorHandler } from '~/lib/error-handler';
 
 // Extend Window interface to include our custom property
 declare global {
@@ -14,14 +15,16 @@ export interface PreviewInfo {
   baseUrl: string;
 }
 
+const ERROR_COLLECTION_PERIOD_MS = 3000;
+
 export class PreviewsStore {
   previews = atom<PreviewInfo[]>([]);
   isLoading = atom<boolean>(false);
   loadingText = atom<string>('Initializing environment...');
-  readyForFixing = atom<boolean>(false);
-  isMakingChanges = atom<boolean>(false);
+  isCollectingErrors = atom<boolean>(false);
   #availablePreviews = new Map<number, PreviewInfo>();
   #webcontainer: Promise<WebContainer>;
+  #errorCollectionTimeout: NodeJS.Timeout | null = null;
 
   constructor(webcontainerPromise: Promise<WebContainer>) {
     this.#webcontainer = webcontainerPromise;
@@ -29,42 +32,40 @@ export class PreviewsStore {
     this.#init();
   }
 
-  finishLoading() {
-    this.isLoading.set(false);
-    this.readyForFixing.set(true);
-    this.isMakingChanges.set(false);
-    this.loadingText.set('Loading...');
+  startErrorCollectionPeriod() {
+    console.debug('[PreviewsStore] Finishing loading, starting error collection period...');
+    this.isCollectingErrors.set(true);
+    this.loadingText.set('Verifying generated app code...');
+
+    if (this.#errorCollectionTimeout) {
+      clearTimeout(this.#errorCollectionTimeout);
+    }
+
+    this.#errorCollectionTimeout = setTimeout(() => {
+      if (!errorHandler.getCollectedErrors().length) {
+        console.log('Setting isLoading to false...');
+        this.isLoading.set(false);
+      }
+
+      this.isCollectingErrors.set(false);
+      this.loadingText.set('Loading...');
+    }, ERROR_COLLECTION_PERIOD_MS);
   }
 
   almostReadyLoading() {
     this.isLoading.set(true);
-    this.readyForFixing.set(true);
     this.loadingText.set('Your app is almost ready! Making final touches...');
-  }
-
-  changesLoading() {
-    this.isLoading.set(true);
-    this.loadingText.set('Loading changes...');
   }
 
   startLoading() {
     this.loadingText.set('Your app is loading...');
     this.isLoading.set(true);
-    this.readyForFixing.set(false);
-    this.isMakingChanges.set(false);
-  }
-
-  makingChanges() {
-    this.loadingText.set('Making changes...');
-    this.isLoading.set(true);
-    this.isMakingChanges.set(true);
+    this.isCollectingErrors.set(false);
   }
 
   fixingIssues() {
     this.isLoading.set(true);
-    this.loadingText.set('Fixing issues... Almost there!');
-    this.readyForFixing.set(false);
-    this.isMakingChanges.set(false);
+    this.loadingText.set('Fixing detected issues... Almost there!');
   }
 
   preparingEnvironment() {

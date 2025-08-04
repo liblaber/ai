@@ -5,6 +5,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
 import { ScreenshotSelector } from './ScreenshotSelector';
 import { PreviewLoader } from '~/components/workbench/PreviewLoader';
+import { logger } from '~/utils/logger';
 
 type ResizeSide = 'left' | 'right' | null;
 
@@ -386,8 +387,10 @@ export const Preview = memo(() => {
                 sandbox="allow-scripts allow-forms allow-popups allow-modals allow-storage-access-by-user-activation allow-same-origin"
                 allow="cross-origin-isolated"
                 onLoad={() => {
+                  logger.debug('onLoad event');
+
                   if (!initialLoadRef.current) {
-                    workbenchStore.previewsStore.finishLoading();
+                    workbenchStore.previewsStore.startErrorCollectionPeriod();
                   }
 
                   initialLoadRef.current = false;

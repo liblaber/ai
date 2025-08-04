@@ -184,43 +184,47 @@ async function chatAction(request: NextRequest) {
             dataStream.writeData(currentProgressAnnotation);
           }
 
-          logger.debug('Creating Implementation Plan...');
-          currentProgressAnnotation = {
-            type: 'progress',
-            label: 'implementation-plan',
-            status: 'in-progress',
-            order: progressCounter++,
-            message: 'Creating implementation plan...',
-          };
-          dataStream.writeData(currentProgressAnnotation);
+          let implementationPlan;
 
-          const dataSource = await conversationService.getConversationDataSource(conversationId);
-          const userId = await requireUserId(request);
-          const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
+          if (!userMessageProperties.isFixMessage) {
+            logger.debug('Creating Implementation Plan...');
+            currentProgressAnnotation = {
+              type: 'progress',
+              label: 'implementation-plan',
+              status: 'in-progress',
+              order: progressCounter++,
+              message: 'Creating implementation plan...',
+            };
+            dataStream.writeData(currentProgressAnnotation);
 
-          const implementationPlan = await createImplementationPlan({
-            isFirstUserMessage: !!userMessageProperties.isFirstUserMessage,
-            summary,
-            userPrompt: userMessage.content,
-            schema: formatDbSchemaForLLM(databaseSchema),
-            onFinish: (response) => {
-              if (response.usage) {
-                logger.debug('createImplementationPlan token usage', JSON.stringify(response.usage));
-                cumulativeUsage.completionTokens += response.usage.completionTokens || 0;
-                cumulativeUsage.promptTokens += response.usage.promptTokens || 0;
-                cumulativeUsage.totalTokens += response.usage.totalTokens || 0;
-              }
-            },
-          });
-          logger.debug('Created Implementation Plan:', implementationPlan);
-          currentProgressAnnotation = {
-            type: 'progress',
-            label: 'implementation-plan',
-            status: 'complete',
-            order: progressCounter++,
-            message: 'Implementation plan created',
-          };
-          dataStream.writeData(currentProgressAnnotation);
+            const dataSource = await conversationService.getConversationDataSource(conversationId);
+            const userId = await requireUserId(request);
+            const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
+
+            implementationPlan = await createImplementationPlan({
+              isFirstUserMessage: !!userMessageProperties.isFirstUserMessage,
+              summary,
+              userPrompt: userMessage.content,
+              schema: formatDbSchemaForLLM(databaseSchema),
+              onFinish: (response) => {
+                if (response.usage) {
+                  logger.debug('createImplementationPlan token usage', JSON.stringify(response.usage));
+                  cumulativeUsage.completionTokens += response.usage.completionTokens || 0;
+                  cumulativeUsage.promptTokens += response.usage.promptTokens || 0;
+                  cumulativeUsage.totalTokens += response.usage.totalTokens || 0;
+                }
+              },
+            });
+            logger.debug('Created Implementation Plan:', implementationPlan);
+            currentProgressAnnotation = {
+              type: 'progress',
+              label: 'implementation-plan',
+              status: 'complete',
+              order: progressCounter++,
+              message: 'Implementation plan created',
+            };
+            dataStream.writeData(currentProgressAnnotation);
+          }
 
           // Stream the text
           const options: StreamingOptions = {
