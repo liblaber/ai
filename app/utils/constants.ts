@@ -1,5 +1,3 @@
-import { LLMManager } from '~/lib/modules/llm/manager';
-
 export const WORK_DIR_NAME = 'project';
 export const WORK_DIR = `/home/${WORK_DIR_NAME}`;
 export const MODIFICATIONS_TAG_NAME = 'liblab_file_modifications';
@@ -15,8 +13,3 @@ export enum MessageRole {
   System = 'system',
   Assistant = 'assistant',
 }
-
-const llmManager = LLMManager.getInstance();
-
-export const DEFAULT_PROVIDER = llmManager.getProvider();
-export const DEFAULT_MODEL = llmManager.defaultModel;

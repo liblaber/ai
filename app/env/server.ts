@@ -11,10 +11,11 @@ export const env = createEnv({
     ENCRYPTION_KEY: z.string().length(44, 'Encryption key must be a 44-character base64-encoded 32-byte key'),
     NGROK_AUTHTOKEN: z.string().optional(),
 
-    DEFAULT_LLM_PROVIDER: z.string().default('Anthropic'),
+    DEFAULT_LLM_PROVIDER: z.enum(['Anthropic', 'OpenRouter']).default('Anthropic'),
     DEFAULT_LLM_MODEL: z.string().default('claude-3-5-sonnet-latest'),
 
-    ANTHROPIC_API_KEY: z.string(),
+    ANTHROPIC_API_KEY: z.string().optional(),
+    OPEN_ROUTER_API_KEY: z.string().optional(),
 
     NETLIFY_AUTH_TOKEN: z.string().optional(),
 
