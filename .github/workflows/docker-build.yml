@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+env:
+  DOCKER_REGISTRY: docker.io
+  DOCKER_IMAGE_NAME: stevankapicic/liblab-ai-app
 
 jobs:
   build:
