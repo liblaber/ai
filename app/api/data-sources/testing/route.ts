@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import PluginManager from '~/lib/plugins/plugin-manager';
 
-export async function GET() {
-  return NextResponse.json({ message: 'Connection testing endpoint is available' });
-}
-
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
