@@ -117,6 +117,7 @@ export const ChatImpl = ({
   const actionAlert = useStore(workbenchStore.alert);
   const { contextOptimizationEnabled } = useSettings();
   const [dataSourceUrl, setDataSourceUrl] = useState<string>('');
+  const [shouldUpdateUrl, setShouldUpdateUrl] = useState(false);
 
   useEffect(() => {
     chatStore.setKey('started', chatStarted);
@@ -149,6 +150,20 @@ export const ChatImpl = ({
       updateUrlOnExit();
     };
   }, []);
+
+  // Update URL when shouldUpdateUrl becomes true (after streaming and async operations complete)
+  useEffect(() => {
+    if (shouldUpdateUrl) {
+      const currentChatId = chatId.get();
+
+      if (currentChatId && window.location.pathname === '/chat') {
+        const newPath = `/chat/${currentChatId}`;
+        window.history.replaceState(null, '', newPath);
+      }
+
+      setShouldUpdateUrl(false);
+    }
+  }, [shouldUpdateUrl]);
 
   const {
     messages,
@@ -227,17 +242,10 @@ export const ChatImpl = ({
             }
           }
         }
+
+        // Set flag to update URL after all async operations are complete
+        setShouldUpdateUrl(true);
       }, 2000);
-
-      // Update URL safely after streaming completes and components are stable
-      setTimeout(() => {
-        const currentChatId = chatId.get();
-
-        if (currentChatId && window.location.pathname === '/chat') {
-          const newPath = `/chat/${currentChatId}`;
-          window.history.replaceState(null, '', newPath);
-        }
-      }, 3000); // Wait 3 seconds after streaming completes to ensure stability
     },
     initialMessages,
     initialInput: Cookies.get(PROMPT_COOKIE_KEY) || '',

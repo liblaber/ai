@@ -186,43 +186,11 @@ export class MongoDBAccessor implements BaseAccessor {
   }
 
   private _parseParameterValue(param: string): any {
-    // Safely parse parameter values
-    if (param === 'null') {
-      return null;
+    try {
+      return JSON.parse(param);
+    } catch {
+      return param;
     }
-
-    if (param === 'undefined') {
-      return undefined;
-    }
-
-    if (param === 'true') {
-      return true;
-    }
-
-    if (param === 'false') {
-      return false;
-    }
-
-    // Try to parse as number
-    if (/^-?\d+(\.\d+)?$/.test(param)) {
-      const num = Number(param);
-
-      if (!isNaN(num)) {
-        return num;
-      }
-    }
-
-    // Try to parse as JSON for objects/arrays
-    if ((param.startsWith('{') && param.endsWith('}')) || (param.startsWith('[') && param.endsWith(']'))) {
-      try {
-        return JSON.parse(param);
-      } catch {
-        // If JSON parsing fails, treat as string
-      }
-    }
-
-    // Return as string (default)
-    return param;
   }
 
   validate(connectionString: string): void {
