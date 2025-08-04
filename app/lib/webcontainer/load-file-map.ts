@@ -1,5 +1,5 @@
 'use client';
-import type { FileMap } from '~/lib/stores/files';
+import { type FileMap } from '~/lib/stores/files';
 import { injectEnvVariable } from '~/utils/envUtils';
 import { webcontainer } from '~/lib/webcontainer/index';
 import { detectProjectCommands } from '~/utils/projectCommands';
@@ -39,14 +39,6 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
         'VITE_API_BASE_URL',
         tunnelForwardingUrl ? tunnelForwardingUrl : undefined,
       );
-    }
-
-    if (fileName === 'package.json') {
-      const projectCommands = detectProjectCommands(value);
-
-      if (projectCommands?.startCommand) {
-        workbenchStore.startCommand.set(projectCommands.startCommand);
-      }
     }
 
     await webContainer.fs.writeFile(fileName, value.content, { encoding: value.isBinary ? undefined : 'utf8' });

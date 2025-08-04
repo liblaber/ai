@@ -6,7 +6,8 @@ export const env = createEnv({
     BASE_URL: z.string().default('http://localhost:3000'),
     LICENSE_KEY: z.string().default('free'),
     STORAGE_TYPE: z.enum(['FILE_SYSTEM', 'DATABASE']).default('FILE_SYSTEM'),
-    STARTER: z.enum(['next', 'remix']).optional(),
+    STARTER: z.enum(['next', 'remix']).default('next'),
+    AUTH_SECRET: z.string().length(44, 'Auth secret must be a 44-character base64-encoded 32-byte key'),
     ENCRYPTION_KEY: z.string().length(44, 'Encryption key must be a 44-character base64-encoded 32-byte key'),
     NGROK_AUTHTOKEN: z.string().optional(),
 
