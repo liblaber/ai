@@ -26,6 +26,17 @@ else
     OS_TYPE="unknown"
 fi
 
+# Ensure all shell scripts have execute permissions
+echo ""
+echo "🔧 Setting execute permissions on shell scripts..."
+if find scripts -name "*.sh" -type f ! -perm +111 -exec chmod +x {} \; 2>/dev/null; then
+    echo "✅ Shell script permissions updated."
+else
+    # Fallback for systems without find -perm support
+    chmod +x scripts/*.sh 2>/dev/null || true
+    echo "✅ Shell script permissions updated (fallback method)."
+fi
+
 # Check for .env file and create if it doesn't exist
 echo ""
 echo "📋 Checking for .env file..."

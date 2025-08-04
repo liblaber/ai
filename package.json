@@ -9,6 +9,7 @@
   "scripts": {
     "quickstart": "pnpm run setup && pnpm run docker:start",
     "setup": "pnpm i && pnpm run prisma:generate && tsx setup.ts",
+    "fix-permissions": "sh scripts/fix-permissions.sh",
     "build": "next build",
     "dev": "node scripts/dev-with-db.js && tsx pre-start.ts && next dev",
     "test": "vitest --run",
