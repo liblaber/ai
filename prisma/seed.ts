@@ -60,6 +60,7 @@ async function seedInitialUser(organizationId: string): Promise<User> {
         name: 'Anonymous',
         emailVerified: false,
         organizationId,
+        role: 'ADMIN',
         isAnonymous: true,
         createdAt: new Date(),
         updatedAt: new Date(),
