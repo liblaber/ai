@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createDataSource, getDataSources } from '~/lib/services/datasourceService';
-import { requireUserAbility, requireUserId } from '~/auth/session';
+import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
-  const userAbility = await requireUserAbility(request);
+  const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.read, PermissionResource.DataSource)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
@@ -16,8 +16,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const userId = await requireUserId(request);
-  const userAbility = await requireUserAbility(request);
+  const { userId, userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.create, PermissionResource.DataSource)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });

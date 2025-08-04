@@ -19,11 +19,11 @@ export async function requireUserId(request: Request) {
 
 export async function requireUserAbility(request: Request) {
   const userId = await requireUserId(request);
-  const ability = await getUserAbility(userId);
+  const userAbility = await getUserAbility(userId);
 
-  if (!ability) {
+  if (!userAbility) {
     throw new Error('User ability not found');
   }
 
-  return ability;
+  return { userId, userAbility };
 }
