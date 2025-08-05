@@ -23,7 +23,6 @@ import { requireUserId } from '~/auth/session';
 import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
 
 const WORK_DIR = '/home/project';
-console.log(`WORK_DIR: ${WORK_DIR}`);
 
 const logger = createScopedLogger('api.chat');
 
