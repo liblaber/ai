@@ -29,8 +29,8 @@ export abstract class BaseProvider implements ProviderInfo {
     const baseUrlKey = this.config.baseUrlKey || defaultBaseUrlKey;
     let baseUrl =
       settingsBaseUrl ||
-      (env.server ? (env.server as unknown as Record<string, string | undefined>)[baseUrlKey] : undefined) ||
-      (env.client ? (env.client as unknown as Record<string, string | undefined>)[baseUrlKey] : undefined) ||
+(env.server ? (env.server as unknown as Record<string, string | undefined>)[baseUrlKey] : undefined) ||
+      this.config.baseUrl;
       this.config.baseUrl;
 
     if (baseUrl && baseUrl.endsWith('/')) {
