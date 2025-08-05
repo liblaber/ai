@@ -47,10 +47,12 @@ export default function SidebarNav() {
     if (e.target instanceof Element) {
       const isMenuButton = e.target.closest('[data-sidebar="menu-button"]');
       const isTriggerButton = e.target.closest('button');
+
       if (isMenuButton || isTriggerButton) {
         return;
       }
     }
+
     toggleSidebar();
   };
 
