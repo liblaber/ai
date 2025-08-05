@@ -13,6 +13,7 @@ export const snapshotService = {
 
     // Only include the fields that are part of the Snapshot model
     const cleanData: Prisma.SnapshotUncheckedCreateInput = {
+      ...(snapshotData.id && { id: snapshotData.id }),
       storageType: snapshotData.storageType,
       storageKey: snapshotData.storageKey,
       conversationId: snapshotData.conversationId,
