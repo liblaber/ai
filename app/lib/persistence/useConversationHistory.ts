@@ -155,3 +155,10 @@ export function useConversationHistory(id?: string) {
     },
   };
 }
+
+export function updateNavigationChat(nextId: string | undefined) {
+  if (nextId && window.location.pathname === '/chat') {
+    const newPath = `/chat/${nextId}`;
+    window.history.replaceState(null, '', newPath);
+  }
+}

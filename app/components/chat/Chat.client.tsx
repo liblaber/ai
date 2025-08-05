@@ -8,7 +8,7 @@ import { useStore } from '@nanostores/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useMessageParser, useShortcuts, useSnapScroll } from '~/lib/hooks';
-import { chatId, description, useConversationHistory } from '~/lib/persistence';
+import { chatId, description, updateNavigationChat, useConversationHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { MessageRole, PROMPT_COOKIE_KEY } from '~/utils/constants';
@@ -132,14 +132,7 @@ export const ChatImpl = ({
 
   // Update URL when component unmounts or page unloads
   useEffect(() => {
-    const updateUrlOnExit = () => {
-      const currentChatId = chatId.get();
-
-      if (currentChatId && window.location.pathname === '/chat') {
-        const newPath = `/chat/${currentChatId}`;
-        window.history.replaceState(null, '', newPath);
-      }
-    };
+    const updateUrlOnExit = () => updateNavigationChat(chatId.get());
 
     // Update URL when page is about to unload (user refreshing/leaving)
     window.addEventListener('beforeunload', updateUrlOnExit);
@@ -154,13 +147,7 @@ export const ChatImpl = ({
   // Update URL when shouldUpdateUrl becomes true (after streaming and async operations complete)
   useEffect(() => {
     if (shouldUpdateUrl) {
-      const currentChatId = chatId.get();
-
-      if (currentChatId && window.location.pathname === '/chat') {
-        const newPath = `/chat/${currentChatId}`;
-        window.history.replaceState(null, '', newPath);
-      }
-
+      updateNavigationChat(chatId.get());
       setShouldUpdateUrl(false);
     }
   }, [shouldUpdateUrl]);
