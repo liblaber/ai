@@ -145,6 +145,12 @@ export class WorkbenchStore {
   }
 
   pushCodeError(error: CodeError) {
+    const isAlreadyDetected = this.codeErrors.get().some((existingError) => (existingError.content = error.content));
+
+    if (isAlreadyDetected) {
+      return;
+    }
+
     this.codeErrors.set([...this.codeErrors.get(), error]);
   }
 
@@ -159,7 +165,7 @@ export class WorkbenchStore {
     }
 
     return `*Fix detected errors*:\n\n${errors
-      .map((error, index) => `**Error ${index + 1}:** ${error.content}`)
+      .map((error) => `<pre><code>${error.content}</code></pre>`)
       .join('\n\n')}`;
   }
 

@@ -10,7 +10,7 @@ type Props = {
 export function FixIssuesDialog({ onFixIssue }: Props) {
   const codeErrors = useStore(workbenchStore.codeErrors);
 
-  const description = codeErrors.map(({ description }) => description).join('\n');
+  const errorContent = codeErrors.map(({ content }) => content).join('\n\n');
 
   const [showErrorDetails, setShowErrorDetails] = useState(false);
 
@@ -54,7 +54,7 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
             </p>
           </motion.div>
 
-          {description && (
+          {errorContent && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mb-6">
               <button
                 onClick={() => setShowErrorDetails(!showErrorDetails)}
@@ -66,16 +66,16 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
           )}
 
           <AnimatePresence>
-            {showErrorDetails && description && (
+            {showErrorDetails && errorContent && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
-                className="text-xs text-liblab-elements-textSecondary p-3 bg-liblab-elements-bg-depth-3 rounded mb-6 text-left overflow-hidden"
+                className="text-xs text-liblab-elements-textSecondary p-3 bg-liblab-elements-bg-depth-3 rounded mb-6 max-h-[400px] text-left overflow-y-scroll"
               >
                 <div className="font-medium mb-1">Error Details:</div>
-                <div className="whitespace-pre-wrap">{description}</div>
+                <div className="whitespace-pre-wrap">{errorContent}</div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -87,6 +87,12 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
             transition={{ delay: 0.4 }}
           >
             <button
+              onClick={() => workbenchStore.clearCodeErrors()}
+              className="flex-1 px-4 py-2 rounded-md text-sm font-medium bg-liblab-elements-button-secondary-background hover:bg-liblab-elements-button-secondary-backgroundHover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-liblab-elements-button-secondary-background text-liblab-elements-button-secondary-text"
+            >
+              Dismiss
+            </button>
+            <button
               onClick={() => {
                 onFixIssue(workbenchStore.getFixErrorsMessageText());
                 workbenchStore.clearCodeErrors();
@@ -95,12 +101,6 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
             >
               <div className="i-ph:chat-circle-duotone"></div>
               Fix Issue
-            </button>
-            <button
-              onClick={() => workbenchStore.clearCodeErrors()}
-              className="flex-1 px-4 py-2 rounded-md text-sm font-medium bg-liblab-elements-button-secondary-background hover:bg-liblab-elements-button-secondary-backgroundHover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-liblab-elements-button-secondary-background text-liblab-elements-button-secondary-text"
-            >
-              Dismiss
             </button>
           </motion.div>
         </div>
