@@ -377,7 +377,7 @@ Before starting, ensure you have all the following installed and configured:
 
 ```bash
 # Install Homebrew if you don't have it
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.ts)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Install Node.js
 brew install node
