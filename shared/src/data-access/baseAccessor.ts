@@ -73,6 +73,21 @@ export interface BaseAccessor {
    */
   formatQuery: (query: string) => string;
 
+  /**
+   * Generates the appropriate system prompt for query generation based on database type
+   * @param databaseType - The database type identifier
+   * @param dbSchema - The formatted database schema
+   * @param existingQueries - Optional array of existing queries
+   * @param userPrompt - The user's query request
+   * @returns The system prompt for this database type
+   */
+  generateSystemPrompt: (
+    databaseType: string,
+    dbSchema: string,
+    existingQueries: string[] | undefined,
+    userPrompt: string,
+  ) => string;
+
   /** A human-readable label identifying this accessor type */
   readonly label: string;
 }

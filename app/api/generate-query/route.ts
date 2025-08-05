@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
       type = detectedType;
 
-      console.log(
+      logger.warn(
         `⚠️  WARNING: No dataSourceId provided. Using sample schema for ${type}. Create a data source to query real data.`,
       );
 

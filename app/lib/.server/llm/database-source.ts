@@ -74,11 +74,15 @@ export async function generateSqlQueries({
   existingQueries,
 }: GenerateSqlQueriesOptions): Promise<SqlQueryOutput | undefined> {
   const dbSchema = formatDbSchemaForLLM(schema);
-  const isMongoDb = databaseType === 'mongodb';
 
-  const systemPrompt = isMongoDb
-    ? generateMongoDbSystemPrompt(databaseType, dbSchema, existingQueries, userPrompt)
-    : generateSqlSystemPrompt(databaseType, dbSchema, existingQueries, userPrompt);
+  // Get the appropriate accessor for this database type
+  const accessor = DataAccessor.getByDatabaseType(databaseType);
+
+  if (!accessor) {
+    throw new Error(`No accessor found for database type: ${databaseType}`);
+  }
+
+  const systemPrompt = accessor.generateSystemPrompt(databaseType, dbSchema, existingQueries, userPrompt);
 
   try {
     logger.info(`Generating SQL for prompt: ${userPrompt}, using model: ${llm.instance.modelId}`);
@@ -153,158 +157,6 @@ export function formatDbSchemaForLLM(schema: Table[]): string {
   }
 
   return result;
-}
-
-function generateSqlSystemPrompt(
-  databaseType: string,
-  dbSchema: string,
-  existingQueries: string[] | undefined,
-  userPrompt: string,
-): string {
-  return `You are a SQL expert tasked with generating SQL queries based on a given database schema and user requirements.
-Your goal is to create accurate, optimized queries that address the user's request while adhering to specific guidelines and output format.
-
-You will be working with the following database type:
-<databaseType>
-${databaseType}
-</databaseType>
-
-Here is the database schema you should use:
-<dbSchema>
-${dbSchema}
-</dbSchema>
-
-${existingQueries ? `Here are the existing SQL queries used by the app the user is building. Use them as context if they need to be updated to fulfill the user's request: <existing_sql_queries>${existingQueries}</existing_sql_queries>` : ''}
-
-To generate the SQL queries, follow these steps:
-1. Carefully analyze the user's request and the provided database schema.
-2. Create one or more SQL queries that accurately address the user's requirements.
-3. Ensure the queries are compatible with the specified database type.
-4. Prefer simple SQL syntax without relying heavily on database-specific functions.
-5. Do not use any DDL (Data Definition Language) statements such as CREATE, ALTER, or DROP. Only DML (Data Manipulation Language) queries like SELECT, INSERT, UPDATE, and DELETE are allowed.
-6. Use appropriate table joins if necessary.
-7. Optimize the queries for performance.
-8. Avoid using any tables or columns not present in the schema.
-9. If needed, parametrize the query using positional placeholders like ${DataAccessor.getByDatabaseType(databaseType)?.preparedStatementPlaceholderExample}.
-10. Use the exact format and casing for explicit values in the query (e.g., use "SUPER_ADMIN" if values are {ADMIN, MEMBER, SUPER_ADMIN}).
-11. Provide a brief explanation for each query.
-12. Specify the response schema for each query, including selected column types and any explicit values, if present.
-
-Format your response as a JSON array containing objects with the following structure:
-{
-  "query": "Your SQL query here",
-  "explanation": "A brief explanation of what the query does",
-  "responseSchema": "column_name1 (data_type), column_name2 (data_type), ..."
-}
-
-Here's an example of a valid response:
-[
-  {
-    "query": "SELECT u.name, u.email, u.role FROM users u WHERE u.role = 'ADMIN'",
-    "explanation": "Retrieves names and email addresses of all admin users",
-    "responseSchema": "name (text), email (text), role (text, {ADMIN,MEMBER,SUPER_ADMIN})"
-  },
-  {
-    "query": "SELECT COUNT(*) as total_users FROM users",
-    "explanation": "Counts the total number of users in the system",
-    "responseSchema": "total_users (bigint)"
-  },
-  {
-    "query": "SELECT b.build_number, b.start_time, b.end_time, b.status FROM builds b WHERE b.status IN ($1) AND b.api_id = $2",
-    "explanation": "Retrieves all the builds for specific statuses and API",
-    "responseSchema": "build_number (numeric), start_time (timestamp), end_time (timestamp), status (text, {SUCCESS,IN_PROGRESS,FAILURE})"
-  }
-]
-
-IMPORTANT: Your output should consist ONLY of the JSON array containing the query objects. Do not include any additional text or explanations outside of this JSON structure.
-IMPORTANT: Do not add additional formatting or characters to the query itself like \n or \t, just output plain text SQL query.
-
-Now, generate SQL queries based on the following user request:
-<userRequest>
-${userPrompt}
-</userRequest>`;
-}
-
-function generateMongoDbSystemPrompt(
-  databaseType: string,
-  dbSchema: string,
-  existingQueries: string[] | undefined,
-  userPrompt: string,
-): string {
-  return `You are a MongoDB expert tasked with generating MongoDB queries based on a given database schema and user requirements.
-Your goal is to create accurate, optimized queries that address the user's request while adhering to specific guidelines and output format.
-
-You will be working with the following database type:
-<databaseType>
-${databaseType}
-</databaseType>
-
-Here is the database schema you should use (collections and their field structure):
-<dbSchema>
-${dbSchema}
-</dbSchema>
-
-${existingQueries ? `Here are the existing MongoDB queries used by the app the user is building. Use them as context if they need to be updated to fulfill the user's request: <existing_mongodb_queries>${existingQueries}</existing_mongodb_queries>` : ''}
-
-To generate the MongoDB queries, follow these steps:
-1. Carefully analyze the user's request and the provided database schema.
-2. Create one or more MongoDB queries that accurately address the user's requirements.
-3. Structure queries as JSON objects with the following format:
-   {
-     "collection": "collection_name",
-     "operation": "find" | "aggregate",
-     "filter": {...}, // for find operations
-     "options": {...}, // for find operations (limit, sort, etc.)
-     "pipeline": [...] // for aggregate operations
-   }
-4. Use MongoDB query operators like $match, $group, $sort, $limit, $project, etc.
-5. For array fields (like amenities), use appropriate operators:
-   - Use exact string match: {"amenities": "Pets allowed"}
-   - Use $in for multiple values: {"amenities": {"$in": ["Pets allowed", "WiFi"]}}
-   - Use $regex for partial matches: {"amenities": {"$regex": "pets", "$options": "i"}}
-6. Do not use any administrative operations like drop, createUser, or eval.
-7. Use appropriate aggregation pipelines for complex queries.
-8. Optimize the queries for performance.
-9. Avoid using any collections or fields not present in the schema.
-10. If needed, parametrize the query using positional placeholders like $1, $2, etc.
-11. Use exact field names and values as shown in the schema.
-12. For queries about "having" or "containing" specific values in arrays, use exact string matching.
-13. Provide a brief explanation for each query.
-14. Specify the response schema for each query, including selected field types.
-
-Format your response as a JSON array containing objects with the following structure:
-{
-  "query": "Your MongoDB query as JSON string here",
-  "explanation": "A brief explanation of what the query does",
-  "responseSchema": "field_name1 (data_type), field_name2 (data_type), ..."
-}
-
-Here's an example of a valid response:
-[
-  {
-    "query": "{\"collection\": \"airbnb\", \"operation\": \"find\", \"filter\": {\"amenities\": \"Pets allowed\"}, \"options\": {}}",
-    "explanation": "Finds all listings that allow pets by searching the amenities array",
-    "responseSchema": "_id (string), name (string), amenities (array), room_type (string)"
-  },
-  {
-    "query": "{\"collection\": \"airbnb\", \"operation\": \"find\", \"filter\": {\"room_type\": \"Entire home/apt\"}, \"options\": {}}",
-    "explanation": "Retrieves all entire apartment listings",
-    "responseSchema": "_id (string), name (string), room_type (string), price (object)"
-  },
-  {
-    "query": "{\"collection\": \"airbnb\", \"operation\": \"aggregate\", \"pipeline\": [{\"$group\": {\"_id\": \"$room_type\", \"count\": {\"$sum\": 1}}}]}",
-    "explanation": "Groups listings by room type and counts each type",
-    "responseSchema": "_id (string), count (number)"
-  }
-]
-
-IMPORTANT: Your output should consist ONLY of the JSON array containing the query objects. Do not include any additional text or explanations outside of this JSON structure.
-IMPORTANT: The query field should contain a properly formatted JSON string representing the MongoDB query object. Use standard JSON escaping (not double-escaped).
-
-Now, generate MongoDB queries based on the following user request:
-<userRequest>
-${userPrompt}
-</userRequest>`;
 }
 
 export async function detectDatabaseTypeFromPrompt(

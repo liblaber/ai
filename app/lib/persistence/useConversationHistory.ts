@@ -155,11 +155,3 @@ export function useConversationHistory(id?: string) {
     },
   };
 }
-
-export function navigateChat(nextId: string) {
-  const newPath = `/chat/${nextId}`;
-
-  if (window.location.pathname !== newPath) {
-    window.history.replaceState(null, '', newPath);
-  }
-}

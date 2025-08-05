@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
-import PluginManager from '~/lib/plugins/plugin-manager';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,9 +11,6 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Initialize the plugin manager if not already initialized
-      await PluginManager.getInstance().initialize();
-
       // Get the appropriate accessor for the database URL
       const accessor = DataSourcePluginManager.getAccessor(databaseUrl);
 

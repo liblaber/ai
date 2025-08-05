@@ -39,30 +39,22 @@ export class MongoDBAccessor implements BaseAccessor {
       throw new Error('Database connection not initialized. Please call initialize() first.');
     }
 
+    let parsedQuery: any;
+
     try {
       // Parse the query which should be a MongoDB aggregation pipeline or find query
-      // Handle both regular JSON and escaped JSON strings from LLM
-      let parsedQuery: any;
+      parsedQuery = JSON.parse(query);
+    } catch (parseError) {
+      console.error('Failed to parse MongoDB query:', {
+        original: query,
+        error: parseError,
+      });
+      throw new Error(
+        `Invalid JSON format for MongoDB query: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`,
+      );
+    }
 
-      try {
-        parsedQuery = JSON.parse(query);
-      } catch (parseError) {
-        // Try to handle escaped JSON strings from LLM generation
-        try {
-          const cleanedQuery = query.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-          parsedQuery = JSON.parse(cleanedQuery);
-        } catch (secondParseError) {
-          console.error('Failed to parse MongoDB query:', {
-            original: query,
-            firstError: parseError,
-            secondError: secondParseError,
-          });
-          throw new Error(
-            `Invalid JSON format for MongoDB query: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`,
-          );
-        }
-      }
-
+    try {
       console.log('MongoDB: Executing query:', JSON.stringify(parsedQuery, null, 2));
 
       if (!parsedQuery.collection) {
@@ -210,37 +202,19 @@ export class MongoDBAccessor implements BaseAccessor {
       throw new Error('No MongoDB query provided. Please provide a valid MongoDB query to execute.');
     }
 
+    let parsedQuery: any;
+
     try {
-      // Try to parse the query, handling both regular JSON and escaped JSON strings
-      let parsedQuery: any;
+      // Try direct JSON parsing first
+      parsedQuery = JSON.parse(query);
+    } catch (parseError) {
+      console.error('MongoDB JSON parsing error:', parseError);
+      throw new Error(
+        `Invalid JSON format for MongoDB query: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+      );
+    }
 
-      try {
-        parsedQuery = JSON.parse(query);
-      } catch (firstParseError) {
-        // If first parse fails, it might be an escaped JSON string
-        // Try to parse it as a string first, then parse the result
-        try {
-          const unescapedQuery = JSON.parse(`"${query.replace(/"/g, '\\"')}"`).replace(/\\"/g, '"');
-          parsedQuery = JSON.parse(unescapedQuery);
-        } catch (secondParseError) {
-          // If both attempts fail, try treating it as an already-unescaped string
-          try {
-            const cleanedQuery = query.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-            parsedQuery = JSON.parse(cleanedQuery);
-          } catch (thirdParseError) {
-            console.error('MongoDB query parsing attempts:', {
-              original: query,
-              firstError: firstParseError instanceof Error ? firstParseError.message : String(firstParseError),
-              secondError: secondParseError instanceof Error ? secondParseError.message : String(secondParseError),
-              thirdError: thirdParseError instanceof Error ? thirdParseError.message : String(thirdParseError),
-            });
-            throw new Error(
-              `Invalid JSON format for MongoDB query: ${firstParseError instanceof Error ? firstParseError.message : String(firstParseError)}`,
-            );
-          }
-        }
-      }
-
+    try {
       // Validate that we have a proper MongoDB query structure
       if (!parsedQuery || typeof parsedQuery !== 'object') {
         throw new Error('MongoDB query must be a valid JSON object');
@@ -440,6 +414,88 @@ export class MongoDBAccessor implements BaseAccessor {
       // If it's not valid JSON, return as-is
       return query;
     }
+  }
+
+  generateSystemPrompt(
+    databaseType: string,
+    dbSchema: string,
+    existingQueries: string[] | undefined,
+    userPrompt: string,
+  ): string {
+    return `You are a MongoDB expert tasked with generating MongoDB queries based on a given database schema and user requirements.
+Your goal is to create accurate, optimized queries that address the user's request while adhering to specific guidelines and output format.
+
+You will be working with the following database type:
+<databaseType>
+${databaseType}
+</databaseType>
+
+Here is the database schema you should use (collections and their field structure):
+<dbSchema>
+${dbSchema}
+</dbSchema>
+
+${existingQueries ? `Here are the existing MongoDB queries used by the app the user is building. Use them as context if they need to be updated to fulfill the user's request: <existing_mongodb_queries>${existingQueries}</existing_mongodb_queries>` : ''}
+
+To generate the MongoDB queries, follow these steps:
+1. Carefully analyze the user's request and the provided database schema.
+2. Create one or more MongoDB queries that accurately address the user's requirements.
+3. Structure queries as JSON objects with the following format:
+   {
+     "collection": "collection_name",
+     "operation": "find" | "aggregate",
+     "filter": {...}, // for find operations
+     "options": {...}, // for find operations (limit, sort, etc.)
+     "pipeline": [...] // for aggregate operations
+   }
+4. Use MongoDB query operators like $match, $group, $sort, $limit, $project, etc.
+5. For array fields (like amenities), use appropriate operators:
+   - Use exact string match: {"amenities": "Pets allowed"}
+   - Use $in for multiple values: {"amenities": {"$in": ["Pets allowed", "WiFi"]}}
+   - Use $regex for partial matches: {"amenities": {"$regex": "pets", "$options": "i"}}
+6. Do not use any administrative operations like drop, createUser, or eval.
+7. Use appropriate aggregation pipelines for complex queries.
+8. Optimize the queries for performance.
+9. Avoid using any collections or fields not present in the schema.
+10. If needed, parametrize the query using positional placeholders like $1, $2, etc.
+11. Use exact field names and values as shown in the schema.
+12. For queries about "having" or "containing" specific values in arrays, use exact string matching.
+13. Provide a brief explanation for each query.
+14. Specify the response schema for each query, including selected field types.
+
+Format your response as a JSON array containing objects with the following structure:
+{
+  "query": "Your MongoDB query as JSON string here",
+  "explanation": "A brief explanation of what the query does",
+  "responseSchema": "field_name1 (data_type), field_name2 (data_type), ..."
+}
+
+Here's an example of a valid response:
+[
+  {
+    "query": "{\"collection\": \"airbnb\", \"operation\": \"find\", \"filter\": {\"amenities\": \"Pets allowed\"}, \"options\": {}}",
+    "explanation": "Finds all listings that allow pets by searching the amenities array",
+    "responseSchema": "_id (string), name (string), amenities (array), room_type (string)"
+  },
+  {
+    "query": "{\"collection\": \"airbnb\", \"operation\": \"find\", \"filter\": {\"room_type\": \"Entire home/apt\"}, \"options\": {}}",
+    "explanation": "Retrieves all entire apartment listings",
+    "responseSchema": "_id (string), name (string), room_type (string), price (object)"
+  },
+  {
+    "query": "{\"collection\": \"airbnb\", \"operation\": \"aggregate\", \"pipeline\": [{\"$group\": {\"_id\": \"$room_type\", \"count\": {\"$sum\": 1}}}]}",
+    "explanation": "Groups listings by room type and counts each type",
+    "responseSchema": "_id (string), count (number)"
+  }
+]
+
+IMPORTANT: Your output should consist ONLY of the JSON array containing the query objects. Do not include any additional text or explanations outside of this JSON structure.
+IMPORTANT: The query field should contain a properly formatted JSON string representing the MongoDB query object. Use standard JSON escaping (not double-escaped).
+
+Now, generate MongoDB queries based on the following user request:
+<userRequest>
+${userPrompt}
+</userRequest>`;
   }
 
   private _safeStringify(obj: any, maxDepth = 3): string {

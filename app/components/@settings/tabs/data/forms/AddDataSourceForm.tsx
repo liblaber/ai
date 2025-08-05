@@ -2,6 +2,7 @@ import { classNames } from '~/utils/classNames';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
+import { z } from 'zod';
 import { BaseSelect } from '~/components/ui/Select';
 import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/database/SelectDatabaseTypeOptions';
 import {
@@ -19,6 +20,11 @@ interface DataSourceResponse {
     id: string;
   };
 }
+
+const testConnectionResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
 
 interface AddDataSourceFormProps {
   isSubmitting: boolean;
@@ -60,10 +66,11 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
         let data: TestConnectionResponse;
 
         try {
-          data = JSON.parse(responseText) as TestConnectionResponse;
+          const parsedResponse = JSON.parse(responseText);
+          data = testConnectionResponseSchema.parse(parsedResponse);
         } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+          console.error('Response validation error:', parseError);
+          throw new Error(`Invalid response format: ${responseText.substring(0, 200)}...`);
         }
         setTestResult(data);
 
