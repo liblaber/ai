@@ -35,6 +35,8 @@ services:
       # Exclude node_modules and .next to use container's version
       - /app/node_modules
       - /app/.next
+    env_file:
+      - '.env'
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://liblab:liblab_password@postgres:5432/liblab
