@@ -76,6 +76,10 @@ export class ErrorHandler {
       logger.debug('Cooldown, setting alert....');
       workbenchStore.setAlert(currentError);
 
+      if (workbenchStore.previewsStore.isLoading.get()) {
+        workbenchStore.previewsStore.isLoading.set(false);
+      }
+
       return;
     }
 

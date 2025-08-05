@@ -4,7 +4,7 @@ import { type Messages, type StreamingOptions, streamText } from '~/lib/.server/
 import { createScopedLogger } from '~/utils/logger';
 import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
 import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
-import { createSummary } from '~/lib/.server/llm/create-summary';
+import { getChatSummary } from '~/lib/.server/llm/get-chat-summary';
 import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
 import { messageService } from '~/lib/services/messageService';
 import { MESSAGE_ROLE } from '~/types/database';
@@ -97,12 +97,12 @@ async function chatAction(request: NextRequest) {
             };
             dataStream.writeData(currentProgressAnnotation);
 
-            // Create a summary of the chat
-            console.log(`Messages count: ${messages.length}`);
+            logger.debug(`Messages count: ${messages.length}`);
 
-            summary = await createSummary({
+            summary = await getChatSummary({
               messages: [...messages],
               contextOptimization,
+              isFixMessage: userMessageProperties.isFixMessage,
               onFinish(resp) {
                 if (resp.usage) {
                   logger.debug('createSummary token usage', JSON.stringify(resp.usage));
@@ -275,7 +275,6 @@ async function chatAction(request: NextRequest) {
 
                 logger.debug('Prompt saved');
 
-                // Track telemetry event after successful message save
                 const userId = await requireUserId(request);
                 const user = await userService.getUser(userId);
                 await trackChatPrompt(conversationId, currentModel, user, userMessageProperties.content);

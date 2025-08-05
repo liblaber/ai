@@ -35,7 +35,6 @@ export class PreviewsStore {
   startErrorCollectionPeriod() {
     console.debug('[PreviewsStore] Finishing loading, starting error collection period...');
     this.isCollectingErrors.set(true);
-    this.loadingText.set('Verifying generated app code...');
 
     if (this.#errorCollectionTimeout) {
       clearTimeout(this.#errorCollectionTimeout);

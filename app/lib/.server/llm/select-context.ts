@@ -193,8 +193,6 @@ export async function selectContext(props: {
   }
 
   return filteredFiles;
-
-  // generateText({
 }
 
 export function getFilePaths(files: FileMap) {
