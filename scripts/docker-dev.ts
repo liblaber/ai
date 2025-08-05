@@ -38,13 +38,6 @@ try {
   devSpinner.stop(`❌ Failed to start Docker environment: ${errorMessage}`);
   process.exit(1);
 }
-devSpinner.message('🔨 Building and starting AI app');
-
-await dockerCompose.upAll({
-  config: 'docker-compose.dev.yml',
-  cwd: process.cwd(),
-  commandOptions: ['--build'],
-});
 
 devSpinner.stop('✅ Development environment started');
 
