@@ -72,18 +72,19 @@ export class ErrorHandler {
       return;
     }
 
-    if (this.#isAutofixCooldownActive(now)) {
-      logger.debug('Cooldown, setting alert....');
-      workbenchStore.setAlert(currentError);
-
-      if (workbenchStore.previewsStore.isLoading.get()) {
-        workbenchStore.previewsStore.isLoading.set(false);
-      }
-
-      return;
+    if (this.#shouldAutofix(now)) {
+      this.#sendAutofixEvent([currentError], now);
     }
 
-    this.#sendAutofixEvent([currentError], now);
+    logger.debug('Skipping autofix, setting issue alert...');
+    workbenchStore.setAlert(currentError);
+
+    if (workbenchStore.previewsStore.isLoading.get()) {
+      workbenchStore.previewsStore.isLoading.set(false);
+      workbenchStore.previewsStore.isFixingIssues.set(false);
+    }
+
+    return;
   }
 
   #collectError(error: ActionAlert) {
@@ -155,16 +156,21 @@ export class ErrorHandler {
       return;
     }
 
-    if (this.#isAutofixCooldownActive(now)) {
-      logger.debug('Cooldown, setting alert for collected errors....');
-
-      const mostRecentError = collectedErrors[collectedErrors.length - 1];
-      workbenchStore.setAlert(mostRecentError);
-
-      return;
+    if (this.#shouldAutofix(now)) {
+      this.#sendAutofixEvent(collectedErrors, now);
     }
 
-    this.#sendAutofixEvent(collectedErrors, now);
+    logger.debug('Skipping autofix, setting issue alert...');
+
+    const mostRecentError = collectedErrors[collectedErrors.length - 1];
+    workbenchStore.setAlert(mostRecentError);
+
+    if (workbenchStore.previewsStore.isLoading.get()) {
+      workbenchStore.previewsStore.isLoading.set(false);
+      workbenchStore.previewsStore.isFixingIssues.set(false);
+    }
+
+    return;
   }
 
   #sendAutofixEvent(errors: ActionAlert[], timestamp: number) {
@@ -190,9 +196,10 @@ export class ErrorHandler {
     return state.lastAutofixAttempt && now - state.lastAutofixAttempt < this.#AUTOFIX_ERROR_DEDUPE_TIMEOUT_MS;
   }
 
-  #isAutofixCooldownActive(now: number) {
+  #shouldAutofix(now: number) {
     const state = this.#state.get();
-    return state.lastAutofixAttempt && now - state.lastAutofixAttempt < this.#AUTOFIX_COOLDOWN_MS;
+
+    return !state.lastAutofixAttempt || now - state.lastAutofixAttempt >= this.#AUTOFIX_COOLDOWN_MS;
   }
 }
 

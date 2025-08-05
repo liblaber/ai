@@ -13,14 +13,13 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 
 import type { ActionAlert } from '~/types/actions';
-import ChatAlert from './ChatAlert';
 import ProgressCompilation from './ProgressCompilation';
 import type { ProgressAnnotation } from '~/types/context';
 import type { ActionRunner } from '~/lib/runtime/action-runner';
 import { ChatTextarea } from './ChatTextarea';
 import { AUTOFIX_ATTEMPT_EVENT } from '~/lib/error-handler';
 import { useSession } from '~/auth/auth-client';
-import { workbenchStore } from '~/lib/stores/workbench';
+import type { SendMessageFn } from './Chat.client';
 
 export interface PendingPrompt {
   input: string;
@@ -43,13 +42,7 @@ interface BaseChatProps {
   description?: string;
   input?: string;
   handleStop?: () => void;
-  sendMessage?: (
-    event: React.UIEvent,
-    messageInput?: string,
-    isFixMessage?: boolean,
-    pendingUploadedFiles?: File[],
-    pendingImageDataList?: string[],
-  ) => Promise<void>;
+  sendMessage?: SendMessageFn;
   sendAutofixMessage?: (message: string) => Promise<void>;
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   exportChat?: () => void;
@@ -57,8 +50,6 @@ interface BaseChatProps {
   setUploadedFiles?: (files: File[]) => void;
   imageDataList?: string[];
   setImageDataList?: (dataList: string[]) => void;
-  actionAlert?: ActionAlert;
-  clearAlert?: () => void;
   data?: JSONValue[] | undefined;
   error?: Error;
   actionRunner?: ActionRunner;
@@ -85,8 +76,6 @@ export const BaseChat = ({
   imageDataList = [],
   setImageDataList,
   messages,
-  actionAlert,
-  clearAlert,
   data,
   actionRunner,
   onSyncFiles,
@@ -289,19 +278,6 @@ export const BaseChat = ({
                 'max-w-homepage-textarea': !chatStarted,
               })}
             >
-              <div className="bg-liblab-elements-bg-depth-2">
-                {actionAlert && (
-                  <ChatAlert
-                    alert={actionAlert}
-                    clearAlert={() => clearAlert?.()}
-                    postMessage={async (message) => {
-                      workbenchStore.previewsStore.fixingIssues();
-                      await sendMessage?.({} as any, message, true);
-                      clearAlert?.();
-                    }}
-                  />
-                )}
-              </div>
               {progressAnnotations && <ProgressCompilation data={progressAnnotations} />}
               {chatStarted && (
                 <ChatTextarea
@@ -383,6 +359,7 @@ export const BaseChat = ({
                 chatStarted={chatStarted}
                 isStreaming={isStreaming}
                 onSyncFiles={onSyncFiles}
+                sendMessage={sendMessage}
               />
             </WorkbenchProvider>
           )}

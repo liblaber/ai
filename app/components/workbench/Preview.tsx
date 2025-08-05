@@ -6,6 +6,8 @@ import { PortDropdown } from './PortDropdown';
 import { ScreenshotSelector } from './ScreenshotSelector';
 import { PreviewLoader } from '~/components/workbench/PreviewLoader';
 import { logger } from '~/utils/logger';
+import { FixIssuesDialog } from './FixIssuesDialog';
+import type { SendMessageFn } from '~/components/chat/Chat.client';
 
 type ResizeSide = 'left' | 'right' | null;
 
@@ -23,7 +25,11 @@ const WINDOW_SIZES: WindowSize[] = [
   { name: 'Desktop', width: 1920, height: 1080, icon: 'i-ph:monitor' },
 ];
 
-export const Preview = memo(() => {
+type Props = {
+  sendMessage?: SendMessageFn;
+};
+
+export const Preview = memo(({ sendMessage }: Props) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -61,6 +67,14 @@ export const Preview = memo(() => {
 
   const [isWindowSizeDropdownOpen, setIsWindowSizeDropdownOpen] = useState(false);
   const [selectedWindowSize, setSelectedWindowSize] = useState<WindowSize>(WINDOW_SIZES[0]);
+
+  const actionAlert = useStore(workbenchStore.alert);
+
+  const postMessage = async (message: string) => {
+    workbenchStore.previewsStore.fixingIssues();
+    await sendMessage?.({} as any, message, true);
+    workbenchStore.clearAlert();
+  };
 
   useEffect(() => {
     workbenchStore.previewsStore.loadingText.subscribe((newLoadingText) => {
@@ -262,6 +276,14 @@ export const Preview = memo(() => {
     <div ref={containerRef} className={`w-full h-full flex flex-col relative`}>
       {isPortDropdownOpen && (
         <div className="z-iframe-overlay w-full h-full absolute" onClick={() => setIsPortDropdownOpen(false)} />
+      )}
+      {/* FixIssueDialog on top of iframe if not loading and alert is set */}
+      {!isLoading && actionAlert && (
+        <FixIssuesDialog
+          alert={actionAlert}
+          clearAlert={workbenchStore.clearAlert.bind(workbenchStore)}
+          postMessage={postMessage}
+        />
       )}
       <div className="bg-liblab-elements-bg-depth-2 p-2 flex items-center gap-2">
         <div className="flex items-center gap-2">

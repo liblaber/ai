@@ -15,13 +15,14 @@ export interface PreviewInfo {
   baseUrl: string;
 }
 
-const ERROR_COLLECTION_PERIOD_MS = 3000;
+const ERROR_COLLECTION_PERIOD_MS = 2000;
 
 export class PreviewsStore {
   previews = atom<PreviewInfo[]>([]);
   isLoading = atom<boolean>(false);
   loadingText = atom<string>('Initializing environment...');
   isCollectingErrors = atom<boolean>(false);
+  isFixingIssues = atom<boolean>(false);
   #availablePreviews = new Map<number, PreviewInfo>();
   #webcontainer: Promise<WebContainer>;
   #errorCollectionTimeout: NodeJS.Timeout | null = null;
@@ -35,6 +36,7 @@ export class PreviewsStore {
   startErrorCollectionPeriod() {
     console.debug('[PreviewsStore] Finishing loading, starting error collection period...');
     this.isCollectingErrors.set(true);
+    this.isFixingIssues.set(false);
 
     if (this.#errorCollectionTimeout) {
       clearTimeout(this.#errorCollectionTimeout);
@@ -64,6 +66,7 @@ export class PreviewsStore {
 
   fixingIssues() {
     this.isLoading.set(true);
+    this.isFixingIssues.set(true);
     this.loadingText.set('Fixing detected issues... Almost there!');
   }
 

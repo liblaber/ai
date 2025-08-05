@@ -5,7 +5,7 @@
  * Preventing TS checks with files presented in the video for a better presentation.
  */
 import { useStore } from '@nanostores/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useMessageParser, useShortcuts, useSnapScroll } from '~/lib/hooks';
 import { chatId, description, navigateChat, useConversationHistory } from '~/lib/persistence';
@@ -57,6 +57,14 @@ interface ChatProps {
   exportChatAction: () => void;
   description?: string;
 }
+
+export type SendMessageFn = (
+  event: React.UIEvent,
+  messageInput?: string,
+  isFixMessage?: boolean,
+  pendingUploadedFiles?: File[],
+  pendingImageDataList?: string[],
+) => Promise<void>;
 
 const logger = createScopedLogger('Chat');
 
@@ -114,7 +122,6 @@ export const ChatImpl = ({
   const [imageDataList, setImageDataList] = useState<string[]>([]);
   const [fakeLoading, setFakeLoading] = useState(false);
   const files = useStore(workbenchStore.files);
-  const actionAlert = useStore(workbenchStore.alert);
   const { contextOptimizationEnabled } = useSettings();
   const [dataSourceUrl, setDataSourceUrl] = useState<string>('');
 
@@ -617,8 +624,6 @@ export const ChatImpl = ({
         setUploadedFiles={setUploadedFiles}
         imageDataList={imageDataList}
         setImageDataList={setImageDataList}
-        actionAlert={actionAlert}
-        clearAlert={() => workbenchStore.clearAlert()}
         data={chatData}
         error={error}
         onSyncFiles={syncLatestChanges}
