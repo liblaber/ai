@@ -1,9 +1,9 @@
-import type { Prisma, Snapshot } from '@prisma/client';
+import { type Conversation, type Prisma, type Snapshot } from '@prisma/client';
 import { prisma } from '~/lib/prisma';
 
 type CreateSnapshotModel = Omit<Snapshot, 'createdAt' | 'id'> & {
   id?: string;
-  conversation?: any; // Allow conversation object but we'll filter it out
+  conversation?: Conversation; // Allow conversation object but we'll filter it out
 };
 
 export const snapshotService = {
