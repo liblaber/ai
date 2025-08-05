@@ -33,7 +33,7 @@ export class FilesStore {
   /**
    * Map of files that matches the state of WebContainer.
    */
-  files: MapStore<FileMap> = import.meta.hot?.data.files ?? map({});
+  files: MapStore<FileMap> = map({});
   #webcontainer: Promise<WebContainer>;
 
   /**
@@ -46,7 +46,7 @@ export class FilesStore {
    * Needs to be reset when the user sends another message and all changes have to be submitted
    * for the model to be aware of the changes.
    */
-  #modifiedFiles: Map<string, string> = import.meta.hot?.data.modifiedFiles ?? new Map();
+  #modifiedFiles: Map<string, string> = new Map();
 
   get filesCount() {
     return this.#size;
@@ -54,11 +54,6 @@ export class FilesStore {
 
   constructor(webcontainerPromise: Promise<WebContainer>) {
     this.#webcontainer = webcontainerPromise;
-
-    if (import.meta.hot) {
-      import.meta.hot.data.files = this.files;
-      import.meta.hot.data.modifiedFiles = this.#modifiedFiles;
-    }
 
     this.#init();
   }
