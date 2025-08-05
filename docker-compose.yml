@@ -29,6 +29,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    env_file:
+      - '.env'
     environment:
       - DATABASE_URL=postgresql://liblab:liblab_password@postgres:5432/liblab
 

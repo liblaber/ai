@@ -42,13 +42,11 @@ type Artifacts = MapStore<Record<string, ArtifactState>>;
 export type WorkbenchViewType = 'code' | 'diff' | 'preview';
 
 export class WorkbenchStore {
-  artifacts: Artifacts = import.meta.hot?.data.artifacts ?? map({});
-  devMode: WritableAtom<boolean> = import.meta.hot?.data.devMode ?? atom(false);
-  currentView: WritableAtom<WorkbenchViewType> = import.meta.hot?.data.currentView ?? atom('preview');
-  unsavedFiles: WritableAtom<Set<string>> = import.meta.hot?.data.unsavedFiles ?? atom(new Set<string>());
-  actionAlert: WritableAtom<ActionAlert | undefined> =
-    import.meta.hot?.data.actionAlert ?? atom<ActionAlert | undefined>(undefined);
-  modifiedFiles = new Set<string>();
+  artifacts: Artifacts = map({});
+  devMode: WritableAtom<boolean> = atom(false);
+  currentView: WritableAtom<WorkbenchViewType> = atom('preview');
+  unsavedFiles: WritableAtom<Set<string>> = atom(new Set<string>());
+  actionAlert: WritableAtom<ActionAlert | undefined> = atom<ActionAlert | undefined>(undefined);
   artifactIdList: string[] = [];
   startCommand = atom<string>(DEFAULT_START_APP_COMMAND);
   actionStreamSampler = createSampler(async (data: ActionCallbackData, isStreaming: boolean = false) => {
@@ -129,15 +127,6 @@ export class WorkbenchStore {
 
   get alert() {
     return this.actionAlert;
-  }
-
-  constructor() {
-    if (import.meta.hot) {
-      import.meta.hot.data.artifacts = this.artifacts;
-      import.meta.hot.data.unsavedFiles = this.unsavedFiles;
-      import.meta.hot.data.currentView = this.currentView;
-      import.meta.hot.data.actionAlert = this.actionAlert;
-    }
   }
 
   async initialize(): Promise<void> {

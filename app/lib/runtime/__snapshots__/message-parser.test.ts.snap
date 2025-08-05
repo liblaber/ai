@@ -1,0 +1,81 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`StreamingMessageParser valid artifacts with actions should correctly parse chunks and strip out liblab artifacts (0): onActionClose 1`] = `
+{
+  "action": {
+    "content": "npm install",
+    "type": "shell",
+  },
+  "actionId": "0",
+  "artifactId": "artifact_1",
+  "messageId": "message_1",
+  "shouldExecute": true,
+}
+`;
+
+exports[`StreamingMessageParser valid artifacts with actions should correctly parse chunks and strip out liblab artifacts (0): onActionOpen 1`] = `
+{
+  "action": {
+    "content": "",
+    "type": "shell",
+  },
+  "actionId": "0",
+  "artifactId": "artifact_1",
+  "messageId": "message_1",
+  "shouldExecute": true,
+}
+`;
+
+exports[`StreamingMessageParser valid artifacts with actions should correctly parse chunks and strip out liblab artifacts (0): onArtifactClose 1`] = `
+{
+  "id": "artifact_1",
+  "messageId": "message_1",
+  "title": "Some title",
+  "type": undefined,
+}
+`;
+
+exports[`StreamingMessageParser valid artifacts with actions should correctly parse chunks and strip out liblab artifacts (0): onArtifactOpen 1`] = `
+{
+  "id": "artifact_1",
+  "messageId": "message_1",
+  "title": "Some title",
+  "type": undefined,
+}
+`;
+
+exports[`StreamingMessageParser valid artifacts without actions should correctly parse chunks and strip out liblab artifacts (0): onArtifactClose 1`] = `
+{
+  "id": "artifact_1",
+  "messageId": "message_1",
+  "title": "Some title",
+  "type": undefined,
+}
+`;
+
+exports[`StreamingMessageParser valid artifacts without actions should correctly parse chunks and strip out liblab artifacts (0): onArtifactOpen 1`] = `
+{
+  "id": "artifact_1",
+  "messageId": "message_1",
+  "title": "Some title",
+  "type": undefined,
+}
+`;
+
+exports[`StreamingMessageParser valid artifacts without actions should correctly parse chunks and strip out liblab artifacts (1): onArtifactClose 1`] = `
+{
+  "id": "artifact_1",
+  "messageId": "message_1",
+  "title": "Some title",
+  "type": undefined,
+}
+`;
+
+exports[`StreamingMessageParser valid artifacts without actions should correctly parse chunks and strip out liblab artifacts (1): onArtifactOpen 1`] = `
+{
+  "id": "artifact_1",
+  "messageId": "message_1",
+  "title": "Some title",
+  "type": undefined,
+}
+`;

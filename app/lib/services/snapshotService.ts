@@ -1,22 +1,27 @@
-import type { Prisma, Snapshot } from '@prisma/client';
+import { type Conversation, type Prisma, type Snapshot } from '@prisma/client';
 import { prisma } from '~/lib/prisma';
 
 type CreateSnapshotModel = Omit<Snapshot, 'createdAt' | 'id'> & {
   id?: string;
+  conversation?: Conversation; // Allow conversation object but we'll filter it out
 };
 
 export const snapshotService = {
   async createSnapshot(snapshot: CreateSnapshotModel, tx?: Prisma.TransactionClient) {
+    // Filter out the conversation object and undefined values
+    const { conversation, ...snapshotData } = snapshot;
+
+    // Only include the fields that are part of the Snapshot model
+    const cleanData: Prisma.SnapshotUncheckedCreateInput = {
+      ...(snapshotData.id && { id: snapshotData.id }),
+      storageType: snapshotData.storageType,
+      storageKey: snapshotData.storageKey,
+      conversationId: snapshotData.conversationId,
+      ...(snapshotData.messageId !== undefined && { messageId: snapshotData.messageId }),
+    };
+
     return (tx ?? prisma).snapshot.create({
-      data: {
-        ...snapshot,
-        conversationId: snapshot.conversationId,
-        ...(snapshot.messageId
-          ? {
-              messageId: snapshot.messageId,
-            }
-          : {}),
-      },
+      data: cleanData,
     });
   },
 
