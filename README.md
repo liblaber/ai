@@ -184,12 +184,6 @@ First, run the setup script to configure your environment:
 pnpm run setup
 ```
 
-If you lack permissions to run `scripts/setup.sh` fix it with:
-
-```bash
-chmod +x scripts/setup.sh
-```
-
 #### Start with Docker
 
 After setup is complete, start the app with Docker:
@@ -260,7 +254,7 @@ pnpm run db:restart
 Run the database setup script to initialize the PostgreSQL database:
 
 ```bash
-./scripts/docker-db-setup.sh
+tsx ./scripts/docker-db-setup.ts
 ```
 
 This script will:
@@ -344,7 +338,7 @@ docker-compose -f docker-compose.dev.yml down -v
 3. **Reset the database:**
    ```bash
    docker-compose -f docker-compose.dev.yml down -v
-   ./scripts/docker-db-setup.sh
+   tsx ./scripts/docker-db-setup.ts
    ```
 
 **Volume Issues**
@@ -359,7 +353,7 @@ docker-compose -f docker-compose.dev.yml down
 docker volume rm liblab_postgres_data
 
 # Restart and setup
-./scripts/docker-db-setup.sh
+tsx ./scripts/docker-db-setup.ts
 ```
 
 ---
@@ -383,7 +377,7 @@ Before starting, ensure you have all the following installed and configured:
 
 ```bash
 # Install Homebrew if you don't have it
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.ts)"
 
 # Install Node.js
 brew install node
@@ -486,12 +480,6 @@ Run the setup:
 
 ```bash
 pnpm run setup
-```
-
-If you lack permissions to run `scripts/setup.sh` fix it with:
-
-```bash
-chmod +x scripts/setup.sh
 ```
 
 **That's it! 🎉**
