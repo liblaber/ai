@@ -18,7 +18,6 @@ function extractComponentName<T>(component: ComponentType<ComponentData<T>>) {
   return component.displayName || component.name || 'Anonymous Component';
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export function WithErrorHandling<T>({ queryData, component: Component, additionalProps }: WithErrorHandlingProps<T>) {
   if (!queryData) {
     return null;

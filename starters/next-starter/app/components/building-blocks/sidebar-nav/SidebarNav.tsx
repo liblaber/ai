@@ -60,26 +60,22 @@ export default function SidebarNav() {
     <Sidebar variant="sidebar" collapsible="icon">
       <SidebarContent onClick={handleSidebarClick}>
         <SidebarMenu className="p-2">
-          {SIDEBAR_LINKS.map(
-            (
-              { href, label, icon: Icon }, // eslint-disable-line @typescript-eslint/naming-convention
-            ) => (
-              <SidebarMenuItem key={href}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <SidebarMenuButton asChild isActive={pathname === href}>
-                      <Link href={href}>
-                        {Icon && <Icon className="w-5 h-5" />} {label}
-                      </Link>
-                    </SidebarMenuButton>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" align="center" hidden={state !== 'collapsed'}>
-                    {label}
-                  </TooltipContent>
-                </Tooltip>
-              </SidebarMenuItem>
-            ),
-          )}
+          {SIDEBAR_LINKS.map(({ href, label, icon: Icon }) => (
+            <SidebarMenuItem key={href}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SidebarMenuButton asChild isActive={pathname === href}>
+                    <Link href={href}>
+                      {Icon && <Icon className="w-5 h-5" />} {label}
+                    </Link>
+                  </SidebarMenuButton>
+                </TooltipTrigger>
+                <TooltipContent side="right" align="center" hidden={state !== 'collapsed'}>
+                  {label}
+                </TooltipContent>
+              </Tooltip>
+            </SidebarMenuItem>
+          ))}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
