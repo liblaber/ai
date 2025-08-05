@@ -4,7 +4,7 @@
 
 import chalk from 'chalk';
 import { spinner, log, intro, outro } from '@clack/prompts';
-import { makeBanner } from './utils/banner';
+import { banner } from './utils/banner';
 
 const sleep = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -41,7 +41,7 @@ const main = async (): Promise<void> => {
 
   startupSpinner.stop('✅ liblab AI is starting up!');
 
-  log.info(makeBanner());
+  log.info(banner);
   log.info('');
   log.success(`Your liblab AI is live on ${chalk.bold(url)} 🎉`);
 

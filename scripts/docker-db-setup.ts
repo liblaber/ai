@@ -4,6 +4,11 @@ import fs from 'node:fs';
 import * as dockerCompose from 'docker-compose';
 import { spinner, log, intro } from '@clack/prompts';
 
+// Database configuration with environment variable fallbacks
+const DB_USER = process.env.POSTGRES_USER || 'liblab';
+const DB_NAME = process.env.POSTGRES_DB || 'liblab';
+const DB_PASSWORD = process.env.POSTGRES_PASSWORD || 'liblab_password';
+
 intro(
   'Welcome to the liblab PostgreSQL setup script. This will start your local database, run migrations, generate the Prisma client, and seed your data if needed.',
 );
@@ -33,7 +38,7 @@ const maxRetries = 30; // 60 seconds total
 
 while (!dbReady && retries < maxRetries) {
   try {
-    await dockerCompose.exec('postgres', 'pg_isready -U liblab -d liblab -q', {
+    await dockerCompose.exec('postgres', `pg_isready -U ${DB_USER} -d ${DB_NAME} -q`, {
       config: 'docker-compose.dev.yml',
       cwd: process.cwd(),
     });
@@ -102,4 +107,4 @@ if (fs.existsSync('prisma/seed.ts')) {
 dbSetupSpinner.stop('✅ Database setup complete!');
 
 log.info('📊 PostgreSQL is running on localhost:5432');
-log.info('🔗 Connection: postgresql://liblab:liblab_password@localhost:5432/liblab');
+log.info(`🔗 Connection: postgresql://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}`);

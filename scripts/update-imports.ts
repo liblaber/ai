@@ -11,16 +11,21 @@ function findTypeScriptFiles(dir: string): string[] {
   const files: string[] = [];
 
   function walk(currentPath: string) {
-    const entries = fs.readdirSync(currentPath, { withFileTypes: true });
+    try {
+      const entries = fs.readdirSync(currentPath, { withFileTypes: true });
 
-    for (const entry of entries) {
-      const fullPath = path.join(currentPath, entry.name);
+      for (const entry of entries) {
+        const fullPath = path.join(currentPath, entry.name);
 
-      if (entry.isDirectory()) {
-        walk(fullPath);
-      } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
-        files.push(fullPath);
+        if (entry.isDirectory()) {
+          walk(fullPath);
+        } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
+          files.push(fullPath);
+        }
       }
+    } catch (error) {
+      // Log the error but continue traversal of other directories
+      log.warn(`⚠️  Warning: Could not read directory ${currentPath}: ${(error as Error).message}`);
     }
   }
 
@@ -32,16 +37,20 @@ function findTypeScriptFiles(dir: string): string[] {
 /**
  * Update import paths in a file
  */
-function updateImportsInFile(filePath: string, replacements: Array<{ from: string; to: string }>) {
+function updateImportsInFile(filePath: string, replacements: Array<{ from: string; to: string }>): boolean {
   try {
     let content = fs.readFileSync(filePath, 'utf8');
     let modified = false;
 
     for (const { from, to } of replacements) {
-      const regex = new RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+      // Escape all special regex characters more robustly
+      const escapedFrom = from.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
+      const regex = new RegExp(escapedFrom, 'g');
 
-      if (content.includes(from)) {
-        content = content.replace(regex, to);
+      const newContent = content.replace(regex, to);
+
+      if (newContent !== content) {
+        content = newContent;
         modified = true;
       }
     }
@@ -50,8 +59,11 @@ function updateImportsInFile(filePath: string, replacements: Array<{ from: strin
       fs.writeFileSync(filePath, content, 'utf8');
       log.success(`Updated imports in: ${filePath}`);
     }
+
+    return modified;
   } catch (error) {
     log.error(`Error updating file ${filePath}: ${error}`);
+    return false;
   }
 }
 
@@ -100,12 +112,9 @@ async function updateImports() {
   let updatedCount = 0;
 
   for (const file of typeScriptFiles) {
-    const originalContent = fs.readFileSync(file, 'utf8');
-    updateImportsInFile(file, replacements);
+    const wasModified = updateImportsInFile(file, replacements);
 
-    const newContent = fs.readFileSync(file, 'utf8');
-
-    if (originalContent !== newContent) {
+    if (wasModified) {
       updatedCount++;
     }
   }

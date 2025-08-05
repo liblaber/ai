@@ -2,7 +2,7 @@
 
 import { spawn } from 'node:child_process';
 import { outro, confirm, cancel, isCancel, intro } from '@clack/prompts';
-import { makeBanner } from './utils/banner';
+import { banner } from './utils/banner';
 
 function runPrismaGenerate(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -50,7 +50,7 @@ function runPnpmDev(): void {
 }
 
 async function main(): Promise<void> {
-  intro(makeBanner());
+  intro(banner);
 
   const shouldRun = await confirm({
     message: 'Do you want to run the liblab AI builder?',

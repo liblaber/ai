@@ -70,19 +70,12 @@ function getEnvVarValue(envContent: string, key: string): string | null {
   return null;
 }
 
-// Helper function to add a small delay for better UX
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 async function main(): Promise<void> {
   intro('🦙 liblab AI Setup');
 
   // Check for .env file and create if it doesn't exist
   const envSpinner = spinner();
   envSpinner.start('📋 Checking for .env file');
-
-  await delay(500); // Small delay for visual feedback
 
   if (!existsSync('.env')) {
     envSpinner.stop('⏳ .env file not found, creating from .env.example');
@@ -104,21 +97,18 @@ async function main(): Promise<void> {
   const posthogSpinner = spinner();
   posthogSpinner.start('📋 Checking for NEXT_PUBLIC_POSTHOG_KEY');
 
-  await delay(300);
-
   if (existsSync('.env.example')) {
     const exampleContent = readFileSync('.env.example', 'utf8');
     const posthogKey = getEnvVarValue(exampleContent, 'NEXT_PUBLIC_POSTHOG_KEY');
 
     if (posthogKey) {
       if (hasEnvVar(envContent, 'NEXT_PUBLIC_POSTHOG_KEY')) {
-        envContent = updateOrAddEnvVar(envContent, 'NEXT_PUBLIC_POSTHOG_KEY', posthogKey);
         posthogSpinner.stop('✅ Updated existing NEXT_PUBLIC_POSTHOG_KEY in .env file.');
       } else {
-        envContent = updateOrAddEnvVar(envContent, 'NEXT_PUBLIC_POSTHOG_KEY', posthogKey);
         posthogSpinner.stop('✅ Added NEXT_PUBLIC_POSTHOG_KEY to .env file.');
       }
 
+      envContent = updateOrAddEnvVar(envContent, 'NEXT_PUBLIC_POSTHOG_KEY', posthogKey);
       writeEnvFile(envContent);
     } else {
       posthogSpinner.stop('⚠️ NEXT_PUBLIC_POSTHOG_KEY not found in .env.example file.');
@@ -131,8 +121,6 @@ async function main(): Promise<void> {
   const authSpinner = spinner();
   authSpinner.start('📋 Checking for AUTH_SECRET');
 
-  await delay(300);
-
   if (!hasEnvVar(envContent, 'AUTH_SECRET')) {
     authSpinner.stop('⏳ Generating auth secret');
 
@@ -140,8 +128,6 @@ async function main(): Promise<void> {
     generateAuthSpinner.start('Generating secure auth secret');
 
     try {
-      await delay(800); // Simulate work being done
-
       const authSecret = generateSecureKey();
 
       envContent = updateOrAddEnvVar(envContent, 'AUTH_SECRET', authSecret);
@@ -160,8 +146,6 @@ async function main(): Promise<void> {
   const encryptionSpinner = spinner();
   encryptionSpinner.start('📋 Checking for ENCRYPTION_KEY');
 
-  await delay(300);
-
   if (!hasEnvVar(envContent, 'ENCRYPTION_KEY')) {
     encryptionSpinner.stop('⏳ Generating AES-256-GCM key');
 
@@ -169,8 +153,6 @@ async function main(): Promise<void> {
     generateEncryptionSpinner.start('Generating AES-256-GCM encryption key');
 
     try {
-      await delay(800); // Simulate work being done
-
       const encryptionKey = generateSecureKey();
 
       envContent = updateOrAddEnvVar(envContent, 'ENCRYPTION_KEY', encryptionKey);
@@ -188,8 +170,6 @@ async function main(): Promise<void> {
   // Check for ANTHROPIC_API_KEY
   const anthropicSpinner = spinner();
   anthropicSpinner.start('📋 Checking for ANTHROPIC_API_KEY');
-
-  await delay(300);
 
   if (!hasEnvVar(envContent, 'ANTHROPIC_API_KEY')) {
     anthropicSpinner.stop('⚠️ ANTHROPIC_API_KEY not found or empty in .env file.');
@@ -221,8 +201,6 @@ async function main(): Promise<void> {
   // Check for NGROK_AUTHTOKEN
   const ngrokSpinner = spinner();
   ngrokSpinner.start('📋 Checking for NGROK_AUTHTOKEN');
-
-  await delay(300);
 
   if (!hasEnvVar(envContent, 'NGROK_AUTHTOKEN')) {
     ngrokSpinner.stop('⚠️ NGROK_AUTHTOKEN not found or empty in .env file.');
