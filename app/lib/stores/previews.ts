@@ -46,10 +46,10 @@ export class PreviewsStore {
       if (!errorHandler.getCollectedErrors().length) {
         console.log('Setting isLoading to false...');
         this.isLoading.set(false);
+        this.loadingText.set('Loading...');
       }
 
       this.isCollectingErrors.set(false);
-      this.loadingText.set('Loading...');
     }, ERROR_COLLECTION_PERIOD_MS);
   }
 

@@ -68,12 +68,11 @@ export const Preview = memo(({ sendMessage }: Props) => {
   const [isWindowSizeDropdownOpen, setIsWindowSizeDropdownOpen] = useState(false);
   const [selectedWindowSize, setSelectedWindowSize] = useState<WindowSize>(WINDOW_SIZES[0]);
 
-  const actionAlert = useStore(workbenchStore.alert);
+  const codeErrors = useStore(workbenchStore.codeErrors);
 
-  const postMessage = async (message: string) => {
+  const onFixIssue = async (message: string) => {
     workbenchStore.previewsStore.fixingIssues();
     await sendMessage?.({} as any, message, true);
-    workbenchStore.clearAlert();
   };
 
   useEffect(() => {
@@ -277,14 +276,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
       {isPortDropdownOpen && (
         <div className="z-iframe-overlay w-full h-full absolute" onClick={() => setIsPortDropdownOpen(false)} />
       )}
-      {/* FixIssueDialog on top of iframe if not loading and alert is set */}
-      {!isLoading && actionAlert && (
-        <FixIssuesDialog
-          alert={actionAlert}
-          clearAlert={workbenchStore.clearAlert.bind(workbenchStore)}
-          postMessage={postMessage}
-        />
-      )}
+      {!isLoading && !!codeErrors.length && <FixIssuesDialog onFixIssue={onFixIssue} />}
       <div className="bg-liblab-elements-bg-depth-2 p-2 flex items-center gap-2">
         <div className="flex items-center gap-2">
           <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
@@ -408,8 +400,8 @@ export const Preview = memo(({ sendMessage }: Props) => {
                 src={iframeUrl}
                 sandbox="allow-scripts allow-forms allow-popups allow-modals allow-storage-access-by-user-activation allow-same-origin"
                 allow="cross-origin-isolated"
-                onLoad={() => {
-                  logger.debug('onLoad event');
+                onLoad={(e) => {
+                  logger.debug('Handling iframe onLoad event', e);
 
                   if (!initialLoadRef.current) {
                     workbenchStore.previewsStore.startErrorCollectionPeriod();

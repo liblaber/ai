@@ -1,5 +1,5 @@
 import { atom } from 'nanostores';
-import type { ActionAlert } from '~/types/actions';
+import type { CodeError } from '~/types/actions';
 import { streamingState } from './stores/streaming';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
@@ -9,7 +9,7 @@ import { createScopedLogger } from '~/utils/logger';
 
 interface ErrorState {
   lastAutofixAttempt?: number;
-  collectedErrors: ActionAlert[];
+  collectedErrors: CodeError[];
   isSubscribedToIsCollectingErrors: boolean;
 }
 
@@ -40,7 +40,7 @@ export class ErrorHandler {
     return this.#state.get().collectedErrors;
   }
 
-  async handle(currentError: ActionAlert): Promise<void> {
+  async handle(currentError: CodeError): Promise<void> {
     logger.debug('handle', currentError);
 
     const conversationId = chatId.get();
@@ -74,20 +74,19 @@ export class ErrorHandler {
 
     if (this.#shouldAutofix(now)) {
       this.#sendAutofixEvent([currentError], now);
+      return;
     }
 
-    logger.debug('Skipping autofix, setting issue alert...');
-    workbenchStore.setAlert(currentError);
+    logger.debug('Skipping autofix, setting code error...');
+    workbenchStore.pushCodeError(currentError);
 
     if (workbenchStore.previewsStore.isLoading.get()) {
       workbenchStore.previewsStore.isLoading.set(false);
       workbenchStore.previewsStore.isFixingIssues.set(false);
     }
-
-    return;
   }
 
-  #collectError(error: ActionAlert) {
+  #collectError(error: CodeError) {
     const state = this.#state.get();
     const updatedErrors = [...state.collectedErrors, error];
 
@@ -158,22 +157,20 @@ export class ErrorHandler {
 
     if (this.#shouldAutofix(now)) {
       this.#sendAutofixEvent(collectedErrors, now);
+      return;
     }
 
     logger.debug('Skipping autofix, setting issue alert...');
 
-    const mostRecentError = collectedErrors[collectedErrors.length - 1];
-    workbenchStore.setAlert(mostRecentError);
+    workbenchStore.codeErrors.set(collectedErrors);
 
     if (workbenchStore.previewsStore.isLoading.get()) {
       workbenchStore.previewsStore.isLoading.set(false);
       workbenchStore.previewsStore.isFixingIssues.set(false);
     }
-
-    return;
   }
 
-  #sendAutofixEvent(errors: ActionAlert[], timestamp: number) {
+  #sendAutofixEvent(errors: CodeError[], timestamp: number) {
     logger.debug('Sending autofix event...');
 
     const event = new CustomEvent(AUTOFIX_ATTEMPT_EVENT, {

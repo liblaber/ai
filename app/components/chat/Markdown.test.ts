@@ -1,5 +1,4 @@
-import { describe, expect, it } from 'vitest';
-import { stripCodeFenceFromArtifact } from './Markdown';
+import { stripCodeFenceFromArtifact } from '~/utils/markdown-utils';
 
 describe('stripCodeFenceFromArtifact', () => {
   it('should remove code fences around artifact element', () => {

@@ -99,6 +99,8 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
         const forkedChatId = await forkConversation(conversationId, messageId);
 
         router.push(`/chat/${forkedChatId}`);
+
+        toast.success('Chat forked successfully');
       } catch (error) {
         toast.error('Failed to fork chat: ' + (error as Error).message);
       }

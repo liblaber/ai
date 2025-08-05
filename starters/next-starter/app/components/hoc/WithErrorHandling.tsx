@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ComponentType } from 'react';
-import { ErrorBanner } from '../ui/errorBanner';
+import { ErrorBanner } from '@/components/ui/errorBanner';
 import { QueryData } from '@/db/execute-query';
 
 export interface WithErrorHandlingProps<T> {
@@ -26,6 +26,7 @@ export function WithErrorHandling<T>({ queryData, component: Component, addition
   if (queryData.isError) {
     const componentName = extractComponentName(Component);
     console.error(`Failed to execute query in ${componentName}: ${queryData.errorMessage}`);
+
     return <ErrorBanner errorMessage={`Error in ${componentName}: ${queryData.errorMessage}`} />;
   }
 

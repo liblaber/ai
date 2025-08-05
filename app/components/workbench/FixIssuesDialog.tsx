@@ -1,23 +1,18 @@
+import { useStore } from '@nanostores/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
-import type { ActionAlert } from '~/types/actions';
+import { workbenchStore } from '~/lib/stores/workbench';
 
-export function FixIssuesDialog({
-  alert,
-  clearAlert,
-  postMessage,
-}: {
-  alert: ActionAlert;
-  clearAlert: () => void;
-  postMessage: (message: string) => void;
-}) {
-  const { description, content, source } = alert;
+type Props = {
+  onFixIssue: (message: string) => void;
+};
+
+export function FixIssuesDialog({ onFixIssue }: Props) {
+  const codeErrors = useStore(workbenchStore.codeErrors);
+
+  const description = codeErrors.map(({ description }) => description).join('\n');
+
   const [showErrorDetails, setShowErrorDetails] = useState(false);
-  const isPreview = source === 'preview';
-  const title = isPreview ? 'Preview Error' : 'Terminal Error';
-  const message = isPreview
-    ? 'Something went wrong while running the preview. Would you like liblab to analyze and help resolve this issue?'
-    : 'Something went wrong while running terminal commands. Would you like liblab to analyze and help resolve this issue?';
 
   return (
     <AnimatePresence>
@@ -30,7 +25,6 @@ export function FixIssuesDialog({
         style={{ pointerEvents: 'auto' }}
       >
         <div className="max-w-lg mx-auto p-6 text-center">
-          {/* Icon */}
           <motion.div
             className="flex justify-center mb-4"
             initial={{ scale: 0 }}
@@ -40,27 +34,26 @@ export function FixIssuesDialog({
             <div className="i-ph:warning-duotone text-4xl text-liblab-elements-button-danger-text"></div>
           </motion.div>
 
-          {/* Title */}
           <motion.h3
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
             className="text-lg font-medium text-liblab-elements-textPrimary mb-3"
           >
-            {title}
+            Detected Application Error
           </motion.h3>
 
-          {/* Message */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="text-sm text-liblab-elements-textSecondary mb-6"
           >
-            <p>{message}</p>
+            <p>
+              Something went wrong while running the preview. Would you like me to analyze and help resolve this issue?
+            </p>
           </motion.div>
 
-          {/* Show Error Details Button */}
           {description && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mb-6">
               <button
@@ -72,7 +65,6 @@ export function FixIssuesDialog({
             </motion.div>
           )}
 
-          {/* Error Details (collapsible) */}
           <AnimatePresence>
             {showErrorDetails && description && (
               <motion.div
@@ -88,7 +80,6 @@ export function FixIssuesDialog({
             )}
           </AnimatePresence>
 
-          {/* Actions */}
           <motion.div
             className="flex gap-3"
             initial={{ opacity: 0, y: 10 }}
@@ -97,10 +88,8 @@ export function FixIssuesDialog({
           >
             <button
               onClick={() => {
-                postMessage(
-                  `*Fix this ${isPreview ? 'preview' : 'terminal'} error* \n\`\`\`${isPreview ? 'js' : 'sh'}\n${content}\n\`\`\`\n`,
-                );
-                clearAlert();
+                onFixIssue(workbenchStore.getFixErrorsMessageText());
+                workbenchStore.clearCodeErrors();
               }}
               className="flex-1 px-4 py-2 rounded-md text-sm font-medium bg-accent-500 hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-liblab-elements-button-danger-background text-liblab-elements-button-primary-text flex items-center justify-center gap-2"
             >
@@ -108,7 +97,7 @@ export function FixIssuesDialog({
               Fix Issue
             </button>
             <button
-              onClick={clearAlert}
+              onClick={() => workbenchStore.clearCodeErrors()}
               className="flex-1 px-4 py-2 rounded-md text-sm font-medium bg-liblab-elements-button-secondary-background hover:bg-liblab-elements-button-secondary-backgroundHover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-liblab-elements-button-secondary-background text-liblab-elements-button-secondary-text"
             >
               Dismiss
