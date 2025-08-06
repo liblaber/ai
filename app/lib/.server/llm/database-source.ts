@@ -9,6 +9,20 @@ const queryDecisionSchema = z.object({
   explanation: z.string(),
 });
 
+// Create dynamic database type detection schema based on available database types
+const getDatabaseTypeDetectionSchema = () => {
+  const availableTypes = DataAccessor.getAvailableDatabaseTypes();
+
+  // Ensure we have at least one type for the enum, and cast to the correct tuple type
+  const typesArray = availableTypes.length > 0 ? availableTypes : ['postgres'];
+
+  return z.object({
+    detectedType: z.enum(typesArray as [string, ...string[]]),
+    confidence: z.number().min(0).max(1),
+    reasoning: z.string(),
+  });
+};
+
 const sqlQuerySchema = z.object({
   query: z.string(),
   explanation: z.string(),
@@ -57,79 +71,18 @@ export async function generateSqlQueries({
   userPrompt,
   llm,
   databaseType,
-  implementationPlan,
   existingQueries,
 }: GenerateSqlQueriesOptions): Promise<SqlQueryOutput | undefined> {
   const dbSchema = formatDbSchemaForLLM(schema);
 
-  const systemPrompt = `You are a SQL expert tasked with generating SQL queries based on a given database schema and user requirements.
-Your goal is to create accurate, optimized queries that address the user's request while adhering to specific guidelines and output format.
+  // Get the appropriate accessor for this database type
+  const accessor = DataAccessor.getByDatabaseType(databaseType);
 
-You will be working with the following database type:
-<databaseType>
-${databaseType}
-</databaseType>
-
-Here is the database schema you should use:
-<dbSchema>
-${dbSchema}
-</dbSchema>
-
-Here is the implementation plan you should consider:
-<implementationPlan>
-${implementationPlan}
-</implementationPlan>
-
-${existingQueries ? `Here are the existing SQL queries used by the app the user is building. Use them as context if they need to be updated to fulfill the user's request: <existing_sql_queries>${existingQueries}</existing_sql_queries>` : ''}
-
-To generate the SQL queries, follow these steps:
-1. Carefully analyze the user's request and the provided database schema.
-2. Create one or more SQL queries that accurately address the user's requirements.
-3. Ensure the queries are compatible with the specified database type.
-4. Prefer simple SQL syntax without relying heavily on database-specific functions.
-5. Do not use any DDL (Data Definition Language) statements such as CREATE, ALTER, or DROP. Only DML (Data Manipulation Language) queries like SELECT, INSERT, UPDATE, and DELETE are allowed.
-6. Use appropriate table joins if necessary.
-7. Optimize the queries for performance.
-8. Avoid generating very long and complex queries, application layer will be able to map the results to the UI components in more complex ways.
-9. Avoid using any tables or columns not present in the schema.
-10. If needed, parametrize the query using positional placeholders like ${DataAccessor.getByDatabaseType(databaseType)?.preparedStatementPlaceholderExample}.
-11. Use the exact format and casing for explicit values in the query (e.g., use "SUPER_ADMIN" if values are {ADMIN, MEMBER, SUPER_ADMIN}).
-12. Provide a brief explanation for each query.
-13. Specify the response schema for each query, including selected column types and any explicit values, if present.
-
-Format your response as a JSON array containing objects with the following structure:
-{
-  "query": "Your SQL query here",
-  "explanation": "A brief explanation of what the query does",
-  "responseSchema": "column_name1 (data_type), column_name2 (data_type), ..."
-}
-
-Here's an example of a valid response:
-[
-  {
-    "query": "SELECT u.name, u.email, u.role FROM users u WHERE u.role = 'ADMIN'",
-    "explanation": "Retrieves names and email addresses of all admin users",
-    "responseSchema": "name (text), email (text), role (text, {ADMIN,MEMBER,SUPER_ADMIN})"
-  },
-  {
-    "query": "SELECT COUNT(*) as total_users FROM users",
-    "explanation": "Counts the total number of users in the system",
-    "responseSchema": "total_users (bigint)"
-  },
-  {
-    "query": "SELECT b.build_number, b.start_time, b.end_time, b.status FROM builds b WHERE b.status IN ($1) AND b.api_id = $2",
-    "explanation": "Retrieves all the builds for specific statuses and API",
-    "responseSchema": "build_number (numeric), start_time (timestamp), end_time (timestamp), status (text, {SUCCESS,IN_PROGRESS,FAILURE})"
+  if (!accessor) {
+    throw new Error(`No accessor found for database type: ${databaseType}`);
   }
-]
 
-IMPORTANT: Your output should consist ONLY of the JSON array containing the query objects. Do not include any additional text or explanations outside of this JSON structure.
-IMPORTANT: Do not add additional formatting or characters to the query itself like \n or \t, just output plain text SQL query.
-
-Now, generate SQL queries based on the following user request:
-<userRequest>
-${userPrompt}
-</userRequest>`;
+  const systemPrompt = accessor.generateSystemPrompt(databaseType, dbSchema, existingQueries, userPrompt);
 
   try {
     logger.info(`Generating SQL for prompt: ${userPrompt}, using model: ${llm.instance.modelId}`);
@@ -204,6 +157,78 @@ export function formatDbSchemaForLLM(schema: Table[]): string {
   }
 
   return result;
+}
+
+export async function detectDatabaseTypeFromPrompt(
+  userPrompt: string,
+  llm: Llm,
+  availableTypes: string[] = ['postgres', 'mysql', 'sqlite', 'mongodb'],
+): Promise<string | null> {
+  logger.info(`Detecting database type for prompt: ${userPrompt} using model: ${llm.instance.modelId}`);
+
+  const systemPrompt = `You are a database expert tasked with analyzing user prompts to determine which type of database they are most likely referring to.
+
+Available database types: ${availableTypes.join(', ')}
+
+Analyze the user's prompt for indicators that suggest a specific database type:
+
+For SQL databases (postgres, mysql, sqlite):
+- SQL keywords (SELECT, FROM, WHERE, JOIN, etc.)
+- Table/column terminology
+- Relational database concepts
+- SQL-specific syntax
+
+For MongoDB:
+- NoSQL terminology (collection, document, field)
+- MongoDB-specific operators ($match, $group, $aggregate, etc.)
+- JSON-like query structure mentions
+- Document database concepts
+
+Consider these factors:
+1. Explicit database technology mentions
+2. Query syntax patterns
+3. Data modeling terminology
+4. Database-specific features or operators
+
+User prompt to analyze:
+<user_prompt>
+${userPrompt}
+</user_prompt>
+
+Provide your analysis in the following JSON format:
+{
+  "detectedType": "postgres|mysql|sqlite|mongodb",
+  "confidence": 0.0-1.0,
+  "reasoning": "Brief explanation of why you chose this database type"
+}
+
+If the prompt doesn't contain enough information to make a confident determination, choose the most common type (postgres) with low confidence.`;
+
+  try {
+    const result = await generateObject({
+      schema: getDatabaseTypeDetectionSchema(),
+      model: llm.instance,
+      maxTokens: llm.maxOutputTokens,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    });
+
+    if (!result?.object) {
+      logger.error('No result object received from LLM for database type detection.');
+      return null;
+    }
+
+    const { detectedType, confidence, reasoning } = result.object;
+
+    logger.info(`Database type detection for prompt: ${userPrompt}`);
+    logger.info('Detection reasoning:', reasoning);
+    logger.info(`Detected type: ${detectedType} (confidence: ${confidence})`);
+
+    return detectedType;
+  } catch (error) {
+    logger.error('Error detecting database type:', error);
+    return null;
+  }
 }
 
 export async function shouldGenerateSqlQueries(

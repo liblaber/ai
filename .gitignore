@@ -32,6 +32,8 @@ dist-ssr
 .wrangler
 _worker.bundle
 
+.claude
+
 Modelfile
 modelfiles
 
