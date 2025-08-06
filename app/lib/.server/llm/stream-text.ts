@@ -138,7 +138,9 @@ ${props.summary}
   ) {
     const userId = await requireUserId(request);
     const schema = await getDatabaseSchema(currentDataSourceId, userId);
-    const dataSource = await prisma.dataSource.findUniqueOrThrow({ where: { id: currentDataSourceId, userId } });
+    const dataSource = await prisma.dataSource.findUniqueOrThrow({
+      where: { id: currentDataSourceId, createdById: userId },
+    });
 
     const connectionDetails = new URL(dataSource.connectionString);
     const type = connectionDetails.protocol.replace(':', '');

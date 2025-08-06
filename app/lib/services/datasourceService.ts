@@ -1,5 +1,8 @@
 import { prisma } from '~/lib/prisma';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { buildResourceWhereClause } from '@/lib/casl/prisma-helpers';
+import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
+import type { AppAbility } from '~/lib/casl/user-ability';
 
 export interface DataSource {
   id: string;
@@ -11,7 +14,7 @@ export interface DataSource {
 
 export async function getDataSource(id: string, userId: string): Promise<DataSource | null> {
   return prisma.dataSource.findFirst({
-    where: { id, userId },
+    where: { id, createdById: userId },
     select: {
       id: true,
       name: true,
@@ -22,8 +25,15 @@ export async function getDataSource(id: string, userId: string): Promise<DataSou
   });
 }
 
-export async function getDataSources(userId: string): Promise<DataSource[]> {
+export async function getDataSources(userAbility: AppAbility): Promise<DataSource[]> {
+  const whereClause = buildResourceWhereClause(
+    userAbility,
+    PermissionAction.read,
+    PermissionResource.DataSource,
+  ) as Prisma.DataSourceWhereInput;
+
   return prisma.dataSource.findMany({
+    where: whereClause,
     select: {
       id: true,
       name: true,
@@ -31,14 +41,13 @@ export async function getDataSources(userId: string): Promise<DataSource[]> {
       createdAt: true,
       updatedAt: true,
     },
-    where: { userId },
   });
 }
 
 export async function createDataSource(data: {
   name: string;
   connectionString: string;
-  userId: string;
+  createdById: string;
 }): Promise<DataSource> {
   validateDataSource(data.connectionString);
 
@@ -46,7 +55,7 @@ export async function createDataSource(data: {
     data: {
       name: data.name,
       connectionString: data.connectionString,
-      userId: data.userId,
+      createdById: data.createdById,
     },
   });
 }
@@ -55,18 +64,18 @@ export async function updateDataSource(data: { id: string; name: string; connect
   validateDataSource(data.connectionString);
 
   return prisma.dataSource.update({
-    where: { id: data.id, userId: data.userId },
+    where: { id: data.id, createdById: data.userId },
     data: { name: data.name, connectionString: data.connectionString },
   });
 }
 
 export async function deleteDataSource(id: string, userId: string) {
-  return prisma.dataSource.delete({ where: { id, userId } });
+  return prisma.dataSource.delete({ where: { id, createdById: userId } });
 }
 
 export async function getDatabaseUrl(userId: string, datasourceId: string) {
   const dataSource = await prisma.dataSource.findUnique({
-    where: { id: datasourceId, userId },
+    where: { id: datasourceId, createdById: userId },
     select: {
       connectionString: true,
     },

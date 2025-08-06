@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const llm = await getLlm();
 
     const dataSource = await prisma.dataSource.findUniqueOrThrow({
-      where: { id: dataSourceId, userId },
+      where: { id: dataSourceId, createdById: userId },
     });
 
     const connectionDetails = new URL(dataSource.connectionString);

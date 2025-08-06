@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const existingSampleDatabase = await prisma.dataSource.findFirst({
       where: {
-        userId,
+        createdById: userId,
         name: 'Sample Database',
       },
     });
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     const dataSource = await prisma.dataSource.create({
       data: {
-        userId,
+        createdById: userId,
         name: 'Sample Database',
         connectionString: 'sqlite://sample.db',
       },
