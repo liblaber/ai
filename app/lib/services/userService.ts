@@ -97,6 +97,35 @@ export const userService = {
     }));
   },
 
+  async getUsersByRole(roleId: string): Promise<UserProfile[]> {
+    const users = await prisma.user.findMany({
+      where: {
+        roles: {
+          some: {
+            roleId,
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        organizationId: true,
+        telemetryEnabled: true,
+      },
+    });
+
+    return users.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      organizationId: user.organizationId!,
+      telemetryEnabled: user.telemetryEnabled,
+    }));
+  },
+
   async updateUserRole(userId: string, organizationId: string, role: DeprecatedRole) {
     return await prisma.user.update({
       where: { id: userId, organizationId },
