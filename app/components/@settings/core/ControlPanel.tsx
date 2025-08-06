@@ -20,7 +20,7 @@ import DataTab from '~/components/@settings/tabs/data/DataTab';
 import DeployedAppsTab from '~/components/@settings/tabs/deployed-apps/DeployedAppsTab';
 import GitHubTab from '~/components/@settings/tabs/connections/GitHubTab';
 import { useUserStore } from '~/lib/stores/user';
-import { UserRole } from '@prisma/client';
+import { DeprecatedRole } from '@prisma/client';
 import OrganizationTab from '~/components/@settings/tabs/organization/OrganizationTab';
 import MembersTab from '~/components/@settings/tabs/members/MembersTab';
 
@@ -212,7 +212,7 @@ export const ControlPanel = () => {
                 <div className="flex-1 overflow-y-auto p-4">
                   <TabSection title="Workspace" tabs={visibleTabs} activeTab={activeTab} onTabClick={handleTabClick} />
 
-                  {role === UserRole.ADMIN && (
+                  {role === DeprecatedRole.ADMIN && (
                     <div className="mt-6">
                       <TabSection title="Admin" tabs={adminTabs} activeTab={activeTab} onTabClick={handleTabClick} />
                     </div>

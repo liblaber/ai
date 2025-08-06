@@ -1,7 +1,10 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+#!/usr/bin/env tsx
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
+import { spinner, log, intro, outro } from '@clack/prompts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -10,6 +13,11 @@ interface TableInfo {
 }
 
 async function setupSampleDatabase(): Promise<void> {
+  intro('🗄️  Sample Database Setup');
+
+  const setupSpinner = spinner();
+  setupSpinner.start('🔧 Setting up sample database');
+
   try {
     // Open database connection
     const db = new Database('./sample.db');
@@ -18,8 +26,9 @@ async function setupSampleDatabase(): Promise<void> {
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as TableInfo[];
 
     if (tables.length > 0) {
-      console.log('✅ Database already initialized');
+      setupSpinner.stop('✅ Database already initialized');
       db.close();
+      outro('🎉 Sample database is ready to use!');
 
       return;
     }
@@ -28,11 +37,14 @@ async function setupSampleDatabase(): Promise<void> {
     const initSql = fs.readFileSync(path.join(__dirname, '..', 'init', '01-init.sql'), 'utf-8');
     db.exec(initSql);
 
-    console.log('✅ Database initialized successfully');
+    setupSpinner.stop('✅ Database initialized successfully');
     db.close();
+
+    outro('🎉 Sample database setup complete!');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Failed to initialize database:', error);
+    setupSpinner.stop('❌ Failed to initialize database');
+    log.error(`Error: ${error}`);
     process.exit(1);
   }
 }

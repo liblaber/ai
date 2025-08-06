@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       schema = await getDatabaseSchema(dataSourceId, userId);
 
       const dataSource = await prisma.dataSource.findUniqueOrThrow({
-        where: { id: dataSourceId, userId },
+        where: { id: dataSourceId, createdById: userId },
       });
 
       type = getConnectionProtocol(dataSource.connectionString);

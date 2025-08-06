@@ -1,11 +1,11 @@
 import { prisma } from '~/lib/prisma';
-import type { UserRole } from '@prisma/client';
+import { DeprecatedRole } from '@prisma/client';
 
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: DeprecatedRole;
   organizationId: string;
   telemetryEnabled: boolean | null;
 }
@@ -76,10 +76,10 @@ export const userService = {
         organizationId,
       },
       select: {
-        role: true,
         id: true,
         name: true,
         email: true,
+        role: true,
         telemetryEnabled: true,
       },
       orderBy: {
@@ -97,7 +97,7 @@ export const userService = {
     }));
   },
 
-  async updateUserRole(userId: string, organizationId: string, role: UserRole) {
+  async updateUserRole(userId: string, organizationId: string, role: DeprecatedRole) {
     return await prisma.user.update({
       where: { id: userId, organizationId },
       data: { role },

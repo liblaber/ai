@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Get the data source to determine the database type
     const dataSource = await prisma.dataSource.findUniqueOrThrow({
-      where: { id: dataSourceId, userId },
+      where: { id: dataSourceId, createdById: userId },
     });
 
     const type = getConnectionProtocol(dataSource.connectionString);

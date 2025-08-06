@@ -517,7 +517,7 @@ export async function POST(request: NextRequest) {
               website = await prisma.website.update({
                 where: {
                   id: websiteId,
-                  userId,
+                  createdById: userId,
                 },
                 data: {
                   siteId: siteInfo.id,
@@ -540,7 +540,7 @@ export async function POST(request: NextRequest) {
                   siteName: siteInfo.name,
                   siteUrl: latestDeploy.links.permalink,
                   chatId: siteInfo.chatId,
-                  userId,
+                  createdById: userId,
                 },
               });
               logger.info(
