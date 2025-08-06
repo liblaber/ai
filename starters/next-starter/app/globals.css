@@ -162,7 +162,7 @@
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgb(156 163 175) transparent;
+    scrollbar-color: rgb(156 163 175) rgb(55 65 81);
   }
 
   *::-webkit-scrollbar {
@@ -171,7 +171,8 @@
   }
 
   *::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgb(55 65 81);
+    border-radius: 4px;
   }
 
   *::-webkit-scrollbar-thumb {
@@ -186,12 +187,16 @@
   }
 
   *::-webkit-scrollbar-corner {
-    background: transparent;
+    background: rgb(55 65 81);
   }
 
   /* Dark theme scrollbar */
   .dark * {
-    scrollbar-color: rgb(75 85 99) transparent;
+    scrollbar-color: rgb(75 85 99) rgb(31 41 55);
+  }
+
+  .dark *::-webkit-scrollbar-track {
+    background: rgb(31 41 55);
   }
 
   .dark *::-webkit-scrollbar-thumb {
@@ -200,5 +205,9 @@
 
   .dark *::-webkit-scrollbar-thumb:hover {
     background-color: rgb(107 114 128);
+  }
+
+  .dark *::-webkit-scrollbar-corner {
+    background: rgb(31 41 55);
   }
 }
