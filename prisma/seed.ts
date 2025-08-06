@@ -42,6 +42,8 @@ async function seed() {
       anonUser = await prisma.user.create({
         data: anonymousUser,
       });
+
+      console.log('Created anonymous user');
     }
 
     const account = await prisma.account.findFirst({

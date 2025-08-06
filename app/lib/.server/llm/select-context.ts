@@ -189,7 +189,7 @@ export async function selectContext(props: {
   logger.info(`Total files: ${totalFiles}`);
 
   if (totalFiles == 0) {
-    throw new Error(`Liblab failed to select files`);
+    throw new Error(`liblab failed to select files`);
   }
 
   return filteredFiles;

@@ -2,7 +2,7 @@ import { logger } from '~/utils/logger';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { DataAccessor } from '@liblab/data-access/dataAccessor';
-import type { Llm } from './get-llm';
+import { getLlm } from './get-llm';
 
 const queryDecisionSchema = z.object({
   shouldUpdateSql: z.boolean(),
@@ -46,7 +46,6 @@ export interface Table {
 export type GenerateSqlQueriesOptions = {
   schema: Table[];
   userPrompt: string;
-  llm: Llm;
   databaseType: string;
   implementationPlan?: string;
   existingQueries?: string[];
@@ -55,7 +54,6 @@ export type GenerateSqlQueriesOptions = {
 export async function generateSqlQueries({
   schema,
   userPrompt,
-  llm,
   databaseType,
   implementationPlan,
   existingQueries,
@@ -132,6 +130,8 @@ ${userPrompt}
 </userRequest>`;
 
   try {
+    const llm = await getLlm();
+
     logger.info(`Generating SQL for prompt: ${userPrompt}, using model: ${llm.instance.modelId}`);
 
     const result = await generateObject({
@@ -206,11 +206,9 @@ export function formatDbSchemaForLLM(schema: Table[]): string {
   return result;
 }
 
-export async function shouldGenerateSqlQueries(
-  userPrompt: string,
-  llm: Llm,
-  existingQueries?: string[],
-): Promise<boolean> {
+export async function shouldGenerateSqlQueries(userPrompt: string, existingQueries?: string[]): Promise<boolean> {
+  const llm = await getLlm();
+
   logger.info(`Deciding should SQL be generated for prompt: ${userPrompt} using model: ${llm.instance.modelId}`);
 
   const systemPrompt = `You are an experienced software engineer and an SQL expert tasked with determining whether a user's request requires updating existing SQL queries or not.

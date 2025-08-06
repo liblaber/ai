@@ -1,7 +1,6 @@
 # Test results
 test-results/
 playwright-report/
-test-results/
 
 # Dependencies
 node_modules/
@@ -31,4 +30,4 @@ coverage/
 
 # OS files
 .DS_Store
-Thumbs.db 
+Thumbs.db
