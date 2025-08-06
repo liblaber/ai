@@ -1,4 +1,5 @@
 import ignore from 'ignore';
+import { extractRelativePath } from '~/utils/diff';
 
 // Common patterns to ignore, similar to .gitignore
 export const IGNORE_PATTERNS = [
@@ -208,7 +209,7 @@ export const filesToArtifacts = (files: { [path: string]: { content: string } },
 ${Object.keys(files)
   .map(
     (filePath) => `
-<liblabAction type="file" filePath="${filePath}">
+<liblabAction type="file" filePath="${extractRelativePath(filePath)}">
 ${files[filePath].content}
 </liblabAction>
 `,

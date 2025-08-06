@@ -5,13 +5,13 @@
  * Preventing TS checks with files presented in the video for a better presentation.
  */
 import { useStore } from '@nanostores/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useMessageParser, useShortcuts, useSnapScroll } from '~/lib/hooks';
 import { chatId, description, navigateChat, useConversationHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { MessageRole, PROMPT_COOKIE_KEY } from '~/utils/constants';
+import { FIX_ANNOTATION, MessageRole, PROMPT_COOKIE_KEY } from '~/utils/constants';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
 import { BaseChat } from './BaseChat';
 import Cookies from 'js-cookie';
@@ -57,6 +57,14 @@ interface ChatProps {
   exportChatAction: () => void;
   description?: string;
 }
+
+export type SendMessageFn = (
+  event: React.UIEvent,
+  messageInput?: string,
+  isFixMessage?: boolean,
+  pendingUploadedFiles?: File[],
+  pendingImageDataList?: string[],
+) => Promise<void>;
 
 const logger = createScopedLogger('Chat');
 
@@ -114,7 +122,6 @@ export const ChatImpl = ({
   const [imageDataList, setImageDataList] = useState<string[]>([]);
   const [fakeLoading, setFakeLoading] = useState(false);
   const files = useStore(workbenchStore.files);
-  const actionAlert = useStore(workbenchStore.alert);
   const { contextOptimizationEnabled } = useSettings();
   const [dataSourceUrl, setDataSourceUrl] = useState<string>('');
 
@@ -248,7 +255,7 @@ export const ChatImpl = ({
   const sendMessage = async (
     _event: React.UIEvent,
     messageInput?: string,
-    askLiblab: boolean = false,
+    isFixMessage: boolean = false,
     pendingUploadedFiles?: File[],
     pendingImageDataList?: string[],
   ) => {
@@ -290,9 +297,9 @@ export const ChatImpl = ({
           content: formatMessageWithModelInfo({
             messageContent: userUpdateArtifact + messageContent,
             dataSourceId: selectedDataSourceId!,
-            askLiblab,
             dataList,
           }),
+          annotations: isFixMessage ? [FIX_ANNOTATION] : undefined,
           experimental_attachments: createExperimentalAttachments(dataList, files),
         },
         {
@@ -310,9 +317,9 @@ export const ChatImpl = ({
           content: formatMessageWithModelInfo({
             messageContent,
             dataSourceId: selectedDataSourceId!,
-            askLiblab,
             dataList,
           }),
+          annotations: isFixMessage ? [FIX_ANNOTATION] : undefined,
           experimental_attachments: createExperimentalAttachments(dataList, files),
         },
         {
@@ -328,7 +335,7 @@ export const ChatImpl = ({
     setUploadedFiles([]);
     setImageDataList([]);
 
-    workbenchStore.previewsStore.makingChanges();
+    workbenchStore.previewsStore.startLoading();
 
     textareaRef.current?.blur();
   };
@@ -375,11 +382,10 @@ export const ChatImpl = ({
       {
         id: generateId(),
         role: 'user',
-        annotations: ['hidden'],
+        annotations: ['hidden', FIX_ANNOTATION],
         content: formatMessageWithModelInfo({
           messageContent: `${userUpdateArtifact}${message}`,
           dataSourceId: selectedDataSourceId!,
-          askLiblab: true,
         }),
       },
     ]);
@@ -618,8 +624,6 @@ export const ChatImpl = ({
         setUploadedFiles={setUploadedFiles}
         imageDataList={imageDataList}
         setImageDataList={setImageDataList}
-        actionAlert={actionAlert}
-        clearAlert={() => workbenchStore.clearAlert()}
         data={chatData}
         error={error}
         onSyncFiles={syncLatestChanges}
@@ -642,7 +646,6 @@ interface MessageWithModelInfo {
   messageContent: string;
   dataSourceId: string;
   firstUserMessage?: boolean;
-  askLiblab?: boolean;
   dataList?: string[];
 }
 
@@ -657,17 +660,12 @@ const formatMessageWithModelInfo = ({
   messageContent,
   dataSourceId,
   firstUserMessage,
-  askLiblab,
   dataList,
 }: MessageWithModelInfo) => {
   let formattedMessage = '';
 
   if (firstUserMessage) {
     formattedMessage += `\n\n[FirstUserMessage: true]`;
-  }
-
-  if (askLiblab) {
-    formattedMessage += `\n\n[AskLiblab: true]`;
   }
 
   formattedMessage += `\n\n[DataSourceId: ${dataSourceId}]`;

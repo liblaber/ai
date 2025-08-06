@@ -18,10 +18,11 @@ import { extractRelativePath, toAbsoluteFilePath } from '~/utils/diff';
 import { chatId, description } from '~/lib/persistence';
 import Cookies from 'js-cookie';
 import { createSampler } from '~/utils/sampler';
-import type { ActionAlert } from '~/types/actions';
+import type { CodeError } from '~/types/actions';
 import type { LiblabShell } from '~/utils/shell';
 import { useGitStore } from './git';
 import ignore from 'ignore';
+import { logger } from '~/utils/logger';
 
 const { saveAs } = fileSaver;
 
@@ -46,7 +47,7 @@ export class WorkbenchStore {
   devMode: WritableAtom<boolean> = atom(false);
   currentView: WritableAtom<WorkbenchViewType> = atom('preview');
   unsavedFiles: WritableAtom<Set<string>> = atom(new Set<string>());
-  actionAlert: WritableAtom<ActionAlert | undefined> = atom<ActionAlert | undefined>(undefined);
+  codeErrors: WritableAtom<CodeError[]> = atom<CodeError[]>([]);
   artifactIdList: string[] = [];
   startCommand = atom<string>(DEFAULT_START_APP_COMMAND);
   actionStreamSampler = createSampler(async (data: ActionCallbackData, isStreaming: boolean = false) => {
@@ -125,10 +126,6 @@ export class WorkbenchStore {
     return this.#terminalStore.getShells;
   }
 
-  get alert() {
-    return this.actionAlert;
-  }
-
   async initialize(): Promise<void> {
     if (this.#initializationPromise) {
       return this.#initializationPromise;
@@ -147,8 +144,29 @@ export class WorkbenchStore {
     this.#globalExecutionQueue = this.#globalExecutionQueue.then(() => callback());
   }
 
-  clearAlert() {
-    this.actionAlert.set(undefined);
+  pushCodeError(error: CodeError) {
+    const isAlreadyDetected = this.codeErrors.get().some((existingError) => (existingError.content = error.content));
+
+    if (isAlreadyDetected) {
+      return;
+    }
+
+    this.codeErrors.set([...this.codeErrors.get(), error]);
+  }
+
+  clearCodeErrors() {
+    this.codeErrors.set([]);
+  }
+
+  getFixErrorsMessageText(errors: CodeError[] = this.codeErrors.get()): string {
+    if (!errors.length) {
+      logger.warn('Could not format fix errors message, codeErrors is empty');
+      return '';
+    }
+
+    return `*Fix detected errors*:\n\n${errors
+      .map((error) => `<pre><code>${error.content}</code></pre>`)
+      .join('\n\n')}`;
   }
 
   toggleTerminal(value?: boolean) {
@@ -313,10 +331,6 @@ export class WorkbenchStore {
     this.#reloadedMessages = new Set(messages);
   }
 
-  setAlert(alert: ActionAlert) {
-    this.actionAlert.set(alert);
-  }
-
   addArtifact({ messageId, title, id, type }: ArtifactCallbackData) {
     const artifact = this.#getArtifact(messageId);
 
@@ -335,12 +349,12 @@ export class WorkbenchStore {
       type,
       runner: new ActionRunner(
         () => this.shells,
-        (alert) => {
+        (codeError) => {
           if (this.#reloadedMessages.has(messageId)) {
             return;
           }
 
-          this.setAlert(alert);
+          this.pushCodeError(codeError);
         },
       ),
     });

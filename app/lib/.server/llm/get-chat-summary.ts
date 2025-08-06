@@ -5,12 +5,13 @@ import { getLlm } from '~/lib/.server/llm/get-llm';
 
 const logger = createScopedLogger('create-summary');
 
-export async function createSummary(props: {
+export async function getChatSummary(props: {
   messages: Message[];
   contextOptimization?: boolean;
   onFinish?: (resp: GenerateTextResult<Record<string, CoreTool<any, any>>, never>) => void;
+  isFixMessage?: boolean;
 }) {
-  const { messages, onFinish } = props;
+  const { messages, onFinish, isFixMessage } = props;
   const processedMessages = messages.map((message) => {
     if (message.role === 'user') {
       const { content } = extractPropertiesFromMessage(message);
@@ -30,15 +31,22 @@ export async function createSummary(props: {
   });
 
   let slicedMessages = processedMessages;
-  const { summary } = extractCurrentContext(processedMessages);
+  const { summary: currentChatSummary } = extractCurrentContext(processedMessages);
+
+  if (isFixMessage && currentChatSummary?.type === 'chatSummary') {
+    logger.debug('Using previous summary for fix request');
+
+    return currentChatSummary.summary;
+  }
+
   let summaryText: string | undefined = undefined;
   let chatId: string | undefined = undefined;
 
-  if (summary && summary.type === 'chatSummary') {
-    chatId = summary.chatId;
+  if (currentChatSummary && currentChatSummary.type === 'chatSummary') {
+    chatId = currentChatSummary.chatId;
     summaryText = `Below is the Chat Summary till now, this is chat summary before the conversation provided by the user
 you should also use this as historical message while providing the response to the user.
-${summary.summary}`;
+${currentChatSummary.summary}`;
 
     if (chatId) {
       let index = 0;

@@ -86,7 +86,7 @@ class WebContainerManager {
         const previewComponent = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement;
 
         if (previewComponent) {
-          workbenchStore.previewsStore.changesLoading();
+          workbenchStore.previewsStore.startLoading();
           workbenchStore.currentView.set('preview');
 
           setTimeout(() => {
@@ -102,7 +102,7 @@ class WebContainerManager {
 
     // Listen for preview errors
     webcontainer.on('preview-message', async (message) => {
-      if (streamingState.get() && !workbenchStore.previewsStore.readyForFixing.get()) {
+      if (streamingState.get()) {
         return;
       }
 
@@ -235,10 +235,19 @@ function getDescriptionAndContent(message: ConsoleErrorMessage & BasePreviewMess
   );
 
   if (!errorArg) {
-    const errorMessage = message.args?.find((arg) => typeof arg === 'string') || 'Unknown error';
+    const errorMessage =
+      message.args
+        ?.map((arg) => {
+          if (typeof arg === 'string') {
+            return arg;
+          }
+
+          return JSON.stringify(arg);
+        })
+        ?.join(', ') || 'Unknown error';
     const errorStack = message.stack || 'No stack trace available';
 
-    return { description: errorMessage, content: `${errorMessage}: ${errorStack}` };
+    return { description: errorMessage, content: `${errorMessage}: \nStack trace: ${errorStack}` };
   }
 
   return { description: `${errorArg.name}: ${errorArg.message}`, content: errorArg.stack };

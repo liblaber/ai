@@ -2,7 +2,7 @@
 
 import { path as nodePath } from '~/utils/path';
 import { atom, map, type MapStore } from 'nanostores';
-import type { ActionAlert, FileHistory, LiblabAction } from '~/types/actions';
+import type { CodeError, FileHistory, LiblabAction } from '~/types/actions';
 import { createScopedLogger } from '~/utils/logger';
 import { unreachable } from '~/utils/unreachable';
 import type { ActionCallbackData } from './message-parser';
@@ -73,12 +73,12 @@ class ActionCommandError extends Error {
 export class ActionRunner {
   runnerId = atom<string>(`${Date.now()}`);
   actions: ActionsMap = map({});
-  onAlert?: (alert: ActionAlert) => void;
+  onAlert?: (alert: CodeError) => void;
   buildOutput?: { path: string; exitCode: number; output: string };
   #currentExecutionPromise: Promise<void> = Promise.resolve();
   #shells: LiblabShell[] = [];
 
-  constructor(getShells: () => LiblabShell[], onAlert?: (alert: ActionAlert) => void) {
+  constructor(getShells: () => LiblabShell[], onAlert?: (alert: CodeError) => void) {
     this.onAlert = onAlert;
 
     // Initialize with the first shell instance

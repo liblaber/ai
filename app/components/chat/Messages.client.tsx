@@ -54,7 +54,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
       }
 
       try {
-        workbenchStore.previewsStore.changesLoading();
+        workbenchStore.previewsStore.startLoading();
 
         await rewindToSnapshot(chatId.get()!, rewindDialog.snapshotId);
 

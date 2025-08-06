@@ -14,7 +14,11 @@ export const useTrackStreamProgress = (data: ProgressAnnotation[], isStreaming: 
 
     const currentStepInProgress = data.findLast((step) => step.status === 'in-progress');
 
-    if (currentStepInProgress && currentStepInProgress.message !== workbenchStore.previewsStore.loadingText.get()) {
+    if (
+      currentStepInProgress &&
+      currentStepInProgress.message !== workbenchStore.previewsStore.loadingText.get() &&
+      !workbenchStore.previewsStore.isFixingIssues.get()
+    ) {
       workbenchStore.previewsStore.loadingText.set(currentStepInProgress.message);
     }
   }, [data]);
