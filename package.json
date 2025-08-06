@@ -13,7 +13,7 @@
     "dev": "tsx scripts/dev-with-db.ts && tsx pre-start.ts && next dev",
     "test": "jest",
     "start": "tsx setup-tunnel.ts && tsx run-migrations.ts && next start",
-    "prod": "tsx pre-start.ts && next build && next start -H 0.0.0.0",
+    "prod": "pnpm run build && pnpm run start",
     "dockerdev": "tsx pre-start.ts && next dev",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

@@ -5,6 +5,9 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
 import { ScreenshotSelector } from './ScreenshotSelector';
 import { PreviewLoader } from '~/components/workbench/PreviewLoader';
+import { logger } from '~/utils/logger';
+import { FixIssuesDialog } from './FixIssuesDialog';
+import type { SendMessageFn } from '~/components/chat/Chat.client';
 
 type ResizeSide = 'left' | 'right' | null;
 
@@ -22,7 +25,11 @@ const WINDOW_SIZES: WindowSize[] = [
   { name: 'Desktop', width: 1920, height: 1080, icon: 'i-ph:monitor' },
 ];
 
-export const Preview = memo(() => {
+type Props = {
+  sendMessage?: SendMessageFn;
+};
+
+export const Preview = memo(({ sendMessage }: Props) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -60,6 +67,13 @@ export const Preview = memo(() => {
 
   const [isWindowSizeDropdownOpen, setIsWindowSizeDropdownOpen] = useState(false);
   const [selectedWindowSize, setSelectedWindowSize] = useState<WindowSize>(WINDOW_SIZES[0]);
+
+  const codeErrors = useStore(workbenchStore.codeErrors);
+
+  const onFixIssue = async (message: string) => {
+    workbenchStore.previewsStore.fixingIssues();
+    await sendMessage?.({} as any, message, true);
+  };
 
   useEffect(() => {
     workbenchStore.previewsStore.loadingText.subscribe((newLoadingText) => {
@@ -262,6 +276,7 @@ export const Preview = memo(() => {
       {isPortDropdownOpen && (
         <div className="z-iframe-overlay w-full h-full absolute" onClick={() => setIsPortDropdownOpen(false)} />
       )}
+      {!isLoading && !!codeErrors.length && <FixIssuesDialog onFixIssue={onFixIssue} />}
       <div className="bg-liblab-elements-bg-depth-2 p-2 flex items-center gap-2">
         <div className="flex items-center gap-2">
           <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
@@ -385,9 +400,11 @@ export const Preview = memo(() => {
                 src={iframeUrl}
                 sandbox="allow-scripts allow-forms allow-popups allow-modals allow-storage-access-by-user-activation allow-same-origin"
                 allow="cross-origin-isolated"
-                onLoad={() => {
+                onLoad={(e) => {
+                  logger.debug('Handling iframe onLoad event', e);
+
                   if (!initialLoadRef.current) {
-                    workbenchStore.previewsStore.finishLoading();
+                    workbenchStore.previewsStore.startErrorCollectionPeriod();
                   }
 
                   initialLoadRef.current = false;
