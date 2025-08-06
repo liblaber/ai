@@ -32,6 +32,9 @@ services:
       - '.env'
     environment:
       - DATABASE_URL=postgresql://liblab:liblab_password@postgres:5432/liblab
+    volumes:
+      - snapshots_data:/app/snapshots
 
 volumes:
   postgres_data:
+  snapshots_data:
