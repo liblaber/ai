@@ -209,7 +209,7 @@ export const ControlPanel = () => {
             >
               {/* Sidebar */}
               <div className="w-[250px] h-full bg-white dark:bg-black border-r border-[#E5E5E5] dark:border-[#1A1A1A] flex flex-col">
-                <div className="flex-1 overflow-y-auto p-4">
+                <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
                   <TabSection title="Workspace" tabs={visibleTabs} activeTab={activeTab} onTabClick={handleTabClick} />
 
                   {role === UserRole.ADMIN && (
@@ -222,7 +222,7 @@ export const ControlPanel = () => {
 
               {/* Main Content */}
               <div className="flex-1 flex flex-col min-w-[650px]">
-                <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 relative">
+                <div className="flex-1 overflow-y-auto scrollbar-thin bg-gray-50 dark:bg-gray-900 relative">
                   <div className="absolute top-4 right-4 z-10">
                     <CloseCircle
                       variant="Bold"

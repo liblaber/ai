@@ -160,7 +160,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="w-[90vw] md:w-[600px] max-h-[85vh] overflow-y-auto"
+              className="w-[90vw] md:w-[600px] max-h-[85vh] overflow-y-auto scrollbar-thin"
             >
               <Dialog.Content className="relative bg-white dark:bg-[#1E1E1E] rounded-lg border border-[#E5E5E5] dark:border-[#333333] shadow-xl">
                 <div className="p-6 space-y-4">
@@ -197,7 +197,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     <p className="text-xs text-liblab-elements-textSecondary dark:text-liblab-elements-textSecondary-dark mb-2">
                       Pushed Files ({pushedFiles.length})
                     </p>
-                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+                    <div className="max-h-[200px] overflow-y-auto scrollbar-thin custom-scrollbar">
                       {pushedFiles.map((file) => (
                         <div
                           key={file.path}

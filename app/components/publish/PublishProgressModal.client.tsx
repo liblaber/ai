@@ -218,7 +218,7 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 relative">
+        <div className="flex-1 overflow-y-auto scrollbar-thin bg-gray-50 dark:bg-gray-900 relative">
           <div className="absolute top-4 right-4 z-10">
             <CloseCircle
               variant="Bold"
@@ -245,7 +245,7 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
                       {renderProgressBar()}
                       <div className="mt-6">
                         <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Deployment Logs</div>
-                        <div className="bg-white dark:bg-gray-800 rounded-md p-4 h-64 overflow-y-auto font-mono text-sm border border-gray-200 dark:border-gray-700">
+                        <div className="bg-white dark:bg-gray-800 rounded-md p-4 h-64 overflow-y-auto scrollbar-thin font-mono text-sm border border-gray-200 dark:border-gray-700">
                           {deploymentLogs.map((log, index) => (
                             <div key={index} className="text-gray-600 dark:text-gray-400">
                               {log}
