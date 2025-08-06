@@ -11,8 +11,8 @@ MODE=${1:-headed}
 echo "🚀 Running liblab.ai E2E tests in $MODE mode..."
 
 # Check if we're in the right directory
-if [ ! -d "e2e-tests" ]; then
-    echo "❌ Error: e2e-tests directory not found. Make sure you're in the project root."
+if [ ! -d "tests/e2e" ]; then
+    echo "❌ Error: tests/e2e directory not found. Make sure you're in the project root."
     exit 1
 fi
 
@@ -30,10 +30,38 @@ if ! curl -s http://localhost:3000 > /dev/null 2>&1; then
     exit 1
 fi
 
-# Navigate to e2e-tests directory and run the tests
-cd e2e-tests
+# Navigate to tests/e2e directory
+cd tests/e2e
 
-# Run the tests using the script we created
-./run-tests.sh $MODE
+# Install dependencies if node_modules doesn't exist
+if [ ! -d "node_modules" ]; then
+    echo "📦 Installing dependencies..."
+    pnpm install
+fi
 
-echo "✅ E2E tests completed!" 
+# Run the tests based on the mode using pnpm
+case $MODE in
+    "headed")
+        echo " Running tests with browser visible..."
+        pnpm run test:headed
+        ;;
+    "ui")
+        echo " Running tests with Playwright UI..."
+        pnpm run test:ui
+        ;;
+    "debug")
+        echo "🐛 Running tests in debug mode..."
+        pnpm run test:debug
+        ;;
+    "headless")
+        echo "👻 Running tests in headless mode..."
+        pnpm test
+        ;;
+    *)
+        echo "❌ Invalid mode: $MODE"
+        echo "Available modes: headed, ui, debug, headless"
+        exit 1
+        ;;
+esac
+
+echo "✅ E2E tests completed!"

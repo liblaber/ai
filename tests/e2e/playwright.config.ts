@@ -42,6 +42,7 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
+
         // Show browser window during test execution
         headless: false,
       },
