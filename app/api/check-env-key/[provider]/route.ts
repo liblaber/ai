@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LLMManager } from '~/lib/modules/llm/manager';
-import { env } from '~/env/client';
+import { env } from '~/env/server';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
   const llmManager = LLMManager.getInstance();
