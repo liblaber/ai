@@ -70,7 +70,7 @@ npm run report
 
 ## Test Flow
 
-The main test (`user-flow.spec.ts`) follows this user journey:
+The main test (`user-onboarding-flow.spec.ts`) follows this user journey:
 
 1. **Navigate to the application** - Opens the base URL
 2. **Handle telemetry consent** - If the telemetry consent page appears, clicks "Decline"
