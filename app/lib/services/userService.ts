@@ -8,20 +8,46 @@ export interface UserProfile {
   role: DeprecatedRole;
   organizationId: string;
   telemetryEnabled: boolean | null;
+  roles?: UserRole[];
 }
+
+export interface UserRole {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
+type UserUpdateData = Partial<Omit<UserProfile, 'id' | 'organizationId' | 'roles'>>;
+
+const userSelect = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  organizationId: true,
+  telemetryEnabled: true,
+};
+
+const userSelectWithRoles = {
+  ...userSelect,
+  roles: {
+    select: {
+      role: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+        },
+      },
+    },
+  },
+};
 
 export const userService = {
   async getUser(userId: string): Promise<UserProfile> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        organizationId: true,
-        telemetryEnabled: true,
-      },
+      select: userSelectWithRoles,
     });
 
     if (!user) {
@@ -35,13 +61,19 @@ export const userService = {
       role: user.role,
       organizationId: user.organizationId!,
       telemetryEnabled: user.telemetryEnabled,
+      roles: user.roles.map((r) => ({
+        id: r.role.id,
+        name: r.role.name,
+        description: r.role.description || undefined,
+      })),
     };
   },
 
-  async updateUser(userId: string, data: Partial<UserProfile>): Promise<UserProfile> {
+  async updateUser(userId: string, data: UserUpdateData): Promise<UserProfile> {
     const user = await prisma.user.update({
       where: { id: userId },
       data,
+      select: userSelect,
     });
 
     return {
@@ -58,6 +90,7 @@ export const userService = {
     const user = await prisma.user.update({
       where: { id: userId },
       data: { telemetryEnabled },
+      select: userSelect,
     });
 
     return {
@@ -75,13 +108,7 @@ export const userService = {
       where: {
         organizationId,
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        telemetryEnabled: true,
-      },
+      select: userSelectWithRoles,
       orderBy: {
         email: 'asc',
       },
@@ -94,6 +121,11 @@ export const userService = {
       role: user.role,
       telemetryEnabled: user.telemetryEnabled,
       organizationId,
+      roles: user.roles.map((r) => ({
+        id: r.role.id,
+        name: r.role.name,
+        description: r.role.description || undefined,
+      })),
     }));
   },
 
@@ -106,14 +138,7 @@ export const userService = {
           },
         },
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        organizationId: true,
-        telemetryEnabled: true,
-      },
+      select: userSelect,
     });
 
     return users.map((user) => ({
@@ -124,6 +149,45 @@ export const userService = {
       organizationId: user.organizationId!,
       telemetryEnabled: user.telemetryEnabled,
     }));
+  },
+
+  async addUserToRole(userId: string, roleId: string): Promise<UserProfile> {
+    const userRole = await prisma.userRole.create({
+      data: {
+        userId,
+        roleId,
+      },
+      select: {
+        user: {
+          select: userSelectWithRoles,
+        },
+      },
+    });
+
+    return {
+      id: userRole.user.id,
+      name: userRole.user.name,
+      email: userRole.user.email,
+      role: userRole.user.role,
+      organizationId: userRole.user.organizationId!,
+      telemetryEnabled: userRole.user.telemetryEnabled,
+      roles: userRole.user.roles.map((r) => ({
+        id: r.role.id,
+        name: r.role.name,
+        description: r.role.description || undefined,
+      })),
+    };
+  },
+
+  async removeUserFromRole(userId: string, roleId: string): Promise<void> {
+    await prisma.userRole.delete({
+      where: {
+        userId_roleId: {
+          userId,
+          roleId,
+        },
+      },
+    });
   },
 
   async updateUserRole(userId: string, organizationId: string, role: DeprecatedRole) {
