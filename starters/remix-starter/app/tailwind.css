@@ -8,8 +8,6 @@ body,
   min-height: 100vh;
 }
 
-@custom-variant dark (&:is(.dark *));
-
 @layer base {
   :root {
     --background: oklch(1 0 0);
@@ -135,7 +133,7 @@ body,
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgb(156 163 175) rgb(55 65 81);
+    scrollbar-color: var(--Grey-Grey-50, #f7f7f8) transparent;
   }
 
   *::-webkit-scrollbar {
@@ -144,32 +142,27 @@ body,
   }
 
   *::-webkit-scrollbar-track {
-    background: rgb(55 65 81);
-    border-radius: 4px;
+    background: transparent;
   }
 
   *::-webkit-scrollbar-thumb {
-    background-color: rgb(156 163 175);
+    background-color: var(--Grey-Grey-50, #f7f7f8);
     border-radius: 4px;
     border: 2px solid transparent;
     background-clip: content-box;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(107 114 128);
+    background-color: rgb(214 219 220);
   }
 
   *::-webkit-scrollbar-corner {
-    background: rgb(55 65 81);
+    background: transparent;
   }
 
   /* Dark theme scrollbar */
   .dark * {
-    scrollbar-color: rgb(75 85 99) rgb(31 41 55);
-  }
-
-  .dark *::-webkit-scrollbar-track {
-    background: rgb(31 41 55);
+    scrollbar-color: rgb(75 85 99) transparent;
   }
 
   .dark *::-webkit-scrollbar-thumb {
@@ -178,9 +171,5 @@ body,
 
   .dark *::-webkit-scrollbar-thumb:hover {
     background-color: rgb(107 114 128);
-  }
-
-  .dark *::-webkit-scrollbar-corner {
-    background: rgb(31 41 55);
   }
 }

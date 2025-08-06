@@ -132,7 +132,7 @@ export const FileTree = memo(
     };
 
     return (
-      <div className={classNames('text-sm scrollbar-thin', className, 'overflow-y-auto')}>
+      <div className={classNames('text-sm ', className, 'overflow-y-auto')}>
         {filteredFileList.map((fileOrFolder) => {
           switch (fileOrFolder.kind) {
             case 'file': {
