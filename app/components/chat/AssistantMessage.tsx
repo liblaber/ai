@@ -69,7 +69,7 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
                 <div className="max-w-chat">
                   <div className="summary max-h-96 flex flex-col">
                     <h2 className="border border-liblab-elements-borderColor rounded-md p4">Summary</h2>
-                    <div style={{ zoom: 0.7 }} className="overflow-y-auto  m4">
+                    <div style={{ zoom: 0.7 }} className="overflow-y-auto m4">
                       <Markdown>{chatSummary}</Markdown>
                     </div>
                   </div>

@@ -111,7 +111,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
     };
 
     return (
-      <div id={id} className={classNames(className, '')} ref={ref}>
+      <div id={id} className={className} ref={ref}>
         {messages.length > 0
           ? messages.map((message, index) => {
               const { role, content, id: messageId, annotations } = message;
