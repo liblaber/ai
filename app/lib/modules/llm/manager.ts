@@ -1,9 +1,10 @@
+import { env } from '~/env';
 import { BaseProvider } from './base-provider';
 import * as providers from './registry';
 
 export class LLMManager {
   private static _instance: LLMManager;
-  private readonly _env: Record<string, string>;
+  private readonly _env: typeof env.server;
   private readonly _defaultModel: string;
   private readonly _defaultProvider: string;
   private _provider: BaseProvider | null = null;
@@ -16,16 +17,16 @@ export class LLMManager {
     return this._defaultModel;
   }
 
-  private constructor(_env: Record<string, string>) {
-    this._env = _env;
-    this._defaultModel = _env.DEFAULT_LLM_MODEL || 'claude-3-5-sonnet-latest';
-    this._defaultProvider = _env.DEFAULT_LLM_PROVIDER || 'Anthropic';
+  private constructor() {
+    this._env = env.server;
+    this._defaultModel = env.server.DEFAULT_LLM_MODEL;
+    this._defaultProvider = env.server.DEFAULT_LLM_PROVIDER;
     this._initializeProvider();
   }
 
   static getInstance(): LLMManager {
     if (!LLMManager._instance) {
-      LLMManager._instance = new LLMManager(process.env as Record<string, string>);
+      LLMManager._instance = new LLMManager();
     }
 
     return LLMManager._instance;

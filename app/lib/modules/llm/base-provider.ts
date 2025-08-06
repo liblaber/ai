@@ -2,7 +2,7 @@ import type { LanguageModelV1 } from 'ai';
 import type { ProviderInfo, ProviderConfig } from './types';
 import type { IProviderSetting } from '~/types/model';
 import { createOpenAI } from '@ai-sdk/openai';
-import { LLMManager } from './manager';
+import { env } from '~/env';
 
 export abstract class BaseProvider implements ProviderInfo {
   abstract name: string;
@@ -15,13 +15,11 @@ export abstract class BaseProvider implements ProviderInfo {
   getProviderBaseUrlAndKey(options: {
     apiKeys?: Record<string, string>;
     providerSettings?: IProviderSetting;
-    serverEnv?: Record<string, string>;
     defaultBaseUrlKey: string;
     defaultApiTokenKey: string;
   }) {
-    const { apiKeys, providerSettings, serverEnv, defaultBaseUrlKey, defaultApiTokenKey } = options;
+    const { apiKeys, providerSettings, defaultBaseUrlKey, defaultApiTokenKey } = options;
     let settingsBaseUrl = providerSettings?.baseUrl;
-    const manager = LLMManager.getInstance();
 
     if (settingsBaseUrl && settingsBaseUrl.length == 0) {
       settingsBaseUrl = undefined;
@@ -30,9 +28,7 @@ export abstract class BaseProvider implements ProviderInfo {
     const baseUrlKey = this.config.baseUrlKey || defaultBaseUrlKey;
     let baseUrl =
       settingsBaseUrl ||
-      serverEnv?.[baseUrlKey] ||
-      process?.env?.[baseUrlKey] ||
-      manager.env?.[baseUrlKey] ||
+      (env.server ? (env.server as unknown as Record<string, string | undefined>)[baseUrlKey] : undefined) ||
       this.config.baseUrl;
 
     if (baseUrl && baseUrl.endsWith('/')) {
@@ -41,7 +37,8 @@ export abstract class BaseProvider implements ProviderInfo {
 
     const apiTokenKey = this.config.apiTokenKey || defaultApiTokenKey;
     const apiKey =
-      apiKeys?.[this.name] || serverEnv?.[apiTokenKey] || process?.env?.[apiTokenKey] || manager.env?.[apiTokenKey];
+      apiKeys?.[this.name] ||
+      (env.server ? (env.server as unknown as Record<string, string | undefined>)[apiTokenKey] : undefined);
 
     return {
       baseUrl,

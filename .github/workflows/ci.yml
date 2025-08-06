@@ -85,6 +85,7 @@ jobs:
           NODE_ENV: production
           ENCRYPTION_KEY: ${{ secrets.DUMMY_ENCRYPTION_KEY }}
           AUTH_SECRET: ${{ secrets.DUMMY_AUTH_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.DUMMY_ANTHROPIC_API_KEY }}
 
       - name: 🧪 Run tests
         run: pnpm test
@@ -92,6 +93,7 @@ jobs:
           NODE_ENV: production
           ENCRYPTION_KEY: ${{ secrets.DUMMY_ENCRYPTION_KEY }}
           AUTH_SECRET: ${{ secrets.DUMMY_AUTH_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.DUMMY_ANTHROPIC_API_KEY }}
 
   all-checks:
     name: ✅ All Checks Passed

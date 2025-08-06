@@ -16,11 +16,10 @@ export default class AnthropicProvider extends BaseProvider {
     apiKeys?: Record<string, string>;
     providerSettings?: Record<string, IProviderSetting>;
   }) => LanguageModelV1 = (options) => {
-    const { apiKeys, providerSettings, serverEnv, model } = options;
+    const { apiKeys, providerSettings, model } = options;
     const { apiKey } = this.getProviderBaseUrlAndKey({
       apiKeys,
       providerSettings,
-      serverEnv: serverEnv as any,
       defaultBaseUrlKey: '',
       defaultApiTokenKey: 'ANTHROPIC_API_KEY',
     });
