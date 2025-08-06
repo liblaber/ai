@@ -34,6 +34,8 @@ services:
       # Exclude node_modules and .next to use container's version
       - /app/node_modules
       - /app/.next
+      # Persist snapshots between container restarts
+      - snapshots_data:/app/snapshots
     env_file:
       - '.env'
     environment:
@@ -45,3 +47,4 @@ services:
 
 volumes:
   postgres_data:
+  snapshots_data:
