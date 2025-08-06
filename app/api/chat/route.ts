@@ -31,6 +31,8 @@ export async function POST(request: NextRequest) {
 }
 
 async function chatAction(request: NextRequest) {
+  const userId = await requireUserId(request);
+
   const body = await request.json<{
     messages: Messages;
     files: any;
@@ -198,7 +200,6 @@ async function chatAction(request: NextRequest) {
             dataStream.writeData(currentProgressAnnotation);
 
             const dataSource = await conversationService.getConversationDataSource(conversationId);
-            const userId = await requireUserId(request);
             const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
 
             implementationPlan = await createImplementationPlan({
