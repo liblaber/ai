@@ -17,7 +17,7 @@ export interface UserRole {
   description?: string | null;
 }
 
-type UserUpdateData = Partial<Omit<UserProfile, 'id' | 'organizationId' | 'roles'>>;
+type UserUpdateData = Partial<Omit<UserProfile, 'id' | 'roles'>>;
 
 const userSelect = {
   id: true,
