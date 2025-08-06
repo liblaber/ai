@@ -24,13 +24,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: `Environment variable ${envVarName} not found` }, { status: 400 });
   }
 
-  /*
-   * Check for API key in the following order:
-   * 1. Process environment variables (NextJS)
-   * 2. LLMManager environment variables
-   */
-  const fixedEnvVarName = envVarName as keyof typeof env;
-  const apiKey = env[fixedEnvVarName];
+  // Check if the API key exists in the validated server environment
+  const apiKey = env[envVarName as keyof typeof env];
 
   return NextResponse.json({ hasKey: !!apiKey });
 }

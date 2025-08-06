@@ -15,11 +15,10 @@ export abstract class BaseProvider implements ProviderInfo {
   getProviderBaseUrlAndKey(options: {
     apiKeys?: Record<string, string>;
     providerSettings?: IProviderSetting;
-    serverEnv?: Record<string, string>;
     defaultBaseUrlKey: string;
     defaultApiTokenKey: string;
   }) {
-    const { apiKeys, providerSettings, serverEnv, defaultBaseUrlKey, defaultApiTokenKey } = options;
+    const { apiKeys, providerSettings, defaultBaseUrlKey, defaultApiTokenKey } = options;
     let settingsBaseUrl = providerSettings?.baseUrl;
 
     if (settingsBaseUrl && settingsBaseUrl.length == 0) {
@@ -29,8 +28,7 @@ export abstract class BaseProvider implements ProviderInfo {
     const baseUrlKey = this.config.baseUrlKey || defaultBaseUrlKey;
     let baseUrl =
       settingsBaseUrl ||
-(env.server ? (env.server as unknown as Record<string, string | undefined>)[baseUrlKey] : undefined) ||
-      this.config.baseUrl;
+      (env.server ? (env.server as unknown as Record<string, string | undefined>)[baseUrlKey] : undefined) ||
       this.config.baseUrl;
 
     if (baseUrl && baseUrl.endsWith('/')) {
@@ -38,7 +36,9 @@ export abstract class BaseProvider implements ProviderInfo {
     }
 
     const apiTokenKey = this.config.apiTokenKey || defaultApiTokenKey;
-    const apiKey = apiKeys?.[this.name] || serverEnv?.[apiTokenKey];
+    const apiKey =
+      apiKeys?.[this.name] ||
+      (env.server ? (env.server as unknown as Record<string, string | undefined>)[apiTokenKey] : undefined);
 
     return {
       baseUrl,
