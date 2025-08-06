@@ -8,7 +8,7 @@ import path from 'path';
  */
 const runSetup = async (): Promise<void> => {
   try {
-    execSync('sh ./scripts/setup.sh', { stdio: 'inherit' });
+    execSync('tsx ./scripts/setup.ts', { stdio: 'inherit' });
 
     reloadEnvFile();
 
