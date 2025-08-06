@@ -388,6 +388,7 @@ export const Workbench = memo(({ chatStarted, isStreaming, actionRunner, onSyncF
       <motion.div animate={'open'} variants={workbenchVariants} className="z-workbench">
         <div
           className={classNames(
+            'scrollbar-thin',
             'fixed top-[calc(var(--header-height)+1.5rem)] bottom-6 w-[var(--workbench-inner-width)] mr-4 z-0 transition-[left,width] duration-200 liblab-ease-cubic-bezier left-[var(--workbench-left)]',
             {
               'w-full': isSmallViewport,
