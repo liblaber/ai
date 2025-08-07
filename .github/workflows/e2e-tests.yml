@@ -2,9 +2,9 @@ name: 🧪 E2E Tests
 
 on:
   push:
-    branches: [main, stevank/eng-594/e2e-tests-setup, develop]
+    branches: [main, stevank/eng-594/e2e-tests-setup, dev]
   pull_request:
-    branches: [main, develop]
+    branches: [main, dev]
   workflow_dispatch:
 
 concurrency:
@@ -15,7 +15,7 @@ jobs:
   e2e-tests:
     name: 🧪 Run E2E Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
 
     steps:
       - name: 📥 Checkout code
@@ -37,7 +37,7 @@ jobs:
           # Copy .env.example to .env first
           cp .env.example .env
 
-          # Overwrite values from .env.example
+          # Set mandatory values in .env because we can't set them interactively through the CLI from GitHub action
           echo "ANTHROPIC_API_KEY=${{ secrets.DUMMY_ANTHROPIC_API_KEY }}" >> .env
           echo "DEFAULT_LLM_PROVIDER=Google" >> .env
           echo "DEFAULT_LLM_MODEL=gemini-2.5-flash" >> .env
@@ -56,7 +56,7 @@ jobs:
           timeout 300 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 5; done'
           echo "✅ Application is ready!"
 
-      - name: 📋 Show Docker container logs
+      - name: 📋 Show Docker ai-app container logs
         run: |
           echo "📋 Container logs:"
           docker compose logs --tail=200 ai-app
@@ -73,6 +73,11 @@ jobs:
         env:
           BASE_URL: http://localhost:3000
           CI: true
+
+      - name: 📋 Show Docker ai-app container logs after test run
+        run: |
+          echo "📋 Container logs:"
+          docker compose logs --tail=200 ai-app
 
       - name: 📊 Upload test results
         if: always()

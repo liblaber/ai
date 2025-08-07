@@ -4,7 +4,7 @@ test.describe('User Onboarding Flow Test', () => {
   test('Complete user onboarding flow', async ({ page }) => {
     test.setTimeout(120000); // 2 minutes for this specific test
 
-    // Enable console logging to see what's happening
+    // Enable browser console logging for debugging
     page.on('console', (msg: any) => console.log('Browser console:', msg.text()));
     page.on('pageerror', (error: any) => console.log('Browser error:', error.message));
 
