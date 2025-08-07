@@ -3,14 +3,14 @@ import { deleteRole, getRole, updateRole } from '~/lib/services/roleService';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
 
-export async function GET(request: NextRequest, { params }: { params: { roleId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ roleId: string }> }) {
   const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.read, PermissionResource.AdminApp)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const { roleId } = params;
+  const { roleId } = await params;
 
   const role = await getRole(roleId);
 
@@ -21,14 +21,14 @@ export async function GET(request: NextRequest, { params }: { params: { roleId: 
   return NextResponse.json({ success: true, role });
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { roleId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ roleId: string }> }) {
   const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.update, PermissionResource.AdminApp)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const { roleId } = params;
+  const { roleId } = await params;
 
   const body = (await request.json()) as {
     name: string;
@@ -57,14 +57,14 @@ export async function PUT(request: NextRequest, { params }: { params: { roleId: 
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { roleId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ roleId: string }> }) {
   const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.delete, PermissionResource.AdminApp)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const { roleId } = params;
+  const { roleId } = await params;
 
   try {
     await deleteRole(roleId);

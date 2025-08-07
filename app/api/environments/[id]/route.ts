@@ -3,14 +3,14 @@ import { deleteEnvironment, getEnvironment, updateEnvironment } from '~/lib/serv
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.read, PermissionResource.Environment)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   const environment = await getEnvironment(id);
 
@@ -21,14 +21,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   return NextResponse.json({ success: true, environment });
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.update, PermissionResource.Environment)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   const body = (await request.json()) as {
     name: string;
@@ -60,14 +60,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.delete, PermissionResource.Environment)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   try {
     await deleteEnvironment(id);

@@ -3,14 +3,17 @@ import { userService } from '~/lib/services/userService';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
 
-export async function DELETE(request: NextRequest, { params }: { params: { roleId: string; userId: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ roleId: string; userId: string }> },
+) {
   const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.delete, PermissionResource.AdminApp)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const { roleId, userId } = params;
+  const { roleId, userId } = await params;
 
   try {
     await userService.removeUserFromRole(userId, roleId);
