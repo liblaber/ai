@@ -60,10 +60,19 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
       color: 'var(--liblab-elements-textPrimary)',
       fontSize: '14px',
     }),
-    menu: () => ({
+    menu: (base: any) => ({
+      ...base,
       minWidth: '200px',
       borderRadius: '1rem',
+      backgroundColor: 'var(--liblab-elements-bg-depth-2) !important',
+      boxShadow: '0 4px 6px 2px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+      marginTop: '0.25rem',
+      cursor: 'pointer',
+      border: '2px solid var(--liblab-elements-borderColor)',
+      zIndex: 9999,
+      textAlign: 'initial',
     }),
+
     option: (base: any, state: any) => ({
       ...base,
       fontSize: '14px',
@@ -112,6 +121,7 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
         isDisabled={disabled}
         components={{ DropdownIndicator }}
         styles={customStyles}
+        menuPlacement="bottom"
       />
     </div>
   );
