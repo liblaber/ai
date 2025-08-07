@@ -1,3 +1,4 @@
+import { prisma } from '~/lib/prisma';
 import { PureAbility, AbilityBuilder } from '@casl/ability';
 import { createPrismaAbility } from '@casl/prisma';
 import { PermissionResource, PermissionAction } from '@prisma/client';
@@ -81,7 +82,35 @@ export async function getUserAbility(userId: string): Promise<AppAbility> {
   const permissions = await getUserPermissions(userId);
   const userAbility = createAbilityForUser(permissions);
 
+  logger.debug(`Caching user ability for user ID: ${userId}`);
   ABILITY_CACHE[userId] = userAbility;
 
   return userAbility;
+}
+
+export function invalidateUserAbilityCache(userId: string): void {
+  logger.debug(`Invalidating user ability cache for user ID: ${userId}`);
+  delete ABILITY_CACHE[userId];
+}
+
+export async function invalidateUserAbilityCacheByRoleId(roleId: string): Promise<void> {
+  logger.debug(`Invalidating user ability cache for role ID: ${roleId}`);
+
+  const userRoles = await prisma.userRole.findMany({
+    where: { roleId },
+    select: { userId: true },
+  });
+
+  if (userRoles.length === 0) {
+    logger.debug(`No users found for role ID: ${roleId}`);
+    return;
+  }
+
+  logger.debug(`Found ${userRoles.length} user(s) for role ID: ${roleId}. Invalidating their ability cache.`);
+
+  userRoles.forEach((userRole) => {
+    invalidateUserAbilityCache(userRole.userId);
+  });
+
+  logger.debug(`Invalidated user ability cache for ${userRoles.length} user(s) associated with role ID: ${roleId}`);
 }

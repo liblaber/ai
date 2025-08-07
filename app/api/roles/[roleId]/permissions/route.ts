@@ -3,6 +3,7 @@ import { createPermission, getRolePermissions } from '~/lib/services/permissionS
 import { getRole } from '~/lib/services/roleService';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource } from '@prisma/client';
+import { invalidateUserAbilityCacheByRoleId } from '~/lib/casl/user-ability';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ roleId: string }> }) {
   const { userAbility } = await requireUserAbility(request);
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       body.dataSourceId,
       body.websiteId,
     );
+    invalidateUserAbilityCacheByRoleId(roleId);
 
     return NextResponse.json({ success: true, permission });
   } catch (error) {

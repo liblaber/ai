@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { userService } from '~/lib/services/userService';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
+import { invalidateUserAbilityCache } from '~/lib/casl/user-ability';
 
 export async function DELETE(
   request: NextRequest,
@@ -17,6 +18,8 @@ export async function DELETE(
 
   try {
     await userService.removeUserFromRole(userId, roleId);
+    invalidateUserAbilityCache(userId);
+
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
