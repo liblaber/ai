@@ -105,7 +105,7 @@ export class SQLiteAccessor implements BaseAccessor {
 
       // For each table, get its columns
       for (const table of tables) {
-        const columns: SQLiteColumn[] = this._db.pragma(`table_info("${table.table_name}")`) as SQLiteColumn[];
+        const columns: SQLiteColumn[] = this._db.pragma(`table_info("${table.table_name.replace(/"/g, '""')}")`) as SQLiteColumn[];
         result.push({
           tableName: table.table_name,
           columns: columns.map((col) => {
