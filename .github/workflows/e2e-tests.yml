@@ -32,20 +32,6 @@ jobs:
           node-version-file: '.tool-versions'
           cache: 'pnpm'
 
-      - name: 📥 Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: 🗄️ Generate Prisma client
-        run: pnpm prisma:generate
-
-      - name: 🐳 Setup Docker
-        run: |
-          # Ensure Docker is running
-          sudo systemctl start docker || true
-          # Verify Docker is available
-          docker --version
-          docker compose version
-
       - name: 📄 Update .env file
         run: |
           # Update or add the three specific AI provider settings
@@ -53,13 +39,11 @@ jobs:
           echo "DEFAULT_LLM_MODEL=gemini-2.5-flash" >> .env
           echo "GOOGLE_GENERATIVE_AI_API_KEY=${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY || 'dummy_key' }}" >> .env
           echo "NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN || 'dummy_key' }}" >> .env
-          echo "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY || 'dummy_key' }}" >> .env
-          echo "AUTH_SECRET=${{ secrets.AUTH_SECRET || 'dummy_key' }}" >> .env
 
-      - name: 🐳 Start Docker services
+      - name: 🐳 Run liblab quickstart
         run: |
           # Start the database and app using docker compose directly
-          docker compose up -d
+          pnpm run quickstart
 
           # Wait for the app to be ready
           echo "⏳ Waiting for the application to be ready..."
