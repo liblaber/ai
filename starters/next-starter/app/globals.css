@@ -166,7 +166,7 @@
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) transparent;
+    scrollbar-color: var(--scrollbar-thumb);
   }
 
   *::-webkit-scrollbar {
@@ -179,7 +179,7 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background-color: var(--scrollbar-thumb);
+    background-color: var(--scrollbar-thumb) transparent;
     border-radius: 4px;
     border: 2px solid transparent;
     background-clip: content-box;
@@ -195,6 +195,6 @@
 
   /* Dark theme scrollbar */
   .dark *::-webkit-scrollbar-thumb:hover {
-    background-color: var(--scrollbar-thumb-hover);
+    background-color: var(--scrollbar-thumb-hover) transparent;
   }
 }
