@@ -1,7 +1,8 @@
 import { convertToCoreMessages, generateId, type Message, streamText as _streamText } from 'ai';
 import { type FileMap } from './constants';
 import { getSystemPrompt } from '~/lib/common/prompts/prompts';
-import { DEFAULT_PROVIDER, MessageRole, MODIFICATIONS_TAG_NAME, WORK_DIR } from '~/utils/constants';
+import { DEFAULT_PROVIDER } from '~/utils/constants/server';
+import { MessageRole, MODIFICATIONS_TAG_NAME, WORK_DIR } from '~/utils/constants';
 import { PromptLibrary } from '~/lib/common/prompt-library';
 import { allowedHTMLElements } from '~/utils/markdown';
 import { createScopedLogger } from '~/utils/logger';

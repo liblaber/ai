@@ -45,7 +45,6 @@ export default class OllamaProvider extends BaseProvider {
     let { baseUrl } = this.getProviderBaseUrlAndKey({
       apiKeys,
       providerSettings: providerSettings?.[this.name],
-      serverEnv: envRecord,
       defaultBaseUrlKey: 'OLLAMA_API_BASE_URL',
       defaultApiTokenKey: '',
     });

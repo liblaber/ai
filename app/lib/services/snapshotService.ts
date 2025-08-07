@@ -17,7 +17,9 @@ export const snapshotService = {
       storageType: snapshotData.storageType,
       storageKey: snapshotData.storageKey,
       conversationId: snapshotData.conversationId,
-      ...(snapshotData.messageId !== undefined && { messageId: snapshotData.messageId }),
+
+      // deliberately comparing != null to cover both null and undefined
+      ...(snapshotData.messageId != null && { messageId: snapshotData.messageId }),
     };
 
     return (tx ?? prisma).snapshot.create({

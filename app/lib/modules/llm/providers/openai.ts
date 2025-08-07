@@ -16,12 +16,11 @@ export default class OpenAIProvider extends BaseProvider {
     apiKeys?: Record<string, string>;
     providerSettings?: Record<string, IProviderSetting>;
   }): LanguageModelV1 {
-    const { model, serverEnv, apiKeys, providerSettings } = options;
+    const { model, apiKeys, providerSettings } = options;
 
     const { apiKey } = this.getProviderBaseUrlAndKey({
       apiKeys,
       providerSettings: providerSettings?.[this.name],
-      serverEnv: serverEnv as any,
       defaultBaseUrlKey: '',
       defaultApiTokenKey: 'OPENAI_API_KEY',
     });
