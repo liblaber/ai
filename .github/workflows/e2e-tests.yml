@@ -34,9 +34,14 @@ jobs:
 
       - name: 📄 Update .env file
         run: |
-          # Update or add the three specific AI provider settings
-          echo "DEFAULT_LLM_PROVIDER=Google" >> .env
-          echo "DEFAULT_LLM_MODEL=gemini-2.5-flash" >> .env
+          # Copy .env.example to .env first
+          cp .env.example .env
+          
+          # Update existing values or add new ones
+          sed -i 's/^DEFAULT_LLM_PROVIDER=.*/DEFAULT_LLM_PROVIDER=Google/' .env
+          sed -i 's/^DEFAULT_LLM_MODEL=.*/DEFAULT_LLM_MODEL=gemini-2.5-flash/' .env
+          
+          # Add new values if they don't exist
           echo "GOOGLE_GENERATIVE_AI_API_KEY=${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY || 'dummy_key' }}" >> .env
           echo "NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN || 'dummy_key' }}" >> .env
 
