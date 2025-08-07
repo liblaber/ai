@@ -32,7 +32,7 @@ body {
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: #f7f7f8 transparent;
+    scrollbar-color: var(--liblab-elements-scrollbar-color) transparent;
   }
 
   *::-webkit-scrollbar {
@@ -45,14 +45,14 @@ body {
   }
 
   *::-webkit-scrollbar-thumb {
-    background-color: #f7f7f8;
+    background-color: var(--liblab-elements-scrollbar-color);
     border-radius: 4px;
     border: 2px solid transparent;
     background-clip: content-box;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(214 219 220);
+    background-color: var(--liblab-elements-scrollbar-hover);
   }
 
   *::-webkit-scrollbar-corner {
@@ -61,14 +61,14 @@ body {
 
   /* Dark theme scrollbar */
   .dark * {
-    scrollbar-color: rgb(75 85 99) transparent;
+    scrollbar-color: var(--liblab-elements-scrollbar-color-dark) transparent;
   }
 
   .dark *::-webkit-scrollbar-thumb {
-    background-color: rgb(75 85 99);
+    background-color: var(--liblab-elements-scrollbar-color-dark);
   }
 
   .dark *::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(107 114 128);
+    background-color: var(--liblab-elements-scrollbar-color-dark-hover);
   }
 }
