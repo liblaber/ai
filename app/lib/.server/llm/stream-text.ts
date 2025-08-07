@@ -15,8 +15,6 @@ import { getLlm } from '~/lib/.server/llm/get-llm';
 import { prisma } from '~/lib/prisma';
 import { requireUserId } from '~/auth/session';
 import type { StarterPluginId } from '~/lib/plugins/types';
-import { env } from '~/env/server';
-import { mockStreamText } from '~/lib/.server/llm/mock-stream-text';
 
 export type Messages = Message[];
 
@@ -72,11 +70,6 @@ export async function streamText(props: {
 
   if (!lastUserMessage) {
     throw new Error('No user message');
-  }
-
-  if (env.USE_MOCK_AI) {
-    logger.warn('Using mocked AI responses');
-    return mockStreamText(lastUserMessage);
   }
 
   let systemPrompt =

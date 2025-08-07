@@ -72,10 +72,11 @@ npm run report
 
 The main test (`user-onboarding-flow.spec.ts`) follows this user journey:
 
-1. **Navigate to the application** - Opens the base URL
-2. **Handle telemetry consent** - If the telemetry consent page appears, clicks "Decline"
-3. **Connect to sample database** - If the data source connection page appears, clicks "Connect" for the sample database
-4. **Submit a message** - On the homepage, enters "Build a revenue dashboard" and submits
+1. **Navigate to Application** - Opens the base URL (default: http://localhost:3000)
+2. **Handle Telemetry Consent** - If the telemetry consent page appears, clicks "Decline"
+3. **Connect Sample Database** - If the data source connection page appears, clicks "Connect" for the sample database
+4. **Submit Message** - On the homepage, enters "Build hello world application with Hello World! h1 title" and submits
+5. **The Chat Loads and Runs the Built App** - The chat and the preview load, eventually the built app starts running in the preview
 
 ## Configuration
 
@@ -85,19 +86,20 @@ The tests are configured in `playwright.config.ts`:
 - **Base URL**: Uses `BASE_URL` environment variable or defaults to `http://localhost:3000`
 - **Web Server**: **Manual** - You must start your application before running tests
 - **Screenshots**: Taken on test failures
-- **Videos**: Recorded on test failures
+- **Videos**: Recorded on every test run
 
 ## Environment Variables
 
 - `BASE_URL`: The base URL of your application (defaults to `http://localhost:3000`)
 - `CI`: Set to `true` in CI environments to enable retries and headless mode
 
-## Troubleshooting
+## Common Issues
 
-1. **Browser not visible**: Make sure `headless: false` is set in the config
-2. **Tests failing**: Check that the main application is running on the correct port
-3. **Selectors not working**: The test uses multiple fallback selectors to find elements
-4. **Slow tests**: Increase timeouts in the config if needed
+1. **Browser not visible**: Make sure `headless: false` is set in `playwright.config.ts`
+2. **Tests failing**: Check that the main application is running on the correct port (`http://localhost:3000`)
+3. **Application not running**: Start your app with `npm run dev`, `pnpm run quickstart`, or `docker compose up`
+4. **Selectors not working**: There may have been some updates to the UI components
+5. **Slow tests**: Increase timeouts in the config if needed
 
 ## Adding New Tests
 
