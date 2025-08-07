@@ -1,5 +1,6 @@
 import { prisma } from '~/lib/prisma';
 import { DeprecatedRole } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 export interface UserProfile {
   id: string;
@@ -43,6 +44,31 @@ const userSelectWithRoles = {
   },
 };
 
+type UserWithRoles = Partial<User> & {
+  roles?: { role: { id: string; name: string; description: string | null } }[];
+};
+
+function mapToUserProfile(user: UserWithRoles): UserProfile {
+  const userProfile = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    organizationId: user.organizationId!,
+    telemetryEnabled: user.telemetryEnabled,
+  } as UserProfile;
+
+  if (user.roles) {
+    userProfile.roles = user.roles.map((r) => ({
+      id: r.role.id,
+      name: r.role.name,
+      description: r.role.description || undefined,
+    }));
+  }
+
+  return userProfile;
+}
+
 export const userService = {
   async getUser(userId: string): Promise<UserProfile> {
     const user = await prisma.user.findUnique({
@@ -54,19 +80,7 @@ export const userService = {
       throw new Error('User not found');
     }
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      organizationId: user.organizationId!,
-      telemetryEnabled: user.telemetryEnabled,
-      roles: user.roles.map((r) => ({
-        id: r.role.id,
-        name: r.role.name,
-        description: r.role.description || undefined,
-      })),
-    };
+    return mapToUserProfile(user);
   },
 
   async updateUser(userId: string, data: UserUpdateData): Promise<UserProfile> {
@@ -76,14 +90,7 @@ export const userService = {
       select: userSelect,
     });
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      organizationId: user.organizationId!,
-      telemetryEnabled: user.telemetryEnabled,
-    };
+    return mapToUserProfile(user);
   },
 
   async updateTelemetryConsent(userId: string, telemetryEnabled: boolean): Promise<UserProfile> {
@@ -93,14 +100,7 @@ export const userService = {
       select: userSelect,
     });
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      organizationId: user.organizationId!,
-      telemetryEnabled: user.telemetryEnabled,
-    };
+    return mapToUserProfile(user);
   },
 
   async getUsersByOrganization(organizationId: string): Promise<UserProfile[]> {
@@ -114,19 +114,7 @@ export const userService = {
       },
     });
 
-    return users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      telemetryEnabled: user.telemetryEnabled,
-      organizationId,
-      roles: user.roles.map((r) => ({
-        id: r.role.id,
-        name: r.role.name,
-        description: r.role.description || undefined,
-      })),
-    }));
+    return users.map((user) => mapToUserProfile(user));
   },
 
   async getUsersByRole(roleId: string): Promise<UserProfile[]> {
@@ -141,14 +129,7 @@ export const userService = {
       select: userSelect,
     });
 
-    return users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      organizationId: user.organizationId!,
-      telemetryEnabled: user.telemetryEnabled,
-    }));
+    return users.map((user) => mapToUserProfile(user));
   },
 
   async addUserToRole(userId: string, roleId: string): Promise<UserProfile> {
@@ -164,19 +145,7 @@ export const userService = {
       },
     });
 
-    return {
-      id: userRole.user.id,
-      name: userRole.user.name,
-      email: userRole.user.email,
-      role: userRole.user.role,
-      organizationId: userRole.user.organizationId!,
-      telemetryEnabled: userRole.user.telemetryEnabled,
-      roles: userRole.user.roles.map((r) => ({
-        id: r.role.id,
-        name: r.role.name,
-        description: r.role.description || undefined,
-      })),
-    };
+    return mapToUserProfile(userRole.user);
   },
 
   async removeUserFromRole(userId: string, roleId: string): Promise<void> {
