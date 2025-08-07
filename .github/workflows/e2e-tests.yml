@@ -56,6 +56,11 @@ jobs:
           timeout 300 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 5; done'
           echo "✅ Application is ready!"
 
+      - name: 📋 Show Docker container logs
+        run: |
+          echo "📋 Container logs:"
+          docker compose logs --tail=200 ai-app
+
       - name: 🧪 Install E2E test dependencies
         working-directory: tests/e2e
         run: |
