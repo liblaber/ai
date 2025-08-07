@@ -33,7 +33,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
   try {
     const deletedPermission = await deletePermission(permissionId);
-    invalidateUserAbilityCacheByRoleId(deletedPermission.roleId);
+    await invalidateUserAbilityCacheByRoleId(deletedPermission.roleId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

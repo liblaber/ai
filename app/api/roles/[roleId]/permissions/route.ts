@@ -51,7 +51,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       body.dataSourceId,
       body.websiteId,
     );
-    invalidateUserAbilityCacheByRoleId(roleId);
+    await invalidateUserAbilityCacheByRoleId(roleId);
 
     return NextResponse.json({ success: true, permission });
   } catch (error) {
