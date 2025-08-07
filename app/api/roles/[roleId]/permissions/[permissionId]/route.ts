@@ -3,14 +3,14 @@ import { deletePermission, getPermission } from '~/lib/services/permissionServic
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ permissionId: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: { permissionId: string } }) {
   const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.read, PermissionResource.AdminApp)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const { permissionId } = await params;
+  const { permissionId } = params;
 
   const permission = await getPermission(permissionId);
 
@@ -21,14 +21,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   return NextResponse.json({ success: true, permission });
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ permissionId: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: { permissionId: string } }) {
   const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.delete, PermissionResource.AdminApp)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const { permissionId } = await params;
+  const { permissionId } = params;
 
   try {
     await deletePermission(permissionId);

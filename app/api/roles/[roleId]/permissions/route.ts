@@ -4,28 +4,28 @@ import { getRole } from '~/lib/services/roleService';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource } from '@prisma/client';
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ roleId: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: { roleId: string } }) {
   const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.read, PermissionResource.AdminApp)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const { roleId } = await params;
+  const { roleId } = params;
 
   const permissions = await getRolePermissions(roleId);
 
   return NextResponse.json({ success: true, permissions });
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ roleId: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: { roleId: string } }) {
   const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.create, PermissionResource.AdminApp)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const { roleId } = await params;
+  const { roleId } = params;
 
   const body = (await request.json()) as {
     action: PermissionAction;
