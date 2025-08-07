@@ -381,7 +381,7 @@ export const Preview = memo(() => {
               <iframe
                 ref={iframeRef}
                 title="preview"
-                className="border-none w-full h-full bg-white"
+                className="border-none w-full h-full"
                 src={iframeUrl}
                 sandbox="allow-scripts allow-forms allow-popups allow-modals allow-storage-access-by-user-activation allow-same-origin"
                 allow="cross-origin-isolated"
