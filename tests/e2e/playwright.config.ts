@@ -43,8 +43,8 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
 
-        // Show browser window during test execution
-        headless: false,
+        // Show browser window during test execution (only in non-CI environments)
+        headless: !!process.env.CI,
       },
     },
   ],
