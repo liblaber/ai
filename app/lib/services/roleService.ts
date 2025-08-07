@@ -2,7 +2,7 @@ import { prisma } from '~/lib/prisma';
 import type { Role } from '@prisma/client';
 
 export async function getRole(id: string): Promise<Role | null> {
-  return prisma.role.findFirst({
+  return prisma.role.findUnique({
     where: { id },
     include: {
       permissions: true,
