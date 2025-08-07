@@ -29,7 +29,7 @@ export async function getUserPermissions(userId: string): Promise<Permission[]> 
 }
 
 export async function getRolePermissions(roleId: string): Promise<Permission[]> {
-  return await prisma.permission.findMany({
+  return prisma.permission.findMany({
     where: { roleId },
   });
 }
