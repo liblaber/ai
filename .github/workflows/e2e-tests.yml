@@ -54,12 +54,13 @@ jobs:
           echo "GOOGLE_GENERATIVE_AI_API_KEY=${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY || 'dummy_key' }}" >> .env
           echo "NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN || 'dummy_key' }}" >> .env
           echo "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY || 'dummy_key' }}" >> .env
+          echo "AUTH_SECRET=${{ secrets.AUTH_SECRET || 'dummy_key' }}" >> .env
 
       - name: 🐳 Start Docker services
         run: |
           # Start the database and app using docker compose directly
           docker compose up -d
-          
+
           # Wait for the app to be ready
           echo "⏳ Waiting for the application to be ready..."
           timeout 300 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 5; done'
@@ -68,7 +69,7 @@ jobs:
       - name: 🧪 Install E2E test dependencies
         working-directory: tests/e2e
         run: |
-          pnpm install
+          npm install
           npx playwright install chromium
 
       - name: 🧪 Run E2E tests
