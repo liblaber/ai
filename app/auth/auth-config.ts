@@ -5,7 +5,8 @@ import { env } from '~/env';
 import { anonymous, createAuthMiddleware } from 'better-auth/plugins';
 import { UserManagementPluginManager } from '~/lib/plugins/user-management/user-management-plugin-manager';
 
-const { BASE_URL } = env.server;
+const { BASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = env.server;
+const { NEXT_PUBLIC_USE_GOOGLE_AUTH } = env.client;
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -14,6 +15,13 @@ export const auth = betterAuth({
   plugins: [anonymous()],
   emailAndPassword: {
     enabled: true,
+  },
+  socialProviders: {
+    google: {
+      clientId: GOOGLE_CLIENT_ID || '',
+      clientSecret: GOOGLE_CLIENT_SECRET || '',
+      enabled: NEXT_PUBLIC_USE_GOOGLE_AUTH,
+    },
   },
   baseURL: BASE_URL,
   trustedOrigins: [BASE_URL],
