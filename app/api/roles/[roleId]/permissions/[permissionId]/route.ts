@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { deletePermission, getPermission } from '~/lib/services/permissionService';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
+import { invalidateUserAbilityCacheByRoleId } from '~/lib/casl/user-ability';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ permissionId: string }> }) {
   const { userAbility } = await requireUserAbility(request);
@@ -31,7 +32,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const { permissionId } = await params;
 
   try {
-    await deletePermission(permissionId);
+    const deletedPermission = await deletePermission(permissionId);
+    await invalidateUserAbilityCacheByRoleId(deletedPermission.roleId);
+
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { userService } from '~/lib/services/userService';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
+import { invalidateUserAbilityCache } from '~/lib/casl/user-ability';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ roleId: string }> }) {
   const { userAbility } = await requireUserAbility(request);
@@ -32,6 +33,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   try {
     const user = await userService.addUserToRole(body.userId, roleId);
+    invalidateUserAbilityCache(body.userId);
+
     return NextResponse.json({ success: true, user });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
