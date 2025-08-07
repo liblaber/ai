@@ -44,7 +44,7 @@ jobs:
           sudo systemctl start docker || true
           # Verify Docker is available
           docker --version
-          docker-compose --version
+          docker compose version
 
       - name: 📄 Update .env file
         run: |
@@ -57,9 +57,9 @@ jobs:
 
       - name: 🐳 Start Docker services
         run: |
-          # Start the database and app using the docker:start command
-          pnpm run docker:start
-
+          # Start the database and app using docker compose directly
+          docker compose up -d
+          
           # Wait for the app to be ready
           echo "⏳ Waiting for the application to be ready..."
           timeout 300 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 5; done'
@@ -96,4 +96,4 @@ jobs:
 
       - name: 🧹 Cleanup Docker services
         if: always()
-        run: pnpm run docker:stop
+        run: docker compose down
