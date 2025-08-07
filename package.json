@@ -38,7 +38,12 @@
     "prisma:reset": "prisma migrate reset --force",
     "prisma:seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push",
-    "db:pull": "prisma db pull"
+    "db:pull": "prisma db pull",
+    "test:e2e": "tsx scripts/run-e2e-tests.ts",
+    "test:e2e:headed": "tsx scripts/run-e2e-tests.ts headed",
+    "test:e2e:ui": "tsx scripts/run-e2e-tests.ts ui",
+    "test:e2e:debug": "tsx scripts/run-e2e-tests.ts debug",
+    "test:e2e:headless": "tsx scripts/run-e2e-tests.ts headless"
   },
   "engines": {
     "node": ">=18.18.0"
