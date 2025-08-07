@@ -24,7 +24,7 @@ export default function ChatAlert({ alert, clearAlert, postMessage }: Props) {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.3 }}
-        className={`rounded-lg border border-liblab-elements-borderColor bg-liblab-elements-bg-depth-2 p-4 mb-2`}
+        className={`rounded-lg border border-depth-3 bg-depth-2 p-4 mb-2`}
       >
         <div className="flex items-start">
           {/* Icon */}
@@ -42,7 +42,7 @@ export default function ChatAlert({ alert, clearAlert, postMessage }: Props) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
-              className={`text-sm font-medium text-liblab-elements-textPrimary`}
+              className={`text-sm font-medium text-primary`}
             >
               {title}
             </motion.h3>
@@ -50,13 +50,11 @@ export default function ChatAlert({ alert, clearAlert, postMessage }: Props) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className={`mt-2 text-sm text-liblab-elements-textSecondary`}
+              className={`mt-2 text-sm text-secondary`}
             >
               <p>{message}</p>
               {description && (
-                <div className="text-xs text-liblab-elements-textSecondary p-2 bg-liblab-elements-bg-depth-3 rounded mt-4 mb-4">
-                  Error: {description}
-                </div>
+                <div className="text-xs text-secondary p-2 bg-depth-3 rounded mt-4 mb-4">Error: {description}</div>
               )}
             </motion.div>
 

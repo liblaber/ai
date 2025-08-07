@@ -285,7 +285,7 @@ export const BaseChat = ({
                 'max-w-homepage-textarea': !chatStarted,
               })}
             >
-              <div className="bg-liblab-elements-bg-depth-2">
+              <div className="bg-depth-2">
                 {actionAlert && (
                   <ChatAlert
                     alert={actionAlert}

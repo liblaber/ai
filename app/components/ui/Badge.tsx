@@ -9,12 +9,11 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          'border-transparent bg-liblab-elements-background text-liblab-elements-textPrimary hover:bg-liblab-elements-background/80',
+        default: 'border-transparent bg-liblab-elements-background text-primary hover:bg-liblab-elements-background/80',
         secondary:
-          'border-transparent bg-liblab-elements-background text-liblab-elements-textSecondary hover:bg-liblab-elements-background/80',
+          'border-transparent bg-liblab-elements-background text-secondary hover:bg-liblab-elements-background/80',
         destructive: 'border-transparent bg-red-500/10 text-red-500 hover:bg-red-500/20',
-        outline: 'text-liblab-elements-textPrimary',
+        outline: 'text-primary',
       },
     },
     defaultVariants: {

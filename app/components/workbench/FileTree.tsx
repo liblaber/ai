@@ -205,7 +205,7 @@ function ContextMenuItem({ onSelect, children }: { onSelect?: () => void; childr
   return (
     <ContextMenu.Item
       onSelect={onSelect}
-      className="flex items-center gap-2 px-2 py-1.5 outline-0 text-sm text-liblab-elements-textPrimary cursor-pointer ws-nowrap text-liblab-elements-item-contentDefault hover:text-liblab-elements-item-contentActive hover:bg-liblab-elements-item-backgroundActive rounded-md"
+      className="flex items-center gap-2 px-2 py-1.5 outline-0 text-sm text-primary cursor-pointer ws-nowrap text-liblab-elements-item-contentDefault hover:text-liblab-elements-item-contentActive hover:bg-liblab-elements-item-backgroundActive rounded-md"
     >
       <span className="size-4 shrink-0"></span>
       <span>{children}</span>
@@ -220,9 +220,9 @@ function FileContextMenu({ onCopyPath, onCopyRelativePath, children }: FolderCon
       <ContextMenu.Portal>
         <ContextMenu.Content
           style={{ zIndex: 998 }}
-          className="border border-liblab-elements-borderColor rounded-md z-context-menu bg-liblab-elements-bg-depth-1 dark:bg-liblab-elements-bg-depth-2 data-[state=open]:animate-in animate-duration-100 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-98 w-56"
+          className="border border-depth-3 rounded-md z-context-menu bg-depth-1 dark:bg-depth-2 data-[state=open]:animate-in animate-duration-100 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-98 w-56"
         >
-          <ContextMenu.Group className="p-1 border-b-px border-solid border-liblab-elements-borderColor">
+          <ContextMenu.Group className="p-1 border-b-px border-solid border-depth-3">
             <ContextMenuItem onSelect={onCopyPath}>Copy path</ContextMenuItem>
             <ContextMenuItem onSelect={onCopyRelativePath}>Copy relative path</ContextMenuItem>
           </ContextMenu.Group>

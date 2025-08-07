@@ -57,7 +57,7 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
     singleValue: (base: any) => ({
       ...base,
       margin: '0',
-      color: 'var(--liblab-elements-textPrimary)',
+      color: 'var(--color-primary)',
       fontSize: '14px',
     }),
     menu: () => ({
@@ -67,13 +67,13 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
     option: (base: any, state: any) => ({
       ...base,
       fontSize: '14px',
-      backgroundColor: state.isSelected || state.isFocused ? 'var(--liblab-elements-bg-depth-2)' : 'transparent',
-      color: 'var(--liblab-elements-textPrimary)',
+      backgroundColor: state.isSelected || state.isFocused ? 'var(--color-depth-2)' : 'transparent',
+      color: 'var(--color-primary)',
       '&:hover': {
         color: 'var(--liblab-elements-messages-linkColor)',
       },
       '&:active': {
-        backgroundColor: 'var(--liblab-elements-bg-depth-2)',
+        backgroundColor: 'var(--color-depth-2)',
       },
       cursor: 'pointer',
       display: 'flex',
@@ -85,9 +85,9 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
     dropdownIndicator: (base: any) => ({
       ...base,
       padding: '0 2px',
-      color: 'var(--liblab-elements-textPrimary)',
+      color: 'var(--color-primary)',
       '&:hover': {
-        color: 'var(--liblab-elements-textPrimary)',
+        color: 'var(--color-primary)',
       },
     }),
   };

@@ -169,7 +169,7 @@ export default function DeployedAppsTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between p-2">
-        <h2 className="text-lg font-medium text-liblab-elements-textPrimary">Deployed Apps</h2>
+        <h2 className="text-lg font-medium text-primary">Deployed Apps</h2>
       </div>
 
       <motion.div

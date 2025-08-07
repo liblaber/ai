@@ -37,8 +37,8 @@ export default function ProgressCompilation({ data }: { data?: ProgressAnnotatio
     <AnimatePresence>
       <div
         className={classNames(
-          'bg-liblab-elements-bg-depth-2',
-          'border border-liblab-elements-borderColor',
+          'bg-depth-2',
+          'border border-depth-3',
           'shadow-lg rounded-lg  relative w-full max-w-chat mx-auto z-prompt',
           'p-1',
         )}

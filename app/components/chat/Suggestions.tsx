@@ -20,10 +20,10 @@ export const Suggestions: React.FC<SuggestionsProps> = ({ suggestions, onSuggest
           onClick={() => onSuggestionClick(suggestion)}
           className={classNames(
             'px-3 py-1.5 text-sm font-medium rounded-full transition-all',
-            'bg-liblab-elements-bg-depth-1 hover:bg-liblab-elements-bg-depth-2',
-            'text-liblab-elements-textPrimary hover:text-liblab-elements-textPrimary',
-            'border border-liblab-elements-borderColorSecondary',
-            'hover:border-liblab-elements-borderColorPrimary',
+            'bg-depth-1 hover:bg-depth-2',
+            'text-primary hover:text-primary',
+            'border border-depth-2',
+            'hover:border-depth-3Primary',
             'cursor-pointer',
           )}
         >

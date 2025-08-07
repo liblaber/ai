@@ -50,10 +50,8 @@ export const PortDropdown = memo(
       <div className="relative z-port-dropdown" ref={dropdownRef}>
         <IconButton icon="i-ph:plug" onClick={() => setIsDropdownOpen(!isDropdownOpen)} />
         {isDropdownOpen && (
-          <div className="absolute right-0 mt-2 bg-liblab-elements-bg-depth-2 border border-liblab-elements-borderColor rounded shadow-sm min-w-[140px] dropdown-animation">
-            <div className="px-4 py-2 border-b border-liblab-elements-borderColor text-sm font-semibold text-liblab-elements-textPrimary">
-              Ports
-            </div>
+          <div className="absolute right-0 mt-2 bg-depth-2 border border-depth-3 rounded shadow-sm min-w-[140px] dropdown-animation">
+            <div className="px-4 py-2 border-b border-depth-3 text-sm font-semibold text-primary">Ports</div>
             {sortedPreviews.map((preview) => (
               <div
                 key={preview.port}

@@ -1,5 +1,4 @@
 import './styles/index.scss';
-import '@unocss/reset/tailwind.css';
 import type { ReactNode } from 'react';
 import { ClientProviders } from './components/ClientProviders';
 import './globals.css';
@@ -86,7 +85,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" />
         <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
       </head>
-      <body className="w-full h-full bg-liblab-elements-bg-depth-1">
+      <body className="w-full h-full bg-white">
         <ClientProviders rootData={rootData}>{children}</ClientProviders>
       </body>
     </html>

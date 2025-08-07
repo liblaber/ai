@@ -60,7 +60,7 @@ $code-font-size: 13px;
 
 .MarkdownContent {
   line-height: 1.6;
-  color: var(--liblab-elements-textPrimary);
+  color: var(--color-primary);
 
   > *:not(:last-child) {
     margin-block-end: 16px;
@@ -75,7 +75,7 @@ $code-font-size: 13px;
     margin-block-end: 16px;
     font-weight: 600;
     line-height: 1.25;
-    color: var(--liblab-elements-textPrimary);
+    color: var(--color-primary);
   }
 
   h1 {
@@ -151,7 +151,7 @@ $code-font-size: 13px;
   blockquote {
     margin: 0;
     padding: 0 1em;
-    color: var(--liblab-elements-textTertiary);
+    color: var(--color-tertiary);
     border-left: 0.25em solid var(--liblab-elements-borderColor);
   }
 

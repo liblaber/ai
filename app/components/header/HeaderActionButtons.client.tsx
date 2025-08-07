@@ -385,7 +385,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
     <>
       <div className="flex">
         <div className="relative" ref={dropdownRef}>
-          <div className="flex border border-liblab-elements-borderColor rounded-md overflow-hidden mr-2 text-sm">
+          <div className="flex border border-depth-3 rounded-md overflow-hidden mr-2 text-sm">
             <Button
               active
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -401,7 +401,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
             </div>
           )}
         </div>
-        <div className="flex border border-liblab-elements-borderColor rounded-md overflow-hidden">
+        <div className="flex border border-depth-3 rounded-md overflow-hidden">
           <Button
             active={showChat}
             disabled={isSmallViewport}
@@ -411,7 +411,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           >
             <div className="i-liblab:chat text-sm" />
           </Button>
-          <div className="w-[1px] bg-liblab-elements-borderColor" />
+          <div className="w-[1px] bg-depth-3" />
           <Button
             active={devMode}
             onClick={() => {
@@ -458,7 +458,7 @@ function Button({ active = false, disabled = false, children, onClick, className
       className={classNames(
         'flex items-center p-1.5',
         {
-          'bg-liblab-elements-item-backgroundDefault hover:bg-liblab-elements-item-backgroundActive text-liblab-elements-textTertiary hover:text-liblab-elements-textPrimary':
+          'bg-liblab-elements-item-backgroundDefault hover:bg-liblab-elements-item-backgroundActive text-tertiary hover:text-primary':
             !active,
           'bg-liblab-elements-item-backgroundAccent text-liblab-elements-item-contentAccent': active && !disabled,
           'bg-liblab-elements-item-backgroundDefault text-alpha-gray-20 dark:text-alpha-white-20 cursor-not-allowed':

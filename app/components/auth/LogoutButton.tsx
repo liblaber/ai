@@ -51,10 +51,10 @@ export function LogoutButton() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-52 bg-liblab-elements-background rounded-lg shadow-xs z-10 overflow-hidden border border-liblab-elements-borderColor bg-liblab-elements-bg-depth-1">
-          <div className="px-4 py-2.5 border-b border-liblab-elements-borderColor bg-liblab-elements-hover/30">
-            <div className="font-medium text-liblab-elements-textPrimary truncate text-sm">{user?.name || 'User'}</div>
-            <div className="text-xs text-liblab-elements-textSecondary truncate">{user?.email || ''}</div>
+        <div className="absolute right-0 mt-2 w-52 bg-liblab-elements-background rounded-lg shadow-xs z-10 overflow-hidden border border-depth-3 bg-depth-1">
+          <div className="px-4 py-2.5 border-b border-depth-3 bg-liblab-elements-hover/30">
+            <div className="font-medium text-primary truncate text-sm">{user?.name || 'User'}</div>
+            <div className="text-xs text-secondary truncate">{user?.email || ''}</div>
           </div>
 
           {/* Menu options */}
@@ -66,7 +66,7 @@ export function LogoutButton() {
                   chatStore.setKey('started', false);
                   setIsOpen(false);
                 }}
-                className="w-full text-left px-4 py-2 text-liblab-elements-textPrimary hover:bg-liblab-elements-item-backgroundAccent hover:text-liblab-elements-item-contentAccent transition-colors flex items-center text-sm group"
+                className="w-full text-left px-4 py-2 text-primary hover:bg-liblab-elements-item-backgroundAccent hover:text-liblab-elements-item-contentAccent transition-colors flex items-center text-sm group"
                 style={{ backgroundColor: 'transparent' }}
               >
                 <span className="i-ph:sign-out w-4 h-4 mr-2 group-hover:text-liblab-elements-item-contentAccent transition-colors" />

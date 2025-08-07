@@ -7,15 +7,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-liblab-elements-background text-liblab-elements-textPrimary hover:bg-liblab-elements-bg-depth-2',
+        default: 'bg-liblab-elements-background text-primary hover:bg-depth-2',
         destructive: 'bg-red-500 text-white hover:bg-red-600',
-        outline:
-          'border border-input bg-transparent hover:bg-liblab-elements-bg-depth-2 text-liblab-elements-textPrimary border-liblab-elements-borderColor',
+        outline: 'border border-input bg-transparent hover:bg-depth-2 text-primary border-depth-3',
         primary: 'bg-accent-500 text-liblab-elements-button-primary-text text-sm hover:bg-accent-600',
-        secondary:
-          'bg-liblab-elements-bg-depth-1 text-liblab-elements-textPrimary hover:bg-liblab-elements-bg-depth-2 hover:text-[var(--liblab-elements-item-contentAccent)]',
-        ghost: 'bg-transparent hover:text-liblab-elements-textPrimary',
-        link: 'text-liblab-elements-textPrimary underline-offset-4 hover:underline',
+        secondary: 'bg-depth-1 text-primary hover:bg-depth-2 hover:text-[var(--liblab-elements-item-contentAccent)]',
+        ghost: 'bg-transparent hover:text-primary',
+        link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-9 px-4 py-2',

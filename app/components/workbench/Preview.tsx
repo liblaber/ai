@@ -262,17 +262,17 @@ export const Preview = memo(() => {
       {isPortDropdownOpen && (
         <div className="z-iframe-overlay w-full h-full absolute" onClick={() => setIsPortDropdownOpen(false)} />
       )}
-      <div className="bg-liblab-elements-bg-depth-2 p-2 flex items-center gap-2">
+      <div className="bg-depth-2 p-2 flex items-center gap-2">
         <div className="flex items-center gap-2">
           <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
           <IconButton
             icon="i-ph:selection"
             onClick={() => setIsSelectionMode(!isSelectionMode)}
-            className={isSelectionMode ? 'bg-liblab-elements-bg-depth-3' : ''}
+            className={isSelectionMode ? 'bg-depth-3' : ''}
           />
         </div>
 
-        <div className="flex-grow flex items-center gap-1 bg-liblab-elements-preview-addressBar-background border border-liblab-elements-borderColor text-liblab-elements-preview-addressBar-text rounded-full px-3 py-1 text-sm hover:bg-liblab-elements-preview-addressBar-backgroundHover hover:focus-within:bg-liblab-elements-preview-addressBar-backgroundActive focus-within:bg-liblab-elements-preview-addressBar-backgroundActive focus-within-border-liblab-elements-borderColorActive focus-within:text-liblab-elements-preview-addressBar-textActive">
+        <div className="flex-grow flex items-center gap-1 bg-liblab-elements-preview-addressBar-background border border-depth-3 text-liblab-elements-preview-addressBar-text rounded-full px-3 py-1 text-sm hover:bg-liblab-elements-preview-addressBar-backgroundHover hover:focus-within:bg-liblab-elements-preview-addressBar-backgroundActive focus-within:bg-liblab-elements-preview-addressBar-backgroundActive focus-within-border-accent focus-within:text-liblab-elements-preview-addressBar-textActive">
           <input
             title="URL"
             ref={inputRef}
@@ -365,13 +365,13 @@ export const Preview = memo(() => {
         </div>
       </div>
 
-      <div className="flex-1 border-t border-liblab-elements-borderColor flex justify-center items-center overflow-auto">
+      <div className="flex-1 border-t border-depth-3 flex justify-center items-center overflow-auto">
         <div
           style={{
             width: isDeviceModeOn ? `${widthPercent}%` : '100%',
             height: '100%',
             overflow: 'visible',
-            background: 'var(--liblab-elements-bg-depth-2)',
+            background: 'var(--color-depth-2)',
             position: 'relative',
             display: 'flex',
           }}
@@ -395,7 +395,7 @@ export const Preview = memo(() => {
                 hidden={isLoading}
               />
               {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-liblab-elements-bg-depth-2 z-50">
+                <div className="absolute inset-0 flex items-center justify-center bg-depth-2 z-50">
                   {<PreviewLoader message={loadingText} />}
                 </div>
               )}
@@ -406,7 +406,7 @@ export const Preview = memo(() => {
               />
             </>
           ) : (
-            <div className="flex w-full h-full justify-center items-center bg-liblab-elements-bg-depth-2 text-liblab-elements-textPrimary">
+            <div className="flex w-full h-full justify-center items-center bg-depth-2 text-primary">
               {<PreviewLoader message={loadingText} />}
             </div>
           )}

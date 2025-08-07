@@ -19,8 +19,8 @@ export const DropdownItem = ({ children, onSelect, className }: DropdownItemProp
   <DropdownMenu.Item
     className={classNames(
       'relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm',
-      'text-liblab-elements-textPrimary hover:text-liblab-elements-textPrimary',
-      'hover:bg-liblab-elements-bg-depth-3',
+      'text-primary hover:text-primary',
+      'hover:bg-depth-3',
       'transition-colors cursor-pointer',
       'outline-none',
       className,
@@ -31,7 +31,7 @@ export const DropdownItem = ({ children, onSelect, className }: DropdownItemProp
   </DropdownMenu.Item>
 );
 
-export const DropdownSeparator = () => <DropdownMenu.Separator className="h-px bg-liblab-elements-borderColor my-1" />;
+export const DropdownSeparator = () => <DropdownMenu.Separator className="h-px bg-depth-3my-1" />;
 
 export const Dropdown = ({ trigger, children, align = 'end', sideOffset = 5 }: DropdownProps) => {
   return (
@@ -42,8 +42,8 @@ export const Dropdown = ({ trigger, children, align = 'end', sideOffset = 5 }: D
         <DropdownMenu.Content
           className={classNames(
             'min-w-[220px] rounded-lg p-2',
-            'bg-liblab-elements-bg-depth-2',
-            'border border-liblab-elements-borderColor',
+            'bg-depth-2',
+            'border border-depth-3',
             'shadow-lg',
             'animate-in fade-in-80 zoom-in-95',
             'data-[side=bottom]:slide-in-from-top-2',

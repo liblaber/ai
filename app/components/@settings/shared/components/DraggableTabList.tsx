@@ -77,11 +77,11 @@ const DraggableTabItem = ({ tab, index, moveTab, showControls, onVisibilityChang
     >
       <div className="flex items-center gap-4">
         <div className="cursor-grab">
-          <div className="i-ph:dots-six-vertical w-4 h-4 text-liblab-elements-textSecondary" />
+          <div className="i-ph:dots-six-vertical w-4 h-4 text-secondary" />
         </div>
         <div>
-          <div className="font-medium text-liblab-elements-textPrimary">{TAB_LABELS[tab.id]}</div>
-          {showControls && <div className="text-xs text-liblab-elements-textSecondary">Order: {tab.order}</div>}
+          <div className="font-medium text-primary">{TAB_LABELS[tab.id]}</div>
+          {showControls && <div className="text-xs text-secondary">Order: {tab.order}</div>}
         </div>
       </div>
       {showControls && !tab.locked && (
@@ -93,7 +93,7 @@ const DraggableTabItem = ({ tab, index, moveTab, showControls, onVisibilityChang
               className="data-[state=checked]:bg-accent-500"
               aria-label={`Toggle ${TAB_LABELS[tab.id]} visibility`}
             />
-            <label className="text-sm text-liblab-elements-textSecondary">Visible</label>
+            <label className="text-sm text-secondary">Visible</label>
           </div>
         </div>
       )}

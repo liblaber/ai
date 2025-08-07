@@ -71,17 +71,15 @@ export function LoginButton() {
       </DialogTrigger>
 
       <Dialog
-        className="sm:max-w-[500px] w-[500px] rounded-lg shadow-xs bg-gray-500 bg-opacity-70 border border-liblab-elements-borderColor backdrop-blur-[2px] flex flex-col items-center justify-center min-h-[400px]"
+        className="sm:max-w-[500px] w-[500px] rounded-lg shadow-xs bg-gray-500 bg-opacity-70 border border-depth-3 backdrop-blur-[2px] flex flex-col items-center justify-center min-h-[400px]"
         onClose={() => toggleLoginModal(false)}
         onBackdrop={() => toggleLoginModal(false)}
       >
         <div className="w-full flex flex-col items-center justify-center">
           <DialogTitle asChild>
-            <h2 className="text-center text-lg font-medium mb-4 mt-0 text-liblab-elements-textPrimary">
-              {loginModalTitle || 'Log in'}
-            </h2>
+            <h2 className="text-center text-lg font-medium mb-4 mt-0 text-primary">{loginModalTitle || 'Log in'}</h2>
           </DialogTitle>
-          <DialogDescription className="text-center text-sm mb-8 text-liblab-elements-textSecondary">
+          <DialogDescription className="text-center text-sm mb-8 text-secondary">
             Please log in to continue.
           </DialogDescription>
 
@@ -96,7 +94,7 @@ export function LoginButton() {
                   <div className="w-full border-t border-gray-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="bg-[#0A0A0A] px-2 text-liblab-elements-textSecondary">OR</span>
+                  <span className="bg-[#0A0A0A] px-2 text-secondary">OR</span>
                 </div>
               </div>
             )}

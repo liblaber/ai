@@ -386,8 +386,8 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
         <div className="flex items-center gap-3">
           <OllamaIcon className="w-8 h-8 text-accent-500" />
           <div>
-            <h3 className="text-lg font-semibold text-liblab-elements-textPrimary">Ollama Models</h3>
-            <p className="text-sm text-liblab-elements-textSecondary mt-1">Install and manage your Ollama models</p>
+            <h3 className="text-lg font-semibold text-primary">Ollama Models</h3>
+            <p className="text-sm text-secondary mt-1">Install and manage your Ollama models</p>
           </div>
         </div>
         <motion.button
@@ -419,8 +419,8 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
               type="text"
               className={classNames(
                 'w-full px-4 py-3 rounded-xl',
-                'bg-liblab-elements-bg-depth-2 border border-liblab-elements-borderColor',
-                'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary',
+                'bg-depth-2 border border-depth-3',
+                'text-primary placeholder-tertiary',
                 'focus:outline-none focus:ring-2 focus:ring-accent-500/30',
                 'transition-all duration-200',
               )}
@@ -433,7 +433,7 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
               }}
               disabled={isInstalling}
             />
-            <p className="text-sm text-liblab-elements-textSecondary px-1">
+            <p className="text-sm text-secondary px-1">
               Browse models at{' '}
               <a
                 href="https://ollama.com/library"
@@ -485,9 +485,7 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
             }}
             className={classNames(
               'px-3 py-1 rounded-full text-xs font-medium transition-all duration-200',
-              selectedTags.includes(tag)
-                ? 'bg-accent-500 text-white'
-                : 'bg-liblab-elements-bg-depth-3 text-liblab-elements-textSecondary hover:bg-liblab-elements-bg-depth-4',
+              selectedTags.includes(tag) ? 'bg-accent-500 text-white' : 'bg-depth-3 text-secondary hover:bg-depth-4',
             )}
           >
             {tag}
@@ -501,8 +499,8 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
             key={model.name}
             className={classNames(
               'flex items-start gap-2 p-3 rounded-lg',
-              'bg-liblab-elements-bg-depth-3',
-              'hover:bg-liblab-elements-bg-depth-4',
+              'bg-depth-3',
+              'hover:bg-depth-4',
               'transition-all duration-200',
               'relative group',
             )}
@@ -511,14 +509,14 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
             <div className="flex-1 space-y-1.5">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-liblab-elements-textPrimary font-mono text-sm">{model.name}</p>
-                  <p className="text-xs text-liblab-elements-textSecondary mt-0.5">{model.desc}</p>
+                  <p className="text-primary font-mono text-sm">{model.name}</p>
+                  <p className="text-xs text-secondary mt-0.5">{model.desc}</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-liblab-elements-textTertiary">{model.size}</span>
+                  <span className="text-xs text-tertiary">{model.size}</span>
                   {model.installedVersion && (
                     <div className="mt-0.5 flex flex-col items-end gap-0.5">
-                      <span className="text-xs text-liblab-elements-textTertiary">v{model.installedVersion}</span>
+                      <span className="text-xs text-tertiary">v{model.installedVersion}</span>
                       {model.needsUpdate && model.latestVersion && (
                         <span className="text-xs text-accent-500">v{model.latestVersion} available</span>
                       )}
@@ -529,10 +527,7 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
               <div className="flex items-center justify-between">
                 <div className="flex flex-wrap gap-1">
                   {model.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-1.5 py-0.5 rounded-full text-[10px] bg-liblab-elements-bg-depth-4 text-liblab-elements-textTertiary"
-                    >
+                    <span key={tag} className="px-1.5 py-0.5 rounded-full text-[10px] bg-depth-4 text-tertiary">
                       {tag}
                     </span>
                   ))}
@@ -585,13 +580,13 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
       {installProgress && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-liblab-elements-textSecondary">{installProgress.status}</span>
+            <span className="text-secondary">{installProgress.status}</span>
             <div className="flex items-center gap-4">
-              <span className="text-liblab-elements-textTertiary">
+              <span className="text-tertiary">
                 {installProgress.downloadedSize} / {installProgress.totalSize}
               </span>
-              <span className="text-liblab-elements-textTertiary">{installProgress.speed}</span>
-              <span className="text-liblab-elements-textSecondary">{Math.round(installProgress.progress)}%</span>
+              <span className="text-tertiary">{installProgress.speed}</span>
+              <span className="text-secondary">{Math.round(installProgress.progress)}%</span>
             </div>
           </div>
           <Progress value={installProgress.progress} className="h-1" />

@@ -146,19 +146,19 @@ export default defineConfig({
       liblab: {
         elements: {
           borderColor: 'var(--liblab-elements-borderColor)',
-          borderColorActive: 'var(--liblab-elements-borderColorActive)',
+          borderColorActive: 'var(--accent)',
           borderColorSecondary: 'var(--liblab-elements-borderColorSecondary)',
           bg: {
             depth: {
-              1: 'var(--liblab-elements-bg-depth-1)',
-              2: 'var(--liblab-elements-bg-depth-2)',
-              3: 'var(--liblab-elements-bg-depth-3)',
-              4: 'var(--liblab-elements-bg-depth-4)',
+              1: 'var(--depth-1)',
+              2: 'var(--depth-2)',
+              3: 'var(--depth-3)',
+              4: 'var(--depth-4)',
             },
           },
-          textPrimary: 'var(--liblab-elements-textPrimary)',
-          textSecondary: 'var(--liblab-elements-textSecondary)',
-          textTertiary: 'var(--liblab-elements-textTertiary)',
+          textPrimary: 'var(--primary)',
+          textSecondary: 'var(--secondary)',
+          textTertiary: 'var(--tertiary)',
           code: {
             background: 'var(--liblab-elements-code-background)',
             text: 'var(--liblab-elements-code-text)',

@@ -62,19 +62,19 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
   return (
     <div className="overflow-hidden w-full">
       <>
-        <div className="flex gap-2 items-center text-sm text-liblab-elements-textSecondary my-1.5">
+        <div className="flex gap-2 items-center text-sm text-secondary my-1.5">
           {(codeContext || chatSummary) && !errorMessage && (
             <Popover side="right" align="start" trigger={<div className="i-ph:info" />}>
               {chatSummary && (
                 <div className="max-w-chat">
                   <div className="summary max-h-96 flex flex-col">
-                    <h2 className="border border-liblab-elements-borderColor rounded-md p4">Summary</h2>
+                    <h2 className="border border-depth-3 rounded-md p4">Summary</h2>
                     <div style={{ zoom: 0.7 }} className="overflow-y-auto m4">
                       <Markdown>{chatSummary}</Markdown>
                     </div>
                   </div>
                   {codeContext && (
-                    <div className="code-context flex flex-col p4 border border-liblab-elements-borderColor rounded-md">
+                    <div className="code-context flex flex-col p4 border border-depth-3 rounded-md">
                       <h2>Context</h2>
                       <div className="flex gap-4 mt-4 liblab" style={{ zoom: 0.6 }}>
                         {codeContext.map((x) => {
@@ -109,7 +109,7 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
           )}
         </div>
       </>
-      <div className="text-liblab-elements-textPrimary">
+      <div className="text-primary">
         {errorMessage ? (
           <>
             <p className="mt-2">Unfortunately, your request has failed with the following error:</p>{' '}

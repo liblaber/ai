@@ -24,7 +24,7 @@ export function ChatDescription() {
         <form onSubmit={handleSubmit} className="flex items-center justify-center">
           <input
             type="text"
-            className="bg-liblab-elements-bg-depth-1 text-liblab-elements-textPrimary rounded px-2 mr-2 w-fit"
+            className="bg-depth-1 text-primary rounded px-2 mr-2 w-fit"
             autoFocus
             value={currentDescription}
             onChange={handleChange}

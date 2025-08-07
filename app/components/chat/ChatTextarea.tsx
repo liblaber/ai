@@ -90,7 +90,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
     }
 
     return (
-      <div className="relative w-full bg-liblab-elements-bg-depth-3 p-3 rounded-xl border-liblab-elements-borderColorSecondary">
+      <div className="relative w-full bg-depth-3 p-3 rounded-xl border-depth-2">
         <FilePreview
           files={uploadedFiles}
           imageDataList={imageDataList}
@@ -114,7 +114,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
             ref={ref}
             className={classNames(
               'w-full pl-4 pt-4 pr-16 rounded-xl outline-none resize-none',
-              'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary bg-liblab-elements-bg-depth-2 text-sm',
+              'text-primary placeholder-tertiary bg-depth-2 text-sm',
               'transition-all duration-200',
               'hover:border-liblab-elements-focus',
             )}

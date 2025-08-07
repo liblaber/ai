@@ -86,12 +86,8 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
             </>
           )}
           <div className="px-5 p-3.5 w-full text-left">
-            <div className="w-full text-liblab-elements-textPrimary font-medium leading-5 text-sm">
-              {artifact?.title}
-            </div>
-            <div className="w-full w-full text-liblab-elements-textSecondary text-xs mt-0.5">
-              Click for the code view
-            </div>
+            <div className="w-full text-primary font-medium leading-5 text-sm">{artifact?.title}</div>
+            <div className="w-full w-full text-secondary text-xs mt-0.5">Click for the code view</div>
           </div>
         </button>
         <AnimatePresence>
@@ -256,7 +252,7 @@ const ActionList = ({ actions }: ActionListProps) => {
 function getIconColor(status: ActionState['status']) {
   switch (status) {
     case 'pending': {
-      return 'text-liblab-elements-textTertiary';
+      return 'text-tertiary';
     }
     case 'running': {
       return 'text-liblab-elements-loader-progress';
@@ -265,7 +261,7 @@ function getIconColor(status: ActionState['status']) {
       return 'text-liblab-elements-icon-success';
     }
     case 'aborted': {
-      return 'text-liblab-elements-textSecondary';
+      return 'text-secondary';
     }
     case 'failed': {
       return 'text-liblab-elements-icon-error';

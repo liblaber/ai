@@ -2,17 +2,17 @@
 :root,
 :root[data-theme='light'] {
   --liblab-elements-borderColor: theme('colors.alpha.gray.10');
-  --liblab-elements-borderColorActive: theme('colors.accent.600');
+  --accent: theme('colors.accent.600');
   --liblab-elements-borderColorSecondary: theme('colors.gray.900');
 
-  --liblab-elements-bg-depth-1: theme('colors.white');
-  --liblab-elements-bg-depth-2: theme('colors.gray.50');
-  --liblab-elements-bg-depth-3: theme('colors.gray.200');
-  --liblab-elements-bg-depth-4: theme('colors.alpha.gray.5');
+  --depth-1: theme('colors.white');
+  --depth-2: theme('colors.gray.50');
+  --depth-3: theme('colors.gray.200');
+  --depth-4: theme('colors.alpha.gray.5');
 
-  --liblab-elements-textPrimary: theme('colors.gray.950');
-  --liblab-elements-textSecondary: theme('colors.gray.600');
-  --liblab-elements-textTertiary: theme('colors.gray.500');
+  --primary: theme('colors.gray.950');
+  --secondary: theme('colors.gray.600');
+  --tertiary: theme('colors.gray.500');
 
   --liblab-elements-code-background: theme('colors.gray.100');
   --liblab-elements-code-text: theme('colors.gray.950');
@@ -43,7 +43,7 @@
   --liblab-elements-artifacts-background: theme('colors.white');
   --liblab-elements-artifacts-backgroundHover: theme('colors.accent.500');
   --liblab-elements-artifacts-borderColor: var(--liblab-elements-borderColor);
-  --liblab-elements-artifacts-inlineCode-text: var(--liblab-elements-textPrimary);
+  --liblab-elements-artifacts-inlineCode-text: var(--color-primary);
 
   --liblab-elements-actions-background: theme('colors.white');
   --liblab-elements-actions-code-background: theme('colors.gray.800');
@@ -71,11 +71,11 @@
   --liblab-elements-preview-addressBar-background: theme('colors.gray.100');
   --liblab-elements-preview-addressBar-backgroundHover: theme('colors.alpha.gray.5');
   --liblab-elements-preview-addressBar-backgroundActive: theme('colors.white');
-  --liblab-elements-preview-addressBar-text: var(--liblab-elements-textSecondary);
-  --liblab-elements-preview-addressBar-textActive: var(--liblab-elements-textPrimary);
+  --liblab-elements-preview-addressBar-text: var(--color-secondary);
+  --liblab-elements-preview-addressBar-textActive: var(--color-primary);
 
   --liblab-elements-terminals-background: theme('colors.white');
-  --liblab-elements-terminals-buttonBackground: var(--liblab-elements-bg-depth-4);
+  --liblab-elements-terminals-buttonBackground: var(--color-depth-4);
 
   --liblab-elements-cta-background: theme('colors.gray.100');
   --liblab-elements-cta-text: theme('colors.gray.950');
@@ -106,17 +106,17 @@
 :root,
 :root[data-theme='dark'] {
   --liblab-elements-borderColor: theme('colors.gray.800');
-  --liblab-elements-borderColorActive: theme('colors.accent.500');
+  --accent: theme('colors.accent.500');
   --liblab-elements-borderColorSecondary: theme('colors.gray.900');
 
-  --liblab-elements-bg-depth-1: theme('colors.gray.950');
-  --liblab-elements-bg-depth-2: theme('colors.gray.900');
-  --liblab-elements-bg-depth-3: theme('colors.gray.800');
-  --liblab-elements-bg-depth-4: theme('colors.gray.700');
+  --depth-1: theme('colors.gray.950');
+  --depth-2: theme('colors.gray.900');
+  --depth-3: theme('colors.gray.800');
+  --depth-4: theme('colors.gray.700');
 
-  --liblab-elements-textPrimary: theme('colors.gray.100');
-  --liblab-elements-textSecondary: theme('colors.gray.400');
-  --liblab-elements-textTertiary: theme('colors.gray.500');
+  --primary: theme('colors.gray.100');
+  --secondary: theme('colors.gray.400');
+  --tertiary: theme('colors.gray.500');
 
   --liblab-elements-code-background: theme('colors.gray.800');
   --liblab-elements-code-text: theme('colors.white');
@@ -157,7 +157,7 @@
   --liblab-elements-messages-linkColor: theme('colors.accent.500');
   --liblab-elements-messages-code-background: theme('colors.gray.900');
   --liblab-elements-messages-inlineCode-background: theme('colors.gray.800');
-  --liblab-elements-messages-inlineCode-text: var(--liblab-elements-textPrimary);
+  --liblab-elements-messages-inlineCode-text: var(--color-primary);
 
   --liblab-elements-icon-success: theme('colors.green.400');
   --liblab-elements-icon-error: theme('colors.red.400');
@@ -175,14 +175,14 @@
   --liblab-elements-sidebar-buttonBackgroundHover: theme('colors.alpha.accent.20');
   --liblab-elements-sidebar-buttonText: theme('colors.accent.500');
 
-  --liblab-elements-preview-addressBar-background: var(--liblab-elements-bg-depth-1);
+  --liblab-elements-preview-addressBar-background: var(--color-depth-1);
   --liblab-elements-preview-addressBar-backgroundHover: theme('colors.alpha.white.5');
-  --liblab-elements-preview-addressBar-backgroundActive: var(--liblab-elements-bg-depth-1);
-  --liblab-elements-preview-addressBar-text: var(--liblab-elements-textSecondary);
-  --liblab-elements-preview-addressBar-textActive: var(--liblab-elements-textPrimary);
+  --liblab-elements-preview-addressBar-backgroundActive: var(--color-depth-1);
+  --liblab-elements-preview-addressBar-text: var(--color-secondary);
+  --liblab-elements-preview-addressBar-textActive: var(--color-primary);
 
-  --liblab-elements-terminals-background: var(--liblab-elements-bg-depth-1);
-  --liblab-elements-terminals-buttonBackground: var(--liblab-elements-bg-depth-3);
+  --liblab-elements-terminals-background: var(--color-depth-1);
+  --liblab-elements-terminals-buttonBackground: var(--color-depth-3);
 
   --liblab-elements-cta-background: theme('colors.alpha.white.10');
   --liblab-elements-cta-text: theme('colors.white');

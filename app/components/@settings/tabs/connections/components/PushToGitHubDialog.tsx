@@ -171,12 +171,10 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     </div>
                   </div>
 
-                  <div className="bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 rounded-lg p-3 text-left">
-                    <p className="text-xs text-liblab-elements-textSecondary dark:text-liblab-elements-textSecondary-dark mb-2">
-                      Repository URL
-                    </p>
+                  <div className="bg-depth-2 dark:bg-depth-3 rounded-lg p-3 text-left">
+                    <p className="text-xs text-secondary dark:text-secondary-dark mb-2">Repository URL</p>
                     <div className="flex items-center gap-2">
-                      <code className="flex-1 text-sm bg-liblab-elements-background dark:bg-liblab-elements-background-dark px-3 py-2 rounded border border-liblab-elements-borderColor dark:border-liblab-elements-borderColor-dark text-liblab-elements-textPrimary dark:text-liblab-elements-textPrimary-dark font-mono">
+                      <code className="flex-1 text-sm bg-liblab-elements-background dark:bg-liblab-elements-background-dark px-3 py-2 rounded border border-depth-3 dark:border-depth-3-dark text-primary dark:text-primary-dark font-mono">
                         {createdRepoUrl}
                       </code>
                       <motion.button
@@ -193,18 +191,18 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     </div>
                   </div>
 
-                  <div className="bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 rounded-lg p-3">
-                    <p className="text-xs text-liblab-elements-textSecondary dark:text-liblab-elements-textSecondary-dark mb-2">
+                  <div className="bg-depth-2 dark:bg-depth-3 rounded-lg p-3">
+                    <p className="text-xs text-secondary dark:text-secondary-dark mb-2">
                       Pushed Files ({pushedFiles.length})
                     </p>
                     <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
                       {pushedFiles.map((file) => (
                         <div
                           key={file.path}
-                          className="flex items-center justify-between py-1 text-sm text-liblab-elements-textPrimary dark:text-liblab-elements-textPrimary-dark"
+                          className="flex items-center justify-between py-1 text-sm text-primary dark:text-primary-dark"
                         >
                           <span className="font-mono truncate flex-1">{file.path}</span>
-                          <span className="text-xs text-liblab-elements-textSecondary dark:text-liblab-elements-textSecondary-dark ml-2">
+                          <span className="text-xs text-secondary dark:text-secondary-dark ml-2">
                             {formatSize(file.size)}
                           </span>
                         </div>
@@ -274,7 +272,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     initial={{ scale: 0.8 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="mx-auto w-12 h-12 rounded-xl bg-liblab-elements-bg-depth-3 flex items-center justify-center text-accent-500"
+                    className="mx-auto w-12 h-12 rounded-xl bg-depth-3 flex items-center justify-center text-accent-500"
                   >
                     <div className="i-ph:github-logo w-6 h-6" />
                   </motion.div>
@@ -328,7 +326,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       initial={{ scale: 0.8 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.1 }}
-                      className="w-10 h-10 rounded-xl bg-liblab-elements-bg-depth-3 flex items-center justify-center text-accent-500"
+                      className="w-10 h-10 rounded-xl bg-depth-3 flex items-center justify-center text-accent-500"
                     >
                       <div className="i-ph:git-branch w-5 h-5" />
                     </motion.div>
@@ -351,7 +349,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     </Dialog.Close>
                   </div>
 
-                  <div className="flex items-center gap-3 mb-6 p-3 bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 rounded-lg">
+                  <div className="flex items-center gap-3 mb-6 p-3 bg-depth-2 dark:bg-depth-3 rounded-lg">
                     <img src={user?.avatar_url} alt={user?.login} className="w-10 h-10 rounded-full" />
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name || user?.login}</p>
@@ -364,7 +362,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       href={gitMetadata.gitUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 rounded-lg p-4 hover:bg-liblab-elements-bg-depth-3 dark:hover:bg-liblab-elements-bg-depth-4 transition-colors"
+                      className="block bg-depth-2 dark:bg-depth-3 rounded-lg p-4 hover:bg-depth-3 dark:hover:bg-depth-4 transition-colors"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -407,7 +405,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     initial={{ scale: 0.8 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="w-10 h-10 rounded-xl bg-liblab-elements-bg-depth-3 flex items-center justify-center text-accent-500"
+                    className="w-10 h-10 rounded-xl bg-depth-3 flex items-center justify-center text-accent-500"
                   >
                     <div className="i-ph:git-branch w-5 h-5" />
                   </motion.div>
@@ -430,7 +428,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                   </Dialog.Close>
                 </div>
 
-                <div className="flex items-center gap-3 mb-6 p-3 bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 rounded-lg">
+                <div className="flex items-center gap-3 mb-6 p-3 bg-depth-2 dark:bg-depth-3 rounded-lg">
                   <img src={user.avatar_url} alt={user.login} className="w-10 h-10 rounded-full" />
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name || user.login}</p>
@@ -448,7 +446,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                         <motion.button
                           type="button"
                           onClick={handleReconnect}
-                          className="w-full p-3 text-left rounded-lg bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 hover:bg-liblab-elements-bg-depth-3 dark:hover:bg-liblab-elements-bg-depth-4 transition-colors group"
+                          className="w-full p-3 text-left rounded-lg bg-depth-2 dark:bg-depth-3 hover:bg-depth-3 dark:hover:bg-depth-4 transition-colors group"
                         >
                           <div className="flex items-center justify-between text-white hover:text-accent-500">
                             <div className="flex items-center gap-2">
@@ -489,7 +487,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       value={repoName}
                       onChange={handleRepoNameChange}
                       placeholder="my-awesome-project"
-                      className="w-full px-4 py-2 rounded-lg bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 border border-[#E5E5E5] dark:border-[#1A1A1A] text-gray-900 dark:text-white placeholder-gray-400"
+                      className="w-full px-4 py-2 rounded-lg bg-depth-2 dark:bg-depth-3 border border-[#E5E5E5] dark:border-[#1A1A1A] text-gray-900 dark:text-white placeholder-gray-400"
                       required
                     />
                     <div className="flex items-center gap-2">

@@ -453,16 +453,16 @@ export function RepositorySelectionDialog({ isOpen, onClose, onSelect }: Reposit
         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
         <Dialog.Content className="fixed top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[90vw] md:w-[600px] max-h-[85vh] overflow-hidden bg-white dark:bg-[#1A1A1A] rounded-xl shadow-xl z-[51] border border-[#E5E5E5] dark:border-[#333333]">
           <div className="p-4 border-b border-[#E5E5E5] dark:border-[#333333] flex items-center justify-between">
-            <Dialog.Title className="text-lg font-semibold text-liblab-elements-textPrimary dark:text-liblab-elements-textPrimary-dark">
+            <Dialog.Title className="text-lg font-semibold text-primary dark:text-primary-dark">
               Import GitHub Repository
             </Dialog.Title>
             <Dialog.Close
               onClick={handleClose}
               className={classNames(
                 'p-2 rounded-lg transition-all duration-200 ease-in-out',
-                'text-liblab-elements-textTertiary hover:text-liblab-elements-textPrimary',
-                'dark:text-liblab-elements-textTertiary-dark dark:hover:text-liblab-elements-textPrimary-dark',
-                'hover:bg-liblab-elements-bg-depth-2 dark:hover:bg-liblab-elements-bg-depth-3',
+                'text-tertiary hover:text-primary',
+                'dark:text-tertiary-dark dark:hover:text-primary-dark',
+                'hover:bg-depth-2 dark:hover:bg-depth-3',
                 'focus:outline-none focus:ring-2 focus:ring-liblab-elements-borderColor dark:focus:ring-liblab-elements-borderColor-dark',
               )}
             >
@@ -518,11 +518,11 @@ export function RepositorySelectionDialog({ isOpen, onClose, onSelect }: Reposit
                           setSearchQuery(e.target.value);
                           handleSearch(e.target.value);
                         }}
-                        className="flex-1 px-4 py-2 rounded-lg bg-[#F5F5F5] dark:bg-[#252525] border border-[#E5E5E5] dark:border-[#333333] text-liblab-elements-textPrimary"
+                        className="flex-1 px-4 py-2 rounded-lg bg-[#F5F5F5] dark:bg-[#252525] border border-[#E5E5E5] dark:border-[#333333] text-primary"
                       />
                       <button
                         onClick={() => setFilters({})}
-                        className="px-3 py-2 rounded-lg bg-[#F5F5F5] dark:bg-[#252525] text-liblab-elements-textSecondary hover:text-liblab-elements-textPrimary"
+                        className="px-3 py-2 rounded-lg bg-[#F5F5F5] dark:bg-[#252525] text-secondary hover:text-primary"
                       >
                         <span className="i-ph:funnel-simple" />
                       </button>
@@ -569,17 +569,17 @@ export function RepositorySelectionDialog({ isOpen, onClose, onSelect }: Reposit
                         <h3 className="font-medium">{selectedRepository.full_name}</h3>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm text-liblab-elements-textSecondary">Select Branch</label>
+                        <label className="text-sm text-secondary">Select Branch</label>
                         <select
                           value={selectedBranch}
                           onChange={(e) => setSelectedBranch(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 border border-liblab-elements-borderColor dark:border-liblab-elements-borderColor-dark text-liblab-elements-textPrimary dark:text-liblab-elements-textPrimary-dark focus:outline-none focus:ring-2 focus:ring-liblab-elements-borderColor dark:focus:ring-liblab-elements-borderColor-dark"
+                          className="w-full px-3 py-2 rounded-lg bg-depth-2 dark:bg-depth-3 border border-depth-3 dark:border-depth-3-dark text-primary dark:text-primary-dark focus:outline-none focus:ring-2 focus:ring-liblab-elements-borderColor dark:focus:ring-liblab-elements-borderColor-dark"
                         >
                           {branches.map((branch) => (
                             <option
                               key={branch.name}
                               value={branch.name}
-                              className="bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 text-liblab-elements-textPrimary dark:text-liblab-elements-textPrimary-dark"
+                              className="bg-depth-2 dark:bg-depth-3 text-primary dark:text-primary-dark"
                             >
                               {branch.name} {branch.default ? '(default)' : ''}
                             </option>
@@ -628,7 +628,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
         'px-4 py-2 h-10 rounded-lg transition-all duration-200 flex items-center gap-2 min-w-[120px] justify-center',
         active
           ? 'bg-accent-500 text-white hover:bg-accent-600'
-          : 'bg-[#F5F5F5] dark:bg-[#252525] text-liblab-elements-textPrimary dark:text-white hover:bg-[#E5E5E5] dark:hover:bg-[#333333] border border-[#E5E5E5] dark:border-[#333333]',
+          : 'bg-[#F5F5F5] dark:bg-[#252525] text-primary dark:text-white hover:bg-[#E5E5E5] dark:hover:bg-[#333333] border border-[#E5E5E5] dark:border-[#333333]',
       )}
     >
       {children}
@@ -649,7 +649,7 @@ function RepositoryList({
 }) {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8 text-liblab-elements-textSecondary">
+      <div className="flex items-center justify-center py-8 text-secondary">
         <span className="i-ph:spinner animate-spin mr-2" />
         Loading repositories...
       </div>
@@ -658,7 +658,7 @@ function RepositoryList({
 
   if (repos.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-liblab-elements-textSecondary">
+      <div className="flex flex-col items-center justify-center py-8 text-secondary">
         <span className="i-ph:folder-simple-dashed w-12 h-12 mb-2 opacity-50" />
         <p>{activeTab === 'my-repos' ? 'No repositories found' : 'Search for repositories'}</p>
       </div>
@@ -673,8 +673,8 @@ function RepositoryCard({ repo, onSelect }: { repo: GitHubRepoInfo; onSelect: ()
     <div className="p-4 rounded-lg bg-[#F5F5F5] dark:bg-[#252525] border border-[#E5E5E5] dark:border-[#333333] hover:border-accent-500/50 transition-colors">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="i-ph:git-repository text-liblab-elements-textTertiary" />
-          <h3 className="font-medium text-liblab-elements-textPrimary dark:text-white">{repo.name}</h3>
+          <span className="i-ph:git-repository text-tertiary" />
+          <h3 className="font-medium text-primary dark:text-white">{repo.name}</h3>
         </div>
         <button
           onClick={onSelect}
@@ -684,8 +684,8 @@ function RepositoryCard({ repo, onSelect }: { repo: GitHubRepoInfo; onSelect: ()
           Import
         </button>
       </div>
-      {repo.description && <p className="text-sm text-liblab-elements-textSecondary mb-3">{repo.description}</p>}
-      <div className="flex items-center gap-4 text-sm text-liblab-elements-textTertiary">
+      {repo.description && <p className="text-sm text-secondary mb-3">{repo.description}</p>}
+      <div className="flex items-center gap-4 text-sm text-tertiary">
         {repo.language && (
           <span className="flex items-center gap-1">
             <span className="i-ph:code" />

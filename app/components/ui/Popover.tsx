@@ -19,7 +19,7 @@ export default ({
         sideOffset={10}
         side={side}
         align={align}
-        className="bg-liblab-elements-bg-depth-2 text-liblab-elements-item-contentAccent p-2 rounded-md shadow-xl z-workbench"
+        className="bg-depth-2 text-liblab-elements-item-contentAccent p-2 rounded-md shadow-xl z-workbench"
       >
         {children}
         <Popover.Arrow className="bg-liblab-elements-item-bg-depth-2" />

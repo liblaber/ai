@@ -212,7 +212,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
                 'w-full max-h-120px text-2xl font-light tracking-wide',
                 'bg-transparent resize-none',
                 'outline-none transition-colors',
-                'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary',
+                'text-primary placeholder-tertiary',
               )}
             />
           </div>
