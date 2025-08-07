@@ -1,0 +1,99 @@
+name: 🧪 E2E Tests
+
+on:
+  push:
+    branches: [main, stevank/eng-594/e2e-tests-setup, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-tests:
+    name: 🧪 Run E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.tool-versions'
+          cache: 'pnpm'
+
+      - name: 📥 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🗄️ Generate Prisma client
+        run: pnpm prisma:generate
+
+      - name: 🐳 Setup Docker
+        run: |
+          # Ensure Docker is running
+          sudo systemctl start docker || true
+          # Verify Docker is available
+          docker --version
+          docker-compose --version
+
+      - name: 📄 Update .env file
+        run: |
+          # Update or add the three specific AI provider settings
+          echo "DEFAULT_LLM_PROVIDER=Google" >> .env
+          echo "DEFAULT_LLM_MODEL=gemini-2.5-flash" >> .env
+          echo "GOOGLE_GENERATIVE_AI_API_KEY=${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY || 'dummy_key' }}" >> .env
+          echo "NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN || 'dummy_key' }}" >> .env
+          echo "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY || 'dummy_key' }}" >> .env
+
+      - name: 🐳 Start Docker services
+        run: |
+          # Start the database and app using the docker:start command
+          pnpm run docker:start
+
+          # Wait for the app to be ready
+          echo "⏳ Waiting for the application to be ready..."
+          timeout 300 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 5; done'
+          echo "✅ Application is ready!"
+
+      - name: 🧪 Install E2E test dependencies
+        working-directory: tests/e2e
+        run: |
+          pnpm install
+          npx playwright install chromium
+
+      - name: 🧪 Run E2E tests
+        working-directory: tests/e2e
+        run: pnpm test
+        env:
+          BASE_URL: http://localhost:3000
+          CI: true
+
+      - name: 📊 Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/e2e/playwright-report/
+          retention-days: 30
+
+      - name: 📊 Upload test videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-videos
+          path: tests/e2e/test-results/
+          retention-days: 30
+
+      - name: 🧹 Cleanup Docker services
+        if: always()
+        run: pnpm run docker:stop
