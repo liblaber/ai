@@ -75,6 +75,7 @@ jobs:
           CI: true
 
       - name: 📋 Show Docker ai-app container logs after test run
+        if: always()
         run: |
           echo "📋 Container logs:"
           docker compose logs --tail=200 ai-app
