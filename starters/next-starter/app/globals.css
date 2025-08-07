@@ -62,7 +62,7 @@
   --border: oklch(0.92 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
   --ring: oklch(0.623 0.214 259.815);
-  --scrollbar-thumb: oklch(0.9764 0.001 286.38);
+  --scrollbar-thumb: oklch(0.4461 0.0263 256.8);
   --scrollbar-thumb-hover: oklch(0.551 0.0234 264.36);
   --chart-1: oklch(0.5 0.15 250); /* Deep Blue */
   --chart-1-stroke: oklch(0.35 0.15 250);
@@ -117,8 +117,8 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.488 0.243 264.376);
-  --scrollbar-thumb: oklch(0.4461 0.0263 256.8);
-  --scrollbar-thumb-hover: oklch(0.551 0.0234 264.36);
+  --scrollbar-thumb: oklch(0.9764 0.001 286.38);
+  --scrollbar-thumb-hover: oklch(0.8879 0.0056 211.04);
   --chart-1: oklch(0.6 0.15 250); /* Deep Blue */
   --chart-1-stroke: oklch(0.45 0.15 250);
   --chart-2: oklch(0.7 0.12 235); /* Blue */
