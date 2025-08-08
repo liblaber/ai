@@ -21,6 +21,7 @@ export const SendButton = ({ show, isStreaming, disabled, onClick }: SendButtonP
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 10 }}
           disabled={disabled}
+          title={isStreaming ? 'Stop generation (Enter)' : 'Send message (Enter)'}
           onClick={(event) => {
             event.preventDefault();
 

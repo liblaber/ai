@@ -7,10 +7,11 @@ interface PanelHeaderButtonProps {
   disabled?: boolean;
   children: string | JSX.Element | Array<JSX.Element | string>;
   onClick?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  title?: string;
 }
 
 export const PanelHeaderButton = memo(
-  ({ className, disabledClassName, disabled = false, children, onClick }: PanelHeaderButtonProps) => {
+  ({ className, disabledClassName, disabled = false, children, onClick, title }: PanelHeaderButtonProps) => {
     return (
       <button
         className={classNames(
@@ -21,6 +22,7 @@ export const PanelHeaderButton = memo(
           className,
         )}
         disabled={disabled}
+        title={title}
         onClick={(event) => {
           if (disabled) {
             return;

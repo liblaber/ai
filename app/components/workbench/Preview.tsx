@@ -279,9 +279,10 @@ export const Preview = memo(({ sendMessage }: Props) => {
       {!isLoading && !!codeErrors.length && <FixIssuesDialog onFixIssue={onFixIssue} />}
       <div className="bg-liblab-elements-bg-depth-2 p-2 flex items-center gap-2">
         <div className="flex items-center gap-2">
-          <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
+          <IconButton icon="i-ph:arrow-clockwise" title="Reload preview" onClick={reloadPreview} />
           <IconButton
             icon="i-ph:selection"
+            title={isSelectionMode ? 'Exit screenshot mode' : 'Enter screenshot mode'}
             onClick={() => setIsSelectionMode(!isSelectionMode)}
             className={isSelectionMode ? 'bg-liblab-elements-bg-depth-3' : ''}
           />
