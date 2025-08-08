@@ -40,7 +40,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     await prisma.$transaction(async (tx) => {
       logger.info(`Creating snapshot entry in db ${snapshotId} for conversation ${conversationId}`);
-      logger.info('The body is: ', JSON.stringify(body));
 
       await snapshotService.createSnapshot(
         {

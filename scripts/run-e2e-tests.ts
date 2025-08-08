@@ -16,7 +16,7 @@ function execCommand(command: string, cwd?: string): void {
       encoding: 'utf8',
     });
   } catch (error) {
-    console.error(`❌ Command failed: ${command}`);
+    console.error(`❌ Command failed: ${command}`, error);
     process.exit(1);
   }
 }
@@ -31,13 +31,8 @@ async function checkUrl(url: string): Promise<boolean> {
   }
 }
 
-// Main function
-async function main(): Promise<void> {
-  // Get mode from command line arguments, default to 'headed'
-  const mode = (process.argv[2] as TestMode) || 'headed';
-
-  console.log(`🚀 Running liblab.ai E2E tests in ${mode} mode...`);
-
+// Check prerequisites (directory, app running)
+async function checkPrerequisites(): Promise<void> {
   // Check if we're in the right directory
   if (!existsSync('tests/e2e')) {
     console.error("❌ Error: tests/e2e directory not found. Make sure you're in the project root.");
@@ -53,15 +48,17 @@ async function main(): Promise<void> {
     console.error('❌ Error: The main application is not running on http://localhost:3000');
     console.log('');
     console.log('Please start your application first:');
-    console.log('  • For local development: npm run dev');
+    console.log('  • For local development: pnpm run dev');
     console.log('  • For Docker: pnpm run quickstart');
-    console.log('  • For production: npm run start');
+    console.log('  • For production: pnpm run start');
     console.log('');
     console.log('Then run the tests again.');
     process.exit(1);
   }
+}
 
-  // Navigate to tests/e2e directory
+// Setup e2e directory and dependencies
+function setupE2EDirectory(): string {
   const e2eDir = join(process.cwd(), 'tests/e2e');
   process.chdir(e2eDir);
 
@@ -71,30 +68,38 @@ async function main(): Promise<void> {
     execCommand('npm install', e2eDir);
   }
 
-  // Run the tests based on the mode using pnpm
+  return e2eDir;
+}
+
+// Get test command and description based on mode
+function getTestCommand(mode: TestMode | undefined): { command: string; description: string } {
   switch (mode) {
     case 'headed':
-      console.log(' Running tests with browser visible...');
-      execCommand('pnpm run test:headed', e2eDir);
-      break;
+      return { command: 'npm run test:headed', description: 'in headed mode' };
     case 'ui':
-      console.log(' Running tests with Playwright UI...');
-      execCommand('pnpm run test:ui', e2eDir);
-      break;
+      return { command: 'npm run test:ui', description: 'with Playwright UI' };
     case 'debug':
-      console.log('🐛 Running tests in debug mode...');
-      execCommand('pnpm run test:debug', e2eDir);
-      break;
+      return { command: 'npm run test:debug', description: 'in debug mode' };
     case 'headless':
-      console.log('👻 Running tests in headless mode...');
-      execCommand('pnpm test', e2eDir);
-      break;
+      return { command: 'npm run test:headless', description: 'in headless mode' };
     default:
-      console.error(`❌ Invalid mode: ${mode}`);
-      console.log('Available modes: headed, ui, debug, headless');
-      process.exit(1);
+      return { command: 'npm test', description: 'in default mode (browser visible in non-CI environments)' };
   }
+}
 
+// Main function
+async function main(): Promise<void> {
+  const mode = process.argv[2] as TestMode;
+  const { command, description } = getTestCommand(mode);
+
+  console.log(`🚀 Running liblab.ai E2E tests ${description}...`);
+
+  await checkPrerequisites();
+
+  const e2eDir = setupE2EDirectory();
+
+  console.log(`🎯 Running tests ${description}...`);
+  execCommand(command, e2eDir);
   console.log('✅ E2E tests completed!');
 }
 
