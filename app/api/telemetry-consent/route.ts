@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const telemetry = await getTelemetry();
     await telemetry.trackTelemetryEvent(
       {
-        eventType: TelemetryEventType.USER_CHAT_REVERT,
+        eventType: TelemetryEventType.USER_TELEMETRY_CONSENT,
         properties: { telemetryEnabled },
       },
       user,
