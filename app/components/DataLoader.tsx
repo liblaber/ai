@@ -52,13 +52,13 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     // If no session and anonymous provider is available, try anonymous login
     if (!session?.user && anonymousProvider && !isLoggingIn.current) {
       loginAnonymous();
+
+      return;
     }
 
-    // If no session and no anonymous provider, clear user state
-    if (!session?.user) {
-      console.log('❌ No session, clearing user state');
-      clearUser();
-
+    // If login is in progress, wait for it to complete
+    if (!session?.user && isLoggingIn.current) {
+      console.log('⏳ Anonymous login in progress, waiting...');
       return;
     }
 
