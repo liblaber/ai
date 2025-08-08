@@ -3,11 +3,11 @@ FROM ${BASE} AS base
 
 WORKDIR /app
 
-# Install ngrok
+# Install cloudflared (trycloudflare quick tunnels)
 RUN apt-get update && apt-get install -y curl && \
-    curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && \
-    echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | tee /etc/apt/sources.list.d/ngrok.list && \
-    apt-get update && apt-get install -y ngrok && \
+    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /etc/apt/trusted.gpg.d/cloudflare-main.gpg >/dev/null && \
+    echo "deb [signed-by=/etc/apt/trusted.gpg.d/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared jammy main" | tee /etc/apt/sources.list.d/cloudflared.list && \
+    apt-get update && apt-get install -y cloudflared && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies (this step is cached as long as the dependencies don't change)
