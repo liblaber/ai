@@ -2,8 +2,41 @@ export interface BrowserInfo {
   name: 'Chrome' | 'Firefox' | 'Safari' | 'Edge' | 'Other';
   version: string;
   supportsWebContainers: boolean;
-  shouldUseServerRendered: boolean;
 }
+
+interface BrowserConfig {
+  name: BrowserInfo['name'];
+  userAgentCheck: (userAgent: string) => boolean;
+  versionRegex: RegExp;
+  supportsWebContainers: boolean;
+}
+
+const BROWSER_CONFIGS: BrowserConfig[] = [
+  {
+    name: 'Chrome',
+    userAgentCheck: (ua) => ua.includes('Chrome') && !ua.includes('Edg'),
+    versionRegex: /Chrome\/([0-9.]+)/,
+    supportsWebContainers: true,
+  },
+  {
+    name: 'Edge',
+    userAgentCheck: (ua) => ua.includes('Edg'),
+    versionRegex: /Edg\/([0-9.]+)/,
+    supportsWebContainers: true,
+  },
+  {
+    name: 'Firefox',
+    userAgentCheck: (ua) => ua.includes('Firefox'),
+    versionRegex: /Firefox\/([0-9.]+)/,
+    supportsWebContainers: false,
+  },
+  {
+    name: 'Safari',
+    userAgentCheck: (ua) => ua.includes('Safari') && !ua.includes('Chrome'),
+    versionRegex: /Safari\/([0-9.]+)/,
+    supportsWebContainers: false,
+  },
+];
 
 export function detectBrowser(): BrowserInfo {
   if (typeof window === 'undefined') {
@@ -11,43 +44,33 @@ export function detectBrowser(): BrowserInfo {
       name: 'Other',
       version: 'unknown',
       supportsWebContainers: false,
-      shouldUseServerRendered: true,
     };
   }
 
   const userAgent = window.navigator.userAgent;
-  let name: BrowserInfo['name'] = 'Other';
-  let version = 'unknown';
 
-  if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) {
-    name = 'Chrome';
+  for (const config of BROWSER_CONFIGS) {
+    if (config.userAgentCheck(userAgent)) {
+      const match = userAgent.match(config.versionRegex);
+      const version = match ? match[1] : 'unknown';
+      const supportsWebContainers = config.supportsWebContainers && checkWebContainerSupport();
 
-    const match = userAgent.match(/Chrome\/([0-9.]+)/);
-    version = match ? match[1] : 'unknown';
-  } else if (userAgent.includes('Firefox')) {
-    name = 'Firefox';
-
-    const match = userAgent.match(/Firefox\/([0-9.]+)/);
-    version = match ? match[1] : 'unknown';
-  } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
-    name = 'Safari';
-
-    const match = userAgent.match(/Safari\/([0-9.]+)/);
-    version = match ? match[1] : 'unknown';
-  } else if (userAgent.includes('Edg')) {
-    name = 'Edge';
-
-    const match = userAgent.match(/Edg\/([0-9.]+)/);
-    version = match ? match[1] : 'unknown';
+      return {
+        name: config.name,
+        version,
+        supportsWebContainers,
+      };
+    }
   }
 
-  const supportsWebContainers = checkWebContainerSupport(name);
-  const shouldUseServerRendered = !supportsWebContainers;
-
-  return { name, version, supportsWebContainers, shouldUseServerRendered };
+  return {
+    name: 'Other',
+    version: 'unknown',
+    supportsWebContainers: false,
+  };
 }
 
-function checkWebContainerSupport(browserName: string): boolean {
+function checkWebContainerSupport(): boolean {
   if (typeof window === 'undefined') {
     return false;
   }
@@ -56,6 +79,6 @@ function checkWebContainerSupport(browserName: string): boolean {
   const hasWorker = typeof Worker !== 'undefined';
   const hasWebAssembly = typeof WebAssembly !== 'undefined';
 
-  // Only Chrome reliably supports WebContainers with proper COEP headers
-  return browserName === 'Chrome' && hasSharedArrayBuffer && hasWorker && hasWebAssembly;
+  // Chrome and Edge reliably support WebContainers with proper COEP headers
+  return hasSharedArrayBuffer && hasWorker && hasWebAssembly;
 }
