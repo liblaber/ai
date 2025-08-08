@@ -123,4 +123,4 @@ For answers to common questions about this code of conduct, see the FAQ at [http
 
 ---
 
-**Questions?** Feel free to reach out to us at [community@liblab.ai](mailto:community@liblab.ai) or create an issue in our [GitHub repository](https://github.com/liblaber/liblab.ai/issues).
+**Questions?** Feel free to reach out to us at [community@liblab.ai](mailto:community@liblab.ai) or create an issue in our [GitHub repository](https://github.com/liblaber/ai/issues).
