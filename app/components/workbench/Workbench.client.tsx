@@ -387,14 +387,14 @@ export const Workbench = memo(
         <motion.div animate={'open'} variants={workbenchVariants} className="z-workbench">
           <div
             className={classNames(
-              'fixed top-[calc(var(--header-height)+1.5rem)] bottom-6 w-[var(--workbench-inner-width)] mr-4 z-0 transition-[left,width] duration-200 liblab-ease-cubic-bezier left-[var(--workbench-left)]',
+              'fixed top-[calc(var(--header-height)+1rem)] bottom-6 w-[var(--workbench-inner-width)] mr-4 z-0 transition-[left,width] duration-200 liblab-ease-cubic-bezier left-[var(--workbench-left)]',
               {
                 'w-full': isSmallViewport,
                 'left-0': isSmallViewport,
               },
             )}
           >
-            <div className="absolute inset-0 px-2 lg:px-4">
+            <div className="absolute inset-0 pl-2 pr-4">
               <div className="h-full flex flex-col bg-depth-2 border border-depth-3 shadow-sm rounded-xl overflow-hidden">
                 <div className="flex items-center px-3 py-1 h-12 border-b border-depth-3">
                   <Slider selected={selectedView} setSelected={setSelectedView} />

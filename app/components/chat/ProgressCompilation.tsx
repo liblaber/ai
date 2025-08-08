@@ -39,17 +39,11 @@ export default function ProgressCompilation({ data }: { data?: ProgressAnnotatio
         className={classNames(
           'bg-depth-2',
           'border border-depth-3',
-          'shadow-lg rounded-lg  relative w-full max-w-chat mx-auto z-prompt',
+          'shadow-lg rounded-lg  relative w-full mx-auto z-prompt',
           'p-1',
         )}
       >
-        <div
-          className={classNames(
-            'bg-liblab-elements-item-backgroundAccent',
-            'p-1 rounded-lg text-liblab-elements-item-contentAccent',
-            'flex ',
-          )}
-        >
+        <div className={classNames('bg-accent/10', 'p-1 rounded-lg text-accent', 'flex ')}>
           <div className="flex-1">
             <AnimatePresence>
               {expanded ? (
@@ -74,7 +68,7 @@ export default function ProgressCompilation({ data }: { data?: ProgressAnnotatio
             animate={{ width: 'auto' }}
             exit={{ width: 0 }}
             transition={{ duration: 0.15, ease: cubicEasingFn }}
-            className=" p-1 rounded-lg bg-liblab-elements-item-backgroundAccent hover:bg-liblab-elements-artifacts-backgroundHover"
+            className=" p-1 rounded-lg bg-accent/10 hover:bg-depth-3/50"
             onClick={() => setExpanded((v) => !v)}
           >
             <div className={expanded ? 'i-ph:caret-up-bold' : 'i-ph:caret-down-bold'}></div>

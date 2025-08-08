@@ -34,10 +34,10 @@ export function ChatDescription() {
           />
           <TooltipProvider>
             <WithTooltip tooltip="Save title">
-              <div className="flex justify-between items-center p-2 rounded-md bg-liblab-elements-item-backgroundAccent">
+              <div className="flex justify-between items-center p-2 rounded-md bg-accent/10">
                 <button
                   type="submit"
-                  className="i-ph:check-bold scale-110 hover:text-liblab-elements-item-contentAccent"
+                  className="i-ph:check-bold scale-110 hover:text-accent"
                   onMouseDown={handleSubmit}
                 />
               </div>

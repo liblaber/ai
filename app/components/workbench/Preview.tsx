@@ -287,7 +287,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
           />
         </div>
 
-        <div className="flex-grow flex items-center gap-1 bg-liblab-elements-preview-addressBar-background border border-depth-3 text-liblab-elements-preview-addressBar-text rounded-full px-3 py-1 text-sm hover:bg-liblab-elements-preview-addressBar-backgroundHover hover:focus-within:bg-liblab-elements-preview-addressBar-backgroundActive focus-within:bg-liblab-elements-preview-addressBar-backgroundActive focus-within-border-accent focus-within:text-liblab-elements-preview-addressBar-textActive">
+        <div className="flex-grow flex items-center gap-1 bg-depth-1 border border-depth-3 text-secondary rounded-full px-3 py-1 text-sm hover:bg-depth-3 hover:focus-within:bg-depth-1 focus-within:bg-depth-1 focus-within-border-accent focus-within:text-primary">
           <input
             title="URL"
             ref={inputRef}
@@ -361,13 +361,13 @@ export const Preview = memo(({ sendMessage }: Props) => {
                       }}
                     >
                       <div
-                        className={`${size.icon} w-5 h-5 text-[#6B7280] dark:text-gray-400 group-hover:text-liblab-elements-item-contentAccent dark:group-hover:text-liblab-elements-item-contentAccent transition-colors duration-200`}
+                        className={`${size.icon} w-5 h-5 text-[#6B7280] dark:text-gray-400 group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200`}
                       />
                       <div className="flex flex-col">
-                        <span className="font-medium group-hover:text-liblab-elements-item-contentAccent dark:group-hover:text-liblab-elements-item-contentAccent transition-colors duration-200">
+                        <span className="font-medium group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200">
                           {size.name}
                         </span>
-                        <span className="text-xs text-[#6B7280] dark:text-gray-400 group-hover:text-liblab-elements-item-contentAccent dark:group-hover:text-liblab-elements-item-contentAccent transition-colors duration-200">
+                        <span className="text-xs text-[#6B7280] dark:text-gray-400 group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200">
                           {size.width} × {size.height}
                         </span>
                       </div>

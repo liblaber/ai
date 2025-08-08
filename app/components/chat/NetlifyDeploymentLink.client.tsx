@@ -28,7 +28,7 @@ export function NetlifyDeploymentLink() {
             href={deployedSite.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-liblab-elements-item-backgroundActive text-secondary hover:text-[#00AD9F] z-50"
+            className="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-depth-3 text-secondary hover:text-[#00AD9F] z-50"
             onClick={(e) => {
               e.stopPropagation(); // Add this to prevent click from bubbling up
             }}

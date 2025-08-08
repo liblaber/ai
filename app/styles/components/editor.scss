@@ -35,7 +35,7 @@
 
   /* Panels */
 
-  --cm-panels-borderColor: var(--liblab-elements-editor-panels-borderColor, var(--liblab-elements-borderColor));
+  --cm-panels-borderColor: var(--liblab-elements-editor-panels-borderColor, var(--color-depth-2));
 
   /* Search */
 
@@ -48,13 +48,10 @@
 
   --cm-search-closeButton-backgroundColorHover: var(
     --liblab-elements-editor-search-closeButton-backgroundColorHover,
-    var(--liblab-elements-item-backgroundActive)
+    var(--color-depth-2)
   );
 
-  --cm-search-closeButton-textColor: var(
-    --liblab-elements-editor-search-closeButton-textColor,
-    var(--liblab-elements-item-contentDefault)
-  );
+  --cm-search-closeButton-textColor: var(--liblab-elements-editor-search-closeButton-textColor, var(--secondary));
 
   --cm-search-closeButton-textColorHover: var(
     --liblab-elements-editor-search-closeButton-textColorHover,
@@ -68,18 +65,12 @@
 
   --cm-search-button-backgroundColorHover: var(
     --liblab-elements-editor-search-button-backgroundColorHover,
-    var(--liblab-elements-item-backgroundActive)
+    var(--color-depth-2)
   );
 
-  --cm-search-button-textColor: var(
-    --liblab-elements-editor-search-button-textColor,
-    var(--color-secondary)
-  );
+  --cm-search-button-textColor: var(--liblab-elements-editor-search-button-textColor, var(--color-secondary));
 
-  --cm-search-button-textColorHover: var(
-    --liblab-elements-editor-search-button-textColorHover,
-    var(--color-primary)
-  );
+  --cm-search-button-textColorHover: var(--liblab-elements-editor-search-button-textColorHover, var(--color-primary));
 
   --cm-search-button-borderColor: var(--liblab-elements-editor-search-button-borderColor, transparent);
   --cm-search-button-borderColorHover: var(--liblab-elements-editor-search-button-borderColorHover, transparent);
@@ -91,10 +82,7 @@
 
   --cm-search-input-backgroundColor: var(--liblab-elements-editor-search-input-backgroundColor, transparent);
   --cm-search-input-textColor: var(--liblab-elements-editor-search-input-textColor, var(--color-primary));
-  --cm-search-input-borderColor: var(
-    --liblab-elements-editor-search-input-borderColor,
-    var(--liblab-elements-borderColor)
-  );
+  --cm-search-input-borderColor: var(--liblab-elements-editor-search-input-borderColor, var(--color-depth-2));
 
   --cm-search-input-borderColorFocused: var(
     --liblab-elements-editor-search-input-borderColorFocused,
@@ -111,12 +99,9 @@
     rgba(59, 206, 255, 0.3)
   );
 
-  --cm-tooltip-textColorSelected: var(
-    --liblab-elements-editor-tooltip-textColorSelected,
-    var(--color-primary)
-  );
+  --cm-tooltip-textColorSelected: var(--liblab-elements-editor-tooltip-textColorSelected, var(--color-primary));
 
-  --cm-tooltip-borderColor: var(--liblab-elements-editor-tooltip-borderColor, var(--liblab-elements-borderColor));
+  --cm-tooltip-borderColor: var(--liblab-elements-editor-tooltip-borderColor, var(--color-depth-2));
 
   --cm-searchMatch-backgroundColor: var(--liblab-elements-editor-searchMatch-backgroundColor, rgba(234, 92, 0, 0.33));
 }

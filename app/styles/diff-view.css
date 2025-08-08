@@ -1,3 +1,5 @@
+@reference "../globals.css";
+
 .diff-panel-content {
   scrollbar-width: thin;
   scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
@@ -59,7 +61,7 @@
 }
 
 .diff-line-content {
-  @apply px-4 py-0.5 font-mono whitespace-pre flex-1 group-hover:bg-depth-2 text-primary;
+  @apply px-4 py-0.5 font-mono whitespace-pre flex-1 group-hover:bg-depth-3 text-primary;
 }
 
 /* Cores específicas para adições/remoções */

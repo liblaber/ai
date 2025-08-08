@@ -462,8 +462,8 @@ export function RepositorySelectionDialog({ isOpen, onClose, onSelect }: Reposit
                 'p-2 rounded-lg transition-all duration-200 ease-in-out',
                 'text-tertiary hover:text-primary',
                 'dark:text-tertiary-dark dark:hover:text-primary-dark',
-                'hover:bg-depth-2 dark:hover:bg-depth-3',
-                'focus:outline-none focus:ring-2 focus:ring-liblab-elements-borderColor dark:focus:ring-liblab-elements-borderColor-dark',
+                'hover:bg-depth-3 dark:hover:bg-depth-3',
+                'focus:outline-none focus:ring-2 focus:ring-depth-2 dark:focus:ring-depth-2',
               )}
             >
               <span className="i-ph:x block w-5 h-5" aria-hidden="true" />
@@ -573,7 +573,7 @@ export function RepositorySelectionDialog({ isOpen, onClose, onSelect }: Reposit
                         <select
                           value={selectedBranch}
                           onChange={(e) => setSelectedBranch(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg bg-depth-2 dark:bg-depth-3 border border-depth-3 dark:border-depth-3-dark text-primary dark:text-primary-dark focus:outline-none focus:ring-2 focus:ring-liblab-elements-borderColor dark:focus:ring-liblab-elements-borderColor-dark"
+                          className="w-full px-3 py-2 rounded-lg bg-depth-2 dark:bg-depth-3 border border-depth-3 dark:border-depth-3-dark text-primary dark:text-primary-dark focus:outline-none focus:ring-2 focus:ring-depth-2 dark:focus:ring-depth-2"
                         >
                           {branches.map((branch) => (
                             <option

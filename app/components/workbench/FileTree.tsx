@@ -205,7 +205,7 @@ function ContextMenuItem({ onSelect, children }: { onSelect?: () => void; childr
   return (
     <ContextMenu.Item
       onSelect={onSelect}
-      className="flex items-center gap-2 px-2 py-1.5 outline-0 text-sm text-primary cursor-pointer ws-nowrap text-liblab-elements-item-contentDefault hover:text-liblab-elements-item-contentActive hover:bg-liblab-elements-item-backgroundActive rounded-md"
+      className="flex items-center gap-2 px-2 py-1.5 outline-0 text-sm text-primary cursor-pointer ws-nowrap text-secondary hover:text-primary hover:bg-depth-3 rounded-md"
     >
       <span className="size-4 shrink-0"></span>
       <span>{children}</span>
@@ -237,9 +237,8 @@ function Folder({ folder, collapsed, selected = false, onCopyPath, onCopyRelativ
     <FileContextMenu onCopyPath={onCopyPath} onCopyRelativePath={onCopyRelativePath}>
       <NodeButton
         className={classNames('group', {
-          'bg-transparent text-liblab-elements-item-contentDefault hover:text-liblab-elements-item-contentActive hover:bg-liblab-elements-item-backgroundActive':
-            !selected,
-          'bg-liblab-elements-item-backgroundAccent text-liblab-elements-item-contentAccent': selected,
+          'bg-transparent text-secondary hover:text-primary hover:bg-depth-3': !selected,
+          'bg-accent/10 text-accent': selected,
         })}
         depth={folder.depth}
         iconClasses={classNames({
@@ -320,19 +319,18 @@ function File({
     <FileContextMenu onCopyPath={onCopyPath} onCopyRelativePath={onCopyRelativePath}>
       <NodeButton
         className={classNames('group', {
-          'bg-transparent hover:bg-liblab-elements-item-backgroundActive text-liblab-elements-item-contentDefault':
-            !selected,
-          'bg-liblab-elements-item-backgroundAccent text-liblab-elements-item-contentAccent': selected,
+          'bg-transparent hover:bg-depth-3 text-secondary': !selected,
+          'bg-accent/10 text-accent': selected,
         })}
         depth={depth}
         iconClasses={classNames('i-liblab:ic_doc scale-98', {
-          'group-hover:text-liblab-elements-item-contentActive': !selected,
+          'group-hover:text-primary': !selected,
         })}
         onClick={onClick}
       >
         <div
           className={classNames('flex items-center', {
-            'group-hover:text-liblab-elements-item-contentActive': !selected,
+            'group-hover:text-primary': !selected,
           })}
         >
           <div className="flex-1 truncate pr-2">{name}</div>

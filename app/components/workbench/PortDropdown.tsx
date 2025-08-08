@@ -55,7 +55,7 @@ export const PortDropdown = memo(
             {sortedPreviews.map((preview) => (
               <div
                 key={preview.port}
-                className="flex items-center px-4 py-2 cursor-pointer hover:bg-liblab-elements-item-backgroundActive"
+                className="flex items-center px-4 py-2 cursor-pointer hover:bg-depth-3"
                 onClick={() => {
                   setActivePreviewIndex(preview.index);
                   setIsDropdownOpen(false);
@@ -64,9 +64,7 @@ export const PortDropdown = memo(
               >
                 <span
                   className={
-                    activePreviewIndex === preview.index
-                      ? 'text-liblab-elements-item-contentAccent'
-                      : 'text-liblab-elements-item-contentDefault group-hover:text-liblab-elements-item-contentActive'
+                    activePreviewIndex === preview.index ? 'text-accent' : 'text-secondary group-hover:text-primary'
                   }
                 >
                   {preview.port}

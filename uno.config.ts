@@ -145,9 +145,9 @@ export default defineConfig({
       ...COLOR_PRIMITIVES,
       liblab: {
         elements: {
-          borderColor: 'var(--liblab-elements-borderColor)',
+          borderColor: 'var(--color-bg-depth-2)',
           borderColorActive: 'var(--accent)',
-          borderColorSecondary: 'var(--liblab-elements-borderColorSecondary)',
+          borderColorSecondary: 'var(--color-bg-depth-2Secondary)',
           bg: {
             depth: {
               1: 'var(--depth-1)',
@@ -199,7 +199,7 @@ export default defineConfig({
           artifacts: {
             background: 'var(--liblab-elements-artifacts-background)',
             backgroundHover: 'var(--liblab-elements-artifacts-backgroundHover)',
-            borderColor: 'var(--liblab-elements-artifacts-borderColor)',
+            borderColor: 'var(--color-depth-2)',
             inlineCode: {
               background: 'var(--liblab-elements-artifacts-inlineCode-background)',
               text: 'var(--liblab-elements-artifacts-inlineCode-text)',

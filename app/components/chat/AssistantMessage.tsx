@@ -66,7 +66,7 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
           {(codeContext || chatSummary) && !errorMessage && (
             <Popover side="right" align="start" trigger={<div className="i-ph:info" />}>
               {chatSummary && (
-                <div className="max-w-chat">
+                <div className="max-w-chat-width">
                   <div className="summary max-h-96 flex flex-col">
                     <h2 className="border border-depth-3 rounded-md p4">Summary</h2>
                     <div style={{ zoom: 0.7 }} className="overflow-y-auto m4">
@@ -82,7 +82,7 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
                           return (
                             <>
                               <code
-                                className="bg-liblab-elements-artifacts-inlineCode-background text-liblab-elements-artifacts-inlineCode-text px-1.5 py-1 rounded-md text-liblab-elements-item-contentAccent hover:underline cursor-pointer"
+                                className="bg-liblab-elements-artifacts-inlineCode-background text-liblab-elements-artifacts-inlineCode-text px-1.5 py-1 rounded-md text-accent hover:underline cursor-pointer"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();

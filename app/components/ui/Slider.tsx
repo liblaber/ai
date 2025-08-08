@@ -29,9 +29,7 @@ export const Slider = genericMemo(({ selected, setSelected }: SliderProps) => {
   if (!devMode) {
     return (
       <div className="flex items-center">
-        <span className="mr-1 text-sm font-bold text-liblab-elements-item-contentDefault cursor-default select-none px-2.5 py-1">
-          Preview
-        </span>
+        <span className="mr-1 text-sm font-bold text-secondary cursor-default select-none px-2.5 py-1">Preview</span>
       </div>
     );
   }
@@ -63,9 +61,7 @@ const SliderButton = memo(({ selected, children, setSelected }: SliderButtonProp
       onClick={setSelected}
       className={classNames(
         'bg-transparent text-sm px-2.5 py-1 rounded-md relative h-full',
-        selected
-          ? 'text-white'
-          : 'text-liblab-elements-item-contentDefault hover:text-liblab-elements-item-contentActive cursor-pointer',
+        selected ? 'text-white' : 'text-secondary hover:text-primary cursor-pointer',
       )}
     >
       <span className="relative z-10">{children}</span>

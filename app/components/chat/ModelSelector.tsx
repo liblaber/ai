@@ -155,7 +155,7 @@ export const ModelSelector = ({
 
   if (providerList.length === 0) {
     return (
-      <div className="mb-2 p-4 rounded-lg border border-depth-3 bg-liblab-elements-prompt-background text-primary">
+      <div className="mb-2 p-4 rounded-lg border border-depth-3 bg-depth-2/80 text-primary">
         <p className="text-center">
           No providers are currently enabled. Please enable at least one provider in the settings to start using the
           chat.
@@ -181,7 +181,7 @@ export const ModelSelector = ({
             setModel(firstModel.name);
           }
         }}
-        className="flex-1 p-2 rounded-lg border border-depth-3 bg-liblab-elements-prompt-background text-primary focus:outline-none focus:ring-2 focus:ring-liblab-elements-focus transition-all"
+        className="flex-1 p-2 rounded-lg border border-depth-3 bg-depth-2/80 text-primary focus:outline-none focus:ring-2 focus:ring-liblab-elements-focus transition-all"
       >
         {providerList.map((provider: ProviderInfo) => (
           <option key={provider.name} value={provider.name}>
@@ -194,7 +194,7 @@ export const ModelSelector = ({
         <div
           className={classNames(
             'w-full p-2 rounded-lg border border-depth-3',
-            'bg-liblab-elements-prompt-background text-primary',
+            'bg-depth-2/80 text-primary',
             'focus-within:outline-none focus-within:ring-2 focus-within:ring-liblab-elements-focus',
             'transition-all cursor-pointer',
             isModelDropdownOpen ? 'ring-2 ring-liblab-elements-focus' : undefined,
@@ -260,12 +260,11 @@ export const ModelSelector = ({
                 'sm:scrollbar-none',
                 '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2',
                 '[&::-webkit-scrollbar-thumb]:bg-depth-3',
-                '[&::-webkit-scrollbar-thumb]:hover:bg-liblab-elements-borderColorHover',
                 '[&::-webkit-scrollbar-thumb]:rounded-full',
                 '[&::-webkit-scrollbar-track]:bg-depth-2',
                 '[&::-webkit-scrollbar-track]:rounded-full',
                 'sm:[&::-webkit-scrollbar]:w-1.5 sm:[&::-webkit-scrollbar]:h-1.5',
-                'sm:hover:[&::-webkit-scrollbar-thumb]:bg-liblab-elements-borderColor/50',
+                'sm:hover:[&::-webkit-scrollbar-thumb]:bg-depth-2/50',
                 'sm:hover:[&::-webkit-scrollbar-thumb:hover]:bg-depth-3',
                 'sm:[&::-webkit-scrollbar-track]:bg-transparent',
               )}

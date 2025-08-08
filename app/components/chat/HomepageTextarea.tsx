@@ -152,7 +152,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[80px] rounded-full blur-[80px] shadow-[0_20px_50px_80px] shadow-accent-700/80" />
           <div
             className={classNames(
-              'relative h-190px p-7 border-2 border-accent-900/50 rounded-2xl',
+              'relative h-[190px] p-7 border-2 border-accent-900/50 rounded-2xl',
               'bg-black/60',
               'focus-within:border-accent-800/70 transition-all duration-300',
             )}
@@ -209,7 +209,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
               onPaste={onPaste}
               placeholder="Create a clean revenue dashboard"
               className={classNames(
-                'w-full max-h-120px text-2xl font-light tracking-wide',
+                'w-full max-h-[120px] text-2xl font-light tracking-wide',
                 'bg-transparent resize-none',
                 'outline-none transition-colors',
                 'text-primary placeholder-tertiary',

@@ -279,7 +279,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">GitHub Connection Required</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Please connect your GitHub account first.</p>
                   <motion.button
-                    className="px-4 py-2 rounded-lg bg-accent-500 text-white text-sm hover:bg-accent-600 inline-flex items-center gap-2"
+                    className="px-4 py-2 rounded-lg bg-accent-500 text-gray-900 text-sm hover:bg-accent-600 inline-flex items-center gap-2"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleConnectGitHub}
@@ -362,7 +362,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       href={gitMetadata.gitUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block bg-depth-2 dark:bg-depth-3 rounded-lg p-4 hover:bg-depth-3 dark:hover:bg-depth-4 transition-colors"
+                      className="block bg-depth-2 dark:bg-depth-3 rounded-lg p-4 hover:bg-depth-3 dark:hover:bg-depth-3 transition-colors"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -446,7 +446,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                         <motion.button
                           type="button"
                           onClick={handleReconnect}
-                          className="w-full p-3 text-left rounded-lg bg-depth-2 dark:bg-depth-3 hover:bg-depth-3 dark:hover:bg-depth-4 transition-colors group"
+                          className="w-full p-3 text-left rounded-lg bg-depth-2 dark:bg-depth-3 hover:bg-depth-3 dark:hover:bg-depth-3 transition-colors group"
                         >
                           <div className="flex items-center justify-between text-white hover:text-accent-500">
                             <div className="flex items-center gap-2">

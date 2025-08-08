@@ -129,9 +129,8 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                 <div
                   key={index}
                   className={classNames('flex gap-4 p-6 w-full rounded-xl relative', {
-                    'bg-liblab-elements-messages-background': isUserMessage || !isStreaming || (isStreaming && !isLast),
-                    'bg-gradient-to-b from-liblab-elements-messages-background from-30% to-transparent':
-                      isStreaming && isLast,
+                    'bg-depth-3': isUserMessage || !isStreaming || (isStreaming && !isLast),
+                    'bg-gradient-to-b from-depth-3 from-30% to-transparent': isStreaming && isLast,
                     'mt-2': !isFirst,
                   })}
                 >

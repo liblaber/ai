@@ -80,13 +80,13 @@ $code-font-size: 13px;
 
   h1 {
     font-size: 2em;
-    border-bottom: 1px solid var(--liblab-elements-borderColor);
+    border-bottom: 1px solid var(--color-depth-2);
     padding-bottom: 0.3em;
   }
 
   h2 {
     font-size: 1.5em;
-    border-bottom: 1px solid var(--liblab-elements-borderColor);
+    border-bottom: 1px solid var(--color-depth-2);
     padding-bottom: 0.3em;
   }
 
@@ -117,7 +117,7 @@ $code-font-size: 13px;
   }
 
   a {
-    color: var(--liblab-elements-messages-linkColor);
+    color: var(--color-link);
     text-decoration: none;
     cursor: pointer;
 
@@ -131,8 +131,8 @@ $code-font-size: 13px;
     font-size: $code-font-size;
     border-radius: 6px;
     padding: 0.2em 0.4em;
-    background-color: var(--liblab-elements-messages-inlineCode-background);
-    color: var(--liblab-elements-messages-inlineCode-text);
+    background-color: var(--color-depth-3);
+    color: var(--color-primary);
   }
 
   pre {
@@ -152,7 +152,7 @@ $code-font-size: 13px;
     margin: 0;
     padding: 0 1em;
     color: var(--color-tertiary);
-    border-left: 0.25em solid var(--liblab-elements-borderColor);
+    border-left: 0.25em solid var(--color-depth-2);
   }
 
   :is(ul, ol):not(:has(:global(.actions)), :global(.actions *)) {
@@ -188,7 +188,7 @@ $code-font-size: 13px;
     height: 0.25em;
     padding: 0;
     margin: 24px 0;
-    background-color: var(--liblab-elements-borderColor);
+    background-color: var(--color-depth-2);
     border: 0;
   }
 

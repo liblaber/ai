@@ -386,11 +386,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       <div className="flex">
         <div className="relative" ref={dropdownRef}>
           <div className="flex border border-depth-3 rounded-md overflow-hidden mr-2 text-sm">
-            <Button
-              active
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="px-4 hover:bg-liblab-elements-item-backgroundActive flex items-center gap-2"
-            >
+            <Button active onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="px-4 flex items-center gap-2">
               <div className="i-ph:rocket-launch w-4 h-4" />
               Publish
             </Button>
@@ -458,11 +454,9 @@ function Button({ active = false, disabled = false, children, onClick, className
       className={classNames(
         'flex items-center p-1.5',
         {
-          'bg-liblab-elements-item-backgroundDefault hover:bg-liblab-elements-item-backgroundActive text-tertiary hover:text-primary':
-            !active,
-          'bg-liblab-elements-item-backgroundAccent text-liblab-elements-item-contentAccent': active && !disabled,
-          'bg-liblab-elements-item-backgroundDefault text-alpha-gray-20 dark:text-alpha-white-20 cursor-not-allowed':
-            disabled,
+          'bg-depth-1 text-tertiary hover:text-primary': !active,
+          'bg-accent/10 text-accent hover:bg-depth-3/10 cursor-pointer': active && !disabled,
+          'bg-depth-1 text-alpha-gray-20 dark:text-alpha-white-20 cursor-not-allowed': disabled,
         },
         className,
       )}

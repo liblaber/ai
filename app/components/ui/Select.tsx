@@ -103,7 +103,7 @@ const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> =
     boxShadow: '0 4px 6px 2px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
     marginTop: '0.25rem',
     cursor: 'pointer',
-    border: '2px solid var(--liblab-elements-borderColor)',
+    border: '2px solid var(--color-depth-2)',
     borderRadius: '0.5rem',
     zIndex: 9999,
     textAlign: 'initial',
@@ -123,7 +123,7 @@ const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> =
     color: 'var(--color-primary)',
     fontSize: '0.875rem',
     '&:hover': {
-      color: 'var(--liblab-elements-messages-linkColor)',
+      color: 'var(--color-link)',
     },
     '&:active': {
       backgroundColor: 'var(--color-depth-2)',

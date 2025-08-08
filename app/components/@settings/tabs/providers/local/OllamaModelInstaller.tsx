@@ -485,7 +485,7 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
             }}
             className={classNames(
               'px-3 py-1 rounded-full text-xs font-medium transition-all duration-200',
-              selectedTags.includes(tag) ? 'bg-accent-500 text-white' : 'bg-depth-3 text-secondary hover:bg-depth-4',
+              selectedTags.includes(tag) ? 'bg-accent-500 text-white' : 'bg-depth-3 text-secondary hover:bg-depth-3',
             )}
           >
             {tag}
@@ -500,7 +500,7 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
             className={classNames(
               'flex items-start gap-2 p-3 rounded-lg',
               'bg-depth-3',
-              'hover:bg-depth-4',
+              'hover:bg-depth-3',
               'transition-all duration-200',
               'relative group',
             )}

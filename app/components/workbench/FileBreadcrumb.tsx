@@ -135,7 +135,7 @@ export const FileBreadcrumb = memo<FileBreadcrumbProps>(({ files, pathSegments =
                             />
                           </div>
                         </div>
-                        <DropdownMenu.Arrow className="fill-liblab-elements-borderColor" />
+                        <DropdownMenu.Arrow className="fill-depth-2" />
                       </motion.div>
                     </DropdownMenu.Content>
                   </DropdownMenu.Portal>
