@@ -38,6 +38,34 @@ export const userService = {
     };
   },
 
+  // TODO: @skos just troubleshooting
+  async getUserByEmail(email: string): Promise<UserProfile> {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        organizationId: true,
+        telemetryEnabled: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      organizationId: user.organizationId!,
+      telemetryEnabled: user.telemetryEnabled,
+    };
+  },
+
   async updateUser(userId: string, data: Partial<UserProfile>): Promise<UserProfile> {
     const user = await prisma.user.update({
       where: { id: userId },
