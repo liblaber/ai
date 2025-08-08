@@ -95,7 +95,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/((?!api/execute-query).*)',
+        source: '/((?!api/).*)',
         headers: [
           {
             key: 'X-Frame-Options',
@@ -119,17 +119,14 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Permissive CORS for all API routes (Cloudflared quick tunnels)
       {
-        source: '/api/execute-query',
+        source: '/api/:path*',
         headers: [
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET, POST, PUT, DELETE, OPTIONS',
-          },
-          {
-            key: 'Access-Control-Allow-Headers',
-            value: '*',
-          },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: '*' },
+          { key: 'Access-Control-Expose-Headers', value: '*' },
         ],
       },
     ];
