@@ -20,9 +20,9 @@ async function seed() {
         organization = await tx.organization.create({
           data: anonymousOrganization,
         });
-        console.log('✅ Created organization:', organization.id);
+        console.log('✅ Created anonymous organization');
       } else {
-        console.log('✅ Organization exists:', organization.id);
+        console.log('✅ Anonymous organization already exists');
       }
 
       let anonUser = await tx.user.findUnique({

@@ -61,7 +61,7 @@ const runMigrationsWithErrorHandling = async (): Promise<void> => {
 
 runMigrationsWithErrorHandling()
   .then(() => {
-    console.log('✅ Migration script completed, the app can now start safely');
+    console.log('✅ Migration script completed, the app can now start safely\n');
     process.exit(0);
   })
   .catch((error) => {
