@@ -89,23 +89,29 @@ export default function TelemetryConsentPage() {
       <Header showMenuIcon={false} />
       <div className="h-full bg-gray-950 flex items-center justify-center p-4">
         <div className="w-full max-w-[620px] h-[560px]">
-          <h1 className="text-2xl text-liblab-elements-textPrimary mb-6 text-center">Help us improve liblab ai</h1>
+          <h1 className="text-2xl text-liblab-elements-textPrimary mb-6 text-center">Help us improve liblab AI</h1>
           <div className="mb-6">
             <p className="text-center text-base font-light text-liblab-elements-textPrimary mb-4">
-              We collect anonymous usage data to help us improve liblab ai. This includes:
+              We collect anonymous usage data to help make liblab AI better for everyone. This includes:
             </p>
             <div className="space-y-3 text-sm text-gray-300">
               <div className="flex items-start gap-3">
                 <span className="i-ph:check-circle-fill text-green-400 mt-0.5 flex-shrink-0" />
-                <span>Error reports to help us fix bugs and improve reliability</span>
+                <span>Error reports to identify bugs and improve stability</span>
               </div>
               <div className="flex items-start gap-3">
                 <span className="i-ph:check-circle-fill text-green-400 mt-0.5 flex-shrink-0" />
-                <span>Usage patterns to understand how features are being used</span>
+                <span>Usage patterns to understand how features are used</span>
               </div>
               <div className="flex items-start gap-3">
                 <span className="i-ph:check-circle-fill text-green-400 mt-0.5 flex-shrink-0" />
-                <span>Performance metrics to optimize the application</span>
+                <span>Performance metrics to optimize speed and responsiveness</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="i-ph:check-circle-fill text-green-400 mt-0.5 flex-shrink-0" />
+                <span>
+                  Prompts sent to the LLM to enhance the quality of generated outputs and improve prompt understanding
+                </span>
               </div>
             </div>
             <div className="mt-6 p-4 bg-gray-800 rounded-lg">
@@ -116,7 +122,8 @@ export default function TelemetryConsentPage() {
                 </span>
               </div>
               <div className="text-gray-400 text-[13px] leading-snug">
-                We do not collect any personal information, chat content, built apps code or any other sensitive data.
+                We do not collect any personal information, built app code, user data, or chat responses from the LLM,
+                only the prompts you send. All data is anonymized and used solely to improve the product.
               </div>
             </div>
           </div>

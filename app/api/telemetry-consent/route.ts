@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { userService } from '~/lib/services/userService';
 import { requireUserId } from '~/auth/session';
 import { logger } from '~/utils/logger';
+import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +11,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { telemetryEnabled } = body as { telemetryEnabled: boolean };
 
-    await userService.updateTelemetryConsent(userId, telemetryEnabled);
+    const user = await userService.updateTelemetryConsent(userId, telemetryEnabled);
+
+    const telemetry = await getTelemetry();
+    await telemetry.trackTelemetryEvent(
+      {
+        eventType: TelemetryEventType.USER_CHAT_REVERT,
+        properties: { telemetryEnabled },
+      },
+      user,
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

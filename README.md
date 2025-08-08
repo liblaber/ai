@@ -70,13 +70,14 @@ Local Machine ← Encrypted Response ← Secure Tunnel ← Preview Dashboard
 
 ## 📈 Telemetry
 
-To help us improve liblab.ai, we collect anonymous usage events by default. This includes:
+To help us improve liblab AI, we collect anonymous usage data to help make liblab AI better for everyone. This includes:
 
-- Whether the setup script completed successfully or with an error (including the actual error message)
-- Whether the development server started successfully or with an error (including the actual error message)
-- A unique, anonymous machine identifier (generated from hardware and OS info, never your name or email)
+- Error reports to identify bugs and improve stability
+- Usage patterns to understand how features are used
+- Performance metrics to optimize speed and responsiveness
+- Prompts sent to the LLM to enhance the quality of generated outputs and improve prompt understanding
 
-**No sensitive data, database credentials, or personal information is ever collected.**
+**We do not collect any personal information, built app code, user data, or chat responses from the LLM, only the prompts you send. All data is anonymized and used solely to improve the product.**
 
 Events are sent to [PostHog](https://posthog.com/) for analytics. This helps us understand how the open source project is used and where users encounter issues, so we can improve the experience.
 
