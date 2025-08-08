@@ -13,6 +13,10 @@ import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-mana
 import { userService } from '~/lib/services/userService';
 import { env as serverEnv } from '~/env/server';
 
+interface ErrorData {
+  message?: string;
+}
+
 const TOTAL_STEPS = 6;
 
 interface CommandResult {
@@ -192,9 +196,14 @@ export async function POST(request: NextRequest) {
         try {
           siteName = await generateUniqueSiteName(chatId);
           logger.info('Generated unique site name', JSON.stringify({ chatId, siteName }));
-        } catch (error) {
+        } catch (error: any) {
           // Handle error in generating unique site name
-          handleErrorResponse(writer, 'Failed to generate unique site name', currentStepIndex, error as Error);
+          handleErrorResponse(
+            writer,
+            'Failed to generate unique site name',
+            currentStepIndex,
+            new Error(error?.message ?? JSON.stringify(error)),
+          );
           await safeCloseWriter();
 
           return;
@@ -213,12 +222,12 @@ export async function POST(request: NextRequest) {
         });
 
         if (!createSiteResponse.ok) {
-          const errorData = await createSiteResponse.json().catch(() => null);
+          const errorData = await createSiteResponse.json<ErrorData>().catch(() => null);
           handleErrorResponse(
             writer,
             `Failed to create site: ${JSON.stringify(errorData)}`,
             currentStepIndex,
-            errorData as Error,
+            new Error(errorData?.message ?? JSON.stringify(errorData)),
           );
           await safeCloseWriter();
 
@@ -375,8 +384,13 @@ export async function POST(request: NextRequest) {
 
         try {
           zip.extractAllTo(tempDir, true);
-        } catch (error) {
-          handleErrorResponse(writer, 'Failed to extract zip', currentStepIndex, error as Error);
+        } catch (error: any) {
+          handleErrorResponse(
+            writer,
+            'Failed to extract zip',
+            currentStepIndex,
+            new Error(error?.message ?? JSON.stringify(error)),
+          );
 
           await safeCloseWriter();
 
@@ -448,8 +462,13 @@ export async function POST(request: NextRequest) {
             NETLIFY_AUTH_TOKEN: token,
           });
           logger.info('Netlify configuration completed', JSON.stringify({ chatId }));
-        } catch (error) {
-          handleErrorResponse(writer, 'Failed to configure Netlify', currentStepIndex, error as Error);
+        } catch (error: any) {
+          handleErrorResponse(
+            writer,
+            'Failed to configure Netlify',
+            currentStepIndex,
+            new Error(error?.message ?? JSON.stringify(error)),
+          );
 
           await safeCloseWriter();
 
@@ -506,8 +525,13 @@ export async function POST(request: NextRequest) {
         });
 
         if (!deployResponse.ok) {
-          const errorData = await deployResponse.json().catch(() => null);
-          handleErrorResponse(writer, 'Failed to fetch deployment info', currentStepIndex, errorData as Error);
+          const errorData = await deployResponse.json<ErrorData>().catch(() => null);
+          handleErrorResponse(
+            writer,
+            'Failed to fetch deployment info',
+            currentStepIndex,
+            new Error(errorData?.message ?? JSON.stringify(errorData)),
+          );
           await safeCloseWriter();
 
           return;
@@ -599,8 +623,13 @@ export async function POST(request: NextRequest) {
                 })}\n\n`,
               ),
             );
-          } catch (error) {
-            handleErrorResponse(writer, 'Failed to save website', currentStepIndex, error as Error);
+          } catch (error: any) {
+            handleErrorResponse(
+              writer,
+              'Failed to save website',
+              currentStepIndex,
+              new Error(error?.message ?? JSON.stringify(error)),
+            );
             await safeCloseWriter();
 
             return;
@@ -611,8 +640,13 @@ export async function POST(request: NextRequest) {
         logger.info('Cleaning up temporary directory', JSON.stringify({ chatId, tempDir }));
         await rimraf(tempDir);
       }
-    } catch (error) {
-      handleErrorResponse(writer, 'Deployment process failed', currentStepIndex, error as Error);
+    } catch (error: any) {
+      handleErrorResponse(
+        writer,
+        'Deployment process failed',
+        currentStepIndex,
+        new Error(error?.message ?? JSON.stringify(error)),
+      );
     } finally {
       await safeCloseWriter();
     }
