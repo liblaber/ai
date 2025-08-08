@@ -59,7 +59,7 @@ class TelemetryManager {
 
     const eventProperties = {
       ...event.properties,
-      userId: user?.id,
+      userId: user?.id, // No user PII being tracked, only the id
       instanceId: this._instanceId, // Used to identify events from single liblab ai instance
       nodeVersion: process.version,
       liblabVersion: env.npm_package_version || '0.0.1',
