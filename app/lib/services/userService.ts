@@ -4,8 +4,6 @@ import type { User } from '@prisma/client';
 
 export interface UserProfile {
   id: string;
-  name: string;
-  email: string;
   role: DeprecatedRole;
   organizationId: string;
   telemetryEnabled: boolean | null;
@@ -49,10 +47,8 @@ type UserWithRoles = Partial<User> & {
 };
 
 function mapToUserProfile(user: UserWithRoles): UserProfile {
-  const userProfile = {
+  const userProfile: UserProfile = {
     id: user.id,
-    name: user.name,
-    email: user.email,
     role: user.role,
     organizationId: user.organizationId!,
     telemetryEnabled: user.telemetryEnabled,
