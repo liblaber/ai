@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateSqlQueries } from '~/lib/.server/llm/database-source';
 import { createScopedLogger } from '~/utils/logger';
 import { z } from 'zod';
-import { getLlm } from '~/lib/.server/llm/get-llm';
 import { prisma } from '~/lib/prisma';
 import { requireUserId } from '~/auth/session';
 
@@ -25,8 +24,6 @@ export async function POST(request: NextRequest) {
 
     const schema = await getDatabaseSchema(dataSourceId, userId);
 
-    const llm = await getLlm();
-
     const dataSource = await prisma.dataSource.findUniqueOrThrow({
       where: { id: dataSourceId, userId },
     });
@@ -37,7 +34,6 @@ export async function POST(request: NextRequest) {
     const queries = await generateSqlQueries({
       schema,
       userPrompt: prompt,
-      llm,
       databaseType: type,
       existingQueries,
     });

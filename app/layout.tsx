@@ -30,8 +30,6 @@ async function getRootData() {
       headers: headersList,
     });
 
-    console.log('Calling getRootData', session);
-
     let user = null;
     let dataSources: any[] = [];
     let pluginAccess = FREE_PLUGIN_ACCESS;
