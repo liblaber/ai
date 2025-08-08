@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useSession } from '~/auth/auth-client';
+import { useEffect, useRef } from 'react';
+import { useSession, signIn } from '~/auth/auth-client';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { usePluginStore } from '~/lib/plugins/plugin-store';
 import type { DataSourceType } from '~/lib/stores/dataSourceTypes';
@@ -12,6 +12,7 @@ import { useUserStore } from '~/lib/stores/user';
 import { DATA_SOURCE_CONNECTION_ROUTE, TELEMETRY_CONSENT_ROUTE } from '~/lib/constants/routes';
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
 import type { UserProfile } from '~/lib/services/userService';
+import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
 
 export interface RootData {
   user: UserProfile | null;
@@ -37,11 +38,27 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
   const { setPluginAccess } = usePluginStore();
   const { setDataSourceTypes } = useDataSourceTypesStore();
   const { setUser, clearUser, user } = useUserStore();
+  const { anonymousProvider } = useAuthProvidersPlugin();
   const router = useRouter();
+  const isLoggingIn = useRef(false);
 
   useEffect(() => {
+    console.log('🔍 DataLoader auth check:', {
+      hasSession: !!session?.user,
+      hasAnonymousProvider: !!anonymousProvider,
+      isLoggingIn: isLoggingIn.current,
+    });
+
+    // If no session and anonymous provider is available, try anonymous login
+    if (!session?.user && anonymousProvider && !isLoggingIn.current) {
+      loginAnonymous();
+    }
+
+    // If no session and no anonymous provider, clear user state
     if (!session?.user) {
+      console.log('❌ No session, clearing user state');
       clearUser();
+
       return;
     }
 
@@ -92,7 +109,48 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
 
       return;
     }
-  }, [session?.user, rootData, setDataSources, setPluginAccess, setDataSourceTypes, setUser, clearUser, user, router]);
+  }, [
+    session?.user,
+    anonymousProvider,
+    rootData,
+    setDataSources,
+    setPluginAccess,
+    setDataSourceTypes,
+    setUser,
+    clearUser,
+    user,
+    router,
+  ]);
+
+  const loginAnonymous = async () => {
+    if (isLoggingIn.current) {
+      console.log('⏳ Login already in progress, skipping...');
+      return;
+    }
+
+    isLoggingIn.current = true;
+
+    try {
+      console.log('🔐 Attempting anonymous login...');
+
+      const { error: signInError } = await signIn.email({
+        email: 'anonymous@anonymous.com',
+        password: 'password1234',
+        rememberMe: true,
+      });
+
+      if (signInError) {
+        console.error('❌ Failed to sign in anonymous user:', signInError);
+        return;
+      }
+
+      console.log('✅ Anonymous login successful');
+    } catch (error: any) {
+      console.error(`❌ Anonymous login failed: ${error?.message}`);
+    } finally {
+      isLoggingIn.current = false;
+    }
+  };
 
   return <>{children}</>;
 }
