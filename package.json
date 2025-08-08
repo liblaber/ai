@@ -37,7 +37,8 @@
     "prisma:reset": "prisma migrate reset --force",
     "prisma:seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push",
-    "db:pull": "prisma db pull"
+    "db:pull": "prisma db pull",
+    "update": "git pull && pnpm run quickstart"
   },
   "engines": {
     "node": ">=18.18.0"
