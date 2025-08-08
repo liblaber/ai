@@ -250,30 +250,40 @@ export const Preview = memo(({ sendMessage }: Props) => {
   );
 
   const setDeviceSize = (size: WindowSize) => {
+    const MIN_PREVIEW_WIDTH_PERCENT = 10;
+    const MAX_PREVIEW_WIDTH_PERCENT = 100;
+    const ESTIMATED_PREVIEW_WIDTH_RATIO = 0.5;
+
     // Enable device mode if not already enabled
     if (!isDeviceModeOn) {
       setIsDeviceModeOn(true);
     }
 
-    // Calculate the percentage width based on current container width
+    const calculateTargetPercent = (deviceWidth: number, containerWidth: number) => {
+      if (containerWidth === 0) {
+        return MIN_PREVIEW_WIDTH_PERCENT;
+      }
+
+      const percent = (deviceWidth / containerWidth) * 100;
+
+      return Math.max(MIN_PREVIEW_WIDTH_PERCENT, Math.min(MAX_PREVIEW_WIDTH_PERCENT, percent));
+    };
+
     const previewContainer = containerRef.current;
+    let targetPercent: number;
 
     if (previewContainer) {
-      // Get the preview area container (the one that actually contains the iframe)
-      const previewArea = previewContainer.querySelector('.flex-1') as HTMLElement;
+      const previewArea = previewContainer.querySelector<HTMLElement>('.flex-1');
       const availableWidth = previewArea ? previewArea.offsetWidth : previewContainer.offsetWidth;
-
-      // Calculate percentage, ensuring it doesn't exceed 100% and has a minimum of 10%
-      const targetPercent = Math.max(10, Math.min(100, (size.width / availableWidth) * 100));
-      setWidthPercent(targetPercent);
+      targetPercent = calculateTargetPercent(size.width, availableWidth);
     } else {
-      // Fallback: Use a more conservative approach
+      // Fallback if container ref is not available yet
       const screenWidth = window.innerWidth;
-      // Estimate workbench preview area (roughly 50% of screen width accounting for chat panel)
-      const estimatedPreviewWidth = screenWidth * 0.5;
-      const targetPercent = Math.max(10, Math.min(100, (size.width / estimatedPreviewWidth) * 100));
-      setWidthPercent(targetPercent);
+      const estimatedPreviewWidth = screenWidth * ESTIMATED_PREVIEW_WIDTH_RATIO;
+      targetPercent = calculateTargetPercent(size.width, estimatedPreviewWidth);
     }
+
+    setWidthPercent(targetPercent);
 
     // Update the selected window size for the dropdown
     setSelectedWindowSize(size);
