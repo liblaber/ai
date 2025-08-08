@@ -249,26 +249,34 @@ export const Preview = memo(({ sendMessage }: Props) => {
     </div>
   );
 
-  const openInNewWindow = (size: WindowSize) => {
-    if (activePreview?.baseUrl) {
-      const match = activePreview.baseUrl.match(/^https?:\/\/([^.]+)\.local-credentialless\.webcontainer-api\.io/);
-
-      if (match) {
-        const previewId = match[1];
-        const previewUrl = `/webcontainer/preview/${previewId}`;
-        const newWindow = window.open(
-          previewUrl,
-          '_blank',
-          `noopener,noreferrer,width=${size.width},height=${size.height},menubar=no,toolbar=no,location=no,status=no`,
-        );
-
-        if (newWindow) {
-          newWindow.focus();
-        }
-      } else {
-        console.warn('[Preview] Invalid WebContainer URL:', activePreview.baseUrl);
-      }
+  const setDeviceSize = (size: WindowSize) => {
+    // Enable device mode if not already enabled
+    if (!isDeviceModeOn) {
+      setIsDeviceModeOn(true);
     }
+
+    // Calculate the percentage width based on current container width
+    const previewContainer = containerRef.current;
+
+    if (previewContainer) {
+      // Get the preview area container (the one that actually contains the iframe)
+      const previewArea = previewContainer.querySelector('.flex-1') as HTMLElement;
+      const availableWidth = previewArea ? previewArea.offsetWidth : previewContainer.offsetWidth;
+
+      // Calculate percentage, ensuring it doesn't exceed 100% and has a minimum of 10%
+      const targetPercent = Math.max(10, Math.min(100, (size.width / availableWidth) * 100));
+      setWidthPercent(targetPercent);
+    } else {
+      // Fallback: Use a more conservative approach
+      const screenWidth = window.innerWidth;
+      // Estimate workbench preview area (roughly 50% of screen width accounting for chat panel)
+      const estimatedPreviewWidth = screenWidth * 0.5;
+      const targetPercent = Math.max(10, Math.min(100, (size.width / estimatedPreviewWidth) * 100));
+      setWidthPercent(targetPercent);
+    }
+
+    // Update the selected window size for the dropdown
+    setSelectedWindowSize(size);
   };
 
   return (
@@ -336,8 +344,9 @@ export const Preview = memo(({ sendMessage }: Props) => {
           <div className="flex items-center relative">
             <IconButton
               icon="i-ph:arrow-square-out"
-              onClick={() => openInNewWindow(selectedWindowSize)}
-              title={`Open Preview in ${selectedWindowSize.name} Window`}
+              onClick={() => setDeviceSize(selectedWindowSize)}
+              title={`Set Preview to ${selectedWindowSize.name} Size (${selectedWindowSize.width}×${selectedWindowSize.height})`}
+              className={isDeviceModeOn ? 'bg-liblab-elements-bg-depth-3' : ''}
             />
             <IconButton
               icon="i-ph:caret-down"
@@ -357,7 +366,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
                       onClick={() => {
                         setSelectedWindowSize(size);
                         setIsWindowSizeDropdownOpen(false);
-                        openInNewWindow(size);
+                        setDeviceSize(size);
                       }}
                     >
                       <div
