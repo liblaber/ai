@@ -1,7 +1,7 @@
-import { type ConsoleMessage, test } from '@playwright/test';
+import { type ConsoleMessage, type ElementHandle, type Page, test } from '@playwright/test';
 
 test.describe('User Onboarding Flow Test', () => {
-  test('Complete user onboarding flow', async ({ page }) => {
+  test('Complete user onboarding flow', async ({ page }: { page: Page }) => {
     test.setTimeout(120000); // 2 minutes for this specific test
 
     // Enable browser console logging for debugging
@@ -97,7 +97,9 @@ test.describe('User Onboarding Flow Test', () => {
       // Step 7: Check for "Hello World!" content inside the iframe
       console.log(' Looking for "Hello World!" content in iframe...');
 
-      const frame = await iframe.elementHandle().then((handle) => handle?.contentFrame());
+      const frame = await iframe
+        .elementHandle()
+        .then((handle: ElementHandle<SVGElement | HTMLElement> | null) => handle?.contentFrame());
 
       if (!frame) {
         throw new Error('Could not get frame from iframe element');
