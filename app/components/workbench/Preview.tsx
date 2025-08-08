@@ -249,26 +249,44 @@ export const Preview = memo(({ sendMessage }: Props) => {
     </div>
   );
 
-  const openInNewWindow = (size: WindowSize) => {
-    if (activePreview?.baseUrl) {
-      const match = activePreview.baseUrl.match(/^https?:\/\/([^.]+)\.local-credentialless\.webcontainer-api\.io/);
+  const setDeviceSize = (size: WindowSize) => {
+    const MIN_PREVIEW_WIDTH_PERCENT = 10;
+    const MAX_PREVIEW_WIDTH_PERCENT = 100;
+    const ESTIMATED_PREVIEW_WIDTH_RATIO = 0.5;
 
-      if (match) {
-        const previewId = match[1];
-        const previewUrl = `/webcontainer/preview/${previewId}`;
-        const newWindow = window.open(
-          previewUrl,
-          '_blank',
-          `noopener,noreferrer,width=${size.width},height=${size.height},menubar=no,toolbar=no,location=no,status=no`,
-        );
-
-        if (newWindow) {
-          newWindow.focus();
-        }
-      } else {
-        console.warn('[Preview] Invalid WebContainer URL:', activePreview.baseUrl);
-      }
+    // Enable device mode if not already enabled
+    if (!isDeviceModeOn) {
+      setIsDeviceModeOn(true);
     }
+
+    const calculateTargetPercent = (deviceWidth: number, containerWidth: number) => {
+      if (containerWidth === 0) {
+        return MIN_PREVIEW_WIDTH_PERCENT;
+      }
+
+      const percent = (deviceWidth / containerWidth) * 100;
+
+      return Math.max(MIN_PREVIEW_WIDTH_PERCENT, Math.min(MAX_PREVIEW_WIDTH_PERCENT, percent));
+    };
+
+    const previewContainer = containerRef.current;
+    let targetPercent: number;
+
+    if (previewContainer) {
+      const previewArea = previewContainer.querySelector<HTMLElement>('.flex-1');
+      const availableWidth = previewArea ? previewArea.offsetWidth : previewContainer.offsetWidth;
+      targetPercent = calculateTargetPercent(size.width, availableWidth);
+    } else {
+      // Fallback if container ref is not available yet
+      const screenWidth = window.innerWidth;
+      const estimatedPreviewWidth = screenWidth * ESTIMATED_PREVIEW_WIDTH_RATIO;
+      targetPercent = calculateTargetPercent(size.width, estimatedPreviewWidth);
+    }
+
+    setWidthPercent(targetPercent);
+
+    // Update the selected window size for the dropdown
+    setSelectedWindowSize(size);
   };
 
   return (
@@ -336,8 +354,9 @@ export const Preview = memo(({ sendMessage }: Props) => {
           <div className="flex items-center relative">
             <IconButton
               icon="i-ph:arrow-square-out"
-              onClick={() => openInNewWindow(selectedWindowSize)}
-              title={`Open Preview in ${selectedWindowSize.name} Window`}
+              onClick={() => setDeviceSize(selectedWindowSize)}
+              title={`Set Preview to ${selectedWindowSize.name} Size (${selectedWindowSize.width}×${selectedWindowSize.height})`}
+              className={isDeviceModeOn ? 'bg-liblab-elements-bg-depth-3' : ''}
             />
             <IconButton
               icon="i-ph:caret-down"
@@ -357,7 +376,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
                       onClick={() => {
                         setSelectedWindowSize(size);
                         setIsWindowSizeDropdownOpen(false);
-                        openInNewWindow(size);
+                        setDeviceSize(size);
                       }}
                     >
                       <div
