@@ -31,7 +31,7 @@ export type LiblabAction = FileAction | ShellAction | StartAction | BuildAction 
 
 export type LiblabActionData = LiblabAction | BaseAction;
 
-export interface ActionAlert {
+export interface CodeError {
   type: string;
   title: string;
   description: string;

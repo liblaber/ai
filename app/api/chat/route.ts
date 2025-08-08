@@ -4,7 +4,7 @@ import { type Messages, type StreamingOptions, streamText } from '~/lib/.server/
 import { createScopedLogger } from '~/utils/logger';
 import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
 import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
-import { createSummary } from '~/lib/.server/llm/create-summary';
+import { getChatSummary } from '~/lib/.server/llm/get-chat-summary';
 import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
 import { messageService } from '~/lib/services/messageService';
 import { MESSAGE_ROLE } from '~/types/database';
@@ -21,6 +21,7 @@ import { createImplementationPlan } from '~/lib/.server/llm/create-implementatio
 import { getDatabaseSchema } from '~/lib/schema';
 import { requireUserId } from '~/auth/session';
 import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
+import { AI_SDK_INVALID_KEY_ERROR } from '~/utils/constants';
 
 const WORK_DIR = '/home/project';
 
@@ -31,6 +32,8 @@ export async function POST(request: NextRequest) {
 }
 
 async function chatAction(request: NextRequest) {
+  const userId = await requireUserId(request);
+
   const body = await request.json<{
     messages: Messages;
     files: any;
@@ -97,12 +100,12 @@ async function chatAction(request: NextRequest) {
             };
             dataStream.writeData(currentProgressAnnotation);
 
-            // Create a summary of the chat
-            console.log(`Messages count: ${messages.length}`);
+            logger.debug(`Messages count: ${messages.length}`);
 
-            summary = await createSummary({
+            summary = await getChatSummary({
               messages: [...messages],
               contextOptimization,
+              isFixMessage: userMessageProperties.isFixMessage,
               onFinish(resp) {
                 if (resp.usage) {
                   logger.debug('createSummary token usage', JSON.stringify(resp.usage));
@@ -184,43 +187,46 @@ async function chatAction(request: NextRequest) {
             dataStream.writeData(currentProgressAnnotation);
           }
 
-          logger.debug('Creating Implementation Plan...');
-          currentProgressAnnotation = {
-            type: 'progress',
-            label: 'implementation-plan',
-            status: 'in-progress',
-            order: progressCounter++,
-            message: 'Creating implementation plan...',
-          };
-          dataStream.writeData(currentProgressAnnotation);
+          let implementationPlan;
 
-          const dataSource = await conversationService.getConversationDataSource(conversationId);
-          const userId = await requireUserId(request);
-          const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
+          if (!userMessageProperties.isFixMessage) {
+            logger.debug('Creating Implementation Plan...');
+            currentProgressAnnotation = {
+              type: 'progress',
+              label: 'implementation-plan',
+              status: 'in-progress',
+              order: progressCounter++,
+              message: 'Creating implementation plan...',
+            };
+            dataStream.writeData(currentProgressAnnotation);
 
-          const implementationPlan = await createImplementationPlan({
-            isFirstUserMessage: !!userMessageProperties.isFirstUserMessage,
-            summary,
-            userPrompt: userMessage.content,
-            schema: formatDbSchemaForLLM(databaseSchema),
-            onFinish: (response) => {
-              if (response.usage) {
-                logger.debug('createImplementationPlan token usage', JSON.stringify(response.usage));
-                cumulativeUsage.completionTokens += response.usage.completionTokens || 0;
-                cumulativeUsage.promptTokens += response.usage.promptTokens || 0;
-                cumulativeUsage.totalTokens += response.usage.totalTokens || 0;
-              }
-            },
-          });
-          logger.debug('Created Implementation Plan:', implementationPlan);
-          currentProgressAnnotation = {
-            type: 'progress',
-            label: 'implementation-plan',
-            status: 'complete',
-            order: progressCounter++,
-            message: 'Implementation plan created',
-          };
-          dataStream.writeData(currentProgressAnnotation);
+            const dataSource = await conversationService.getConversationDataSource(conversationId);
+            const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
+
+            implementationPlan = await createImplementationPlan({
+              isFirstUserMessage: !!userMessageProperties.isFirstUserMessage,
+              summary,
+              userPrompt: userMessage.content,
+              schema: formatDbSchemaForLLM(databaseSchema),
+              onFinish: (response) => {
+                if (response.usage) {
+                  logger.debug('createImplementationPlan token usage', JSON.stringify(response.usage));
+                  cumulativeUsage.completionTokens += response.usage.completionTokens || 0;
+                  cumulativeUsage.promptTokens += response.usage.promptTokens || 0;
+                  cumulativeUsage.totalTokens += response.usage.totalTokens || 0;
+                }
+              },
+            });
+            logger.debug('Created Implementation Plan:', implementationPlan);
+            currentProgressAnnotation = {
+              type: 'progress',
+              label: 'implementation-plan',
+              status: 'complete',
+              order: progressCounter++,
+              message: 'Implementation plan created',
+            };
+            dataStream.writeData(currentProgressAnnotation);
+          }
 
           // Stream the text
           const options: StreamingOptions = {
@@ -271,7 +277,6 @@ async function chatAction(request: NextRequest) {
 
                 logger.debug('Prompt saved');
 
-                // Track telemetry event after successful message save
                 const userId = await requireUserId(request);
                 const user = await userService.getUser(userId);
                 await trackChatPrompt(conversationId, currentModel, user, userMessageProperties.content);
@@ -343,16 +348,13 @@ async function chatAction(request: NextRequest) {
           dataStream.writeData(currentProgressAnnotation);
           dataStream.writeMessageAnnotation({
             ...currentProgressAnnotation,
-            errorMessage: error?.message || 'Unable to generate response.',
+            errorMessage: getLlmProviderErrorMessage(error),
           });
 
           throw error;
         }
       },
-      onError: (error: any) => {
-        console.log('Error happened!', error);
-        return error.message;
-      },
+      onError: getLlmProviderErrorMessage,
     }).pipeThrough(
       new TransformStream({
         transform: (chunk, controller) => {
@@ -460,4 +462,34 @@ async function trackChatPrompt(
   } catch (telemetryError) {
     logger.error('Failed to track telemetry event', telemetryError);
   }
+}
+
+function getLlmProviderErrorMessage(error: any): string {
+  logger.error('LLM provider error:', error);
+
+  if (isAuthorizationError(error)) {
+    return 'LLM provider responded with authorization error. Please check that your LLM provider API key is valid and has sufficient permissions.';
+  }
+
+  return error?.message || 'Unable to generate response.';
+}
+
+function isAuthorizationError(error: any) {
+  if (error?.statusCode === 401) {
+    return true;
+  }
+
+  const errorMessage = error?.message;
+
+  if (
+    errorMessage &&
+    typeof errorMessage === 'string' &&
+    // There is an error handling issue inside the ai sdk for the invalid keys that contain special characters.
+    // This is the first part of the error message that gets returned.
+    errorMessage.includes(AI_SDK_INVALID_KEY_ERROR)
+  ) {
+    return true;
+  }
+
+  return false;
 }

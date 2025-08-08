@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LLMManager } from '~/lib/modules/llm/manager';
+import { env } from '~/env/server';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
   const llmManager = LLMManager.getInstance();
@@ -19,12 +20,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     );
   }
 
-  /*
-   * Check for API key in the following order:
-   * 1. Process environment variables (NextJS)
-   * 2. LLMManager environment variables
-   */
-  const apiKey = process?.env?.[envVarName] || llmManager.env[envVarName];
+  if (!(envVarName in env)) {
+    return NextResponse.json({ error: `Environment variable ${envVarName} not found` }, { status: 400 });
+  }
+
+  // Check if the API key exists in the validated server environment
+  const apiKey = env[envVarName as keyof typeof env];
 
   return NextResponse.json({ hasKey: !!apiKey });
 }

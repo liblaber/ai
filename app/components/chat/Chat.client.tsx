@@ -5,13 +5,13 @@
  * Preventing TS checks with files presented in the video for a better presentation.
  */
 import { useStore } from '@nanostores/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useMessageParser, useShortcuts, useSnapScroll } from '~/lib/hooks';
-import { chatId, description, navigateChat, useConversationHistory } from '~/lib/persistence';
+import { chatId, description, updateNavigationChat, useConversationHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { MessageRole, PROMPT_COOKIE_KEY } from '~/utils/constants';
+import { FIX_ANNOTATION, MessageRole, PROMPT_COOKIE_KEY } from '~/utils/constants';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
 import { BaseChat } from './BaseChat';
 import Cookies from 'js-cookie';
@@ -57,6 +57,14 @@ interface ChatProps {
   exportChatAction: () => void;
   description?: string;
 }
+
+export type SendMessageFn = (
+  event: React.UIEvent,
+  messageInput?: string,
+  isFixMessage?: boolean,
+  pendingUploadedFiles?: File[],
+  pendingImageDataList?: string[],
+) => Promise<void>;
 
 const logger = createScopedLogger('Chat');
 
@@ -114,9 +122,9 @@ export const ChatImpl = ({
   const [imageDataList, setImageDataList] = useState<string[]>([]);
   const [fakeLoading, setFakeLoading] = useState(false);
   const files = useStore(workbenchStore.files);
-  const actionAlert = useStore(workbenchStore.alert);
   const { contextOptimizationEnabled } = useSettings();
   const [dataSourceUrl, setDataSourceUrl] = useState<string>('');
+  const [shouldUpdateUrl, setShouldUpdateUrl] = useState(false);
 
   useEffect(() => {
     chatStore.setKey('started', chatStarted);
@@ -128,6 +136,28 @@ export const ChatImpl = ({
 
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const messagesRef = useRef<Message[]>([]);
+
+  // Update URL when component unmounts or page unloads
+  useEffect(() => {
+    const updateUrlOnExit = () => updateNavigationChat(chatId.get());
+
+    // Update URL when page is about to unload (user refreshing/leaving)
+    window.addEventListener('beforeunload', updateUrlOnExit);
+
+    // Update URL when component unmounts
+    return () => {
+      window.removeEventListener('beforeunload', updateUrlOnExit);
+      updateUrlOnExit();
+    };
+  }, []);
+
+  // Update URL when shouldUpdateUrl becomes true (after streaming and async operations complete)
+  useEffect(() => {
+    if (shouldUpdateUrl) {
+      updateNavigationChat(chatId.get());
+      setShouldUpdateUrl(false);
+    }
+  }, [shouldUpdateUrl]);
 
   const {
     messages,
@@ -151,25 +181,40 @@ export const ChatImpl = ({
       contextOptimization: contextOptimizationEnabled,
     },
     sendExtraMessageFields: true,
-    onError: async (e) => {
+    onError: (e) => {
       logger.error('Request failed', e);
+      setFakeLoading(false); // Reset loading state on error
       toast.error(
         'There was an error processing your request: ' + (e.message ? e.message : 'No details were returned'),
       );
 
-      const latestSnapshot = await getLatestSnapshotOrNull(chatId.get()!);
-      let fileMapToRevertTo: FileMap;
+      // Handle error recovery asynchronously to avoid Suspense issues
+      setTimeout(async () => {
+        try {
+          const latestSnapshot = await getLatestSnapshotOrNull(chatId.get()!);
+          let fileMapToRevertTo: FileMap;
 
-      if (latestSnapshot) {
-        fileMapToRevertTo = latestSnapshot.fileMap;
-      } else {
-        fileMapToRevertTo = await getStarterTemplateFiles(dataSourceUrl);
-      }
+          if (latestSnapshot) {
+            fileMapToRevertTo = latestSnapshot.fileMap;
+          } else {
+            // For new conversations, try to get starter template but don't fail if it doesn't work
+            try {
+              fileMapToRevertTo = await getStarterTemplateFiles(dataSourceUrl);
+            } catch (starterError) {
+              logger.warn('Could not load starter template during error recovery, using empty file map:', starterError);
+              fileMapToRevertTo = {};
+            }
+          }
 
-      await loadPreviousFileMapIntoContainer(fileMapToRevertTo);
+          await loadPreviousFileMapIntoContainer(fileMapToRevertTo);
+        } catch (error) {
+          logger.error('Error during error recovery:', error);
+        }
+      }, 0);
     },
     onFinish: async ({ id, content }) => {
       setData(undefined);
+      setFakeLoading(false);
 
       logger.debug('Finished streaming');
 
@@ -191,6 +236,9 @@ export const ChatImpl = ({
             }
           }
         }
+
+        // Set flag to update URL after all async operations are complete
+        setShouldUpdateUrl(true);
       }, 2000);
     },
     initialMessages,
@@ -248,7 +296,7 @@ export const ChatImpl = ({
   const sendMessage = async (
     _event: React.UIEvent,
     messageInput?: string,
-    askLiblab: boolean = false,
+    isFixMessage: boolean = false,
     pendingUploadedFiles?: File[],
     pendingImageDataList?: string[],
   ) => {
@@ -290,9 +338,9 @@ export const ChatImpl = ({
           content: formatMessageWithModelInfo({
             messageContent: userUpdateArtifact + messageContent,
             dataSourceId: selectedDataSourceId!,
-            askLiblab,
             dataList,
           }),
+          annotations: isFixMessage ? [FIX_ANNOTATION] : undefined,
           experimental_attachments: createExperimentalAttachments(dataList, files),
         },
         {
@@ -310,9 +358,9 @@ export const ChatImpl = ({
           content: formatMessageWithModelInfo({
             messageContent,
             dataSourceId: selectedDataSourceId!,
-            askLiblab,
             dataList,
           }),
+          annotations: isFixMessage ? [FIX_ANNOTATION] : undefined,
           experimental_attachments: createExperimentalAttachments(dataList, files),
         },
         {
@@ -328,7 +376,7 @@ export const ChatImpl = ({
     setUploadedFiles([]);
     setImageDataList([]);
 
-    workbenchStore.previewsStore.makingChanges();
+    workbenchStore.previewsStore.startLoading();
 
     textareaRef.current?.blur();
   };
@@ -375,11 +423,10 @@ export const ChatImpl = ({
       {
         id: generateId(),
         role: 'user',
-        annotations: ['hidden'],
+        annotations: ['hidden', FIX_ANNOTATION],
         content: formatMessageWithModelInfo({
           messageContent: `${userUpdateArtifact}${message}`,
           dataSourceId: selectedDataSourceId!,
-          askLiblab: true,
         }),
       },
     ]);
@@ -410,10 +457,14 @@ export const ChatImpl = ({
     setFakeLoading(true);
 
     // Generate a new chat ID right away to use in the request
-    if (!chatId.get()) {
-      const conversationId = await createConversation(datasourceId);
+    let conversationId = chatId.get();
+
+    if (!conversationId) {
+      conversationId = await createConversation(datasourceId);
       chatId.set(conversationId);
-      navigateChat(conversationId);
+
+      // Don't update URL during active chat - causes component unmounting
+      // Store the conversation ID for potential future navigation
     }
 
     const dataSourceUrlResponse = await fetch(`/api/data-sources/${datasourceId}/url`);
@@ -438,27 +489,23 @@ export const ChatImpl = ({
         toast.warning('Failed to import starter template\n Continuing with blank template');
       }
 
-      return null;
+      return [];
     });
 
-    // wait for 1.5 second to let the terminal shell be ready
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const userMessage = {
+      id: createId(),
+      role: 'user' as const,
+      content: formatMessageWithModelInfo({
+        messageContent,
+        firstUserMessage: true,
+        dataSourceId: selectedDataSourceId!,
+        dataList,
+      }),
+      experimental_attachments: createExperimentalAttachments(dataList, files),
+    };
 
-    if (starterTemplateMessages) {
-      setMessages([
-        ...starterTemplateMessages,
-        {
-          id: createId(),
-          role: 'user',
-          content: formatMessageWithModelInfo({
-            messageContent,
-            firstUserMessage: true,
-            dataSourceId: selectedDataSourceId!,
-            dataList,
-          }),
-          experimental_attachments: createExperimentalAttachments(dataList, files),
-        },
-      ]);
+    if (starterTemplateMessages && starterTemplateMessages.length > 0) {
+      setMessages([...starterTemplateMessages, userMessage]);
 
       await reload({
         body: {
@@ -472,28 +519,17 @@ export const ChatImpl = ({
       setImageDataList([]);
 
       textareaRef.current?.blur();
-      setFakeLoading(false);
 
       return;
     }
 
     // If template selection failed, proceed with normal conversation without a template
-    setMessages([
-      {
-        id: createId(),
-        role: 'user',
-        content: formatMessageWithModelInfo({
-          messageContent,
-          dataSourceId: selectedDataSourceId!,
-        }),
-      },
-    ]);
+    setMessages([userMessage]);
     await reload({
       body: {
         conversationId: chatId.get(),
       },
     });
-    setFakeLoading(false);
     setInput('');
     Cookies.remove(PROMPT_COOKIE_KEY);
 
@@ -618,8 +654,6 @@ export const ChatImpl = ({
         setUploadedFiles={setUploadedFiles}
         imageDataList={imageDataList}
         setImageDataList={setImageDataList}
-        actionAlert={actionAlert}
-        clearAlert={() => workbenchStore.clearAlert()}
         data={chatData}
         error={error}
         onSyncFiles={syncLatestChanges}
@@ -642,7 +676,6 @@ interface MessageWithModelInfo {
   messageContent: string;
   dataSourceId: string;
   firstUserMessage?: boolean;
-  askLiblab?: boolean;
   dataList?: string[];
 }
 
@@ -657,17 +690,12 @@ const formatMessageWithModelInfo = ({
   messageContent,
   dataSourceId,
   firstUserMessage,
-  askLiblab,
   dataList,
 }: MessageWithModelInfo) => {
   let formattedMessage = '';
 
   if (firstUserMessage) {
     formattedMessage += `\n\n[FirstUserMessage: true]`;
-  }
-
-  if (askLiblab) {
-    formattedMessage += `\n\n[AskLiblab: true]`;
   }
 
   formattedMessage += `\n\n[DataSourceId: ${dataSourceId}]`;

@@ -12,14 +12,14 @@ import { Messages } from './Messages.client';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 
-import type { ActionAlert } from '~/types/actions';
-import ChatAlert from './ChatAlert';
+import type { CodeError } from '~/types/actions';
 import ProgressCompilation from './ProgressCompilation';
 import type { ProgressAnnotation } from '~/types/context';
 import type { ActionRunner } from '~/lib/runtime/action-runner';
 import { ChatTextarea } from './ChatTextarea';
 import { AUTOFIX_ATTEMPT_EVENT } from '~/lib/error-handler';
 import { useSession } from '~/auth/auth-client';
+import type { SendMessageFn } from './Chat.client';
 import { workbenchStore } from '~/lib/stores/workbench';
 
 export interface PendingPrompt {
@@ -43,13 +43,7 @@ interface BaseChatProps {
   description?: string;
   input?: string;
   handleStop?: () => void;
-  sendMessage?: (
-    event: React.UIEvent,
-    messageInput?: string,
-    askLiblab?: boolean,
-    pendingUploadedFiles?: File[],
-    pendingImageDataList?: string[],
-  ) => Promise<void>;
+  sendMessage?: SendMessageFn;
   sendAutofixMessage?: (message: string) => Promise<void>;
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   exportChat?: () => void;
@@ -57,8 +51,6 @@ interface BaseChatProps {
   setUploadedFiles?: (files: File[]) => void;
   imageDataList?: string[];
   setImageDataList?: (dataList: string[]) => void;
-  actionAlert?: ActionAlert;
-  clearAlert?: () => void;
   data?: JSONValue[] | undefined;
   error?: Error;
   actionRunner?: ActionRunner;
@@ -85,8 +77,6 @@ export const BaseChat = ({
   imageDataList = [],
   setImageDataList,
   messages,
-  actionAlert,
-  clearAlert,
   data,
   actionRunner,
   onSyncFiles,
@@ -228,16 +218,12 @@ export const BaseChat = ({
   }, [dataSources]);
 
   useEffect(() => {
-    const handleAutofixAttempt = ({ detail: { error } }: CustomEvent<{ error: ActionAlert }>) => {
+    const handleAutofixAttempt = ({ detail: { errors } }: CustomEvent<{ errors: CodeError[] }>) => {
       if (isStreaming || !sendAutofixMessage) {
         return;
       }
 
-      const isPreview = error.type === 'preview';
-      const message = `*Fix this ${isPreview ? 'preview' : 'terminal'} error* \n\`\`\`${isPreview ? 'js' : 'sh'}\n${error.content}\n\`\`\`\n`;
-
-      console.debug('Autofix attempt:', message);
-      void sendAutofixMessage?.(message);
+      void sendAutofixMessage?.(workbenchStore.getFixErrorsMessageText(errors));
     };
 
     window.addEventListener(AUTOFIX_ATTEMPT_EVENT, handleAutofixAttempt as EventListener);
@@ -280,24 +266,11 @@ export const BaseChat = ({
             )}
 
             <div
-              className={classNames('flex flex-col gap-4 w-full mx-auto z-prompt mb-6', {
+              className={classNames('flex flex-col gap-4 w-full mx-auto z-prompt mb-6 mt-4', {
                 'sticky bottom-2 max-w-chat': chatStarted,
                 'max-w-homepage-textarea': !chatStarted,
               })}
             >
-              <div className="bg-depth-2">
-                {actionAlert && (
-                  <ChatAlert
-                    alert={actionAlert}
-                    clearAlert={() => clearAlert?.()}
-                    postMessage={async (message) => {
-                      workbenchStore.previewsStore.fixingIssues();
-                      await sendMessage?.({} as any, message, true);
-                      clearAlert?.();
-                    }}
-                  />
-                )}
-              </div>
               {progressAnnotations && <ProgressCompilation data={progressAnnotations} />}
               {chatStarted && (
                 <ChatTextarea
@@ -379,6 +352,7 @@ export const BaseChat = ({
                 chatStarted={chatStarted}
                 isStreaming={isStreaming}
                 onSyncFiles={onSyncFiles}
+                sendMessage={sendMessage}
               />
             </WorkbenchProvider>
           )}
