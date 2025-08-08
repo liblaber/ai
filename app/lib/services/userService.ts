@@ -49,10 +49,8 @@ type UserWithRoles = Partial<User> & {
 };
 
 function mapToUserProfile(user: UserWithRoles): UserProfile {
-  const userProfile = {
+  const userProfile: UserProfile = {
     id: user.id,
-    name: user.name,
-    email: user.email,
     role: user.role,
     organizationId: user.organizationId!,
     telemetryEnabled: user.telemetryEnabled,

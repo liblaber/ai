@@ -56,10 +56,14 @@ class TelemetryManager {
       return;
     }
 
+    type RemovePIIUserProfile = Omit<UserProfile, 'email' | 'name'> | undefined;
+
+    const safeUserProfile: RemovePIIUserProfile = user;
+
     // Machine id is used to uniquely identify events per user
     const eventProperties = {
       ...event.properties,
-      user,
+      safeUserProfile,
       instanceId: this._instanceId,
       nodeVersion: process.version,
       liblabVersion: env.npm_package_version || '0.0.1',
