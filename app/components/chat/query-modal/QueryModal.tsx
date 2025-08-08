@@ -228,7 +228,7 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
           <div className="p-6 flex flex-col h-full">
             {isLoading ? (
               <div className="flex items-center justify-center flex-1">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-liblab-elements-textPrimary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
               <>

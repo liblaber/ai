@@ -71,7 +71,7 @@ export default function OrganizationTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between p-2">
-        <h2 className="text-lg font-medium text-liblab-elements-textPrimary">Organization</h2>
+        <h2 className="text-lg font-medium text-primary">Organization</h2>
       </div>
 
       <div className="space-y-6">

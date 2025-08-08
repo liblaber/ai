@@ -1,7 +1,4 @@
-export default {
-  plugins: {
-    '@unocss/postcss': {
-      content: ['./app/**/*.{html,js,ts,jsx,tsx}'],
-    },
-  },
+const config = {
+  plugins: ['@tailwindcss/postcss'],
 };
+export default config;

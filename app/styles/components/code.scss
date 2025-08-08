@@ -1,9 +1,9 @@
 .actions .shiki {
-  background-color: var(--liblab-elements-actions-code-background) !important;
+  background-color: var(--color-depth-3) !important;
 }
 
 .shiki {
   &:not(:has(.actions), .actions *) {
-    background-color: var(--liblab-elements-messages-code-background) !important;
+    background-color: var(--color-depth-2) !important;
   }
 }

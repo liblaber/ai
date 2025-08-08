@@ -12,7 +12,7 @@ export const AiGeneration = ({ userPrompt, onPromptChange, onGenerateQuery, isGe
     <input
       type="text"
       placeholder="Describe what you want to query..."
-      className="flex-1 px-4 bg-[#1E1E1E] text-white rounded-lg border border-[#2E2E2E] focus:outline-none focus:border-[var(--liblab-elements-item-contentAccent)] placeholder:text-gray-500"
+      className="flex-1 px-4 bg-[#1E1E1E] text-white rounded-lg border border-[#2E2E2E] focus:outline-none focus:border-accent placeholder:text-gray-500"
       value={userPrompt}
       onChange={(e) => onPromptChange(e.target.value)}
     />

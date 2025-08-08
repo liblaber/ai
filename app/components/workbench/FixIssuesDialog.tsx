@@ -21,7 +21,7 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="absolute inset-0 flex items-center justify-center bg-liblab-elements-bg-depth-2 z-50"
+        className="absolute inset-0 flex items-center justify-center bg-depth-2 z-50"
         style={{ pointerEvents: 'auto' }}
       >
         <div className="max-w-lg mx-auto p-6 text-center">
@@ -31,14 +31,14 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
             animate={{ scale: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <div className="i-ph:warning-duotone text-4xl text-liblab-elements-button-danger-text"></div>
+            <div className="i-ph:warning-duotone text-4xl text-failed"></div>
           </motion.div>
 
           <motion.h3
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-lg font-medium text-liblab-elements-textPrimary mb-3"
+            className="text-lg font-medium text-primary mb-3"
           >
             Detected Application Error
           </motion.h3>
@@ -47,7 +47,7 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-sm text-liblab-elements-textSecondary mb-6"
+            className="text-sm text-text-secondary mb-6"
           >
             <p>
               Something went wrong while running the preview. Would you like me to analyze and help resolve this issue?
@@ -58,7 +58,7 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mb-6">
               <button
                 onClick={() => setShowErrorDetails(!showErrorDetails)}
-                className="text-sm text-liblab-elements-textSecondary hover:text-liblab-elements-textPrimary underline"
+                className="text-sm text-text-secondary hover:text-primary underline cursor-pointer"
               >
                 {showErrorDetails ? 'Hide Error Details' : 'Show Error Details'}
               </button>
@@ -72,7 +72,7 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
-                className="text-xs text-liblab-elements-textSecondary p-3 bg-liblab-elements-bg-depth-3 rounded mb-6 max-h-[400px] text-left overflow-y-scroll"
+                className="text-xs text-text-secondary p-3 bg-depth-3 rounded mb-6 max-h-[400px] text-left overflow-y-scroll"
               >
                 <div className="font-medium mb-1">Error Details:</div>
                 <div className="whitespace-pre-wrap">{errorContent}</div>
@@ -88,7 +88,7 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
           >
             <button
               onClick={() => workbenchStore.clearCodeErrors()}
-              className="flex-1 px-4 py-2 rounded-md text-sm font-medium bg-liblab-elements-button-secondary-background hover:bg-liblab-elements-button-secondary-backgroundHover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-liblab-elements-button-secondary-background text-liblab-elements-button-secondary-text"
+              className="flex-1 px-4 py-2 rounded-md text-sm cursor-pointer font-medium bg-depth-1 hover:bg-depth-1/50 focus:ring-2 focus:ring-offset-2  focus:outline-none text-primary"
             >
               Dismiss
             </button>
@@ -97,7 +97,7 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
                 onFixIssue(workbenchStore.getFixErrorsMessageText());
                 workbenchStore.clearCodeErrors();
               }}
-              className="flex-1 px-4 py-2 rounded-md text-sm font-medium bg-accent-500 hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-liblab-elements-button-danger-background text-liblab-elements-button-primary-text flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2 rounded-md text-sm cursor-pointer font-medium bg-accent-500 hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 text-gray-900 flex items-center justify-center gap-2"
             >
               <div className="i-ph:chat-circle-duotone"></div>
               Fix Issue

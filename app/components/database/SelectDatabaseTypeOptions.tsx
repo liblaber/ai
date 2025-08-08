@@ -50,14 +50,14 @@ export function SelectDatabaseTypeOptions(props: any) {
         </components.Option>
       ))}
       {lockedDataSourceOptions.length > 0 && (
-        <div className="text-liblab-elements-textPrimary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
+        <div className="text-primary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
           Premium (requires license)
         </div>
       )}
       {lockedDataSourceOptions.map((opt) => (
         <div
           key={opt.value}
-          className="flex hover:cursor-not-allowed items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-60 cursor-default"
+          className="flex hover:cursor-not-allowed items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-primary font-medium opacity-60 cursor-default"
         >
           <span className="flex items-center gap-2">
             {opt.label}
@@ -66,14 +66,12 @@ export function SelectDatabaseTypeOptions(props: any) {
         </div>
       ))}
       {comingSoonDataSourceOptions.length > 0 && (
-        <div className="text-liblab-elements-textPrimary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
-          Coming soon
-        </div>
+        <div className="text-primary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">Coming soon</div>
       )}
       {comingSoonDataSourceOptions.map((opt) => (
         <div
           key={opt.value}
-          className="hover:cursor-not-allowed flex items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-60 cursor-default"
+          className="hover:cursor-not-allowed flex items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-primary font-medium opacity-60 cursor-default"
         >
           <span className="flex items-center gap-2">
             {opt.label}

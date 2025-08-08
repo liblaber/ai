@@ -1,4 +1,3 @@
-import UnoCSS from 'unocss/webpack';
 import type { NextConfig } from 'next';
 
 /** @type {import('next').NextConfig} */
@@ -58,7 +57,6 @@ const nextConfig: NextConfig = {
     }
 
     config.cache = true;
-    config.plugins.push(UnoCSS());
 
     return config;
   },

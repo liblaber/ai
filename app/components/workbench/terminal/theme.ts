@@ -1,43 +1,33 @@
 // Use a fallback type for SSR compatibility
 type ITheme = any;
 
-const getCssVar = (token: string) => {
-  if (typeof document === 'undefined') {
-    return undefined;
-  }
-
-  const style = getComputedStyle(document.documentElement);
-
-  return style.getPropertyValue(token) || undefined;
-};
-
 export function getTerminalTheme(overrides?: ITheme): ITheme {
   return {
-    cursor: getCssVar('--liblab-elements-terminal-cursorColor'),
-    cursorAccent: getCssVar('--liblab-elements-terminal-cursorColorAccent'),
-    foreground: getCssVar('--liblab-elements-terminal-textColor'),
-    background: getCssVar('--liblab-elements-terminal-backgroundColor'),
-    selectionBackground: getCssVar('--liblab-elements-terminal-selection-backgroundColor'),
-    selectionForeground: getCssVar('--liblab-elements-terminal-selection-textColor'),
-    selectionInactiveBackground: getCssVar('--liblab-elements-terminal-selection-backgroundColorInactive'),
+    cursor: '#eff0eb',
+    cursorAccent: '#eff0eb',
+    foreground: '#eff0eb',
+    background: '#08090a',
+    selectionBackground: '#97979b33',
+    selectionForeground: '#eff0eb',
+    selectionInactiveBackground: '#97979b33',
 
     // ansi escape code colors
-    black: getCssVar('--liblab-elements-terminal-color-black'),
-    red: getCssVar('--liblab-elements-terminal-color-red'),
-    green: getCssVar('--liblab-elements-terminal-color-green'),
-    yellow: getCssVar('--liblab-elements-terminal-color-yellow'),
-    blue: getCssVar('--liblab-elements-terminal-color-blue'),
-    magenta: getCssVar('--liblab-elements-terminal-color-magenta'),
-    cyan: getCssVar('--liblab-elements-terminal-color-cyan'),
-    white: getCssVar('--liblab-elements-terminal-color-white'),
-    brightBlack: getCssVar('--liblab-elements-terminal-color-brightBlack'),
-    brightRed: getCssVar('--liblab-elements-terminal-color-brightRed'),
-    brightGreen: getCssVar('--liblab-elements-terminal-color-brightGreen'),
-    brightYellow: getCssVar('--liblab-elements-terminal-color-brightYellow'),
-    brightBlue: getCssVar('--liblab-elements-terminal-color-brightBlue'),
-    brightMagenta: getCssVar('--liblab-elements-terminal-color-brightMagenta'),
-    brightCyan: getCssVar('--liblab-elements-terminal-color-brightCyan'),
-    brightWhite: getCssVar('--liblab-elements-terminal-color-brightWhite'),
+    black: '#000000',
+    red: '#ff5c57',
+    green: '#5af78e',
+    yellow: '#f3f99d',
+    blue: '#57c7ff',
+    magenta: '#ff6ac1',
+    cyan: '#9aedfe',
+    white: '#f1f1f0',
+    brightBlack: '#686868',
+    brightRed: '#ff5c57',
+    brightGreen: '#5af78e',
+    brightYellow: '#f3f99d',
+    brightBlue: '#57c7ff',
+    brightMagenta: '#ff6ac1',
+    brightCyan: '#9aedfe',
+    brightWhite: '#f1f1f0',
 
     ...overrides,
   };

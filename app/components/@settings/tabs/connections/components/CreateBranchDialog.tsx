@@ -40,17 +40,12 @@ export function CreateBranchDialog({ isOpen, onClose, onConfirm, repository, bra
             'border border-[#E5E5E5] dark:border-[#1A1A1A]',
           )}
         >
-          <Dialog.Title className="text-lg font-medium text-liblab-elements-textPrimary mb-4">
-            Create New Branch
-          </Dialog.Title>
+          <Dialog.Title className="text-lg font-medium text-primary mb-4">Create New Branch</Dialog.Title>
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <label
-                  htmlFor="branchName"
-                  className="block text-sm font-medium text-liblab-elements-textSecondary mb-2"
-                >
+                <label htmlFor="branchName" className="block text-sm font-medium text-secondary mb-2">
                   Branch Name
                 </label>
                 <input
@@ -63,7 +58,7 @@ export function CreateBranchDialog({ isOpen, onClose, onConfirm, repository, bra
                     'w-full px-3 py-2 rounded-lg',
                     'bg-[#F5F5F5] dark:bg-[#1A1A1A]',
                     'border border-[#E5E5E5] dark:border-[#1A1A1A]',
-                    'text-liblab-elements-textPrimary placeholder:text-liblab-elements-textTertiary',
+                    'text-primary placeholder:text-tertiary',
                     'focus:outline-none focus:ring-2 focus:ring-accent-500/50',
                   )}
                   required
@@ -71,10 +66,7 @@ export function CreateBranchDialog({ isOpen, onClose, onConfirm, repository, bra
               </div>
 
               <div>
-                <label
-                  htmlFor="sourceBranch"
-                  className="block text-sm font-medium text-liblab-elements-textSecondary mb-2"
-                >
+                <label htmlFor="sourceBranch" className="block text-sm font-medium text-secondary mb-2">
                   Source Branch
                 </label>
                 <select
@@ -85,7 +77,7 @@ export function CreateBranchDialog({ isOpen, onClose, onConfirm, repository, bra
                     'w-full px-3 py-2 rounded-lg',
                     'bg-[#F5F5F5] dark:bg-[#1A1A1A]',
                     'border border-[#E5E5E5] dark:border-[#1A1A1A]',
-                    'text-liblab-elements-textPrimary',
+                    'text-primary',
                     'focus:outline-none focus:ring-2 focus:ring-accent-500/50',
                   )}
                 >
@@ -98,8 +90,8 @@ export function CreateBranchDialog({ isOpen, onClose, onConfirm, repository, bra
               </div>
 
               <div className="mt-4 p-3 bg-[#F5F5F5] dark:bg-[#1A1A1A] rounded-lg">
-                <h4 className="text-sm font-medium text-liblab-elements-textSecondary mb-2">Branch Overview</h4>
-                <ul className="space-y-2 text-sm text-liblab-elements-textSecondary">
+                <h4 className="text-sm font-medium text-secondary mb-2">Branch Overview</h4>
+                <ul className="space-y-2 text-sm text-secondary">
                   <li className="flex items-center gap-2">
                     <GitBranch className="text-lg" />
                     Repository: {repository.name}
@@ -124,7 +116,7 @@ export function CreateBranchDialog({ isOpen, onClose, onConfirm, repository, bra
                 onClick={onClose}
                 className={classNames(
                   'px-4 py-2 rounded-lg text-sm font-medium',
-                  'text-liblab-elements-textPrimary',
+                  'text-primary',
                   'bg-[#F5F5F5] dark:bg-[#1A1A1A]',
                   'hover:bg-accent-500/10 hover:text-accent-500',
                   'dark:hover:bg-accent-500/20 dark:hover:text-accent-500',

@@ -178,7 +178,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
         <div className="space-y-4">
           <div className="flex gap-2 mb-6 items-end">
             <div className="min-w-[160px] flex-1">
-              <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">Data source</label>
+              <label className="mb-3 block text-sm font-medium text-secondary">Data source</label>
               <BaseSelect
                 value={dbType}
                 onChange={(value) => {
@@ -204,9 +204,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
           {dbType.value !== SAMPLE_DATABASE && (
             <>
               <div>
-                <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
-                  Database Name
-                </label>
+                <label className="mb-3 block text-sm font-medium text-secondary">Database Name</label>
                 <input
                   type="text"
                   value={dbName}
@@ -214,7 +212,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   disabled={isSubmitting}
                   className={classNames(
                     'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                    'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary text-base',
+                    'text-primary placeholder-tertiary text-base',
                     'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
                     'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
                     'transition-all duration-200',
@@ -224,9 +222,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                 />
               </div>
               <div>
-                <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
-                  Connection String
-                </label>
+                <label className="mb-3 block text-sm font-medium text-secondary">Connection String</label>
                 <input
                   type="text"
                   value={connStr}
@@ -234,7 +230,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   disabled={isSubmitting}
                   className={classNames(
                     'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                    'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary text-base',
+                    'text-primary placeholder-tertiary text-base',
                     'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
                     'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
                     'transition-all duration-200',
@@ -242,7 +238,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   )}
                   placeholder={`${dbType.connectionStringFormat}`}
                 />
-                <label className="mb-3 block !text-[13px] text-liblab-elements-textSecondary mt-2">
+                <label className="mb-3 block !text-[13px] text-secondary mt-2">
                   e.g. {dbType.connectionStringFormat}
                 </label>
               </div>
@@ -297,9 +293,9 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   disabled={isTestingConnection || isSubmitting || !connStr}
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                    'bg-blue-500 hover:bg-blue-600',
-                    'text-gray-950 dark:text-gray-950',
-                    'disabled:opacity-50 disabled:cursor-not-allowed',
+                    'bg-depth-1 bg-depth-1/50 ',
+                    'text-primary',
+                    'disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
                   )}
                 >
                   {isTestingConnection ? (
@@ -325,7 +321,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',
                   'text-gray-950 dark:text-gray-950',
-                  'disabled:opacity-50 disabled:cursor-not-allowed',
+                  'disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
                 )}
               >
                 {isSubmitting ? (

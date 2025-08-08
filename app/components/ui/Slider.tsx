@@ -29,15 +29,13 @@ export const Slider = genericMemo(({ selected, setSelected }: SliderProps) => {
   if (!devMode) {
     return (
       <div className="flex items-center">
-        <span className="mr-1 text-sm font-bold text-liblab-elements-item-contentDefault cursor-default select-none px-2.5 py-1">
-          Preview
-        </span>
+        <span className="mr-1 text-sm font-bold text-secondary cursor-default select-none px-2.5 py-1">Preview</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center flex-wrap shrink-0 gap-1 bg-liblab-elements-bg-depth-1 overflow-hidden rounded-lg h-full">
+    <div className="flex items-center flex-wrap shrink-0 gap-1 bg-depth-1 overflow-hidden rounded-lg h-full">
       {sliderOptions.map((option) => (
         <SliderButton
           key={option.value}
@@ -63,9 +61,7 @@ const SliderButton = memo(({ selected, children, setSelected }: SliderButtonProp
       onClick={setSelected}
       className={classNames(
         'bg-transparent text-sm px-2.5 py-1 rounded-md relative h-full',
-        selected
-          ? 'text-white'
-          : 'text-liblab-elements-item-contentDefault hover:text-liblab-elements-item-contentActive cursor-pointer',
+        selected ? 'text-white' : 'text-secondary hover:text-primary cursor-pointer',
       )}
     >
       <span className="relative z-10">{children}</span>
@@ -73,7 +69,7 @@ const SliderButton = memo(({ selected, children, setSelected }: SliderButtonProp
         <motion.span
           layoutId="pill-tab"
           transition={{ duration: 0.2 }}
-          className="absolute inset-0 z-0 bg-liblab-elements-bg-depth-3 rounded-md h-full"
+          className="absolute inset-0 z-0 bg-depth-3 rounded-md h-full"
         ></motion.span>
       )}
     </button>

@@ -9,11 +9,7 @@ interface SeparatorProps {
 export const Separator = ({ className, orientation = 'horizontal' }: SeparatorProps) => {
   return (
     <SeparatorPrimitive.Root
-      className={classNames(
-        'bg-liblab-elements-borderColor',
-        orientation === 'horizontal' ? 'h-px w-full' : 'h-full w-px',
-        className,
-      )}
+      className={classNames('bg-depth-3', orientation === 'horizontal' ? 'h-px w-full' : 'h-full w-px', className)}
       orientation={orientation}
     />
   );

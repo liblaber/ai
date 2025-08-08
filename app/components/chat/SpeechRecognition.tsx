@@ -18,7 +18,7 @@ export const SpeechRecognitionButton = ({
       title={isListening ? 'Stop listening' : 'Start speech recognition'}
       disabled={disabled}
       className={classNames('transition-all', {
-        'text-liblab-elements-item-contentAccent': isListening,
+        'text-accent': isListening,
       })}
       onClick={isListening ? onStop : onStart}
     >

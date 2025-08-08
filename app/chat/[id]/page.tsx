@@ -10,7 +10,7 @@ export default async function ChatIdPage({ params }: PageProps) {
   const { id } = await params;
 
   return (
-    <div className="flex flex-col h-full w-full bg-liblab-elements-bg-depth-1">
+    <div className="flex flex-col h-full w-full bg-depth-1">
       <Background />
       <Header />
       <Chat id={id} />

@@ -277,17 +277,17 @@ export const Preview = memo(({ sendMessage }: Props) => {
         <div className="z-iframe-overlay w-full h-full absolute" onClick={() => setIsPortDropdownOpen(false)} />
       )}
       {!isLoading && !!codeErrors.length && <FixIssuesDialog onFixIssue={onFixIssue} />}
-      <div className="bg-liblab-elements-bg-depth-2 p-2 flex items-center gap-2">
+      <div className="bg-depth-2 p-2 flex items-center gap-2">
         <div className="flex items-center gap-2">
           <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
           <IconButton
             icon="i-ph:selection"
             onClick={() => setIsSelectionMode(!isSelectionMode)}
-            className={isSelectionMode ? 'bg-liblab-elements-bg-depth-3' : ''}
+            className={isSelectionMode ? 'bg-depth-3' : ''}
           />
         </div>
 
-        <div className="flex-grow flex items-center gap-1 bg-liblab-elements-preview-addressBar-background border border-liblab-elements-borderColor text-liblab-elements-preview-addressBar-text rounded-full px-3 py-1 text-sm hover:bg-liblab-elements-preview-addressBar-backgroundHover hover:focus-within:bg-liblab-elements-preview-addressBar-backgroundActive focus-within:bg-liblab-elements-preview-addressBar-backgroundActive focus-within-border-liblab-elements-borderColorActive focus-within:text-liblab-elements-preview-addressBar-textActive">
+        <div className="flex-grow flex items-center gap-1 bg-depth-1 border border-depth-3 text-secondary rounded-full px-3 py-1 text-sm hover:bg-depth-3 hover:focus-within:bg-depth-1 focus-within:bg-depth-1 focus-within-border-accent focus-within:text-primary">
           <input
             title="URL"
             ref={inputRef}
@@ -361,13 +361,13 @@ export const Preview = memo(({ sendMessage }: Props) => {
                       }}
                     >
                       <div
-                        className={`${size.icon} w-5 h-5 text-[#6B7280] dark:text-gray-400 group-hover:text-liblab-elements-item-contentAccent dark:group-hover:text-liblab-elements-item-contentAccent transition-colors duration-200`}
+                        className={`${size.icon} w-5 h-5 text-[#6B7280] dark:text-gray-400 group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200`}
                       />
                       <div className="flex flex-col">
-                        <span className="font-medium group-hover:text-liblab-elements-item-contentAccent dark:group-hover:text-liblab-elements-item-contentAccent transition-colors duration-200">
+                        <span className="font-medium group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200">
                           {size.name}
                         </span>
-                        <span className="text-xs text-[#6B7280] dark:text-gray-400 group-hover:text-liblab-elements-item-contentAccent dark:group-hover:text-liblab-elements-item-contentAccent transition-colors duration-200">
+                        <span className="text-xs text-[#6B7280] dark:text-gray-400 group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200">
                           {size.width} × {size.height}
                         </span>
                       </div>
@@ -380,13 +380,13 @@ export const Preview = memo(({ sendMessage }: Props) => {
         </div>
       </div>
 
-      <div className="flex-1 border-t border-liblab-elements-borderColor flex justify-center items-center overflow-auto">
+      <div className="flex-1 border-t border-depth-3 flex justify-center items-center overflow-auto">
         <div
           style={{
             width: isDeviceModeOn ? `${widthPercent}%` : '100%',
             height: '100%',
             overflow: 'visible',
-            background: 'var(--liblab-elements-bg-depth-2)',
+            background: 'var(--color-depth-2)',
             position: 'relative',
             display: 'flex',
           }}
@@ -412,7 +412,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
                 hidden={isLoading}
               />
               {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-liblab-elements-bg-depth-2 z-50">
+                <div className="absolute inset-0 flex items-center justify-center bg-depth-2 z-50">
                   {<PreviewLoader message={loadingText} />}
                 </div>
               )}
@@ -423,7 +423,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
               />
             </>
           ) : (
-            <div className="flex w-full h-full justify-center items-center bg-liblab-elements-bg-depth-2 text-liblab-elements-textPrimary">
+            <div className="flex w-full h-full justify-center items-center bg-depth-2 text-primary">
               {<PreviewLoader message={loadingText} />}
             </div>
           )}

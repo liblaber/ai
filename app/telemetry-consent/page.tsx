@@ -85,13 +85,13 @@ export default function TelemetryConsentPage() {
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-liblab-elements-bg-depth-1">
+    <div className="flex flex-col h-full w-full bg-depth-1">
       <Header showMenuIcon={false} />
       <div className="h-full bg-gray-950 flex items-center justify-center p-4">
         <div className="w-full max-w-[620px] h-[560px]">
-          <h1 className="text-2xl text-liblab-elements-textPrimary mb-6 text-center">Help us improve liblab ai</h1>
+          <h1 className="text-2xl text-primary mb-6 text-center">Help us improve liblab ai</h1>
           <div className="mb-6">
-            <p className="text-center text-base font-light text-liblab-elements-textPrimary mb-4">
+            <p className="text-center text-base font-light text-primary mb-4">
               We collect anonymous usage data to help us improve liblab ai. This includes:
             </p>
             <div className="space-y-3 text-sm text-gray-300">
@@ -111,9 +111,7 @@ export default function TelemetryConsentPage() {
             <div className="mt-6 p-4 bg-gray-800 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <span className="i-ph:shield-check-fill text-blue-400 text-lg" />
-                <span className="font-medium text-[var(--liblab-elements-textPrimary)] text-sm">
-                  Your privacy is protected
-                </span>
+                <span className="font-medium text-[var(--color-primary)] text-sm">Your privacy is protected</span>
               </div>
               <div className="text-gray-400 text-[13px] leading-snug">
                 We do not collect any personal information, chat content, built apps code or any other sensitive data.

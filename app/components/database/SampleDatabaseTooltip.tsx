@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 
 export const SampleDatabaseTooltip = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -53,42 +53,42 @@ export const SampleDatabaseTooltip = () => {
           onMouseLeave={handleMouseLeave}
         >
           <div className="text-sm w-full break-words whitespace-normal">
-            <h3 className="font-semibold text-liblab-elements-textPrimary mb-2">Sample Database Overview</h3>
-            <p className="text-liblab-elements-textSecondary mb-3">
+            <h3 className="font-semibold text-primary mb-2">Sample Database Overview</h3>
+            <p className="text-secondary mb-3">
               This sample database contains information about organizations, the products they offer, and their business
               activities. It includes the following entities:
             </p>
-            <div className="space-y-2 text-liblab-elements-textSecondary">
+            <div className="space-y-2 text-secondary">
               <div>
-                <strong className="text-liblab-elements-textPrimary">Organizations</strong> – Basic company details like
-                name, industry, contact info, and subscription tier.
+                <strong className="text-primary">Organizations</strong> – Basic company details like name, industry,
+                contact info, and subscription tier.
               </div>
               <div>
-                <strong className="text-liblab-elements-textPrimary">Users</strong> – People who work for each
-                organization, including their roles and login activity.
+                <strong className="text-primary">Users</strong> – People who work for each organization, including their
+                roles and login activity.
               </div>
               <div>
-                <strong className="text-liblab-elements-textPrimary">Products</strong> – Items or services offered by
-                organizations, with descriptions, pricing, and stock levels.
+                <strong className="text-primary">Products</strong> – Items or services offered by organizations, with
+                descriptions, pricing, and stock levels.
               </div>
               <div>
-                <strong className="text-liblab-elements-textPrimary">Sales</strong> – Records of individual sales,
-                including payment details and amounts.
+                <strong className="text-primary">Sales</strong> – Records of individual sales, including payment details
+                and amounts.
               </div>
               <div>
-                <strong className="text-liblab-elements-textPrimary">Sale Items</strong> – Specific products sold in
-                each sale, along with quantity, price, and discounts.
+                <strong className="text-primary">Sale Items</strong> – Specific products sold in each sale, along with
+                quantity, price, and discounts.
               </div>
               <div>
-                <strong className="text-liblab-elements-textPrimary">Revenue</strong> – Financial summaries per
-                organization, such as revenue, profit, and breakdowns by source.
+                <strong className="text-primary">Revenue</strong> – Financial summaries per organization, such as
+                revenue, profit, and breakdowns by source.
               </div>
               <div>
-                <strong className="text-liblab-elements-textPrimary">Subscriptions</strong> – Ongoing service plans for
-                each organization, including start/end dates and pricing.
+                <strong className="text-primary">Subscriptions</strong> – Ongoing service plans for each organization,
+                including start/end dates and pricing.
               </div>
             </div>
-            <p className="text-liblab-elements-textSecondary mt-3">
+            <p className="text-secondary mt-3">
               Use this data to explore how organizations operate, manage products, generate revenue, and interact with
               users.
             </p>

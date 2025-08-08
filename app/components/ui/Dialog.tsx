@@ -34,11 +34,7 @@ export const DialogButton = ({ type, children, onClick, disabled }: DialogButton
 export const DialogTitle = ({ className, children, ...props }: RadixDialog.DialogTitleProps) => {
   return (
     <RadixDialog.Title
-      className={classNames(
-        'text-lg font-medium text-liblab-elements-textPrimary',
-        'flex items-center gap-2',
-        className,
-      )}
+      className={classNames('text-lg font-medium text-primary', 'flex items-center gap-2', className)}
       {...props}
     >
       {children}
@@ -48,10 +44,7 @@ export const DialogTitle = ({ className, children, ...props }: RadixDialog.Dialo
 
 export const DialogDescription = ({ className, children, ...props }: RadixDialog.DialogDescriptionProps) => {
   return (
-    <RadixDialog.Description
-      className={classNames('text-sm text-liblab-elements-textSecondary', 'mt-1', className)}
-      {...props}
-    >
+    <RadixDialog.Description className={classNames('text-sm text-secondary', 'mt-1', className)} {...props}>
       {children}
     </RadixDialog.Description>
   );
@@ -134,10 +127,7 @@ export const Dialog = ({ children, className, showCloseButton = true, onClose, o
             {children}
             {showCloseButton && (
               <RadixDialog.Close asChild onClick={onClose}>
-                <IconButton
-                  icon="i-ph:x"
-                  className="absolute top-3 right-3 text-liblab-elements-textSecondary hover:text-liblab-elements-textPrimary"
-                />
+                <IconButton icon="i-ph:x" className="absolute top-3 right-3 text-secondary hover:text-primary" />
               </RadixDialog.Close>
             )}
           </div>
