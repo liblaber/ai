@@ -106,15 +106,15 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         if (currentUser.telemetryEnabled) {
           initializeClientTelemetry(currentUser);
         }
-      }
 
-      // Redirect to data source connection if no data sources exist
-      if (currentDataSources.length === 0) {
-        const currentPath = window.location.pathname;
+        // Redirect to data source connection if no data sources exist
+        if (currentDataSources.length === 0) {
+          const currentPath = window.location.pathname;
 
-        if (currentPath !== DATA_SOURCE_CONNECTION_ROUTE) {
-          router.push(DATA_SOURCE_CONNECTION_ROUTE);
-          return;
+          if (currentPath !== DATA_SOURCE_CONNECTION_ROUTE) {
+            router.push(DATA_SOURCE_CONNECTION_ROUTE);
+            return;
+          }
         }
       }
 
