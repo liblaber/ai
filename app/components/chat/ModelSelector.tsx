@@ -181,7 +181,7 @@ export const ModelSelector = ({
             setModel(firstModel.name);
           }
         }}
-        className="flex-1 p-2 rounded-lg border border-depth-3 bg-depth-2/80 text-primary focus:outline-none focus:ring-2 focus:ring-liblab-elements-focus transition-all"
+        className="flex-1 p-2 rounded-lg border border-depth-3 bg-depth-2/80 text-primary focus:outline-none focus:ring-2 focus:ring-accent transition-all"
       >
         {providerList.map((provider: ProviderInfo) => (
           <option key={provider.name} value={provider.name}>
@@ -195,9 +195,9 @@ export const ModelSelector = ({
           className={classNames(
             'w-full p-2 rounded-lg border border-depth-3',
             'bg-depth-2/80 text-primary',
-            'focus-within:outline-none focus-within:ring-2 focus-within:ring-liblab-elements-focus',
+            'focus-within:outline-none focus-within:ring-2 focus-within:ring-accent',
             'transition-all cursor-pointer',
-            isModelDropdownOpen ? 'ring-2 ring-liblab-elements-focus' : undefined,
+            isModelDropdownOpen ? 'ring-2 ring-accent' : undefined,
           )}
           onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
           onKeyDown={(e) => {
@@ -241,7 +241,7 @@ export const ModelSelector = ({
                     'w-full pl-8 pr-3 py-1.5 rounded-md text-sm',
                     'bg-depth-2 border border-depth-3',
                     'text-primary placeholder:text-tertiary',
-                    'focus:outline-none focus:ring-2 focus:ring-liblab-elements-focus',
+                    'focus:outline-none focus:ring-2 focus:ring-accent',
                     'transition-all',
                   )}
                   onClick={(e) => e.stopPropagation()}
@@ -288,7 +288,7 @@ export const ModelSelector = ({
                       'text-primary',
                       'outline-none',
                       model === modelOption.name || focusedIndex === index ? 'bg-depth-2' : undefined,
-                      focusedIndex === index ? 'ring-1 ring-inset ring-liblab-elements-focus' : undefined,
+                      focusedIndex === index ? 'ring-1 ring-inset ring-accent' : undefined,
                     )}
                     onClick={(e) => {
                       e.stopPropagation();

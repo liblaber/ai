@@ -7,7 +7,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-liblab-elements-background text-primary hover:bg-depth-3',
+        default: 'text-primary hover:bg-depth-3',
         destructive: 'bg-red-500 text-white hover:bg-red-600',
         outline: 'border border-input bg-transparent hover:bg-depth-3 text-primary border-depth-3',
         primary: 'bg-accent-500 text-gray-900 text-sm hover:bg-accent-600',

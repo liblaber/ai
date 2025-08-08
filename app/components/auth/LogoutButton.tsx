@@ -51,8 +51,8 @@ export function LogoutButton() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-52 bg-liblab-elements-background rounded-lg shadow-xs z-10 overflow-hidden border border-depth-3 bg-depth-1">
-          <div className="px-4 py-2.5 border-b border-depth-3 bg-liblab-elements-hover/30">
+        <div className="absolute right-0 mt-2 w-52 rounded-lg shadow-xs z-10 overflow-hidden border border-depth-3 bg-depth-1">
+          <div className="px-4 py-2.5 border-b border-depth-3">
             <div className="font-medium text-primary truncate text-sm">{user?.name || 'User'}</div>
             <div className="text-xs text-secondary truncate">{user?.email || ''}</div>
           </div>

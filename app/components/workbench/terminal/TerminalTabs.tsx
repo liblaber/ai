@@ -76,7 +76,7 @@ export const TerminalTabs = memo(() => {
       }}
     >
       <div className="h-full">
-        <div className="bg-liblab-elements-terminals-background h-full flex flex-col">
+        <div className="bg-depth-1 h-full flex flex-col">
           <div className="flex items-center bg-depth-2 border-y border-depth-3 gap-1.5 min-h-[34px] p-2">
             {Array.from({ length: terminalCount }, (_, index) => {
               const isActive = activeTerminal === index;
@@ -88,8 +88,8 @@ export const TerminalTabs = memo(() => {
                     className={classNames(
                       'flex items-center text-sm cursor-pointer gap-1.5 px-3 py-2 h-full whitespace-nowrap rounded-full',
                       {
-                        'bg-liblab-elements-terminals-buttonBackground text-secondary hover:text-primary': isActive,
-                        'bg-depth-2 text-secondary hover:bg-liblab-elements-terminals-buttonBackground': !isActive,
+                        'bg-depth-3 text-secondary hover:text-primary': isActive,
+                        'bg-depth-2 text-secondary hover:bg-depth-3': !isActive,
                       },
                     )}
                     onClick={() => setActiveTerminal(index)}

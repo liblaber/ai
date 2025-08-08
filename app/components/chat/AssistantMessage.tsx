@@ -82,7 +82,7 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
                           return (
                             <>
                               <code
-                                className="bg-liblab-elements-artifacts-inlineCode-background text-liblab-elements-artifacts-inlineCode-text px-1.5 py-1 rounded-md text-accent hover:underline cursor-pointer"
+                                className="text-primary px-1.5 py-1 rounded-md text-accent hover:underline cursor-pointer"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();

@@ -293,9 +293,9 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   disabled={isTestingConnection || isSubmitting || !connStr}
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                    'bg-blue-500 hover:bg-blue-600',
-                    'text-gray-950 dark:text-gray-950',
-                    'disabled:opacity-50 disabled:cursor-not-allowed',
+                    'bg-depth-1 bg-depth-1/50 ',
+                    'text-primary',
+                    'disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
                   )}
                 >
                   {isTestingConnection ? (
@@ -321,7 +321,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',
                   'text-gray-950 dark:text-gray-950',
-                  'disabled:opacity-50 disabled:cursor-not-allowed',
+                  'disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
                 )}
               >
                 {isSubmitting ? (

@@ -22,7 +22,7 @@ export default ({
         className="bg-depth-2 text-accent p-2 rounded-md shadow-xl z-workbench"
       >
         {children}
-        <Popover.Arrow className="bg-liblab-elements-item-depth-2" />
+        <Popover.Arrow className="bg-depth-2" />
       </Popover.Content>
     </Popover.Portal>
   </Popover.Root>

@@ -209,7 +209,7 @@ const ActionList = ({ actions }: ActionListProps) => {
                   <div>
                     Create{' '}
                     <code
-                      className="bg-depth-3 text-xs text-liblab-elements-artifacts-inlineCode-text px-1.5 py-1 rounded-md text-accent hover:underline cursor-pointer"
+                      className="bg-depth-3 text-xs px-1.5 py-1 rounded-md text-accent hover:underline cursor-pointer"
                       onClick={() => openArtifactInWorkbench(action.filePath)}
                     >
                       {action.filePath}

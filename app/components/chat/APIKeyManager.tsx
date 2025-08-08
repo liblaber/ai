@@ -123,7 +123,7 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
               onChange={(e) => setTempKey(e.target.value)}
               className="w-[300px] px-3 py-1.5 text-sm rounded border border-depth-3
                         bg-depth-2/80 text-primary
-                        focus:outline-none focus:ring-2 focus:ring-liblab-elements-focus"
+                        focus:outline-none focus:ring-2 focus:ring-accent"
             />
             <IconButton
               onClick={handleSave}

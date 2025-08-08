@@ -142,7 +142,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                             onClick={() => handleRewind(snapshotId)}
                             key="i-liblab:ic_back"
                             className={classNames(
-                              'i-liblab:ic_back text-2xl opacity-50 hover:opacity-100 text-liblab-elements-icon-primary transition-colors',
+                              'i-liblab:ic_back text-2xl opacity-50 hover:opacity-100 text-depth-1 transition-colors',
                             )}
                           />
                         </WithTooltip>
@@ -154,7 +154,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                             onClick={() => handleFork(messageId)}
                             key="i-liblab:ic_back-square"
                             className={classNames(
-                              'i-liblab:ic_back-square text-2xl opacity-50 hover:opacity-100 text-liblab-elements-icon-primary bg-transparent! transition-colors',
+                              'i-liblab:ic_back-square text-2xl opacity-50 hover:opacity-100 text-depth-1 bg-transparent! transition-colors',
                             )}
                           />
                         </WithTooltip>
