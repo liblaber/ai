@@ -4,6 +4,8 @@ import type { User } from '@prisma/client';
 
 export interface UserProfile {
   id: string;
+  name: string;
+  email: string;
   role: DeprecatedRole;
   organizationId: string;
   telemetryEnabled: boolean | null;
