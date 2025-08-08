@@ -15,7 +15,7 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 ### Before You Start
 
 1. **Read our [Governance Model](GOVERNANCE.md)** to understand how decisions are made
-2. **Browse existing [Issues](https://github.com/liblaber/liblab.ai/issues)** to see what's being worked on
+2. **Browse existing [Issues](https://github.com/liblaber/ai/issues)** to see what's being worked on
 3. **Look for "good first issue" labels** for beginner-friendly tasks
 
 ### Development Environment Setup
@@ -220,7 +220,7 @@ pnpm prisma generate
 
 ### Getting Help
 
-- **🐛 [GitHub Issues](https://github.com/liblaber/liblab.ai/issues)** - Bug reports and feature requests
+- **🐛 [GitHub Issues](https://github.com/liblaber/ai/issues)** - Bug reports and feature requests
 - **📧 [General Inquiries](mailto:community@liblab.ai)** - Contact us directly
 
 ### Communication Guidelines
