@@ -2,7 +2,7 @@ name: 🧪 E2E Tests
 
 on:
   push:
-    branches: [main, stevank/eng-594/e2e-tests-setup, dev]
+    branches: [main, dev]
   pull_request:
     branches: [main, dev]
   workflow_dispatch:
