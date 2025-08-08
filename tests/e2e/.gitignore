@@ -1,0 +1,33 @@
+# Test results
+test-results/
+playwright-report/
+
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+
+# Logs
+*.log
+
+# Screenshots and videos
+*.png
+*.jpg
+*.jpeg
+*.mp4
+*.webm
+
+# Coverage reports
+coverage/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

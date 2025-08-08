@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Button } from '~/components/ui/Button';
 import { Header } from '~/components/header/Header';
-import { useSession } from '~/auth/auth-client';
 import { useUserStore } from '~/lib/stores/user';
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
@@ -19,16 +18,10 @@ export default function TelemetryConsentPage() {
   const [isAccepting, setIsAccepting] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { data: session } = useSession();
   const { user, setUser } = useUserStore();
   const { dataSourceTypes } = useDataSourceTypesStore();
 
   const handleTelemetryConsent = async (telemetryEnabled: boolean) => {
-    if (!session?.user) {
-      setError('User session not found');
-      return;
-    }
-
     // Set the appropriate loading state
     if (telemetryEnabled) {
       setIsAccepting(true);

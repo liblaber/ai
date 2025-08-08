@@ -295,29 +295,29 @@ NODE_ENV=development
 
 ```bash
 # Run migrations
-docker-compose -f docker-compose.dev.yml exec ai-app-dev pnpm prisma migrate deploy
+docker compose -f docker-compose.dev.yml exec ai-app-dev pnpm prisma migrate deploy
 
 # Generate Prisma client
-docker-compose -f docker-compose.dev.yml exec ai-app-dev pnpm prisma generate
+docker compose -f docker-compose.dev.yml exec ai-app-dev pnpm prisma generate
 
 # Open Prisma Studio
-docker-compose -f docker-compose.dev.yml exec ai-app-dev pnpm prisma studio
+docker compose -f docker-compose.dev.yml exec ai-app-dev pnpm prisma studio
 
 # Reset database
-docker-compose -f docker-compose.dev.yml exec ai-app-dev pnpm prisma migrate reset
+docker compose -f docker-compose.dev.yml exec ai-app-dev pnpm prisma migrate reset
 ```
 
 #### Docker Container Management
 
 ```bash
 # View logs
-docker-compose -f docker-compose.dev.yml logs -f
+docker compose -f docker-compose.dev.yml logs -f
 
 # Stop all services
-docker-compose -f docker-compose.dev.yml down
+docker compose -f docker-compose.dev.yml down
 
 # Remove volumes (⚠️ This will delete all data)
-docker-compose -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.dev.yml down -v
 ```
 
 #### Docker Troubleshooting
@@ -327,18 +327,18 @@ docker-compose -f docker-compose.dev.yml down -v
 1. **Check if PostgreSQL is running:**
 
    ```bash
-   docker-compose -f docker-compose.dev.yml ps
+   docker compose -f docker-compose.dev.yml ps
    ```
 
 2. **Check database logs:**
 
    ```bash
-   docker-compose -f docker-compose.dev.yml logs postgres
+   docker compose -f docker-compose.dev.yml logs postgres
    ```
 
 3. **Reset the database:**
    ```bash
-   docker-compose -f docker-compose.dev.yml down -v
+   docker compose -f docker-compose.dev.yml down -v
    tsx ./scripts/docker-db-setup.ts
    ```
 
@@ -348,7 +348,7 @@ If you need to reset the database volume:
 
 ```bash
 # Stop all services
-docker-compose -f docker-compose.dev.yml down
+docker compose -f docker-compose.dev.yml down
 
 # Remove the volume
 docker volume rm liblab_postgres_data

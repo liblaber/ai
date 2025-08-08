@@ -13,6 +13,7 @@ const customJestConfig = {
     '^~/(.*)$': '<rootDir>/app/$1',
   },
   testMatch: ['**/__tests__/**/*.(ts|tsx|js)', '**/*.(test|spec).(ts|tsx|js)'],
+  testPathIgnorePatterns: ['<rootDir>/tests/e2e/'],
   collectCoverageFrom: ['app/**/*.{ts,tsx}', '!app/**/*.d.ts', '!app/**/*.spec.{ts,tsx}', '!app/**/*.test.{ts,tsx}'],
   transform: {
     '^.+\\.(ts|tsx)$': [
