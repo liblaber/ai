@@ -8,6 +8,7 @@
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
+    "test:headless": "playwright test --headed=false",
     "report": "playwright show-report"
   },
   "keywords": [

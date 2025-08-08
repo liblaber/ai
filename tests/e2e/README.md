@@ -38,13 +38,13 @@ npm run start
 
 ### Test Commands
 
-1. **Run tests in headless mode:**
+1. **Run tests with browser visible (default):**
 
 ```bash
 npm test
 ```
 
-2. **Run tests with browser visible:**
+2. **Run tests with browser visible (explicit headed mode):**
 
 ```bash
 npm run test:headed
@@ -62,7 +62,13 @@ npm run test:ui
 npm run test:debug
 ```
 
-5. **View test report:**
+5. **Run tests in headless mode:**
+
+```bash
+npm run test:headless
+```
+
+6. **View test report:**
 
 ```bash
 npm run report
@@ -76,7 +82,7 @@ The main test (`user-onboarding-flow.spec.ts`) follows this user journey:
 2. **Handle Telemetry Consent** - If the telemetry consent page appears, clicks "Decline"
 3. **Connect Sample Database** - If the data source connection page appears, clicks "Connect" for the sample database
 4. **Submit Message** - On the homepage, enters "Build hello world application with Hello World! h1 title" and submits
-5. **The Chat Loads and Runs the Built App** - The chat and the preview load, eventually the built app starts running in the preview
+5. **The Chat Loads, Generates the App and Runs it** - The chat and the preview load, eventually the built app starts running in the preview
 
 ## Configuration
 
@@ -84,9 +90,9 @@ The tests are configured in `playwright.config.ts`:
 
 - **Browser**: Chromium with headless mode disabled (browser window visible)
 - **Base URL**: Uses `BASE_URL` environment variable or defaults to `http://localhost:3000`
-- **Web Server**: **Manual** - You must start your application before running tests
-- **Screenshots**: Taken on test failures
+- **Screenshots**: Automatically taken on failures
 - **Videos**: Recorded on every test run
+- **Web Server**: **Manual** - You must start your application before running tests
 
 ## Environment Variables
 
