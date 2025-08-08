@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     // TODO: @skos just troubleshooting
     const buba = await userService.getUserByEmail('anonymous@anonymous.com');
-    logger.info(`Anonymous user telemetry: ${buba.email}`, buba);
+    logger.info(`Anonymous user telemetry: ${buba.email}`, JSON.stringify(buba));
 
     const userId = await requireUserId(request);
 
