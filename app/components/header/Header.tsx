@@ -1,6 +1,7 @@
 'use client';
 import { useStore } from '@nanostores/react';
 import { ClientOnly } from '~/components/ui/ClientOnly';
+import { IconButton } from '~/components/ui/IconButton';
 import { chatStore } from '~/lib/stores/chat';
 import { classNames } from '~/utils/classNames';
 import { HeaderActionButtons } from './HeaderActionButtons.client';
@@ -27,7 +28,9 @@ export function Header({ showMenuIcon = true }: Props) {
       <div className="flex items-center gap-2 z-logo text-liblab-elements-textPrimary cursor-pointer">
         {showMenuIcon && (
           <ClientOnly>
-            {() => session?.user && <div className="i-liblab:ic_menu text-xl" title="Open sidebar" />}
+            {() =>
+              session?.user && <IconButton icon="i-liblab:ic_menu" size="xl" title="Open sidebar" className="mr-2" />
+            }
           </ClientOnly>
         )}
         <a href="/" className="ml-1 font-semibold text-accent flex items-center">
