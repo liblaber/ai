@@ -13,22 +13,22 @@ DEFAULT_LLM_MODEL=<model_name>
 
 Supported providers and key names:
 
-| Provider | API Key |
-| --- | --- |
-| Anthropic | `ANTHROPIC_API_KEY` |
-| Google | `GOOGLE_GENERATIVE_AI_API_KEY` |
-| OpenAI | `OPENAI_API_KEY` |
-| Groq | `GROQ_API_KEY` |
-| HuggingFace | `HUGGINGFACE_API_KEY` |
-| Mistral | `MISTRAL_API_KEY` |
-| Cohere | `COHERE_API_KEY` |
-| xAI | `XAI_API_KEY` |
-| Perplexity | `PERPLEXITY_API_KEY` |
-| DeepSeek | `DEEPSEEK_API_KEY` |
-| OpenRouter | `OPEN_ROUTER_API_KEY` |
-| Together | `TOGETHER_API_KEY` |
-| Amazon Bedrock | `AWS_BEDROCK_CONFIG` |
-| GitHub | `GITHUB_API_KEY` |
+| Provider       | API Key                        |
+| -------------- | ------------------------------ |
+| Anthropic      | `ANTHROPIC_API_KEY`            |
+| Google         | `GOOGLE_GENERATIVE_AI_API_KEY` |
+| OpenAI         | `OPENAI_API_KEY`               |
+| Groq           | `GROQ_API_KEY`                 |
+| HuggingFace    | `HUGGINGFACE_API_KEY`          |
+| Mistral        | `MISTRAL_API_KEY`              |
+| Cohere         | `COHERE_API_KEY`               |
+| xAI            | `XAI_API_KEY`                  |
+| Perplexity     | `PERPLEXITY_API_KEY`           |
+| DeepSeek       | `DEEPSEEK_API_KEY`             |
+| OpenRouter     | `OPEN_ROUTER_API_KEY`          |
+| Together       | `TOGETHER_API_KEY`             |
+| Amazon Bedrock | `AWS_BEDROCK_CONFIG`           |
+| GitHub         | `GITHUB_API_KEY`               |
 
 ## Local/Alternative Services
 
