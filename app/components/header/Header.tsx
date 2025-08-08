@@ -25,7 +25,11 @@ export function Header({ showMenuIcon = true }: Props) {
       })}
     >
       <div className="flex items-center gap-2 z-logo text-liblab-elements-textPrimary cursor-pointer">
-        {showMenuIcon && <ClientOnly>{() => session?.user && <div className="i-liblab:ic_menu text-xl" />}</ClientOnly>}
+        {showMenuIcon && (
+          <ClientOnly>
+            {() => session?.user && <div className="i-liblab:ic_menu text-xl" title="Open sidebar" />}
+          </ClientOnly>
+        )}
         <a href="/" className="ml-1 font-semibold text-accent flex items-center">
           <div className="h-8 flex items-center text-black dark:text-white">
             <Logo />
