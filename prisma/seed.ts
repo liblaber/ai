@@ -44,9 +44,9 @@ async function seed() {
         anonUser = await tx.user.create({
           data: anonymousUser,
         });
-        console.log('✅ Created anonymous user:', anonUser.id);
+        console.log('✅ Created anonymous user');
       } else {
-        console.log('✅ Anonymous user exists:', anonUser.id);
+        console.log('✅ Anonymous user already exists');
       }
 
       const account = await tx.account.findFirst({
@@ -65,9 +65,9 @@ async function seed() {
             updatedAt: new Date(),
           },
         });
-        console.log('✅ Created account for anonymous user:', anonUser.id);
+        console.log('✅ Created account for anonymous user');
       } else {
-        console.log('✅ Account exists for anonymous user:', anonUser.id);
+        console.log('✅ Account exists for anonymous user');
       }
     });
 
