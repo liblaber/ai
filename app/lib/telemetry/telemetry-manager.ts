@@ -52,13 +52,13 @@ class TelemetryManager {
   }
 
   async trackTelemetryEvent(event: TelemetryEvent, user?: UserProfile): Promise<void> {
-    type RemovePIIUserProfile = Omit<UserProfile, 'email' | 'name'> | undefined;
-
-    const safeUserProfile: RemovePIIUserProfile = user;
-
     if (!this._isTelemetryEnabled(user) || !this._posthogClient) {
       return;
     }
+
+    type RemovePIIUserProfile = Omit<UserProfile, 'email' | 'name'> | undefined;
+
+    const safeUserProfile: RemovePIIUserProfile = user;
 
     // Machine id is used to uniquely identify events per user
     const eventProperties = {
