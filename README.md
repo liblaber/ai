@@ -70,7 +70,7 @@ Local Machine ← Encrypted Response ← Secure Tunnel ← Preview Dashboard
 
 ## 📈 Telemetry
 
-To help us improve liblab AI, we collect anonymous usage data to help make liblab AI better for everyone. This includes:
+To help us improve liblab ai, we collect anonymous usage data to help make liblab ai better for everyone. This includes:
 
 - Error reports to identify bugs and improve stability
 - Usage patterns to understand how features are used

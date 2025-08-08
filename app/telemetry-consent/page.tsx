@@ -89,10 +89,10 @@ export default function TelemetryConsentPage() {
       <Header showMenuIcon={false} />
       <div className="h-full bg-gray-950 flex items-center justify-center p-4">
         <div className="w-full max-w-[620px] h-[560px]">
-          <h1 className="text-2xl text-liblab-elements-textPrimary mb-6 text-center">Help us improve liblab AI</h1>
+          <h1 className="text-2xl text-liblab-elements-textPrimary mb-6 text-center">Help us improve liblab ai</h1>
           <div className="mb-6">
             <p className="text-center text-base font-light text-liblab-elements-textPrimary mb-4">
-              We collect anonymous usage data to help make liblab AI better for everyone. This includes:
+              We collect anonymous usage data to help make liblab ai better for everyone. This includes:
             </p>
             <div className="space-y-3 text-sm text-gray-300">
               <div className="flex items-start gap-3">
