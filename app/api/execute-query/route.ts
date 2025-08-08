@@ -10,6 +10,13 @@ interface EncryptedRequestBody {
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Expose-Headers': '*',
+      'Access-Control-Max-Age': '86400',
+    },
   });
 }
 
@@ -56,7 +63,15 @@ export async function POST(request: NextRequest) {
 
     const encryptedResponse = encryptData(env.server.ENCRYPTION_KEY, dataBuffer);
 
-    return NextResponse.json({ encryptedData: encryptedResponse });
+    return NextResponse.json(
+      { encryptedData: encryptedResponse },
+      {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Expose-Headers': '*',
+        },
+      },
+    );
   } catch (error: any) {
     console.error('Failed to execute query', error);
     return NextResponse.json(
