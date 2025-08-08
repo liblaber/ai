@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useSession, signIn } from '~/auth/auth-client';
+import { signIn, useSession } from '~/auth/auth-client';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { usePluginStore } from '~/lib/plugins/plugin-store';
 import type { DataSourceType } from '~/lib/stores/dataSourceTypes';
@@ -13,6 +13,7 @@ import { DATA_SOURCE_CONNECTION_ROUTE, TELEMETRY_CONSENT_ROUTE } from '~/lib/con
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
 import type { UserProfile } from '~/lib/services/userService';
 import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
+import type { DataSource } from '~/components/@settings/tabs/data/DataTab';
 
 export interface RootData {
   user: UserProfile | null;
@@ -34,7 +35,7 @@ interface DataLoaderProps {
 
 export function DataLoader({ children, rootData }: DataLoaderProps) {
   const { data: session } = useSession();
-  const { setDataSources } = useDataSourcesStore();
+  const { dataSources, setDataSources } = useDataSourcesStore();
   const { setPluginAccess } = usePluginStore();
   const { setDataSourceTypes } = useDataSourceTypesStore();
   const { setUser, clearUser, user } = useUserStore();
@@ -57,8 +58,22 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     }
 
     // If login is in progress, wait for it to complete
-    if (!session?.user && isLoggingIn.current) {
+    if (!session?.user && anonymousProvider && isLoggingIn.current) {
       console.log('⏳ Anonymous login in progress, waiting...');
+      return;
+    }
+
+    if (!rootData.user && session?.user) {
+      console.log('🔄 Session exists but no server user data, fetching user data...');
+      fetchUserData();
+
+      return;
+    }
+
+    if (!rootData.user && session?.user) {
+      console.log('🔄 Session exists but no server data sources, fetching data sources...');
+      fetchDataSources();
+
       return;
     }
 
@@ -80,9 +95,11 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     // Set user profile
     if (rootData.user) {
       setUser(rootData.user);
+    }
 
+    if (user) {
       // Redirect to telemetry consent screen if user hasn't answered yet (when telemetryEnabled is null)
-      if (rootData.user.telemetryEnabled === null) {
+      if (user.telemetryEnabled === null) {
         const currentPath = window.location.pathname;
 
         if (currentPath !== TELEMETRY_CONSENT_ROUTE) {
@@ -92,8 +109,8 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         return;
       }
 
-      if (rootData.user.telemetryEnabled) {
-        initializeClientTelemetry(rootData.user);
+      if (user.telemetryEnabled) {
+        initializeClientTelemetry(user);
       }
     }
 
@@ -113,6 +130,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     session?.user,
     anonymousProvider,
     rootData,
+    dataSources,
     setDataSources,
     setPluginAccess,
     setDataSourceTypes,
@@ -121,6 +139,50 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     user,
     router,
   ]);
+
+  const fetchUserData = async () => {
+    try {
+      console.log('📡 Fetching user data...');
+
+      const userResponse = await fetch('/api/me');
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const userData = (await userResponse.json()) as {
+        success: boolean;
+        user: UserProfile;
+      };
+
+      console.log('✅ User data fetched successfully');
+      setUser(userData.user);
+    } catch (error) {
+      console.error('❌ Failed to fetch user data:', error);
+    }
+  };
+
+  const fetchDataSources = async () => {
+    try {
+      console.log('📡 Fetching data sources...');
+
+      const dataSourcesResponse = await fetch('/api/data-sources');
+
+      if (!dataSourcesResponse.ok) {
+        throw new Error('Failed to fetch data sources');
+      }
+
+      const dataSourcesData = (await dataSourcesResponse.json()) as {
+        success: boolean;
+        dataSources: DataSource[];
+      };
+
+      console.log('✅ Data sources fetched successfully');
+      setDataSources(dataSourcesData.dataSources);
+    } catch (error) {
+      console.error('❌ Failed to fetch data sources:', error);
+    }
+  };
 
   const loginAnonymous = async () => {
     if (isLoggingIn.current) {
@@ -145,7 +207,6 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       }
 
       console.log('✅ Anonymous login successful');
-      window.location.replace('/');
     } catch (error: any) {
       console.error(`❌ Anonymous login failed: ${error?.message}`);
     } finally {
