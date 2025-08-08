@@ -119,7 +119,6 @@ async function seedDefaultEnvironment(organizationId: string): Promise<Environme
           name: 'Default',
           description: 'Default environment',
           organizationId,
-          createdAt: new Date(),
         },
       });
     }
@@ -187,8 +186,6 @@ async function seedRole(organizationId: string, name: string, description: strin
           name,
           description,
           organizationId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
         },
       });
     }
@@ -211,7 +208,6 @@ async function seedUserRole(userId: string, adminRoleId: string): Promise<void> 
         data: {
           userId,
           roleId: adminRoleId,
-          createdAt: new Date(),
         },
       });
     }
