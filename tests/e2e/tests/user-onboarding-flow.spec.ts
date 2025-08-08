@@ -5,13 +5,13 @@ test.describe('User Onboarding Flow Test', () => {
     test.setTimeout(120000); // 2 minutes for this specific test
 
     // Enable browser console logging for debugging
-    page.on('console', (msg: ConsoleMessage) => console.log('Browser console:', msg.text()));
-    page.on('pageerror', (error: Error) => console.log('Browser error:', error.message));
+    page.on('console', (msg: ConsoleMessage) => console.log('🖥️ Browser console:', msg.text()));
+    page.on('pageerror', (error: Error) => console.log('🖥️ Browser error:', error.message));
 
     console.log('Starting user onboarding flow test...');
 
     // Step 1: Navigate to the application
-    console.log('📱 Navigating to application...');
+    console.log('🧭 Navigating to application...');
     await page.goto('/');
 
     // Wait for the page to load

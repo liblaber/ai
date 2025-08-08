@@ -145,6 +145,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       }
 
       console.log('✅ Anonymous login successful');
+      router.push('/');
     } catch (error: any) {
       console.error(`❌ Anonymous login failed: ${error?.message}`);
     } finally {
