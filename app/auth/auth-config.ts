@@ -45,7 +45,7 @@ export const auth = betterAuth({
       if (ctx.path.startsWith('/callback/') || ctx.path.startsWith('/sign-in/email')) {
         const newSession = ctx.context.newSession;
 
-        console.log('The new session has been logged in.', JSON.stringify(newSession));
+        console.log('The new session has been signed in', JSON.stringify(newSession));
 
         if (!newSession?.user?.email) {
           throw new Error('Unable to complete signup: Missing user email');
