@@ -45,23 +45,17 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
 
   useEffect(() => {
     const loadUserData = async () => {
-      console.log('🔍 DataLoader auth check:', {
-        hasSession: !!session?.user,
-        hasAnonymousProvider: !!anonymousProvider,
-        isLoggingIn: isLoggingIn.current,
-      });
-
       if (!rootData.user && !session?.user && anonymousProvider && !isLoggingIn.current) {
         await loginAnonymous();
       }
 
       if (!rootData.user && !session?.user && anonymousProvider && isLoggingIn.current) {
-        console.log('⏳ Anonymous login in progress, waiting...');
+        console.debug('⏳ Anonymous login in progress, waiting...');
         return;
       }
 
       if (!rootData.user && !session?.user) {
-        console.log('❌ No session available');
+        console.debug('❌ No session available');
         return;
       }
 
@@ -78,8 +72,8 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       let currentUser = rootData.user;
 
       if (!currentUser && session?.user) {
-        console.log('🔄 Fetching user data...');
-        currentUser = await fetchUserDataSync();
+        console.debug('🔄 Fetching user data...');
+        currentUser = await fetchUserData();
         setUser(currentUser);
       } else if (currentUser) {
         setUser(currentUser);
@@ -89,8 +83,8 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       let currentDataSources = rootData.dataSources || [];
 
       if ((!rootData.dataSources || rootData.dataSources.length === 0) && session?.user) {
-        console.log('🔄 Fetching data sources...');
-        currentDataSources = await fetchDataSourcesSync();
+        console.debug('🔄 Fetching data sources...');
+        currentDataSources = await fetchDataSources();
         setDataSources(currentDataSources);
       } else if (rootData.dataSources) {
         setDataSources(rootData.dataSources);
@@ -124,13 +118,13 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         }
       }
 
-      console.log('✅ Data loading and redirects completed');
+      console.debug('✅ Data loading and redirects completed');
     };
 
     loadUserData();
   }, [session?.user, anonymousProvider, rootData, router]);
 
-  const fetchUserDataSync = async (): Promise<UserProfile> => {
+  const fetchUserData = async (): Promise<UserProfile> => {
     try {
       const userResponse = await fetch('/api/me');
 
@@ -143,7 +137,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         user: UserProfile;
       };
 
-      console.log('✅ User data fetched successfully');
+      console.debug('✅ User data fetched successfully');
 
       return userData.user;
     } catch (error) {
@@ -152,7 +146,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     }
   };
 
-  const fetchDataSourcesSync = async (): Promise<DataSource[]> => {
+  const fetchDataSources = async (): Promise<DataSource[]> => {
     try {
       const dataSourcesResponse = await fetch('/api/data-sources');
 
@@ -170,20 +164,20 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       return dataSourcesData.dataSources;
     } catch (error) {
       console.error('❌ Failed to fetch data sources:', error);
-      return [];
+      throw new Error('Failed to fetch data sources');
     }
   };
 
   const loginAnonymous = async () => {
     if (isLoggingIn.current) {
-      console.log('⏳ Login already in progress, skipping...');
+      console.debug('⏳ Login already in progress, skipping...');
       return;
     }
 
     isLoggingIn.current = true;
 
     try {
-      console.log('🔐 Attempting anonymous login...');
+      console.debug('🔐 Attempting anonymous login...');
 
       const { error: signInError } = await signIn.email({
         email: 'anonymous@anonymous.com',
@@ -196,8 +190,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         return;
       }
 
-      console.log('✅ Anonymous login successful');
-      console.log('Current session is', session?.user);
+      console.debug('✅ Anonymous login successful');
     } catch (error: any) {
       console.error(`❌ Anonymous login failed: ${error?.message}`);
     } finally {
