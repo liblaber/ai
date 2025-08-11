@@ -46,8 +46,8 @@ const setupCloudflaredTunnel = (): string | null => {
         console.log(`🌐 Cloudflared Forwarding URL: ${forwardingUrl}`);
         return forwardingUrl;
       }
-    } catch {
-      console.error('Error reading cloudflared log file');
+    } catch (error) {
+      console.error('Error reading cloudflared log file:', error);
     }
 
     console.log('Waiting for Cloudflared URL...');
