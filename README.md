@@ -226,6 +226,12 @@ Run the setup:
 pnpm run setup
 ```
 
+Clone the repo:
+
+```bash
+git clone https://github.com/liblaber/ai.git
+```
+
 **Start the app**
 
 Start the development server with:
