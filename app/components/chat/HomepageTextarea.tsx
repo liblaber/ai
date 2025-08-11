@@ -184,6 +184,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
                 {dataSources.length > 0 && <DataSourcePicker onAddNew={handleConnectDataSource} disabled={false} />}
               </div>
               <button
+                data-testid="send-message-button"
                 className="flex justify-center items-center w-[36px] h-[36px] p-2 bg-accent-500 enabled:hover:shadow-[0_0_20px_3px] enabled:hover:shadow-accent-700/80 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!value.length || isStreaming}
                 onClick={(event) => {
@@ -208,6 +209,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
               onKeyDown={onKeyDown}
               onPaste={onPaste}
               placeholder="Create a clean revenue dashboard"
+              data-testid="homepage-textarea"
               className={classNames(
                 'w-full max-h-120px text-2xl font-light tracking-wide',
                 'bg-transparent resize-none',
