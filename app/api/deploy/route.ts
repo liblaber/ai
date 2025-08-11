@@ -13,6 +13,12 @@ import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-mana
 import { userService } from '~/lib/services/userService';
 import { env as serverEnv } from '~/env/server';
 
+interface ErrorData {
+  message?: string;
+}
+
+const TOTAL_STEPS = 6;
+
 interface CommandResult {
   output: string;
   error: string;
@@ -131,6 +137,7 @@ export async function POST(request: NextRequest) {
     const description = formData.get('description') as string;
     const zipFile = formData.get('zipFile') as File;
     const token = serverEnv.NETLIFY_AUTH_TOKEN;
+    let currentStepIndex = 1;
 
     try {
       logger.info('Starting deployment process', JSON.stringify({ chatId, siteId, websiteId }));
@@ -151,21 +158,24 @@ export async function POST(request: NextRequest) {
         return;
       }
 
-      let targetSiteId = siteId;
-      let siteInfo: NetlifySiteInfo | undefined;
-
       // Send initial progress
       logger.info('Initializing deployment', JSON.stringify({ chatId }));
       await writer.write(
         encoder.encode(
           `data: ${JSON.stringify({
-            step: 1,
-            totalSteps: 6,
+            step: currentStepIndex,
+            totalSteps: TOTAL_STEPS,
             message: 'Initializing deployment...',
             status: 'in_progress',
           })}\n\n`,
         ),
       );
+
+      let targetSiteId = siteId || (await getSiteIdFromChat(chatId));
+
+      logger.info('Target site ID', JSON.stringify({ chatId, targetSiteId }));
+
+      let siteInfo: NetlifySiteInfo | undefined;
 
       // If no siteId provided, create a new site
       if (!targetSiteId) {
@@ -173,8 +183,8 @@ export async function POST(request: NextRequest) {
         await writer.write(
           encoder.encode(
             `data: ${JSON.stringify({
-              step: 2,
-              totalSteps: 6,
+              step: ++currentStepIndex,
+              totalSteps: TOTAL_STEPS,
               message: 'Creating new Netlify site...',
               status: 'in_progress',
             })}\n\n`,
@@ -186,27 +196,13 @@ export async function POST(request: NextRequest) {
         try {
           siteName = await generateUniqueSiteName(chatId);
           logger.info('Generated unique site name', JSON.stringify({ chatId, siteName }));
-        } catch (error) {
-          logger.error(
+        } catch (error: any) {
+          // Handle error in generating unique site name
+          handleErrorResponse(
+            writer,
             'Failed to generate unique site name',
-            JSON.stringify({
-              chatId,
-              error: error instanceof Error ? error.message : 'Unknown error',
-            }),
-          );
-          await writer.write(
-            encoder.encode(
-              `data: ${JSON.stringify({
-                step: 2,
-                totalSteps: 3,
-                message: 'Failed to generate a unique site name. Please try again.',
-                status: 'error',
-                error: {
-                  code: 'SITE_NAME_GENERATION_FAILED',
-                  message: error instanceof Error ? error.message : 'Failed to generate unique site name',
-                },
-              })}\n\n`,
-            ),
+            currentStepIndex,
+            new Error(error?.message ?? JSON.stringify(error)),
           );
           await safeCloseWriter();
 
@@ -226,16 +222,16 @@ export async function POST(request: NextRequest) {
         });
 
         if (!createSiteResponse.ok) {
-          const errorData = await createSiteResponse.json().catch(() => null);
-          logger.error(
-            'Failed to create site',
-            JSON.stringify({
-              chatId,
-              status: createSiteResponse.status,
-              error: errorData,
-            }),
+          const errorData = await createSiteResponse.json<ErrorData>().catch(() => null);
+          handleErrorResponse(
+            writer,
+            `Failed to create site: ${JSON.stringify(errorData)}`,
+            currentStepIndex,
+            new Error(errorData?.message ?? JSON.stringify(errorData)),
           );
-          throw new Error('Failed to create site');
+          await safeCloseWriter();
+
+          return;
         }
 
         const newSite = (await createSiteResponse.json()) as any;
@@ -246,6 +242,50 @@ export async function POST(request: NextRequest) {
           url: newSite.url,
           chatId,
         };
+
+        const website = await prisma.website.findFirst({
+          where: {
+            chatId,
+          },
+        });
+
+        if (website) {
+          logger.info('Updating existing website with new site info', JSON.stringify({ chatId, siteId: targetSiteId }));
+          // Update existing website with new site info
+          await prisma.website.update({
+            where: {
+              id: website.id,
+            },
+            data: {
+              siteId: targetSiteId,
+              siteName: newSite.name,
+              siteUrl: newSite.url,
+            },
+          });
+        } else {
+          logger.info('Creating new website entry', JSON.stringify({ chatId, siteId: targetSiteId }));
+          // Create new website entry
+          await writer.write(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                step: currentStepIndex,
+                totalSteps: TOTAL_STEPS,
+                message: 'Creating new website entry...',
+                status: 'in_progress',
+              })}\n\n`,
+            ),
+          );
+          await prisma.website.create({
+            data: {
+              siteId: targetSiteId,
+              siteName: newSite.name,
+              siteUrl: newSite.url,
+              chatId,
+              userId,
+            },
+          });
+        }
+
         logger.info('Site created successfully', JSON.stringify({ chatId, siteId: targetSiteId }));
       } else {
         // Get existing site info
@@ -253,8 +293,8 @@ export async function POST(request: NextRequest) {
         await writer.write(
           encoder.encode(
             `data: ${JSON.stringify({
-              step: 2,
-              totalSteps: 6,
+              step: ++currentStepIndex,
+              totalSteps: TOTAL_STEPS,
               message: 'Getting existing site info...',
               status: 'in_progress',
             })}\n\n`,
@@ -267,23 +307,45 @@ export async function POST(request: NextRequest) {
           },
         });
 
+        logger.info('Fetched existing site info', JSON.stringify({ chatId, siteId: targetSiteId, siteResponse }));
+
         if (!siteResponse.ok) {
-          logger.warn(
-            'Failed to get existing site info',
+          logger.error(
+            'Failed to get existing site info. This means the site has been deleted on Netlify',
             JSON.stringify({
               chatId,
               siteId: targetSiteId,
               status: siteResponse.status,
             }),
           );
+
+          await prisma.website.deleteMany({
+            where: {
+              chatId,
+              siteId: targetSiteId,
+            },
+          });
+
+          handleErrorResponse(
+            writer,
+            'Failed to get existing site info. This means the site has been deleted on Netlify. We have cleaned up the database entry. Please try to deploy again.',
+            currentStepIndex,
+            new Error(`Status: ${siteResponse.status}`),
+          );
+          await safeCloseWriter();
+
+          return;
         } else {
           const existingSite = (await siteResponse.json()) as any;
+
+          logger.info('Existing site info retrieved', JSON.stringify({ chatId, existingSite }));
           siteInfo = {
             id: existingSite.id,
             name: existingSite.name,
             url: existingSite.url,
             chatId,
           };
+          targetSiteId = existingSite.id;
           logger.info(
             'Retrieved existing site info',
             JSON.stringify({
@@ -305,8 +367,8 @@ export async function POST(request: NextRequest) {
         await writer.write(
           encoder.encode(
             `data: ${JSON.stringify({
-              step: 3,
-              totalSteps: 6,
+              step: ++currentStepIndex,
+              totalSteps: TOTAL_STEPS,
               message: 'Preparing deployment files...',
               status: 'in_progress',
             })}\n\n`,
@@ -322,15 +384,17 @@ export async function POST(request: NextRequest) {
 
         try {
           zip.extractAllTo(tempDir, true);
-        } catch (error) {
-          logger.error(
-            'Failed to extract zip file',
-            JSON.stringify({
-              chatId,
-              error: error instanceof Error ? error.message : 'Unknown error',
-            }),
+        } catch (error: any) {
+          handleErrorResponse(
+            writer,
+            'Failed to extract zip',
+            currentStepIndex,
+            new Error(error?.message ?? JSON.stringify(error)),
           );
-          throw new Error('Failed to extract project files');
+
+          await safeCloseWriter();
+
+          return;
         }
 
         // Remove the zip file
@@ -342,8 +406,8 @@ export async function POST(request: NextRequest) {
         await writer.write(
           encoder.encode(
             `data: ${JSON.stringify({
-              step: 4,
-              totalSteps: 6,
+              step: ++currentStepIndex,
+              totalSteps: TOTAL_STEPS,
               message: 'Installing dependencies...',
               status: 'in_progress',
             })}\n\n`,
@@ -358,19 +422,20 @@ export async function POST(request: NextRequest) {
             NETLIFY_AUTH_TOKEN: token,
           },
           undefined,
-          (message) => {
+          async (message) => {
             if (message.includes('error') || message.includes('failed')) {
-              logger.warn(
-                'Dependency installation warning',
-                JSON.stringify({ chatId, message: JSON.stringify(message) }),
-              );
+              handleErrorResponse(writer, 'Failed to install dependencies', currentStepIndex, new Error(message));
+
+              await safeCloseWriter();
+
+              return;
             }
 
             writer.write(
               encoder.encode(
                 `data: ${JSON.stringify({
-                  step: 4,
-                  totalSteps: 6,
+                  step: currentStepIndex,
+                  totalSteps: TOTAL_STEPS,
                   message,
                   status: 'in_progress',
                 })}\n\n`,
@@ -397,31 +462,17 @@ export async function POST(request: NextRequest) {
             NETLIFY_AUTH_TOKEN: token,
           });
           logger.info('Netlify configuration completed', JSON.stringify({ chatId }));
-        } catch (error) {
-          logger.error(
-            'Netlify configuration failed',
-            JSON.stringify({
-              chatId,
-              error: error instanceof Error ? error.message : 'Unknown error',
-            }),
+        } catch (error: any) {
+          handleErrorResponse(
+            writer,
+            'Failed to configure Netlify',
+            currentStepIndex,
+            new Error(error?.message ?? JSON.stringify(error)),
           );
-          await writer.write(
-            encoder.encode(
-              `data: ${JSON.stringify({
-                step: 4,
-                totalSteps: 6,
-                message: 'Failed to configure netlify',
-                status: 'error',
-                error: {
-                  code: 'SITE_CONFIGURATION_FAILED',
-                  message: error instanceof Error ? error.message : 'Failed to configure netlify',
-                },
-              })}\n\n`,
-            ),
-          );
+
           await safeCloseWriter();
 
-          throw new Error('Failed to configure Netlify');
+          return;
         }
 
         // Generate deployment alias from description
@@ -432,8 +483,8 @@ export async function POST(request: NextRequest) {
         await writer.write(
           encoder.encode(
             `data: ${JSON.stringify({
-              step: 6,
-              totalSteps: 6,
+              step: ++currentStepIndex,
+              totalSteps: TOTAL_STEPS,
               message: 'Deploying to Netlify...',
               status: 'in_progress',
             })}\n\n`,
@@ -453,8 +504,8 @@ export async function POST(request: NextRequest) {
               writer.write(
                 encoder.encode(
                   `data: ${JSON.stringify({
-                    step: 6,
-                    totalSteps: 6,
+                    step: currentStepIndex,
+                    totalSteps: TOTAL_STEPS,
                     message,
                     status: 'in_progress',
                   })}\n\n`,
@@ -474,16 +525,16 @@ export async function POST(request: NextRequest) {
         });
 
         if (!deployResponse.ok) {
-          const errorData = await deployResponse.json().catch(() => null);
-          logger.error(
-            'Failed to get deploy info',
-            JSON.stringify({
-              chatId,
-              status: deployResponse.status,
-              error: errorData,
-            }),
+          const errorData = await deployResponse.json<ErrorData>().catch(() => null);
+          handleErrorResponse(
+            writer,
+            'Failed to fetch deployment info',
+            currentStepIndex,
+            new Error(errorData?.message ?? JSON.stringify(errorData)),
           );
-          throw new Error('Failed to get deploy info');
+          await safeCloseWriter();
+
+          return;
         }
 
         const deploys = (await deployResponse.json()) as any[];
@@ -556,8 +607,8 @@ export async function POST(request: NextRequest) {
             await writer.write(
               encoder.encode(
                 `data: ${JSON.stringify({
-                  step: 6,
-                  totalSteps: 6,
+                  step: currentStepIndex,
+                  totalSteps: TOTAL_STEPS,
                   message: 'Deployment successful!',
                   status: 'success',
                   data: {
@@ -572,66 +623,31 @@ export async function POST(request: NextRequest) {
                 })}\n\n`,
               ),
             );
-          } catch (error) {
-            logger.error(
-              'Failed to save website to database',
-              JSON.stringify({
-                chatId,
-                siteId: siteInfo.id,
-                error: error instanceof Error ? error.message : 'Unknown error',
-              }),
+          } catch (error: any) {
+            handleErrorResponse(
+              writer,
+              'Failed to save website',
+              currentStepIndex,
+              new Error(error?.message ?? JSON.stringify(error)),
             );
+            await safeCloseWriter();
 
-            // Send success message without website data
-            await writer.write(
-              encoder.encode(
-                `data: ${JSON.stringify({
-                  step: 6,
-                  totalSteps: 6,
-                  message: 'Deployment successful!',
-                  status: 'success',
-                  data: {
-                    deploy: {
-                      id: latestDeploy.id,
-                      state: latestDeploy.state,
-                      url: latestDeploy.links.permalink,
-                    },
-                    site: siteInfo,
-                  },
-                })}\n\n`,
-              ),
-            );
+            return;
           }
         }
       } finally {
         // Clean up temporary directory
         logger.info('Cleaning up temporary directory', JSON.stringify({ chatId, tempDir }));
         await rimraf(tempDir);
-        await safeCloseWriter();
       }
-    } catch (error) {
-      logger.error(
-        'Deployment failed',
-        JSON.stringify({
-          chatId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-        }),
+    } catch (error: any) {
+      handleErrorResponse(
+        writer,
+        'Deployment process failed',
+        currentStepIndex,
+        new Error(error?.message ?? JSON.stringify(error)),
       );
-
-      if (!writer.closed) {
-        await writer.write(
-          encoder.encode(
-            `data: ${JSON.stringify({
-              step: 0,
-              totalSteps: 6,
-              message: error instanceof Error ? error.message : 'Deployment failed',
-              status: 'error',
-            })}\n\n`,
-          ),
-        );
-      }
-
+    } finally {
       await safeCloseWriter();
     }
   })();
@@ -643,4 +659,47 @@ export async function POST(request: NextRequest) {
       Connection: 'keep-alive',
     },
   });
+}
+
+function handleErrorResponse(
+  writer: WritableStreamDefaultWriter,
+  message: string,
+  currentStepIndex: number,
+  error?: Error,
+): Promise<void> {
+  logger.error(
+    'Deployment error',
+    JSON.stringify({
+      message,
+      error: error ? error.message : 'Unknown error',
+    }),
+  );
+  return writer.write(
+    new TextEncoder().encode(
+      `data: ${JSON.stringify({
+        step: currentStepIndex,
+        totalSteps: TOTAL_STEPS,
+        message: message + (error ? `: ${error.message}` : ''),
+        status: 'error',
+        error: error ? { code: 'DEPLOYMENT_ERROR', message: error.message } : undefined,
+      })}\n\n`,
+    ),
+  );
+}
+
+async function getSiteIdFromChat(chatId: string): Promise<string> {
+  const website = await prisma.website.findFirst({
+    where: {
+      chatId,
+    },
+    select: {
+      siteId: true,
+    },
+  });
+
+  if (!website || !website.siteId) {
+    return '';
+  }
+
+  return website.siteId;
 }
