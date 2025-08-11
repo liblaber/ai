@@ -50,7 +50,7 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-sm text-text-secondary mb-6"
+            className="text-sm text-primary mb-6"
           >
             <p>
               Something went wrong while running the preview. Would you like me to analyze and help resolve this issue?
@@ -61,7 +61,7 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mb-6">
               <button
                 onClick={() => setShowErrorDetails(!showErrorDetails)}
-                className="text-sm text-text-secondary hover:text-primary underline cursor-pointer"
+                className="text-sm text-primary hover:text-primary underline cursor-pointer"
               >
                 {showErrorDetails ? 'Hide Error Details' : 'Show Error Details'}
               </button>
@@ -75,7 +75,7 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
-                className="text-xs text-text-secondary p-3 bg-depth-3 rounded mb-6 max-h-[400px] text-left overflow-y-scroll"
+                className="text-xs text-secondary p-3 bg-depth-3 rounded mb-6 max-h-[400px] text-left overflow-y-scroll"
               >
                 <div className="font-medium mb-1">Error Details:</div>
                 <div className="whitespace-pre-wrap">{errorContent}</div>

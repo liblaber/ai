@@ -119,7 +119,7 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
             exit={{ height: '0px' }}
             transition={{ duration: 0.15 }}
           >
-            <div className="border-bg-depth-2 h-[1px]" />
+            <div className="border-depth-2 h-[1px]" />
 
             <div className="p-5 text-left bg-depth-2">
               <ActionList actions={actions} />

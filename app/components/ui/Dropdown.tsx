@@ -31,7 +31,7 @@ export const DropdownItem = ({ children, onSelect, className }: DropdownItemProp
   </DropdownMenu.Item>
 );
 
-export const DropdownSeparator = () => <DropdownMenu.Separator className="h-px bg-depth-3my-1" />;
+export const DropdownSeparator = () => <DropdownMenu.Separator className="h-px bg-depth-3 my-1" />;
 
 export const Dropdown = ({ trigger, children, align = 'end', sideOffset = 5 }: DropdownProps) => {
   return (

@@ -87,7 +87,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" />
         <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
       </head>
-      <body className="w-full h-full bg-white">
+      <body className="w-full h-full bg-depth-1">
         <ClientProviders rootData={rootData}>{children}</ClientProviders>
       </body>
     </html>
