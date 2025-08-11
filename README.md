@@ -23,52 +23,92 @@ Securely connect your database, build an app, and deploy in seconds.
 
 **Prerequisites**
 
-- **pnpm** - Package manager (faster than npm)
+<details>
+  <summary><b>pnpm</b> <em>(Package manager, faster than npm)</em></summary>
 
-  ```bash
-  # Install pnpm globally
-  npm install -g pnpm
+```bash
+# Install pnpm globally
+npm install -g pnpm
 
-  # Verify installation
-  pnpm --version
-  ```
+# Verify installation
+pnpm --version
+```
 
-- **Docker** - Required for containerized setup
-  Install Docker Desktop from [docker.com/get-started](https://www.docker.com/get-started/)
-  **Verify the Installation**
-  ```bash
-  docker --version
-  docker-compose --version
-  ```
-- **Anthropic API Key** - Required for AI model access
-  **Step 1:** Create an Anthropic Account
-  1. Go to [console.anthropic.com/signup](https://console.anthropic.com/signup)
-  2. Create an account
-  3. Verify your email
-     **Step 2:** Generate an API Key
-  4. Go to [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
-  5. Click "Create Key"
-  6. Give it a name (e.g., "liblab-ai")
-  7. Copy the API key (starts with `sk-ant-`)
-     **Step 3:** Save your API Key
-     You'll add this to your `.env` file during setup, but keep it handy:
-  ```bash
-  ANTHROPIC_API_KEY=sk-ant-your-api-key-here
-  ```
-- **Ngrok Auth Token** - Required for external tunnel access
-  **Step 1: Create Ngrok Account**
-  1. Go to [ngrok.com](https://ngrok.com/)
-  2. Sign up for a free account
-  3. Verify your email
-     **Step 2: Get Your Auth Token**
-  4. After logging in, go to [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)
-  5. Copy your authtoken (long alphanumeric string)
-     **Step 3: Save Your Auth Token**
-     You'll add this to your `.env` file during setup, but keep it handy:
-  ```bash
-  NGROK_AUTHTOKEN=your-ngrok-authtoken-here
-  ```
-- **Netlify Key** - Optional to run the builder. Required to deploy completed apps.
+</details>
+
+<details>
+  <summary><b>Docker</b> <em>(Required for containerized setup)</em></summary>
+
+Install Docker Desktop from [docker.com/get-started](https://www.docker.com/get-started/)
+
+**Verify the Installation**
+
+```bash
+docker --version
+docker-compose --version
+```
+
+</details>
+
+<details>
+  <summary><b>Anthropic API Key </b><em>(Required for AI model access)</em></summary>
+
+<strong>Step 1: Create an Anthropic Account</strong>
+
+1. Go to [console.anthropic.com/signup](https://console.anthropic.com/signup)
+2. Create an account
+3. Verify your email
+
+<strong>Step 2: Generate an API Key</strong> 4. Go to [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) 5. Click "Create Key" 6. Give it a name (e.g., "liblab-ai") 7. Copy the API key (starts with `sk-ant-`)
+
+<strong>Step 3: Save your API Key</strong>
+Add this to your `.env` file during setup, but keep it handy:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-your-api-key-here
+```
+
+</details>
+
+<details>
+  <summary><b>Ngrok Auth Token</b> <em>(Required for external tunnel access)</em></summary>
+
+<strong>Step 1: Create Ngrok Account</strong>
+
+1. Go to [ngrok.com](https://ngrok.com/)
+2. Sign up for a free account
+3. Verify your email
+
+<strong>Step 2: Get Your Auth Token</strong> 4. After logging in, go to [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken) 5. Copy your authtoken (long alphanumeric string)
+
+<strong>Step 3: Save Your Auth Token</strong>
+Add this to your `.env` file during setup, but keep it handy:
+
+```bash
+NGROK_AUTHTOKEN=your-ngrok-authtoken-here
+```
+
+</details>
+
+<details>
+  <summary><b>Netlify Key</b> <em>(Optional to run the builder. Required to deploy completed apps)</em></summary>
+
+<strong>Step 1: Create a Netlify account</strong>
+
+1. Go to [netlify.com](https://netlify.com/)
+2. Sign up for a free account
+
+<strong>Step 2: Generate an auth token</strong> 3. Go to User Settings &gt; Applications &gt; New access token 4. Generate and copy your token
+
+<strong>Step 3: Add the token to your .env file</strong>
+
+```bash
+NETLIFY_AUTH_TOKEN=your-token-here
+```
+
+Once configured, you can deploy any app you generate through liblab.ai to Netlify using the deploy option in the UI.
+
+</details>
 
 [liblab.ai](http://liblab.ai/) runs best on Chrome or Chromium browsers when using a desktop. Mobile browsers don't have full support right now.
 
