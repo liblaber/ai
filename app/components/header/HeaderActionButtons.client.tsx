@@ -6,6 +6,7 @@ import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import {
   addDeploymentLog,
+  addErrorLogs,
   clearDeploymentLogs,
   fetchWebsite,
   setDeploymentProgress,
@@ -63,7 +64,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentChatId = useStore(chatId);
   const chatDescription = useStore(description);
-  const [modalMode, setModalMode] = useState<'publish' | 'settings'>('publish');
+  const [modalMode, setModalMode] = useState<'publish' | 'settings' | 'initializing'>('publish');
   const [hasNetlifyToken, setHasNetlifyToken] = useState(false);
 
   useEffect(() => {
@@ -179,11 +180,13 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   };
 
   const startDeployment = async () => {
-    setModalMode('publish');
+    // needed to ensure loader shows
+    setModalMode('initializing');
 
     try {
       setDeploymentProgress(null);
       clearDeploymentLogs();
+
       setIsModalOpen(true);
       setLoading(true);
       abortControllerRef.current = new AbortController();
@@ -259,6 +262,8 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
         signal: abortControllerRef.current.signal,
       });
 
+      setModalMode('publish');
+
       if (!response.ok) {
         throw new Error('Failed to start deployment');
       }
@@ -312,8 +317,9 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
                 break;
               } else if (data.status === 'error') {
                 toast.error(data.message);
-
+                addErrorLogs(data.message);
                 // Close the reader when there's an error
+                setDeploymentProgress({ ...data, message: '' });
                 await reader.cancel();
                 break;
               }
@@ -388,6 +394,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           <div className="flex border border-liblab-elements-borderColor rounded-md overflow-hidden mr-2 text-sm">
             <Button
               active
+              title="Publish your site to the web"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="px-4 hover:bg-liblab-elements-item-backgroundActive flex items-center gap-2"
             >
@@ -405,6 +412,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           <Button
             active={showChat}
             disabled={isSmallViewport}
+            title={showChat ? 'Hide chat panel' : 'Show chat panel'}
             onClick={() => {
               chatStore.setKey('showChat', !showChat);
             }}
@@ -414,6 +422,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           <div className="w-[1px] bg-liblab-elements-borderColor" />
           <Button
             active={devMode}
+            title={devMode ? 'Exit code view' : 'Enter code view'}
             onClick={() => {
               if (!showChat) {
                 chatStore.setKey('showChat', true);
@@ -450,9 +459,10 @@ interface ButtonProps {
   children?: any;
   onClick?: VoidFunction;
   className?: string;
+  title?: string;
 }
 
-function Button({ active = false, disabled = false, children, onClick, className }: ButtonProps) {
+function Button({ active = false, disabled = false, children, onClick, className, title }: ButtonProps) {
   return (
     <button
       className={classNames(
@@ -467,6 +477,7 @@ function Button({ active = false, disabled = false, children, onClick, className
         className,
       )}
       onClick={onClick}
+      title={title}
     >
       {children}
     </button>

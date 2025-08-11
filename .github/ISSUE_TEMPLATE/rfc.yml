@@ -15,7 +15,7 @@ body:
         - New major features
         - Changes to development processes
 
-        Please review our [Governance Model](https://github.com/liblaber/liblab.ai/blob/main/GOVERNANCE.md) for the RFC process.
+        Please review our [Governance Model](https://github.com/liblaber/ai/blob/main/GOVERNANCE.md) for the RFC process.
 
   - type: textarea
     id: summary
