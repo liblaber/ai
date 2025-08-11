@@ -82,7 +82,3 @@ The main test (`user-onboarding-flow.spec.ts`) follows this complete user journe
 - **Screenshots**: Automatically taken on failures
 - **Videos**: Recorded on every test run
 - **Web Server**: **Manual** - You must start your application before running tests
-
-```
-
-```
