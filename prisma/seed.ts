@@ -65,6 +65,9 @@ async function seedInitialUser(organizationId: string): Promise<User> {
       initialUser = await prisma.user.create({
         data: anonymousUser,
       });
+      console.log('✅ Created anonymous user');
+    } else {
+      console.log('✅ Anonymous user already exists');
     }
 
     return initialUser;
@@ -92,6 +95,9 @@ async function seedInitialAccount(initialUser: User): Promise<Account> {
           updatedAt: new Date(),
         },
       });
+      console.log('✅ Created account for anonymous user');
+    } else {
+      console.log('✅ Account exists for anonymous user');
     }
 
     return account;
@@ -115,6 +121,9 @@ async function seedDefaultEnvironment(organizationId: string): Promise<Environme
           organizationId,
         },
       });
+      console.log('✅ Created default environment');
+    } else {
+      console.log('✅ Default environment already exists');
     }
 
     return environment;
@@ -182,6 +191,9 @@ async function seedRole(organizationId: string, name: string, description: strin
           organizationId,
         },
       });
+      console.log(`✅ Created ${name} role`);
+    } else {
+      console.log(`✅ ${name} role already exists`);
     }
 
     return role;
