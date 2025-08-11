@@ -1,5 +1,6 @@
 import { classNames } from '~/utils/classNames';
 import { useEffect, useState } from 'react';
+import { Info, XCircle, CheckCircle, Loader2, Plug, Trash2, Save, AlertTriangle } from 'lucide-react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
 import { toast } from 'sonner';
@@ -262,7 +263,7 @@ export default function EditDataSourceForm({
           {dbType.value === SAMPLE_DATABASE && (
             <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
               <div className="flex items-center gap-2">
-                <div className="i-ph:info w-5 h-5 text-blue-500" />
+                <Info className="w-5 h-5 text-blue-500" />
                 <p className="text-sm text-blue-600 dark:text-blue-400">
                   Sample database cannot be edited. Delete and create a new one if needed.
                 </p>
@@ -274,7 +275,7 @@ export default function EditDataSourceForm({
           {error && !testResult && (
             <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
               <div className="flex items-center gap-2">
-                <div className="i-ph:x-circle w-5 h-5 text-red-500" />
+                <XCircle className="w-5 h-5 text-red-500" />
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               </div>
             </div>
@@ -289,11 +290,9 @@ export default function EditDataSourceForm({
               }`}
             >
               <div className="flex items-center gap-2">
-                <div
-                  className={`i-ph:${
-                    testResult.success ? 'check-circle' : 'x-circle'
-                  } w-5 h-5 ${testResult.success ? 'text-green-500' : 'text-red-500'}`}
-                />
+                <div className={`w-5 h-5 ${testResult.success ? 'text-green-500' : 'text-red-500'}`}>
+                  {testResult.success ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                </div>
                 <p
                   className={`text-sm ${
                     testResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
@@ -326,12 +325,12 @@ export default function EditDataSourceForm({
                 >
                   {isTestingConnection ? (
                     <>
-                      <div className="i-ph:spinner animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Testing...</span>
                     </>
                   ) : (
                     <>
-                      <div className="i-ph:plug-fill" />
+                      <Plug className="w-4 h-4" />
                       <span>Test Connection</span>
                     </>
                   )}
@@ -350,7 +349,7 @@ export default function EditDataSourceForm({
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                 )}
               >
-                <div className="i-ph:trash-bold" />
+                <Trash2 className="w-4 h-4" />
                 <span>Delete</span>
               </button>
               <button
@@ -366,12 +365,12 @@ export default function EditDataSourceForm({
               >
                 {isSubmitting ? (
                   <>
-                    <div className="i-ph:spinner animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Saving...</span>
                   </>
                 ) : (
                   <>
-                    <div className="i-ph:floppy-disk" />
+                    <Save className="w-4 h-4" />
                     <span>Save Changes</span>
                   </>
                 )}
@@ -386,7 +385,7 @@ export default function EditDataSourceForm({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center gap-3 mb-4">
-              <div className="i-ph:warning-circle w-6 h-6 text-amber-500" />
+              <AlertTriangle className="w-6 h-6 text-amber-500" />
               <h3 className="text-lg font-semibold text-primary">Confirm Save Changes</h3>
             </div>
             <p className="text-sm text-secondary mb-6">

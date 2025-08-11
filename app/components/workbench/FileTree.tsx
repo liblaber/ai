@@ -5,6 +5,7 @@ import { createScopedLogger, renderLogger } from '~/utils/logger';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import type { FileHistory } from '~/types/actions';
 import { type Change, diffLines } from 'diff';
+import { ChevronDown, ChevronRight, Circle, File as FileIcon } from 'lucide-react';
 
 const logger = createScopedLogger('FileTree');
 
@@ -242,11 +243,11 @@ function Folder({ folder, collapsed, selected = false, onCopyPath, onCopyRelativ
         })}
         depth={folder.depth}
         iconClasses={classNames({
-          'i-ph:caret-right scale-98': collapsed,
-          'i-ph:caret-down scale-98': !collapsed,
+          'scale-98': true,
         })}
         onClick={onClick}
       >
+        {collapsed ? <ChevronRight className="w-4 h-4 scale-98" /> : <ChevronDown className="w-4 h-4 scale-98" />}
         {folder.name}
       </NodeButton>
     </FileContextMenu>
@@ -323,16 +324,17 @@ function File({
           'bg-accent/10 text-accent': selected,
         })}
         depth={depth}
-        iconClasses={classNames('i-liblab:ic_doc scale-98', {
+        iconClasses={classNames('scale-98', {
           'group-hover:text-primary': !selected,
         })}
         onClick={onClick}
       >
         <div
-          className={classNames('flex items-center', {
+          className={classNames('flex items-center gap-1', {
             'group-hover:text-primary': !selected,
           })}
         >
+          <FileIcon className="w-4 h-4 scale-98 shrink-0" />
           <div className="flex-1 truncate pr-2">{name}</div>
           <div className="flex items-center gap-1">
             {showStats && (
@@ -341,7 +343,7 @@ function File({
                 {deletions > 0 && <span className="text-red-500">-{deletions}</span>}
               </div>
             )}
-            {unsavedChanges && <span className="i-ph:circle-fill scale-68 shrink-0 text-orange-500" />}
+            {unsavedChanges && <Circle className="w-3 h-3 scale-68 shrink-0 text-orange-500" />}
           </div>
         </div>
       </NodeButton>
@@ -368,7 +370,7 @@ function NodeButton({ depth, iconClasses, onClick, className, children }: Button
       onClick={() => onClick?.()}
     >
       <div className={classNames('scale-120 shrink-0', iconClasses)}></div>
-      <div className="truncate w-full text-left">{children}</div>
+      <div className="flex gap-1 items-center truncate w-full text-left">{children}</div>
     </button>
   );
 }

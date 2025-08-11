@@ -11,6 +11,7 @@ import {
   updateNetlifyConnection,
 } from '~/lib/stores/netlify';
 import type { NetlifyUser } from '~/types/netlify';
+import { Loader2, Zap, Plug, CheckCircle, Globe, Clock, GitBranch, Info } from 'lucide-react';
 
 export default function NetlifyConnection() {
   const connection = useStore(netlifyConnection);
@@ -104,12 +105,12 @@ export default function NetlifyConnection() {
             >
               {connecting ? (
                 <>
-                  <div className="i-ph:spinner-gap animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Connecting...
                 </>
               ) : (
                 <>
-                  <div className="i-ph:plug-charging w-4 h-4" />
+                  <Zap className="w-4 h-4" />
                   Connect
                 </>
               )}
@@ -127,11 +128,11 @@ export default function NetlifyConnection() {
                     'hover:bg-red-600',
                   )}
                 >
-                  <div className="i-ph:plug w-4 h-4" />
+                  <Plug className="w-4 h-4" />
                   Disconnect
                 </button>
                 <span className="text-sm text-secondary flex items-center gap-1">
-                  <div className="i-ph:check-circle w-4 h-4 text-green-500" />
+                  <CheckCircle className="w-4 h-4 text-green-500" />
                   Connected to Netlify
                 </span>
               </div>
@@ -153,7 +154,7 @@ export default function NetlifyConnection() {
 
             {fetchingStats ? (
               <div className="flex items-center gap-2 text-sm text-secondary">
-                <div className="i-ph:spinner-gap w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Fetching Netlify sites...
               </div>
             ) : connection.stats ? (
@@ -181,7 +182,7 @@ export default function NetlifyConnection() {
                         <div className="flex items-center justify-between">
                           <div>
                             <h5 className="text-sm font-medium text-primary flex items-center gap-2">
-                              <div className="i-ph:globe w-4 h-4 text-[#00AD9F]" />
+                              <Globe className="w-4 h-4 text-[#00AD9F]" />
                               {site.name}
                             </h5>
                             <div className="flex items-center gap-2 mt-2 text-xs text-secondary">
@@ -197,7 +198,7 @@ export default function NetlifyConnection() {
                                 <>
                                   <span>•</span>
                                   <span className="flex items-center gap-1">
-                                    <div className="i-ph:clock w-3 h-3" />
+                                    <Clock className="w-3 h-3" />
                                     {new Date(site.published_deploy.published_at).toLocaleDateString()}
                                   </span>
                                 </>
@@ -207,7 +208,7 @@ export default function NetlifyConnection() {
                           {site.build_settings?.provider && (
                             <div className="text-xs text-secondary px-2 py-1 rounded-md bg-[#F0F0F0] dark:bg-[#252525]">
                               <span className="flex items-center gap-1">
-                                <div className="i-ph:git-branch w-3 h-3" />
+                                <GitBranch className="w-3 h-3" />
                                 {site.build_settings.provider}
                               </span>
                             </div>
@@ -218,7 +219,7 @@ export default function NetlifyConnection() {
                   </div>
                 ) : isSitesExpanded ? (
                   <div className="text-sm text-secondary flex items-center gap-2">
-                    <div className="i-ph:info w-4 h-4" />
+                    <Info className="w-4 h-4" />
                     No sites found in your Netlify account
                   </div>
                 ) : null}

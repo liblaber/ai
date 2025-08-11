@@ -13,6 +13,7 @@ import { openSettingsPanel } from '~/lib/stores/settings';
 import { CloseCircle } from 'iconsax-reactjs';
 import { useGitStore } from '~/lib/stores/git';
 import { Button } from '~/components/ui/Button';
+import { CheckCircle, Copy, Github, User, GitBranch, Loader2 } from 'lucide-react';
 
 interface PushToGitHubDialogProps {
   isOpen: boolean;
@@ -166,7 +167,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                 <div className="p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-green-500">
-                      <div className="i-ph:check-circle w-5 h-5" />
+                      <CheckCircle className="w-5 h-5" />
                       <h3 className="text-lg font-medium">Successfully pushed to GitHub</h3>
                     </div>
                   </div>
@@ -186,7 +187,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                       >
-                        <div className="i-ph:copy w-4 h-4" />
+                        <Copy className="w-4 h-4" />
                       </motion.button>
                     </div>
                   </div>
@@ -217,7 +218,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       rel="noopener noreferrer"
                       className="px-4 py-2 rounded-lg bg-accent-500 text-primary hover:bg-accent-600 text-sm inline-flex items-center gap-2"
                     >
-                      <div className="i-ph:github-logo w-4 h-4" />
+                      <Github className="w-4 h-4" />
                       View Repository
                     </motion.a>
                     <motion.button
@@ -227,7 +228,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       }}
                       className="px-4 py-2 rounded-lg bg-[#F5F5F5] dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-400 hover:bg-[#E5E5E5] dark:hover:bg-[#252525] text-sm inline-flex items-center gap-2"
                     >
-                      <div className="i-ph:copy w-4 h-4" />
+                      <Copy className="w-4 h-4" />
                       Copy URL
                     </motion.button>
                     <motion.button
@@ -274,7 +275,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     transition={{ delay: 0.1 }}
                     className="mx-auto w-12 h-12 rounded-xl bg-depth-3 flex items-center justify-center text-accent-500"
                   >
-                    <div className="i-ph:github-logo w-6 h-6" />
+                    <Github className="w-6 h-6" />
                   </motion.div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">GitHub Connection Required</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Please connect your GitHub account first.</p>
@@ -284,7 +285,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     whileTap={{ scale: 0.98 }}
                     onClick={handleConnectGitHub}
                   >
-                    <div className="i-ph:user" />
+                    <User />
                     Connect GitHub
                   </motion.button>
                 </div>
@@ -328,7 +329,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       transition={{ delay: 0.1 }}
                       className="w-10 h-10 rounded-xl bg-depth-3 flex items-center justify-center text-accent-500"
                     >
-                      <div className="i-ph:git-branch w-5 h-5" />
+                      <GitBranch className="w-5 h-5" />
                     </motion.div>
                     <div>
                       <Dialog.Title className="text-lg font-medium text-gray-900 dark:text-white">
@@ -366,7 +367,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="i-ph:github-logo w-4 h-4 text-accent-500" />
+                          <Github className="w-4 h-4 text-accent-500" />
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                             {gitMetadata.gitUrl.split('/').pop()?.replace('.git', '')}
                           </h4>
@@ -407,7 +408,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     transition={{ delay: 0.1 }}
                     className="w-10 h-10 rounded-xl bg-depth-3 flex items-center justify-center text-accent-500"
                   >
-                    <div className="i-ph:git-branch w-5 h-5" />
+                    <GitBranch className="w-5 h-5" />
                   </motion.div>
                   <div>
                     <Dialog.Title className="text-lg font-medium text-gray-900 dark:text-white">
@@ -450,7 +451,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                         >
                           <div className="flex items-center justify-between text-white hover:text-accent-500">
                             <div className="flex items-center gap-2">
-                              <div className="i-ph:github-logo w-4 h-4" />
+                              <Github className="w-4 h-4" />
                               <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-accent-500">
                                 {gitMetadata.gitUrl.split('/').pop()?.replace('.git', '')}
                               </span>
@@ -516,7 +517,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     >
                       {isLoading ? (
                         <>
-                          <div className="i-ph:spinner-gap-bold animate-spin w-4" />
+                          <Loader2 className="w-4 animate-spin" />
                           Connecting...
                         </>
                       ) : (

@@ -10,6 +10,8 @@ import { openSettingsPanel } from '~/lib/stores/settings';
 import { SendButton } from './SendButton.client';
 import { processImageFile } from '~/utils/fileUtils';
 import { ClientOnly } from '~/components/ui/ClientOnly';
+import { Database } from 'lucide-react';
+import IcAttach from '~/icons/ic_attach.svg';
 
 interface ChatTextareaProps {
   value: string;
@@ -63,7 +65,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
     const fileUploadButton = (
       <IconButton title="Upload file" className="transition-all" onClick={() => handleFileUpload()}>
         <WithTooltip tooltip="Upload file">
-          <div className="i-liblab:ic_attach text-3xl opacity-50 hover:opacity-100" />
+          <IcAttach className="text-3xl opacity-50 hover:opacity-100" />
         </WithTooltip>
       </IconButton>
     );
@@ -166,7 +168,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
                   'text-white',
                 )}
               >
-                <div className="i-ph:database-duotone" />
+                <Database className="w-4 h-4" />
                 <span>Connect Data Source</span>
               </button>
             )}

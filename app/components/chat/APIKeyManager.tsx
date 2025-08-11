@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { IconButton } from '~/components/ui/IconButton';
 import type { ProviderInfo } from '~/types/model';
 import Cookies from 'js-cookie';
+import { CheckCircle, XCircle, Check, X, Edit, Key } from 'lucide-react';
 
 interface APIKeyManagerProps {
   provider: ProviderInfo;
@@ -94,17 +95,17 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
             <div className="flex items-center gap-2">
               {apiKey ? (
                 <>
-                  <div className="i-ph:check-circle-fill text-green-500 w-4 h-4" />
+                  <CheckCircle className="text-green-500 w-4 h-4" />
                   <span className="text-xs text-green-500">Set via UI</span>
                 </>
               ) : isEnvKeySet ? (
                 <>
-                  <div className="i-ph:check-circle-fill text-green-500 w-4 h-4" />
+                  <CheckCircle className="text-green-500 w-4 h-4" />
                   <span className="text-xs text-green-500">Set via environment variable</span>
                 </>
               ) : (
                 <>
-                  <div className="i-ph:x-circle-fill text-red-500 w-4 h-4" />
+                  <XCircle className="text-red-500 w-4 h-4" />
                   <span className="text-xs text-red-500">Not Set (Please set via UI or ENV_VAR)</span>
                 </>
               )}
@@ -130,14 +131,14 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
               title="Save API Key"
               className="bg-green-500/10 hover:bg-green-500/20 text-green-500"
             >
-              <div className="i-ph:check w-4 h-4" />
+              <Check className="w-4 h-4" />
             </IconButton>
             <IconButton
               onClick={() => setIsEditing(false)}
               title="Cancel"
               className="bg-red-500/10 hover:bg-red-500/20 text-red-500"
             >
-              <div className="i-ph:x w-4 h-4" />
+              <X className="w-4 h-4" />
             </IconButton>
           </div>
         ) : (
@@ -148,7 +149,7 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
                 title="Edit API Key"
                 className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500"
               >
-                <div className="i-ph:pencil-simple w-4 h-4" />
+                <Edit className="w-4 h-4" />
               </IconButton>
             }
             {provider?.getApiKeyLink && !apiKey && (
@@ -158,7 +159,7 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
                 className="bg-accent-500/10 hover:bg-accent-500/20 text-accent-500 flex items-center gap-2"
               >
                 <span className="text-xs whitespace-nowrap">{provider?.labelForGetApiKey || 'Get API Key'}</span>
-                <div className={`${provider?.icon || 'i-ph:key'} w-4 h-4`} />
+                <Key className="w-4 h-4" />
               </IconButton>
             )}
           </>

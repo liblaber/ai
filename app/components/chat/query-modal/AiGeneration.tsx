@@ -1,3 +1,4 @@
+import { Sparkles } from 'lucide-react';
 import { Button } from '~/components/ui/Button';
 
 interface AiGenerationProps {
@@ -22,7 +23,7 @@ export const AiGeneration = ({ userPrompt, onPromptChange, onGenerateQuery, isGe
       disabled={isGenerating || !userPrompt.trim()}
       className="flex items-center gap-2"
     >
-      <div className="i-ph:sparkle w-5 h-5" />
+      <Sparkles className="w-5 h-5" />
       {isGenerating ? 'Generating...' : 'Generate Query with AI'}
     </Button>
   </div>

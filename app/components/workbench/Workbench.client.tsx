@@ -26,6 +26,22 @@ import { PushToGitHubDialog } from '~/components/@settings/tabs/connections/comp
 import { useGitStore } from '~/lib/stores/git';
 import { chatId } from '~/lib/persistence';
 import type { SendMessageFn } from '~/components/chat/Chat.client';
+import {
+  MonitorPlay,
+  CodeXml,
+  FileText,
+  Paintbrush,
+  Braces,
+  Database,
+  Box,
+  Terminal,
+  Loader2,
+  Github,
+  Search,
+  Download,
+  GitBranch,
+  CheckCircle,
+} from 'lucide-react';
 
 interface WorkspaceProps {
   chatStarted?: boolean;
@@ -96,7 +112,7 @@ const FileModifiedDropdown = memo(
                         className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg bg-depth-1 border border-depth-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                       />
                       <div className="absolute left-2 top-1/2 -translate-y-1/2 text-tertiary">
-                        <div className="i-ph:magnifying-glass" />
+                        <Search className="w-4 h-4" />
                       </div>
                     </div>
 
@@ -115,17 +131,17 @@ const FileModifiedDropdown = memo(
                               <div className="flex items-center gap-2">
                                 <div className="shrink-0 w-5 h-5 text-tertiary">
                                   {['typescript', 'javascript', 'jsx', 'tsx'].includes(language) && (
-                                    <div className="i-ph:file-js" />
+                                    <FileText className="w-5 h-5" />
                                   )}
-                                  {['css', 'scss', 'less'].includes(language) && <div className="i-ph:paint-brush" />}
-                                  {language === 'html' && <div className="i-ph:code" />}
-                                  {language === 'json' && <div className="i-ph:brackets-curly" />}
-                                  {language === 'python' && <div className="i-ph:file-text" />}
-                                  {language === 'markdown' && <div className="i-ph:article" />}
-                                  {['yaml', 'yml'].includes(language) && <div className="i-ph:file-text" />}
-                                  {language === 'sql' && <div className="i-ph:database" />}
-                                  {language === 'dockerfile' && <div className="i-ph:cube" />}
-                                  {language === 'shell' && <div className="i-ph:terminal" />}
+                                  {['css', 'scss', 'less'].includes(language) && <Paintbrush className="w-5 h-5" />}
+                                  {language === 'html' && <CodeXml className="w-5 h-5" />}
+                                  {language === 'json' && <Braces className="w-5 h-5" />}
+                                  {language === 'python' && <FileText className="w-5 h-5" />}
+                                  {language === 'markdown' && <FileText className="w-5 h-5" />}
+                                  {['yaml', 'yml'].includes(language) && <FileText className="w-5 h-5" />}
+                                  {language === 'sql' && <Database className="w-5 h-5" />}
+                                  {language === 'dockerfile' && <Box className="w-5 h-5" />}
+                                  {language === 'shell' && <Terminal className="w-5 h-5" />}
                                   {![
                                     'typescript',
                                     'javascript',
@@ -143,7 +159,7 @@ const FileModifiedDropdown = memo(
                                     'tsx',
                                     'scss',
                                     'less',
-                                  ].includes(language) && <div className="i-ph:file-text" />}
+                                  ].includes(language) && <FileText className="w-5 h-5" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between gap-2">
@@ -213,7 +229,7 @@ const FileModifiedDropdown = memo(
                       ) : (
                         <div className="flex flex-col items-center justify-center p-4 text-center">
                           <div className="w-12 h-12 mb-2 text-tertiary">
-                            <div className="i-ph:file-dashed" />
+                            <FileText className="w-12 h-12" />
                           </div>
                           <p className="text-sm font-medium text-primary">
                             {searchQuery ? 'No matching files' : 'No modified files'}
@@ -232,7 +248,7 @@ const FileModifiedDropdown = memo(
                         onClick={() => {
                           navigator.clipboard.writeText(filteredFiles.map(([filePath]) => filePath).join('\n'));
                           toast('File list copied to clipboard', {
-                            icon: <div className="i-ph:check-circle text-accent-500" />,
+                            icon: <CheckCircle className="w-4 h-4 text-accent-500" />,
                           });
                         }}
                         className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-depth-1 hover:bg-depth-3 transition-colors text-tertiary hover:text-primary"
@@ -407,7 +423,7 @@ export const Workbench = memo(
                           workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
                         }}
                       >
-                        <div className="i-ph:terminal" />
+                        <Terminal className="w-4 h-4" />
                         Toggle Terminal
                       </PanelHeaderButton>
                       <PanelHeaderButton
@@ -416,11 +432,11 @@ export const Workbench = memo(
                           workbenchStore.downloadZip();
                         }}
                       >
-                        <div className="i-ph:download-simple" />
+                        <Download className="w-4 h-4" />
                         Download Code
                       </PanelHeaderButton>
                       <PanelHeaderButton className="mr-1 text-sm" onClick={() => setIsPushDialogOpen(true)}>
-                        <div className="i-ph:git-branch" />
+                        <GitBranch className="w-4 h-4" />
                         {(() => {
                           if (!isGitConnected) {
                             return 'Connect GitHub';
@@ -433,7 +449,7 @@ export const Workbench = memo(
                       </PanelHeaderButton>
                       {isGitConnected && (
                         <PanelHeaderButton className="mr-1 text-sm" onClick={handleSyncFiles} disabled={isSyncing}>
-                          {isSyncing ? <div className="i-ph:spinner" /> : <div className="i-ph:github-logo" />}
+                          {isSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Github className="w-4 h-4" />}
                           {isSyncing ? 'Syncing...' : 'Sync Files'}
                         </PanelHeaderButton>
                       )}
@@ -449,7 +465,7 @@ export const Workbench = memo(
                       workbenchStore.currentView.set(devMode ? 'preview' : 'code');
                     }}
                   >
-                    {devMode ? <div className="i-ph:monitor-play" /> : <div className="i-ph:code" />}
+                    {devMode ? <MonitorPlay className="w-4 h-4" /> : <CodeXml className="w-4 h-4" />}
                     {devMode ? 'Exit Code View' : 'Enter Code View'}
                   </PanelHeaderButton>
                 </div>

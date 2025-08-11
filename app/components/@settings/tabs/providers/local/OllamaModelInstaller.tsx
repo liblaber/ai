@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Loader2, RotateCcw, ExternalLink, Download } from 'lucide-react';
 import { classNames } from '~/utils/classNames';
 import { Progress } from '~/components/ui/Progress';
 import { toast } from 'sonner';
@@ -403,11 +404,7 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          {isChecking ? (
-            <div className="i-ph:spinner-gap-bold animate-spin" />
-          ) : (
-            <div className="i-ph:arrows-clockwise" />
-          )}
+          {isChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
           Check Updates
         </motion.button>
       </div>
@@ -442,7 +439,7 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
                 className="text-accent-500 hover:underline inline-flex items-center gap-1 text-base font-medium"
               >
                 ollama.com/library
-                <div className="i-ph:arrow-square-out text-sm" />
+                <ExternalLink className="text-sm w-4 h-4" />
               </a>{' '}
               and copy model names to install
             </p>
@@ -464,7 +461,7 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
         >
           {isInstalling ? (
             <div className="flex items-center gap-2">
-              <div className="i-ph:spinner-gap-bold animate-spin w-4 h-4" />
+              <Loader2 className="w-4 h-4 animate-spin w-4 h-4" />
               <span>Installing...</span>
             </div>
           ) : (
@@ -547,7 +544,7 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <div className="i-ph:arrows-clockwise text-xs" />
+                        <RotateCcw className="text-xs w-3 h-3" />
                         Update
                       </motion.button>
                     ) : (
@@ -566,7 +563,7 @@ export default function OllamaModelInstaller({ onModelInstalled }: OllamaModelIn
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      <div className="i-ph:download text-xs" />
+                      <Download className="text-xs w-3 h-3" />
                       Install
                     </motion.button>
                   )}

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
 import { Trash } from 'iconsax-reactjs';
+import { Loader2, Globe } from 'lucide-react';
 
 interface Website {
   id: string;
@@ -63,7 +64,7 @@ function AppItem({ website, onDelete }: { website: Website; onDelete: () => void
 function LoadingState() {
   return (
     <div className="text-center py-12">
-      <div className="i-ph:circle-notch w-12 h-12 text-gray-400 mx-auto mb-4 animate-spin" />
+      <Loader2 className="w-12 h-12 text-gray-400 mx-auto mb-4 animate-spin" />
       <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Loading apps...</h4>
       <p className="text-sm text-gray-600 dark:text-gray-400">Please wait while we fetch your deployed apps.</p>
     </div>
@@ -114,7 +115,7 @@ function ConfirmationModal({
 function EmptyState() {
   return (
     <div className="text-center py-12">
-      <div className="i-ph:globe-duotone w-12 h-12 text-gray-400 mx-auto mb-4" />
+      <Globe className="w-12 h-12 text-gray-400 mx-auto mb-4" />
       <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Deployed Apps</h4>
       <p className="text-sm text-gray-600 dark:text-gray-400">Deploy your first app from any chat to see it here.</p>
     </div>

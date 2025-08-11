@@ -124,6 +124,7 @@
     "js-cookie": "^3.0.5",
     "jspdf": "^3.0.1",
     "jszip": "^3.10.1",
+    "lucide-react": "^0.539.0",
     "mime": "^4.0.4",
     "mongodb": "^6.18.0",
     "mysql2": "^3.14.1",
@@ -173,6 +174,7 @@
     "@iconify/types": "^2.0.0",
     "@octokit/types": "^13.6.2",
     "@prisma/client": "^6.5.0",
+    "@svgr/webpack": "^8.1.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@types/adm-zip": "^0.5.7",
@@ -188,6 +190,7 @@
     "@types/react": "^18.3.12",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18.3.1",
+    "@types/react-svg": "^5.0.0",
     "@types/sqlite3": "^3.1.11",
     "@unocss/postcss": "^66.3.3",
     "@unocss/reset": "^0.61.9",
@@ -237,8 +240,8 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "prettier --write",
+      "eslint --fix"
     ],
     "*.{json,md,css,scss}": [
       "prettier --write"

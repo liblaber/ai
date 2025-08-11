@@ -3,6 +3,7 @@ import { classNames } from '~/utils/classNames';
 import type { GitHubAuthState } from '~/components/@settings/tabs/connections/types/GitHub';
 import Cookies from 'js-cookie';
 import { getLocalStorage } from '~/lib/persistence';
+import { Plug, PlusCircle, Loader2, CheckCircle, Clock } from 'lucide-react';
 
 const GITHUB_TOKEN_KEY = 'github_token';
 
@@ -39,7 +40,7 @@ export function ConnectionForm({ authState, setAuthState, onSave, onDisconnect }
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-[#F5F5F5] dark:bg-[#1A1A1A] border border-[#E5E5E5] dark:border-[#1A1A1A]">
-              <div className="i-ph:plug-fill text-tertiary" />
+              <Plug className="text-tertiary" />
             </div>
             <div>
               <h3 className="text-lg font-medium text-primary">Connection Settings</h3>
@@ -85,7 +86,7 @@ export function ConnectionForm({ authState, setAuthState, onSave, onDisconnect }
                 )}
               >
                 <span>Generate new token</span>
-                <div className="i-ph:plus-circle" />
+                <PlusCircle className="w-4 h-4" />
               </a>
             </div>
             <input
@@ -135,12 +136,12 @@ export function ConnectionForm({ authState, setAuthState, onSave, onDisconnect }
                 >
                   {authState.isVerifying ? (
                     <>
-                      <div className="i-ph:spinner animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Verifying...</span>
                     </>
                   ) : (
                     <>
-                      <div className="i-ph:plug-fill" />
+                      <Plug className="w-4 h-4" />
                       <span>Connect</span>
                     </>
                   )}
@@ -156,11 +157,11 @@ export function ConnectionForm({ authState, setAuthState, onSave, onDisconnect }
                       'text-primary',
                     )}
                   >
-                    <div className="i-ph:plug-fill" />
+                    <Plug className="w-4 h-4" />
                     <span>Disconnect</span>
                   </button>
                   <span className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-green-600 dark:text-green-400 bg-green-500/5 rounded-lg border border-green-500/20">
-                    <div className="i-ph:check-circle-fill" />
+                    <CheckCircle className="w-4 h-4" />
                     <span>Connected</span>
                   </span>
                 </>
@@ -168,7 +169,7 @@ export function ConnectionForm({ authState, setAuthState, onSave, onDisconnect }
             </div>
             {authState.rateLimits && (
               <div className="flex items-center gap-2 text-sm text-tertiary">
-                <div className="i-ph:clock-countdown opacity-60" />
+                <Clock className="w-4 h-4 opacity-60" />
                 <span>Rate limit resets at {authState.rateLimits.reset.toLocaleTimeString()}</span>
               </div>
             )}

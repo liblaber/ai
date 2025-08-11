@@ -7,6 +7,26 @@ import { getLocalStorage } from '~/lib/persistence';
 import { motion } from 'framer-motion';
 import { formatSize } from '~/utils/formatSize';
 import { Input } from '~/components/ui/Input';
+import {
+  Files,
+  Database,
+  Code,
+  Package,
+  FolderTree,
+  AlertTriangle,
+  X,
+  BookOpen,
+  Search,
+  Link,
+  Filter,
+  ArrowLeft,
+  Loader2,
+  FolderOpen,
+  GitBranch,
+  Download,
+  Star,
+  Clock,
+} from 'lucide-react';
 
 interface GitHubTreeResponse {
   tree: Array<{
@@ -57,15 +77,15 @@ function StatsDialog({ isOpen, onClose, onConfirm, stats, isLargeRepo }: StatsDi
                     <p className="text-sm text-[#666666] dark:text-[#999999]">Repository Statistics:</p>
                     <div className="space-y-2 text-sm text-[#111111] dark:text-white">
                       <div className="flex items-center gap-2">
-                        <span className="i-ph:files text-accent-500 w-4 h-4" />
+                        <Files className="w-4 h-4 text-accent-500" />
                         <span>Total Files: {stats.totalFiles}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="i-ph:database text-accent-500 w-4 h-4" />
+                        <Database className="w-4 h-4 text-accent-500" />
                         <span>Total Size: {formatSize(stats.totalSize)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="i-ph:code text-accent-500 w-4 h-4" />
+                        <Code className="w-4 h-4 text-accent-500" />
                         <span>
                           Languages:{' '}
                           {Object.entries(stats.languages)
@@ -77,13 +97,13 @@ function StatsDialog({ isOpen, onClose, onConfirm, stats, isLargeRepo }: StatsDi
                       </div>
                       {stats.hasPackageJson && (
                         <div className="flex items-center gap-2">
-                          <span className="i-ph:package text-accent-500 w-4 h-4" />
+                          <Package className="w-4 h-4 text-accent-500" />
                           <span>Has package.json</span>
                         </div>
                       )}
                       {stats.hasDependencies && (
                         <div className="flex items-center gap-2">
-                          <span className="i-ph:tree-structure text-accent-500 w-4 h-4" />
+                          <FolderTree className="w-4 h-4 text-accent-500" />
                           <span>Has dependencies</span>
                         </div>
                       )}
@@ -91,7 +111,7 @@ function StatsDialog({ isOpen, onClose, onConfirm, stats, isLargeRepo }: StatsDi
                   </div>
                   {isLargeRepo && (
                     <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-500/10 rounded-lg text-sm flex items-start gap-2">
-                      <span className="i-ph:warning text-yellow-600 dark:text-yellow-500 w-4 h-4 flex-shrink-0 mt-0.5" />
+                      <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
                       <div className="text-yellow-800 dark:text-yellow-500">
                         This repository is quite large ({formatSize(stats.totalSize)}). Importing it might take a while
                         and could impact performance.
@@ -466,7 +486,7 @@ export function RepositorySelectionDialog({ isOpen, onClose, onSelect }: Reposit
                 'focus:outline-none focus:ring-2 focus:ring-depth-2 dark:focus:ring-depth-2',
               )}
             >
-              <span className="i-ph:x block w-5 h-5" aria-hidden="true" />
+              <X className="block w-5 h-5" aria-hidden="true" />
               <span className="sr-only">Close dialog</span>
             </Dialog.Close>
           </div>
@@ -474,15 +494,15 @@ export function RepositorySelectionDialog({ isOpen, onClose, onSelect }: Reposit
           <div className="p-4">
             <div className="flex gap-2 mb-4">
               <TabButton active={activeTab === 'my-repos'} onClick={() => setActiveTab('my-repos')}>
-                <span className="i-ph:book-bookmark" />
+                <BookOpen className="w-4 h-4" />
                 My Repos
               </TabButton>
               <TabButton active={activeTab === 'search'} onClick={() => setActiveTab('search')}>
-                <span className="i-ph:magnifying-glass" />
+                <Search className="w-4 h-4" />
                 Search
               </TabButton>
               <TabButton active={activeTab === 'url'} onClick={() => setActiveTab('url')}>
-                <span className="i-ph:link" />
+                <Link className="w-4 h-4" />
                 URL
               </TabButton>
             </div>
@@ -524,7 +544,7 @@ export function RepositorySelectionDialog({ isOpen, onClose, onSelect }: Reposit
                         onClick={() => setFilters({})}
                         className="px-3 py-2 rounded-lg bg-[#F5F5F5] dark:bg-[#252525] text-secondary hover:text-primary"
                       >
-                        <span className="i-ph:funnel-simple" />
+                        <Filter className="w-4 h-4" />
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -564,7 +584,7 @@ export function RepositorySelectionDialog({ isOpen, onClose, onSelect }: Reposit
                           onClick={() => setSelectedRepository(null)}
                           className="p-1.5 rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
                         >
-                          <span className="i-ph:arrow-left w-4 h-4" />
+                          <ArrowLeft className="w-4 h-4" />
                         </button>
                         <h3 className="font-medium">{selectedRepository.full_name}</h3>
                       </div>
@@ -650,7 +670,7 @@ function RepositoryList({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8 text-secondary">
-        <span className="i-ph:spinner animate-spin mr-2" />
+        <Loader2 className="w-4 h-4 animate-spin mr-2" />
         Loading repositories...
       </div>
     );
@@ -659,7 +679,7 @@ function RepositoryList({
   if (repos.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-secondary">
-        <span className="i-ph:folder-simple-dashed w-12 h-12 mb-2 opacity-50" />
+        <FolderOpen className="w-12 h-12 mb-2 opacity-50" />
         <p>{activeTab === 'my-repos' ? 'No repositories found' : 'Search for repositories'}</p>
       </div>
     );
@@ -673,14 +693,14 @@ function RepositoryCard({ repo, onSelect }: { repo: GitHubRepoInfo; onSelect: ()
     <div className="p-4 rounded-lg bg-[#F5F5F5] dark:bg-[#252525] border border-[#E5E5E5] dark:border-[#333333] hover:border-accent-500/50 transition-colors">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="i-ph:git-repository text-tertiary" />
+          <GitBranch className="text-tertiary" />
           <h3 className="font-medium text-primary dark:text-white">{repo.name}</h3>
         </div>
         <button
           onClick={onSelect}
           className="px-4 py-2 h-10 rounded-lg bg-accent-500 text-white hover:bg-accent-600 transition-all duration-200 flex items-center gap-2 min-w-[120px] justify-center"
         >
-          <span className="i-ph:download-simple w-4 h-4" />
+          <Download className="w-4 h-4" />
           Import
         </button>
       </div>
@@ -688,16 +708,16 @@ function RepositoryCard({ repo, onSelect }: { repo: GitHubRepoInfo; onSelect: ()
       <div className="flex items-center gap-4 text-sm text-tertiary">
         {repo.language && (
           <span className="flex items-center gap-1">
-            <span className="i-ph:code" />
+            <Code className="w-4 h-4" />
             {repo.language}
           </span>
         )}
         <span className="flex items-center gap-1">
-          <span className="i-ph:star" />
+          <Star className="w-4 h-4" />
           {repo.stargazers_count.toLocaleString()}
         </span>
         <span className="flex items-center gap-1">
-          <span className="i-ph:clock" />
+          <Clock className="w-4 h-4" />
           {new Date(repo.updated_at).toLocaleDateString()}
         </span>
       </div>

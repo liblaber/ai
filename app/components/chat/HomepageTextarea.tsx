@@ -10,6 +10,9 @@ import { processImageFile } from '~/utils/fileUtils';
 import { Suggestions } from './Suggestions';
 import { toast } from 'sonner';
 import { logger } from '~/utils/logger';
+import IcSendBlack from '~/icons/ic_send_black.svg';
+import IcAttach from '~/icons/ic_attach.svg';
+import IcMagic from '~/icons/ic_magic.svg';
 
 interface HomepageTextareaProps {
   value: string;
@@ -99,10 +102,10 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
     const fileUploadButton = (
       <div className="relative group">
         <button
-          className="flex justify-center items-center text-white opacity-80 hover:opacity-100 bg-transparent p-1"
+          className="flex justify-center cursor-pointer items-center text-white opacity-80 hover:opacity-100 bg-transparent p-1"
           onClick={() => handleFileUpload()}
         >
-          <div className="i-liblab:ic_attach text-2xl mr-2" />
+          <IcAttach className="text-2xl mr-2" />
           <span className="font-thick">
             Attach
             {uploadedFiles.length > 0
@@ -162,16 +165,11 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
                 <div className="flex items-center gap-4">
                   {selectedDataSourceId && (
                     <button
-                      className="flex justify-center items-center text-white opacity-80 hover:opacity-100 bg-transparent p-1 transition-all"
+                      className="flex justify-center cursor-pointer items-center text-white opacity-80 hover:opacity-100 bg-transparent p-1 transition-all"
                       onClick={fetchSuggestions}
                       disabled={isLoadingSuggestions}
                     >
-                      <div
-                        className={classNames(
-                          'i-liblab:ic_magic text-2xl mr-2 transition-all',
-                          isLoadingSuggestions ? 'opacity-30 animate-spin' : 'opacity-80 hover:opacity-100',
-                        )}
-                      />
+                      <IcMagic className="mr-1 transition-all" />
                       <span className="font-thick">{isLoadingSuggestions ? 'Loading...' : 'Suggestions'}</span>
                     </button>
                   )}
@@ -184,7 +182,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
                 {dataSources.length > 0 && <DataSourcePicker onAddNew={handleConnectDataSource} disabled={false} />}
               </div>
               <button
-                className="flex justify-center items-center w-[36px] h-[36px] p-2 bg-accent-500 enabled:hover:shadow-[0_0_20px_3px] enabled:hover:shadow-accent-700/80 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex cursor-pointer justify-center items-center w-[36px] h-[36px] p-1 bg-accent-500 enabled:hover:shadow-[0_0_20px_3px] enabled:hover:shadow-accent-700/80 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!value.length || isStreaming}
                 onClick={(event) => {
                   if (isStreaming) {
@@ -197,7 +195,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
                   }
                 }}
               >
-                <div className="i-liblab:ic_send_black text-xl"></div>
+                <IcSendBlack />
               </button>
             </div>
 

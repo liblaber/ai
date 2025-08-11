@@ -53,7 +53,7 @@
 
 /* Estilos unificados para ambas as visualizações */
 .diff-line {
-  @apply flex group min-w-fit transition-colors duration-150;
+  @apply flex min-w-fit transition-colors duration-150;
 }
 
 .diff-line-number {

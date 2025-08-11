@@ -8,6 +8,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
 import { cubicEasingFn } from '~/utils/easings';
 import { WORK_DIR } from '~/utils/constants';
+import { Check, ChevronDown, ChevronUp, Circle, Files, LoaderCircle, Terminal, X } from 'lucide-react';
 
 const highlighterOptions = {
   langs: ['shell'],
@@ -76,18 +77,14 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
           {artifact.type == 'bundled' && (
             <>
               <div className="p-4">
-                {allActionFinished ? (
-                  <div className={'i-ph:files-light'} style={{ fontSize: '2rem' }}></div>
-                ) : (
-                  <div className={'i-svg-spinners:90-ring-with-bg'} style={{ fontSize: '2rem' }}></div>
-                )}
+                {allActionFinished ? <Files className="w-8 h-8" /> : <Circle className="w-8 h-8 animate-spin" />}
               </div>
               <div className="bg-depth-2 w-[1px]" />
             </>
           )}
           <div className="px-5 p-3.5 w-full text-left">
             <div className="w-full text-primary font-medium leading-5 text-sm">{artifact?.title}</div>
-            <div className="w-full w-full text-secondary text-xs mt-0.5">Click for the code view</div>
+            <div className="w-full text-secondary text-xs mt-0.5">Click for the code view</div>
           </div>
         </button>
         <AnimatePresence>
@@ -104,7 +101,9 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
                 {!devMode && !allActionFinished ? (
                   <div className="i-svg-spinners:90-ring-with-bg"></div>
                 ) : (
-                  <div className={showActions ? 'i-ph:caret-up-bold' : 'i-ph:caret-down-bold'}></div>
+                  <div className={showActions ? 'w-4 h-4' : 'w-4 h-4'}>
+                    {showActions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
                 )}
               </div>
             </motion.button>
@@ -171,10 +170,12 @@ function openArtifactInWorkbench(filePath: any) {
 const ActionList = ({ actions }: ActionListProps) => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-      <ul className="pl-4!">
+      <ul className="pl-0!">
         {actions.map((action, index) => {
           const { status, type, content } = action;
           const isLast = index === actions.length - 1;
+
+          console.log('Status:', status);
 
           return (
             <motion.li
@@ -193,17 +194,17 @@ const ActionList = ({ actions }: ActionListProps) => {
                   {status === 'running' ? (
                     <>
                       {type !== 'start' ? (
-                        <div className="i-svg-spinners:90-ring-with-bg"></div>
+                        <LoaderCircle className="w-4 h-4 animate-spin" />
                       ) : (
-                        <div className="i-ph:terminal-window-duotone"></div>
+                        <Terminal className="w-4 h-4" />
                       )}
                     </>
                   ) : status === 'pending' ? (
-                    <div className="i-ph:circle-duotone"></div>
+                    <Circle className="w-4 h-4" />
                   ) : status === 'complete' ? (
-                    <div className="i-ph:check"></div>
+                    <Check className="w-4 h-4" />
                   ) : status === 'failed' || status === 'aborted' ? (
-                    <div className="i-ph:x"></div>
+                    <X className="w-4 h-4" />
                   ) : null}
                 </div>
                 {type === 'file' ? (

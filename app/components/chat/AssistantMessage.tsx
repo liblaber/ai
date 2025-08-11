@@ -5,6 +5,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { WORK_DIR } from '~/utils/constants';
 import { Button } from '~/components/ui/Button';
 import { Card } from '~/components/ui/Card';
+import { Info, RotateCcw } from 'lucide-react';
 
 interface AssistantMessageProps {
   content: string;
@@ -64,7 +65,7 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
       <>
         <div className="flex gap-2 items-center text-sm text-secondary my-1.5">
           {(codeContext || chatSummary) && !errorMessage && (
-            <Popover side="right" align="start" trigger={<div className="i-ph:info" />}>
+            <Popover side="right" align="start" trigger={<Info className="w-4 h-4" />}>
               {chatSummary && (
                 <div className="max-w-chat-width">
                   <div className="summary max-h-96 flex flex-col">
@@ -117,7 +118,7 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
               <p>{errorMessage}</p>
             </Card>
             <Button variant="secondary" size="sm" className="mt-4" onClick={() => onRetry(errorMessage)}>
-              <div className="i-ph:arrow-clockwise w-3 h-3 mr-2" />
+              <RotateCcw className="w-3 h-3 mr-2" />
               Retry
             </Button>
           </>

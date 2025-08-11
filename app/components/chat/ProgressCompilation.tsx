@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState } from 'react';
 import type { ProgressAnnotation } from '~/types/context';
 import { classNames } from '~/utils/classNames';
-import { cubicEasingFn } from '~/utils/easings';
+import { Check, ChevronDown, ChevronUp, X } from 'lucide-react';
 
 export default function ProgressCompilation({ data }: { data?: ProgressAnnotation[] }) {
   const [progressList, setProgressList] = React.useState<ProgressAnnotation[]>([]);
@@ -64,14 +64,10 @@ export default function ProgressCompilation({ data }: { data?: ProgressAnnotatio
             </AnimatePresence>
           </div>
           <motion.button
-            initial={{ width: 0 }}
-            animate={{ width: 'auto' }}
-            exit={{ width: 0 }}
-            transition={{ duration: 0.15, ease: cubicEasingFn }}
-            className=" p-1 rounded-lg bg-accent/10 hover:bg-depth-3/50"
+            className="flex items-center justify-center w-6 h-6 rounded-md hover:bg-depth-3 transition-colors"
             onClick={() => setExpanded((v) => !v)}
           >
-            <div className={expanded ? 'i-ph:caret-up-bold' : 'i-ph:caret-down-bold'}></div>
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </motion.button>
         </div>
       </div>
@@ -93,9 +89,9 @@ const ProgressItem = ({ progress }: { progress: ProgressAnnotation }) => {
           {progress.status === 'in-progress' ? (
             <div className="i-svg-spinners:90-ring-with-bg"></div>
           ) : progress.status === 'complete' ? (
-            <div className="i-ph:check text-green-500"></div>
+            <Check className="w-4 h-4 text-green-500" />
           ) : progress.status === 'error' ? (
-            <div className="i-ph:x text-red-500"></div>
+            <X className="w-4 h-4 text-red-500" />
           ) : null}
         </div>
         {/* {x.label} */}

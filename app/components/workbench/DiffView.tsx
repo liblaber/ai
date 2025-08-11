@@ -5,11 +5,11 @@ import type { FileMap } from '~/lib/stores/files';
 import type { EditorDocument } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { type Change, diffLines } from 'diff';
 import { getHighlighter } from 'shiki';
-import '~/styles/diff-view.css';
 import { diffFiles, extractRelativePath } from '~/utils/diff';
 import { ActionRunner } from '~/lib/runtime/action-runner';
 import type { FileHistory } from '~/types/actions';
 import { getLanguageFromExtension } from '~/utils/getLanguageFromExtension';
+import { AlertCircle, AlertTriangle, File, Files, FileX, Maximize2, Minimize2 } from 'lucide-react';
 
 interface CodeComparisonProps {
   beforeCode: string;
@@ -42,7 +42,9 @@ const FullscreenButton = memo(({ onClick, isFullscreen }: FullscreenButtonProps)
     className="ml-4 p-1 rounded hover:bg-depth-3 text-tertiary hover:text-primary transition-colors"
     title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
   >
-    <div className={isFullscreen ? 'i-ph:corners-in' : 'i-ph:corners-out'} />
+    <div className={isFullscreen ? 'w-4 h-4' : 'w-4 h-4'}>
+      {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+    </div>
   </button>
 ));
 
@@ -331,7 +333,9 @@ const changeColorStyles = {
 const renderContentWarning = (type: 'binary' | 'error') => (
   <div className="h-full flex items-center justify-center p-4">
     <div className="text-center text-tertiary">
-      <div className={`i-ph:${type === 'binary' ? 'file-x' : 'warning-circle'} text-4xl text-red-400 mb-2 mx-auto`} />
+      <div className={`w-12 h-12 text-red-400 mb-2 mx-auto`}>
+        {type === 'binary' ? <FileX className="w-12 h-12" /> : <AlertTriangle className="w-12 h-12" />}
+      </div>
       <p className="font-medium text-primary">{type === 'binary' ? 'Binary file detected' : 'Error processing file'}</p>
       <p className="text-sm mt-1">
         {type === 'binary' ? 'Diff view is not available for binary files' : 'Could not generate diff preview'}
@@ -351,7 +355,7 @@ const NoChangesView = ({
 }) => (
   <div className="h-full flex flex-col items-center justify-center p-4">
     <div className="text-center text-tertiary">
-      <div className="i-ph:files text-4xl text-green-400 mb-2 mx-auto" />
+      <Files className="w-12 h-12 text-green-400 mb-2 mx-auto" />
       <p className="font-medium text-primary">Files are identical</p>
       <p className="text-sm mt-1">Both versions match exactly</p>
     </div>
@@ -503,7 +507,7 @@ const FileInfo = memo(
 
     return (
       <div className="flex items-center bg-depth-1 p-2 text-sm text-primary shrink-0">
-        <div className="i-ph:file mr-2 h-4 w-4 shrink-0" />
+        <File className="mr-2 h-4 w-4 shrink-0" />
         <span className="truncate">{filename}</span>
         <span className="ml-auto shrink-0 flex items-center gap-2">
           {hasChanges ? (
@@ -729,7 +733,7 @@ export const DiffView = memo(({ fileHistory, setFileHistory }: DiffViewProps) =>
     return (
       <div className="flex w-full h-full justify-center items-center bg-depth-1 text-red-400">
         <div className="text-center">
-          <div className="i-ph:warning-circle text-4xl mb-2" />
+          <AlertCircle className="w-12 h-12 mb-2" />
           <p>Failed to render diff view</p>
         </div>
       </div>

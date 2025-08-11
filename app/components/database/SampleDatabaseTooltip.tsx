@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useState, useRef } from 'react';
+import { Info } from 'lucide-react';
 
 export const SampleDatabaseTooltip = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -37,11 +38,13 @@ export const SampleDatabaseTooltip = () => {
     <>
       <div
         ref={iconRef}
-        className="i-ph:info w-4 h-4 cursor-help ml-2"
+        className="w-4 h-4 cursor-help ml-2"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
-      />
+      >
+        <Info className="w-4 h-4" />
+      </div>
       {isVisible && (
         <div
           className="fixed w-96 max-w-96 min-w-96 box-border bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-4 z-[99999]"

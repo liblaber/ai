@@ -1,5 +1,18 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
+import {
+  RotateCcw,
+  SquareDashed,
+  Monitor,
+  Smartphone,
+  Tablet,
+  Laptop,
+  Monitor as DesktopIcon,
+  Maximize2,
+  Minimize2,
+  ExternalLink,
+  ChevronDown,
+} from 'lucide-react';
 import { IconButton } from '~/components/ui/IconButton';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
@@ -15,14 +28,14 @@ interface WindowSize {
   name: string;
   width: number;
   height: number;
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const WINDOW_SIZES: WindowSize[] = [
-  { name: 'Mobile', width: 375, height: 667, icon: 'i-ph:device-mobile' },
-  { name: 'Tablet', width: 768, height: 1024, icon: 'i-ph:device-tablet' },
-  { name: 'Laptop', width: 1366, height: 768, icon: 'i-ph:laptop' },
-  { name: 'Desktop', width: 1920, height: 1080, icon: 'i-ph:monitor' },
+  { name: 'Mobile', width: 375, height: 667, icon: Smartphone },
+  { name: 'Tablet', width: 768, height: 1024, icon: Tablet },
+  { name: 'Laptop', width: 1366, height: 768, icon: Laptop },
+  { name: 'Desktop', width: 1920, height: 1080, icon: DesktopIcon },
 ];
 
 type Props = {
@@ -279,12 +292,15 @@ export const Preview = memo(({ sendMessage }: Props) => {
       {!isLoading && !!codeErrors.length && <FixIssuesDialog onFixIssue={onFixIssue} />}
       <div className="bg-depth-2 p-2 flex items-center gap-2">
         <div className="flex items-center gap-2">
-          <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
+          <IconButton onClick={reloadPreview}>
+            <RotateCcw className="w-4 h-4" />
+          </IconButton>
           <IconButton
-            icon="i-ph:selection"
             onClick={() => setIsSelectionMode(!isSelectionMode)}
             className={isSelectionMode ? 'bg-depth-3' : ''}
-          />
+          >
+            <SquareDashed className="w-4 h-4" />
+          </IconButton>
         </div>
 
         <div className="flex-grow flex items-center gap-1 bg-depth-1 border border-depth-3 text-secondary rounded-full px-3 py-1 text-sm hover:bg-depth-3 hover:focus-within:bg-depth-1 focus-within:bg-depth-1 focus-within-border-accent focus-within:text-primary">
@@ -322,29 +338,30 @@ export const Preview = memo(({ sendMessage }: Props) => {
           )}
 
           <IconButton
-            icon="i-ph:devices"
             onClick={toggleDeviceMode}
             title={isDeviceModeOn ? 'Switch to Responsive Mode' : 'Switch to Device Mode'}
-          />
+          >
+            <Monitor className="w-4 h-4" />
+          </IconButton>
 
-          <IconButton
-            icon={isFullscreen ? 'i-ph:arrows-in' : 'i-ph:arrows-out'}
-            onClick={toggleFullscreen}
-            title={isFullscreen ? 'Exit Full Screen' : 'Full Screen'}
-          />
+          <IconButton onClick={toggleFullscreen} title={isFullscreen ? 'Exit Full Screen' : 'Full Screen'}>
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </IconButton>
 
           <div className="flex items-center relative">
             <IconButton
-              icon="i-ph:arrow-square-out"
               onClick={() => openInNewWindow(selectedWindowSize)}
               title={`Open Preview in ${selectedWindowSize.name} Window`}
-            />
+            >
+              <ExternalLink className="w-4 h-4" />
+            </IconButton>
             <IconButton
-              icon="i-ph:caret-down"
               onClick={() => setIsWindowSizeDropdownOpen(!isWindowSizeDropdownOpen)}
               className="ml-1"
               title="Select Window Size"
-            />
+            >
+              <ChevronDown className="w-4 h-4" />
+            </IconButton>
 
             {isWindowSizeDropdownOpen && (
               <>
@@ -360,9 +377,9 @@ export const Preview = memo(({ sendMessage }: Props) => {
                         openInNewWindow(size);
                       }}
                     >
-                      <div
-                        className={`${size.icon} w-5 h-5 text-[#6B7280] dark:text-gray-400 group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200`}
-                      />
+                      <div className="w-5 h-5 text-[#6B7280] dark:text-gray-400 group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200">
+                        <size.icon className="w-5 h-5" />
+                      </div>
                       <div className="flex flex-col">
                         <span className="font-medium group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200">
                           {size.name}

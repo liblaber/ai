@@ -1,4 +1,6 @@
 import { AnimatePresence, cubicBezier, motion } from 'framer-motion';
+import { Square } from 'lucide-react';
+import IcSendBlack from '~/icons/ic_send_black.svg';
 
 interface SendButtonProps {
   show: boolean;
@@ -15,7 +17,7 @@ export const SendButton = ({ show, isStreaming, disabled, onClick }: SendButtonP
     <AnimatePresence>
       {show ? (
         <motion.button
-          className="absolute flex justify-center items-center top-[18px] right-[22px] p-1 bg-accent-500 hover:brightness-94  rounded-lg w-[34px] h-[34px] transition-theme disabled:opacity-50 disabled:cursor-not-allowed"
+          className="absolute flex justify-center items-center top-[18px] right-[22px] p-1 bg-accent-500 hover:brightness-94 text-depth-1 cursor-pointer rounded-lg w-[34px] h-[34px] transition-theme disabled:opacity-50 disabled:cursor-not-allowed"
           transition={{ ease: customEasingFn, duration: 0.17 }}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -29,13 +31,7 @@ export const SendButton = ({ show, isStreaming, disabled, onClick }: SendButtonP
             }
           }}
         >
-          <div>
-            {!isStreaming ? (
-              <div className="i-liblab:ic_send_black text-xl"></div>
-            ) : (
-              <div className="i-ph:stop-circle-bold"></div>
-            )}
-          </div>
+          <div>{!isStreaming ? <IcSendBlack /> : <Square className="w-5 h-5" />}</div>
         </motion.button>
       ) : null}
     </AnimatePresence>

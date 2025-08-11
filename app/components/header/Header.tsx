@@ -8,6 +8,7 @@ import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
 import { Logo } from '~/components/Logo';
 import { UserMenu } from '~/components/auth/UserMenu';
 import { useSession } from '~/auth/auth-client';
+import { Menu } from 'lucide-react';
 
 interface Props {
   showMenuIcon?: boolean;
@@ -25,7 +26,7 @@ export function Header({ showMenuIcon = true }: Props) {
       })}
     >
       <div className="flex items-center gap-2 z-logo text-primary cursor-pointer">
-        {showMenuIcon && <ClientOnly>{() => session?.user && <div className="i-liblab:ic_menu text-xl" />}</ClientOnly>}
+        {showMenuIcon && <ClientOnly>{() => session?.user && <Menu className="text-xl" />}</ClientOnly>}
         <a href="/" className="ml-1 font-semibold text-accent flex items-center">
           <div className="h-8 flex items-center text-black dark:text-white">
             <Logo />

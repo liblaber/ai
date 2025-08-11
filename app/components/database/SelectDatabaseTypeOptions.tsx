@@ -1,6 +1,7 @@
 import { components } from 'react-select';
 import { SampleDatabaseTooltip } from './SampleDatabaseTooltip';
 import { Lock } from 'iconsax-reactjs';
+import { Check } from 'lucide-react';
 import { SAMPLE_DATABASE, useDataSourceTypesPlugin } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
 
 export const SingleValueWithTooltip = (props: any) => {
@@ -44,7 +45,9 @@ export function SelectDatabaseTypeOptions(props: any) {
               <span>{opt.label}</span>
             </div>
             {props.selectProps.value?.value === opt.value && (
-              <span className="i-ph:check-bold text-base text-gray-100 ml-2" />
+              <span className="text-base text-gray-100 ml-2">
+                <Check className="w-4 h-4" />
+              </span>
             )}
           </div>
         </components.Option>

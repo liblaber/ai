@@ -3,6 +3,7 @@ import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import type { SelectOption } from '~/components/ui/Select';
 import { BaseSelect } from '~/components/ui/Select';
 import { components } from 'react-select';
+import IcDatabase from '~/icons/ic_database.svg';
 
 interface DataSourcePickerProps {
   onAddNew?: () => void;
@@ -117,7 +118,7 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
         width="auto"
         minWidth="auto"
         isSearchable={false}
-        controlIcon={<span className="i-liblab:ic_database text-xl" />}
+        controlIcon={<IcDatabase className="text-xl" />}
         isDisabled={disabled}
         components={{ DropdownIndicator }}
         styles={customStyles}

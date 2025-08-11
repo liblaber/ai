@@ -1,6 +1,7 @@
 import { useStore } from '@nanostores/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
+import { AlertTriangle, MessageCircle } from 'lucide-react';
 import { workbenchStore } from '~/lib/stores/workbench';
 
 type Props = {
@@ -31,7 +32,9 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
             animate={{ scale: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <div className="i-ph:warning-duotone text-4xl text-failed"></div>
+            <div className="text-4xl text-failed">
+              <AlertTriangle className="w-12 h-12" />
+            </div>
           </motion.div>
 
           <motion.h3
@@ -99,7 +102,7 @@ export function FixIssuesDialog({ onFixIssue }: Props) {
               }}
               className="flex-1 px-4 py-2 rounded-md text-sm cursor-pointer font-medium bg-accent-500 hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 text-gray-900 flex items-center justify-center gap-2"
             >
-              <div className="i-ph:chat-circle-duotone"></div>
+              <MessageCircle className="w-4 h-4" />
               Fix Issue
             </button>
           </motion.div>

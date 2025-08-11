@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
+import { LogOut } from 'lucide-react';
 import { signOut, useSession } from '~/auth/auth-client';
 import { useRouter } from 'next/navigation';
 import { ProfilePicture } from './ProfilePicture';
@@ -69,7 +70,7 @@ export function LogoutButton() {
                 className="w-full text-left px-4 py-2 text-primary hover:bg-accent/10 hover:text-accent cursor-pointer transition-colors flex items-center text-sm group"
                 style={{ backgroundColor: 'transparent' }}
               >
-                <span className="i-ph:sign-out w-4 h-4 mr-2 group-hover:text-accent transition-colors" />
+                <LogOut className="w-4 h-4 mr-2 group-hover:text-accent transition-colors" />
                 <span className="group-hover:translate-x-0.5 transition-transform duration-150">Logout</span>
               </button>
             </div>

@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef } from 'react';
+import { Plug } from 'lucide-react';
 import { IconButton } from '~/components/ui/IconButton';
 import type { PreviewInfo } from '~/lib/stores/previews';
 
@@ -48,7 +49,9 @@ export const PortDropdown = memo(
 
     return (
       <div className="relative z-port-dropdown" ref={dropdownRef}>
-        <IconButton icon="i-ph:plug" onClick={() => setIsDropdownOpen(!isDropdownOpen)} />
+        <IconButton onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+          <Plug className="w-4 h-4" />
+        </IconButton>
         {isDropdownOpen && (
           <div className="absolute right-0 mt-2 bg-depth-2 border border-depth-3 rounded shadow-sm min-w-[140px] dropdown-animation">
             <div className="px-4 py-2 border-b border-depth-3 text-sm font-semibold text-primary">Ports</div>

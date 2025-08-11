@@ -16,6 +16,7 @@ import { loadPreviousFileMapIntoContainer } from '~/lib/webcontainer/load-file-m
 import { workbenchStore } from '~/lib/stores/workbench';
 import { useRouter } from 'next/navigation';
 import { PROJECT_SETUP_ANNOTATION } from '~/utils/constants';
+import { GitFork, Undo2 } from 'lucide-react';
 
 interface MessagesProps {
   id?: string;
@@ -135,16 +136,20 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                   })}
                 >
                   {!isUserMessage && (
-                    <div className="absolute top-3 right-3 flex gap-1 flex-col lg:flex-row h-6">
+                    <div className="absolute top-3 right-3 flex gap-2 flex-col lg:flex-row h-6 z-10">
                       {messageId && snapshotId && (
                         <WithTooltip tooltip="Revert to this message">
                           <button
                             onClick={() => handleRewind(snapshotId)}
-                            key="i-liblab:ic_back"
                             className={classNames(
-                              'i-liblab:ic_back text-2xl opacity-50 hover:opacity-100 text-depth-1 transition-colors',
+                              'text-2xl opacity-50 hover:opacity-100 text-depth-1 transition-colors',
                             )}
-                          />
+                          >
+                            <Undo2
+                              strokeWidth={3}
+                              className="bg-primary cursor-pointer text-depth-3 w-5 h-5 p-0.5 rounded-md"
+                            />
+                          </button>
                         </WithTooltip>
                       )}
 
@@ -152,11 +157,15 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                         <WithTooltip tooltip="Fork chat from this message">
                           <button
                             onClick={() => handleFork(messageId)}
-                            key="i-liblab:ic_back-square"
                             className={classNames(
-                              'i-liblab:ic_back-square text-2xl opacity-50 hover:opacity-100 text-depth-1 bg-transparent! transition-colors',
+                              'text-2xl opacity-50 hover:opacity-100 text-depth-1 bg-transparent! transition-colors',
                             )}
-                          />
+                          >
+                            <GitFork
+                              strokeWidth={3}
+                              className="bg-primary cursor-pointer text-depth-3 w-5 h-5 p-0.5 rounded-md"
+                            />
+                          </button>
                         </WithTooltip>
                       )}
                     </div>
@@ -187,7 +196,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
           <DialogRoot open={rewindDialog.isOpen} onOpenChange={(open) => !open && closeRewindDialog()}>
             <Dialog onBackdrop={closeRewindDialog} onClose={closeRewindDialog}>
               <div className="p-6 bg-white dark:bg-gray-950">
-                <DialogTitle className="text-gray-900 dark:text-white">Revert Chat?</DialogTitle>
+                <DialogTitle className="text-gray-900 dark:text-white" title="Revert Chat?" />
                 <DialogDescription className="mt-2 text-gray-600 dark:text-gray-400">
                   <p>You are about to revert the conversation to this point.</p>
                   <p className="mt-2">

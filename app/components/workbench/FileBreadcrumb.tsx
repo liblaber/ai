@@ -6,7 +6,8 @@ import { classNames } from '~/utils/classNames';
 import { WORK_DIR } from '~/utils/constants';
 import { cubicEasingFn } from '~/utils/easings';
 import { renderLogger } from '~/utils/logger';
-import FileTree from './FileTree';
+import { ChevronRight, File } from 'lucide-react';
+import { FileTree } from './FileTree';
 
 const WORK_DIR_REGEX = new RegExp(`^${WORK_DIR.split('/').slice(0, -1).join('/').replaceAll('/', '\\/')}/`);
 
@@ -97,11 +98,11 @@ export const FileBreadcrumb = memo<FileBreadcrumbProps>(({ files, pathSegments =
                   })}
                   onClick={() => handleSegmentClick(index)}
                 >
-                  {isLast && <div className="i-liblab:ic_doc" />}
+                  {isLast && <File className="w-4 h-4" />}
                   {segment}
                 </span>
               </DropdownMenu.Trigger>
-              {index > 0 && !isLast && <span className="i-ph:caret-right inline-block mx-1" />}
+              {index > 0 && !isLast && <ChevronRight className="inline-block mx-1 w-4 h-4" />}
               <AnimatePresence>
                 {isActive && (
                   <DropdownMenu.Portal>

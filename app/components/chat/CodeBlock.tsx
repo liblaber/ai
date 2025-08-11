@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { type BundledLanguage, bundledLanguages, codeToHtml, isSpecialLang, type SpecialLanguage } from 'shiki';
+import { Clipboard } from 'lucide-react';
 import { classNames } from '~/utils/classNames';
 import { createScopedLogger } from '~/utils/logger';
 
@@ -73,7 +74,7 @@ export const CodeBlock = ({
             title="Copy Code"
             onClick={() => copyToClipboard()}
           >
-            <div className="i-ph:clipboard-text-duotone"></div>
+            <Clipboard className="w-4 h-4" />
           </button>
         )}
       </div>

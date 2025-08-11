@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { CloseCircle } from 'iconsax-reactjs';
 import { useStore } from '@nanostores/react';
 import { websiteStore } from '~/lib/stores/websiteStore';
+import { Check, X, ExternalLink, Rocket, Copy } from 'lucide-react';
 
 interface PublishProgressModalProps {
   isOpen: boolean;
@@ -102,9 +103,9 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
               })}
             >
               {isCompleted ? (
-                <div className="i-ph:check w-4 h-4" />
+                <Check className="w-4 h-4" />
               ) : isError ? (
-                <div className="i-ph:x w-4 h-4" />
+                <X className="w-4 h-4" />
               ) : (
                 <span className="text-sm font-medium">{index + 1}</span>
               )}
@@ -157,7 +158,7 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
               className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
             >
               View
-              <div className="i-ph:arrow-square-out w-4 h-4" />
+              <ExternalLink className="w-4 h-4" />
             </a>
           )}
         </div>
@@ -167,7 +168,7 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
             onClick={onPublishClick}
             className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
           >
-            <div className="i-ph:rocket-launch w-4 h-4" />
+            <Rocket className="w-4 h-4" />
             Publish New Version
           </button>
 
@@ -178,12 +179,12 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
             >
               {isCopying ? (
                 <>
-                  <div className="i-ph:check w-4 h-4" />
+                  <Check className="w-4 h-4" />
                   Copied!
                 </>
               ) : (
                 <>
-                  <div className="i-ph:copy w-4 h-4" />
+                  <Copy className="w-4 h-4" />
                   Copy Link
                 </>
               )}

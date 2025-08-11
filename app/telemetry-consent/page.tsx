@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CheckCircle, Shield } from 'lucide-react';
 import { Button } from '~/components/ui/Button';
 import { Header } from '~/components/header/Header';
 import { useSession } from '~/auth/auth-client';
@@ -96,21 +97,21 @@ export default function TelemetryConsentPage() {
             </p>
             <div className="space-y-3 text-sm text-gray-300">
               <div className="flex items-start gap-3">
-                <span className="i-ph:check-circle-fill text-green-400 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
                 <span>Error reports to help us fix bugs and improve reliability</span>
               </div>
               <div className="flex items-start gap-3">
-                <span className="i-ph:check-circle-fill text-green-400 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
                 <span>Usage patterns to understand how features are being used</span>
               </div>
               <div className="flex items-start gap-3">
-                <span className="i-ph:check-circle-fill text-green-400 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
                 <span>Performance metrics to optimize the application</span>
               </div>
             </div>
             <div className="mt-6 p-4 bg-gray-800 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <span className="i-ph:shield-check-fill text-blue-400 text-lg" />
+                <Shield className="w-5 h-5 text-blue-400" />
                 <span className="font-medium text-[var(--color-primary)] text-sm">Your privacy is protected</span>
               </div>
               <div className="text-gray-400 text-[13px] leading-snug">

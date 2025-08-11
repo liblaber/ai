@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CheckCircle, Lock } from 'lucide-react';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
@@ -210,7 +211,7 @@ export default function DataSourceConnectionPage() {
               >
                 {isSuccess ? (
                   <div className="flex items-center gap-2">
-                    <span className="i-ph:check-circle-fill text-lg" />
+                    <CheckCircle className="w-5 h-5" />
                     Data Source Connected
                   </div>
                 ) : isTesting ? (
@@ -222,7 +223,7 @@ export default function DataSourceConnectionPage() {
               <div>
                 <div className="border-b border-gray-700 mb-7" />
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="i-ph:lock-fill text-lg text-gray-400 !text-primary" />
+                  <Lock className="w-5 h-5 text-gray-400 !text-primary" />
                   <span className="font-medium text-primary text-sm">100% Secure & Encrypted</span>
                 </div>
                 <div className="text-gray-400 text-[13px] leading-snug">
@@ -244,7 +245,7 @@ export default function DataSourceConnectionPage() {
               >
                 {isSuccess ? (
                   <div className="flex items-center gap-2">
-                    <span className="i-ph:check-circle-fill text-lg" />
+                    <CheckCircle className="w-5 h-5" />
                     Data Source Connected
                   </div>
                 ) : isConnecting ? (

@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { ModelInfo } from '~/lib/modules/llm/types';
 import { classNames } from '~/utils/classNames';
+import { ChevronDown, Search } from 'lucide-react';
 
 interface ModelSelectorProps {
   model?: string;
@@ -216,10 +217,12 @@ export const ModelSelector = ({
             <div className="truncate">{modelList.find((m) => m.name === model)?.label || 'Select model'}</div>
             <div
               className={classNames(
-                'i-ph:caret-down w-4 h-4 text-secondary opacity-75',
+                'w-4 h-4 text-secondary opacity-75',
                 isModelDropdownOpen ? 'rotate-180' : undefined,
               )}
-            />
+            >
+              <ChevronDown className="w-4 h-4" />
+            </div>
           </div>
         </div>
 
@@ -249,7 +252,7 @@ export const ModelSelector = ({
                   aria-label="Search models"
                 />
                 <div className="absolute left-2.5 top-1/2 -translate-y-1/2">
-                  <span className="i-ph:magnifying-glass text-tertiary" />
+                  <Search className="w-4 h-4 text-tertiary" />
                 </div>
               </div>
             </div>

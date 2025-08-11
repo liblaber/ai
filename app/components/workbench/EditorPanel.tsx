@@ -1,6 +1,7 @@
 import { useStore } from '@nanostores/react';
 import { memo, useMemo } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { FolderTree, Save, RotateCcw } from 'lucide-react';
 import {
   CodeMirrorEditor,
   type EditorDocument,
@@ -76,7 +77,7 @@ export const EditorPanel = memo(
             <Panel defaultSize={20} minSize={10} collapsible>
               <div className="flex flex-col border-r border-depth-3 h-full">
                 <PanelHeader>
-                  <div className="i-ph:tree-structure-duotone shrink-0" />
+                  <FolderTree className="w-4 h-4 shrink-0" />
                   Files
                 </PanelHeader>
                 <FileTree
@@ -100,11 +101,11 @@ export const EditorPanel = memo(
                     {activeFileUnsaved && (
                       <div className="flex gap-1 ml-auto -mr-1.5">
                         <PanelHeaderButton onClick={onFileSave}>
-                          <div className="i-ph:floppy-disk-duotone" />
+                          <Save className="w-4 h-4" />
                           Save
                         </PanelHeaderButton>
                         <PanelHeaderButton onClick={onFileReset}>
-                          <div className="i-ph:clock-counter-clockwise-duotone" />
+                          <RotateCcw className="w-4 h-4" />
                           Reset
                         </PanelHeaderButton>
                       </div>

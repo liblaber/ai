@@ -1,5 +1,6 @@
 import { useStore } from '@nanostores/react';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
+import { Check, Pencil } from 'lucide-react';
 import WithTooltip from '~/components/ui/Tooltip';
 import { useEditChatDescription } from '~/lib/hooks';
 import { description as descriptionStore } from '~/lib/persistence';
@@ -35,11 +36,9 @@ export function ChatDescription() {
           <TooltipProvider>
             <WithTooltip tooltip="Save title">
               <div className="flex justify-between items-center p-2 rounded-md bg-accent/10">
-                <button
-                  type="submit"
-                  className="i-ph:check-bold scale-110 hover:text-accent"
-                  onMouseDown={handleSubmit}
-                />
+                <button type="submit" className="scale-110 hover:text-accent" onMouseDown={handleSubmit}>
+                  <Check className="w-4 h-4" />
+                </button>
               </div>
             </WithTooltip>
           </TooltipProvider>
@@ -49,9 +48,9 @@ export function ChatDescription() {
           {currentDescription}
           <TooltipProvider>
             <WithTooltip tooltip="Rename chat">
-              <div className="flex justify-between items-center p-1 rounded-md bg-gray-800 ml-2">
-                <span
-                  className="i-liblab:ic_edit_pencil text-xl opacity-50 hover:opacity-100"
+              <div className="flex justify-between items-center p-1 rounded-md ml-2">
+                <Pencil
+                  className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
                   onClick={(event) => {
                     event.preventDefault();
                     toggleEditMode();

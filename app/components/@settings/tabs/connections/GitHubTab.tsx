@@ -6,6 +6,21 @@ import Cookies from 'js-cookie';
 import { LockSlash } from 'iconsax-reactjs';
 import { useGitStore } from '~/lib/stores/git';
 import { env } from '~/env/client';
+import {
+  Loader2,
+  Github,
+  ExternalLink,
+  Zap,
+  CheckCircle,
+  ChevronDown,
+  Users,
+  BookOpen,
+  Star,
+  GitFork,
+  GitCommit,
+  GitBranch,
+  Clock,
+} from 'lucide-react';
 
 interface GitHubUserResponse {
   login: string;
@@ -72,7 +87,7 @@ interface GitHubConnection {
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-full min-h-[400px]">
     <div className="flex flex-col items-center gap-3">
-      <div className="i-ph:spinner-gap w-8 h-8 animate-spin text-gray-500 dark:text-gray-400" />
+      <Loader2 className="w-8 h-8 animate-spin text-gray-500 dark:text-gray-400" />
       <span className="text-sm text-gray-500 dark:text-gray-400">Loading GitHub connection...</span>
     </div>
   </div>
@@ -292,7 +307,7 @@ export default function GitHubTab() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <div className="i-ph:github-logo w-5 h-5 text-accent-500" />
+        <Github className="w-5 h-5 text-accent-500" />
         <h2 className="text-lg font-medium text-primary">GitHub Settings</h2>
       </motion.div>
       <p className="text-sm text-secondary mb-6">Manage your GitHub connection and repository settings</p>
@@ -308,7 +323,7 @@ export default function GitHubTab() {
           >
             <div className="p-6 space-y-6">
               <div className="flex items-center gap-2">
-                <div className="i-ph:github-logo w-5 h-5 text-primary" />
+                <Github className="w-5 h-5 text-primary" />
                 <h3 className="text-base font-medium text-primary">GitHub Connection</h3>
               </div>
 
@@ -364,7 +379,7 @@ export default function GitHubTab() {
                       className="text-accent-500 hover:underline inline-flex items-center gap-1"
                     >
                       Get your token
-                      <div className="i-ph:arrow-square-out w-10 h-5" />
+                      <ExternalLink className="w-10 h-5" />
                     </a>
                     <div className="mt-2">
                       <p className="font-medium">Required scopes:</p>
@@ -401,12 +416,12 @@ export default function GitHubTab() {
                   >
                     {isConnecting ? (
                       <>
-                        <div className="i-ph:spinner-gap animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         Connecting...
                       </>
                     ) : (
                       <>
-                        <div className="i-ph:plug-charging w-4 h-4" />
+                        <Zap className="w-4 h-4" />
                         Connect
                       </>
                     )}
@@ -427,7 +442,7 @@ export default function GitHubTab() {
 
                 {connection.user && (
                   <span className="text-sm text-secondary flex items-center gap-1">
-                    <div className="i-ph:check-circle w-4 h-4" />
+                    <CheckCircle className="w-4 h-4" />
                     Connected to GitHub
                   </span>
                 )}
@@ -447,9 +462,9 @@ export default function GitHubTab() {
                           <h3 className="text-lg font-medium text-primary">
                             {connection.user.name || connection.user.login}
                           </h3>
-                          <div
+                          <ChevronDown
                             className={classNames(
-                              'i-ph:caret-down w-4 h-4 text-secondary transition-transform',
+                              'w-4 h-4 text-secondary transition-transform',
                               isStatsExpanded ? 'rotate-180' : '',
                             )}
                           />
@@ -459,19 +474,19 @@ export default function GitHubTab() {
                         )}
                         <div className="flex gap-4 mt-2 text-sm text-secondary">
                           <span className="flex items-center gap-1">
-                            <div className="i-ph:users w-4 h-4" />
+                            <Users className="w-4 h-4" />
                             {connection.user.followers} followers
                           </span>
                           <span className="flex items-center gap-1">
-                            <div className="i-ph:book-bookmark w-4 h-4" />
+                            <BookOpen className="w-4 h-4" />
                             {connection.user.public_repos} public repos
                           </span>
                           <span className="flex items-center gap-1">
-                            <div className="i-ph:star w-4 h-4" />
+                            <Star className="w-4 h-4" />
                             {connection.stats.totalStars} stars
                           </span>
                           <span className="flex items-center gap-1">
-                            <div className="i-ph:git-fork w-4 h-4" />
+                            <GitFork className="w-4 h-4" />
                             {connection.stats.totalForks} forks
                           </span>
                         </div>
@@ -526,7 +541,7 @@ export default function GitHubTab() {
                           {connection.stats.recentActivity.map((event) => (
                             <div key={event.id} className="p-3 rounded-lg bg-[#F8F8F8] dark:bg-[#1A1A1A] text-sm">
                               <div className="flex items-center gap-2 text-primary">
-                                <div className="i-ph:git-commit w-4 h-4 text-secondary" />
+                                <GitCommit className="w-4 h-4 text-secondary" />
                                 <span className="font-medium">{event.type.replace('Event', '')}</span>
                                 <span>on</span>
                                 <a
@@ -587,28 +602,20 @@ export default function GitHubTab() {
                             <div className="flex items-center justify-between">
                               <div>
                                 <h5 className="text-sm font-medium text-primary flex items-center gap-2">
-                                  <div className="i-ph:git-repository w-4 h-4 text-secondary" />
+                                  <GitBranch className="w-4 h-4 text-secondary" />
                                   {repo.name}
                                 </h5>
                                 {repo.description && <p className="text-xs text-secondary mt-1">{repo.description}</p>}
                                 <div className="flex items-center gap-2 mt-2 text-xs text-secondary">
-                                  <span className="flex items-center gap-1">
-                                    <div className="i-ph:git-branch w-3 h-3" />
-                                    {repo.default_branch}
-                                  </span>
-                                  <span>•</span>
-                                  <span>Updated {new Date(repo.updated_at).toLocaleDateString()}</span>
+                                  <GitBranch className="w-3 h-3" />
+                                  {repo.default_branch}
                                 </div>
                               </div>
                               <div className="flex items-center gap-3 text-xs text-secondary">
-                                <span className="flex items-center gap-1">
-                                  <div className="i-ph:star w-3 h-3" />
-                                  {repo.stargazers_count}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <div className="i-ph:git-fork w-3 h-3" />
-                                  {repo.forks_count}
-                                </span>
+                                <Star className="w-3 h-3" />
+                                {repo.stargazers_count}
+                                <GitFork className="w-3 h-3" />
+                                {repo.forks_count}
                               </div>
                             </div>
                           </a>
@@ -622,7 +629,7 @@ export default function GitHubTab() {
               {/* Remote Changes Pull Interval Settings */}
               <div className="mt-6 border-t border-[#E5E5E5] dark:border-[#1A1A1A] pt-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="i-ph:clock w-5 h-5 text-primary" />
+                  <Clock className="w-5 h-5 text-primary" />
                   <h3 className="text-base font-medium text-primary">Remote Changes Settings</h3>
                 </div>
 

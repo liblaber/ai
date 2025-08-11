@@ -1,5 +1,6 @@
 import { IconButton } from '~/components/ui/IconButton';
 import { classNames } from '~/utils/classNames';
+import { Mic, MicOff } from 'lucide-react';
 import React from 'react';
 
 export const SpeechRecognitionButton = ({
@@ -22,7 +23,7 @@ export const SpeechRecognitionButton = ({
       })}
       onClick={isListening ? onStop : onStart}
     >
-      {isListening ? <div className="i-ph:microphone-slash text-xl" /> : <div className="i-ph:microphone text-xl" />}
+      {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
     </IconButton>
   );
 };

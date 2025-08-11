@@ -1,5 +1,6 @@
 import { useStore } from '@nanostores/react';
 import React, { memo, useEffect, useRef, useState } from 'react';
+import { ChevronDown, Code, Plus } from 'lucide-react';
 import { type ImperativePanelHandle, Panel } from 'react-resizable-panels';
 import { IconButton } from '~/components/ui/IconButton';
 import { shortcutEventEmitter } from '~/lib/hooks';
@@ -94,7 +95,7 @@ export const TerminalTabs = memo(() => {
                     )}
                     onClick={() => setActiveTerminal(index)}
                   >
-                    <div className="i-liblab:ic_code text-xl opacity-50" />
+                    <Code className="text-xl opacity-50" />
                     Terminal {terminalCount > 1 && index + 1}
                   </button>
                 </React.Fragment>
@@ -102,19 +103,22 @@ export const TerminalTabs = memo(() => {
             })}
             {terminalCount < MAX_TERMINALS && (
               <IconButton
-                icon="i-liblab:ic_plus_circ"
                 className="enabled:opacity-50 enabled:hover:opacity-100"
                 size="2xl"
                 onClick={addTerminal}
-              />
+                title="Add Terminal"
+              >
+                <Plus className="w-4 h-4" />
+              </IconButton>
             )}
             <IconButton
               className="ml-auto"
-              icon="i-ph:caret-down"
               title="Close"
               size="md"
               onClick={() => workbenchStore.toggleTerminal(false)}
-            />
+            >
+              <ChevronDown className="w-4 h-4" />
+            </IconButton>
           </div>
           {Array.from({ length: terminalCount }, (_, index) => {
             const isActive = activeTerminal === index;

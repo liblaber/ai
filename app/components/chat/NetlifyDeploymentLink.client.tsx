@@ -1,4 +1,5 @@
 import { useStore } from '@nanostores/react';
+import { Rocket } from 'lucide-react';
 import { fetchNetlifyStats, netlifyConnection } from '~/lib/stores/netlify';
 import { chatId } from '~/lib/persistence/useConversationHistory';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -33,7 +34,7 @@ export function NetlifyDeploymentLink() {
               e.stopPropagation(); // Add this to prevent click from bubbling up
             }}
           >
-            <div className="i-ph:rocket-launch w-5 h-5" />
+            <Rocket className="w-5 h-5" />
           </a>
         </Tooltip.Trigger>
         <Tooltip.Portal>

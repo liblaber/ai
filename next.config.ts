@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  devIndicators: {
+    position: 'bottom-right',
+  },
 
   // SASS configuration
   sassOptions: {
@@ -65,6 +68,12 @@ const nextConfig: NextConfig = {
 
       config.cache = true;
     }
+
+    // Add SVG handling for both development and production
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ['@svgr/webpack'],
+    });
 
     return config;
   },
