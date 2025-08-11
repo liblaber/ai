@@ -363,6 +363,9 @@ importers:
       zustand:
         specifier: ^5.0.3
         version: 5.0.7(@types/react@18.3.23)(react@18.3.1)(use-sync-external-store@1.5.0(react@18.3.1))
+      zx:
+        specifier: ^8.8.0
+        version: 8.8.0
     devDependencies:
       '@blitz/eslint-plugin':
         specifier: 0.1.0
@@ -10133,6 +10136,11 @@ packages:
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
+
+  zx@8.8.0:
+    resolution: {integrity: sha512-v0VZXgSHusDvTtZROno3Ws8xkE1uNSSwH/yF8Fm+ZwBrYhr+bRNNpsnTJ32eR/t6umc7lAz5WqdP800ugW9zFA==}
+    engines: {node: '>= 12.17.0'}
+    hasBin: true
 
 snapshots:
 
@@ -21564,3 +21572,5 @@ snapshots:
       use-sync-external-store: 1.5.0(react@18.3.1)
 
   zwitch@2.0.4: {}
+
+  zx@8.8.0: {}

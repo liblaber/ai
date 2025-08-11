@@ -7,6 +7,7 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
+    "preflight": "tsx scripts/preflight.ts",
     "quickstart": "pnpm run setup && pnpm run docker:start",
     "setup": "pnpm i && pnpm run prisma:generate && tsx setup.ts",
     "build": "next build",
@@ -163,7 +164,8 @@
     "vite-plugin-node-polyfills": "^0.22.0",
     "wrangler": "^4.14.1",
     "zod": "^3.24.1",
-    "zustand": "^5.0.3"
+    "zustand": "^5.0.3",
+    "zx": "^8.8.0"
   },
   "devDependencies": {
     "@blitz/eslint-plugin": "0.1.0",
