@@ -198,30 +198,6 @@ async function main(): Promise<void> {
     anthropicSpinner.stop('✅ ANTHROPIC_API_KEY already exists.');
   }
 
-  // Check for NGROK_AUTHTOKEN
-  const ngrokSpinner = spinner();
-  ngrokSpinner.start('📋 Checking for NGROK_AUTHTOKEN');
-
-  if (!hasEnvVar(envContent, 'NGROK_AUTHTOKEN')) {
-    ngrokSpinner.stop('⚠️ NGROK_AUTHTOKEN not found or empty in .env file.');
-    log.info('📖 Get your token from: https://dashboard.ngrok.com/get-started/your-authtoken');
-
-    const ngrokToken = (await text({
-      message: 'Please enter your ngrok auth token (optional):',
-      placeholder: '2abc123def456',
-    })) as string;
-
-    if (ngrokToken && ngrokToken.trim()) {
-      envContent = updateOrAddEnvVar(envContent, 'NGROK_AUTHTOKEN', ngrokToken.trim());
-      writeEnvFile(envContent);
-      log.success('✅ Added NGROK_AUTHTOKEN to .env file.');
-    } else {
-      log.warn('⚠️ Skipped ngrok auth token. External tunneling will be disabled.');
-    }
-  } else {
-    ngrokSpinner.stop('✅ NGROK_AUTHTOKEN already exists.');
-  }
-
   outro('🎉 liblab AI Setup Complete!');
 }
 
