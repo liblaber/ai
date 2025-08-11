@@ -24,6 +24,26 @@ Securely connect your database, build an app, and deploy in seconds.
 **Prerequisites**
 
 <details>
+  <summary><b>Node.js</b> <em>(Only required for configuration, not for running the app)</em></summary>
+
+Node.js (version 18 or higher) is needed to run setup/configuration scripts before starting the Docker containers. The application itself will run inside Docker and does not use your local Node.js.
+
+```bash
+# Install Node.js using Homebrew
+brew install node
+
+# Or use Node Version Manager (nvm)
+brew install nvm
+nvm install --lts
+
+# Verify installation
+node --version  # Should show v18.x.x or higher
+npm --version
+```
+
+</details>
+
+<details>
   <summary><b>pnpm</b> <em>(Package manager, faster than npm)</em></summary>
 
 ```bash
