@@ -167,35 +167,100 @@ async function main(): Promise<void> {
     encryptionSpinner.stop('✅ ENCRYPTION_KEY already exists.');
   }
 
-  // Check for ANTHROPIC_API_KEY
-  const anthropicSpinner = spinner();
-  anthropicSpinner.start('📋 Checking for ANTHROPIC_API_KEY');
+  // Prompt for LLM provider(s) using a select, and skip if API key exists
+  log.info('🔑 Configure your AI provider');
 
-  if (!hasEnvVar(envContent, 'ANTHROPIC_API_KEY')) {
-    anthropicSpinner.stop('⚠️ ANTHROPIC_API_KEY not found or empty in .env file.');
+  const providers = [
+    {
+      value: 'openai',
+      enumValue: 'OpenAI',
+      label: 'OpenAI (GPT)',
+      apiKeyEnv: 'OPENAI_API_KEY',
+      apiKeyPrompt: 'Please enter your OpenAI API key:',
+      apiKeyExample: 'sk-...',
+      modelExample: 'gpt-4o',
+      apiKeyRegex: /^sk-[\w-]+/,
+      apiKeyFormatMsg: 'OpenAI key must start with sk-',
+    },
+    {
+      value: 'anthropic',
+      enumValue: 'Anthropic',
+      label: 'Anthropic (Claude)',
+      apiKeyEnv: 'ANTHROPIC_API_KEY',
+      apiKeyPrompt: 'Please enter your Anthropic API key:',
+      apiKeyExample: 'sk-ant-...',
+      modelExample: 'claude-4-sonnet-20250514',
+      apiKeyRegex: /^sk-ant-[\w-]+/,
+      apiKeyFormatMsg: 'Anthropic key must start with sk-ant-',
+    },
+    {
+      value: 'openrouter',
+      enumValue: 'OpenRouter',
+      label: 'OpenRouter',
+      apiKeyEnv: 'OPEN_ROUTER_API_KEY',
+      apiKeyPrompt: 'Please enter your OpenRouter API key:',
+      apiKeyExample: 'sk-or-...',
+      modelExample: 'openai/gpt-5-nano',
+      apiKeyRegex: /^sk-or-[\w-]+/,
+      apiKeyFormatMsg: 'OpenRouter key must start with sk-or-',
+    },
+  ];
 
-    const anthropicKey = (await text({
-      message: 'Please enter your Anthropic API key:',
-      placeholder: 'sk-ant-api03-',
-      // eslint-disable-next-line consistent-return
+  // Use select instead of text
+  const { select } = await import('@clack/prompts');
+  const providerValue = (await select({
+    message: 'Select your AI provider:',
+    options: providers.map((p) => ({ value: p.value, label: p.label })),
+  })) as string;
+
+  const selected = providers.find((p) => p.value === providerValue);
+
+  if (!selected) {
+    log.error('Unknown provider.');
+    process.exit(1);
+  }
+
+  // If API key already exists, skip provider setup
+  if (hasEnvVar(envContent, selected.apiKeyEnv)) {
+    log.info(`✅ ${selected.apiKeyEnv} already exists in .env file. Skipping provider setup.`);
+  } else {
+    // Prompt for model name
+    const modelName = (await text({
+      message: `Enter the model name for ${selected.label} (e.g. ${selected.modelExample}):`,
+      placeholder: selected.modelExample,
+      validate: (value) => {
+        if (!value || value.trim().length === 0) {
+          return 'Model name is required';
+        }
+
+        return undefined;
+      },
+    })) as string;
+
+    envContent = updateOrAddEnvVar(envContent, 'DEFAULT_LLM_PROVIDER', selected.enumValue);
+    envContent = updateOrAddEnvVar(envContent, 'DEFAULT_LLM_MODEL', modelName.trim());
+    writeEnvFile(envContent);
+    log.success(`✅ Set DEFAULT_LLM_MODEL and DEFAULT_LLM_PROVIDER in .env file.`);
+
+    // Prompt for API key with regex validation
+    const apiKey = (await text({
+      message: selected.apiKeyPrompt,
+      placeholder: selected.apiKeyExample,
       validate: (value) => {
         if (!value || value.trim().length === 0) {
           return 'API key is required';
         }
 
-        if (!value.startsWith('sk-ant-')) {
-          return 'API key should start with sk-ant-';
+        if (selected.apiKeyRegex && !selected.apiKeyRegex.test(value.trim())) {
+          return selected.apiKeyFormatMsg || 'Invalid API key format';
         }
+
+        return undefined;
       },
     })) as string;
-
-    if (anthropicKey && anthropicKey.trim()) {
-      envContent = updateOrAddEnvVar(envContent, 'ANTHROPIC_API_KEY', anthropicKey.trim());
-      writeEnvFile(envContent);
-      log.success('✅ Added ANTHROPIC_API_KEY to .env file.');
-    }
-  } else {
-    anthropicSpinner.stop('✅ ANTHROPIC_API_KEY already exists.');
+    envContent = updateOrAddEnvVar(envContent, selected.apiKeyEnv, apiKey.trim());
+    writeEnvFile(envContent);
+    log.success(`✅ Added ${selected.apiKeyEnv} to .env file.`);
   }
 
   // Check for NGROK_AUTHTOKEN
