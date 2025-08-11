@@ -134,6 +134,13 @@ Once configured, you can deploy any app you generate through liblab.ai to Netlif
 
 Some browser add-ons like ad blockers or VPNs might cause problems. If things aren't working right, try disabling them and reload the page.
 
+**Clone the repo**:
+
+```bash
+git clone https://github.com/liblaber/ai.git
+cd ai
+```
+
 **Run the setup:**
 
 ```bash
@@ -275,13 +282,14 @@ Some browser add-ons like ad blockers or VPNs might cause problems. If things ar
 
 **Setup**
 
-Clone the repo:
+**Clone the repo**:
 
 ```bash
 git clone https://github.com/liblaber/ai.git
+cd ai
 ```
 
-Run the setup:
+**Run the setup**:
 
 ```bash
 pnpm run setup
