@@ -95,3 +95,170 @@ body {
 .text-balance {
   text-wrap: balance;
 }
+
+.liblab-markdown {
+  /* Typography styles converted from Tailwind */
+  color: var(--color-gray-100);
+  line-height: 1.625;
+  max-width: none;
+
+  /* General spacing */
+  & > *:not(:last-child) {
+    margin-bottom: 1rem;
+  }
+
+  /* Headings */
+  & h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgb(var(--color-gray-900));
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  & h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgb(var(--color-gray-900));
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  & h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  & h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  & h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  & h6 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-gray-500);
+    margin-bottom: 1rem;
+  }
+
+  /* Paragraphs */
+  & p:not(:last-of-type) {
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+
+  & p {
+    white-space: pre-wrap;
+  }
+
+  /* Links */
+  & a {
+    color: var(--color-accent);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  & a:hover {
+    text-decoration: underline;
+  }
+
+  /* Inline code */
+  & :not(pre) > code {
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.875rem;
+    background-color: var(--color-gray-800);
+    color: var(--color-gray-100);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+  }
+
+  /* Code blocks */
+  & pre {
+    padding: 1.25rem;
+    border-radius: 0.375rem;
+  }
+
+  & pre:has(> code) {
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.875rem;
+    background-color: transparent;
+    overflow-x: auto;
+    min-width: 0;
+  }
+
+  /* Blockquotes */
+  & blockquote {
+    margin: 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    color: var(--color-gray-500);
+    border-left: 4px solid rgb(var(--color-gray-900));
+  }
+
+  /* Lists */
+  & ul {
+    padding-left: 2rem;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    list-style-type: disc;
+  }
+
+  & ol {
+    padding-left: 2rem;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    list-style-type: decimal;
+  }
+
+  & li + li {
+    margin-top: 0.5rem;
+  }
+
+  & li > *:not(:last-child) {
+    margin-bottom: 1rem;
+  }
+
+  /* Images */
+  & img {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Horizontal rules */
+  & hr {
+    height: 0.25rem;
+    padding: 0;
+    margin: 1.5rem 0;
+    background-color: rgb(var(--color-gray-900));
+    border: 0;
+  }
+
+  /* Tables */
+  & table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  & th {
+    padding: 0.5rem;
+    border: 1px solid rgb(var(--color-gray-300));
+  }
+
+  & td {
+    padding: 0.5rem;
+    border: 1px solid rgb(var(--color-gray-300));
+  }
+
+  & tr:nth-child(2n) {
+    background-color: rgb(var(--color-gray-100));
+  }
+}

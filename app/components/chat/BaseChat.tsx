@@ -234,7 +234,12 @@ export const BaseChat = ({
   }, [sendAutofixMessage]);
 
   const baseChat = (
-    <div className={classNames('BaseChat relative flex h-full w-full overflow-hidden')} data-chat-visible={showChat}>
+    <div
+      className={classNames('relative flex h-full w-full overflow-hidden', {
+        'data-[chat-visible=false]:[--workbench-inner-width:100%] data-[chat-visible=false]:[--workbench-left:0]': true,
+      })}
+      data-chat-visible={showChat}
+    >
       {session?.user && <Menu />}
       <div
         ref={scrollRef}
@@ -242,7 +247,12 @@ export const BaseChat = ({
           '!h-[90vh]': !chatStarted,
         })}
       >
-        <div className={classNames('Chat flex flex-col flex-grow max-w-chat-width h-full')}>
+        <div
+          className={classNames('flex flex-col flex-grow max-w-chat-width h-full', {
+            'data-[chat-visible=false]:transition-all data-[chat-visible=false]:duration-300 data-[chat-visible=false]:will-change-transform data-[chat-visible=false]:will-change-opacity data-[chat-visible=false]:-translate-x-1/2 data-[chat-visible=false]:opacity-0': true,
+            'opacity-100': true,
+          })}
+        >
           <div
             className={classNames('pt-4 pl-4 pr-2', {
               'h-full flex flex-col': chatStarted,
@@ -312,11 +322,11 @@ export const BaseChat = ({
                   }}
                   onDragLeave={(e) => {
                     e.preventDefault();
-                    (e.currentTarget as HTMLTextAreaElement).style.border = '1px solid var(--color-depth-2)';
+                    (e.currentTarget as HTMLTextAreaElement).style.border = '1px solid rgb(30 33 37)';
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
-                    (e.currentTarget as HTMLTextAreaElement).style.border = '1px solid var(--color-depth-2)';
+                    (e.currentTarget as HTMLTextAreaElement).style.border = '1px solid rgb(30 33 37)';
 
                     const files = Array.from(e.dataTransfer.files);
                     files.forEach((file) => {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
-import type { TelemetryEvent } from '~/lib/telemetry/telemetry-manager';
+import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
+import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
+import type { TelemetryEvent } from '~/lib/telemetry/telemetry-types';
 import type { UserProfile } from '~/lib/services/userService';
 import { userService } from '~/lib/services/userService';
 import { logger } from '~/utils/logger';

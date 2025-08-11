@@ -1,4 +1,4 @@
-import type { TelemetryEvent } from './telemetry-manager';
+import type { TelemetryEvent } from './telemetry-types';
 import type { UserProfile } from '~/lib/services/userService';
 import posthog from 'posthog-js';
 import { logger } from '~/utils/logger';

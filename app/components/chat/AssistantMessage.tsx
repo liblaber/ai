@@ -68,15 +68,15 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
               {chatSummary && (
                 <div className="max-w-chat-width">
                   <div className="summary max-h-96 flex flex-col">
-                    <h2 className="border border-depth-3 rounded-md p4">Summary</h2>
-                    <div style={{ zoom: 0.7 }} className="overflow-y-auto m4">
+                    <h2 className="border border-depth-3 rounded-md p-4 text-lg font-semibold">Summary</h2>
+                    <div style={{ zoom: 0.7 }} className="overflow-y-auto m-4">
                       <Markdown>{chatSummary}</Markdown>
                     </div>
                   </div>
                   {codeContext && (
-                    <div className="code-context flex flex-col p4 border border-depth-3 rounded-md">
-                      <h2>Context</h2>
-                      <div className="flex gap-4 mt-4 liblab" style={{ zoom: 0.6 }}>
+                    <div className="code-context flex flex-col p-4 border border-depth-3 rounded-md">
+                      <h2 className="text-lg font-semibold">Context</h2>
+                      <div className="flex gap-4 mt-4" style={{ zoom: 0.6 }}>
                         {codeContext.map((x) => {
                           const normalized = normalizedFilePath(x);
                           return (

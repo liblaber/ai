@@ -68,7 +68,7 @@ export const Markdown = ({ children, html = false, limitedMarkdown = false }: Ma
   return (
     <ReactMarkdown
       allowedElements={allowedHTMLElements}
-      className="MarkdownContent"
+      className="liblab-markdown"
       components={components}
       remarkPlugins={remarkPlugins(limitedMarkdown)}
       rehypePlugins={rehypePlugins(html)}

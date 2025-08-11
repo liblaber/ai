@@ -64,7 +64,7 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
   }, [actions]);
 
   return (
-    <div className="artifact flex flex-col overflow-hidden rounded-xl w-full transition-border duration-150">
+    <div className="artifact flex flex-col overflow-hidden rounded-xl w-full transition-border duration-150 my-6">
       <div className="flex">
         <button
           className="flex items-stretch bg-depth-2 hover:bg-depth-2/50 w-full overflow-hidden"
@@ -171,7 +171,7 @@ function openArtifactInWorkbench(filePath: any) {
 const ActionList = ({ actions }: ActionListProps) => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-      <ul className="list-none space-y-2.5">
+      <ul className="pl-4!">
         {actions.map((action, index) => {
           const { status, type, content } = action;
           const isLast = index === actions.length - 1;
@@ -182,6 +182,7 @@ const ActionList = ({ actions }: ActionListProps) => {
               variants={actionVariants}
               initial="hidden"
               animate="visible"
+              className="list-none"
               transition={{
                 duration: 0.2,
                 ease: cubicEasingFn,
@@ -209,7 +210,7 @@ const ActionList = ({ actions }: ActionListProps) => {
                   <div>
                     Create{' '}
                     <code
-                      className="bg-depth-3 text-xs px-1.5 py-1 rounded-md text-accent hover:underline cursor-pointer"
+                      className="bg-depth-3 !text-xs px-1.5 py-1 rounded-md text-accent! hover:underline cursor-pointer"
                       onClick={() => openArtifactInWorkbench(action.filePath)}
                     >
                       {action.filePath}
