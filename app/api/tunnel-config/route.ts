@@ -13,15 +13,7 @@ export async function GET() {
         const tunnelUrl = fs.readFileSync(TUNNEL_CONFIG_FILE, 'utf8').trim();
 
         if (tunnelUrl) {
-          return NextResponse.json(
-            { url: tunnelUrl },
-            {
-              headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Expose-Headers': '*',
-              },
-            },
-          );
+          return NextResponse.json({ url: tunnelUrl });
         }
       }
     }
@@ -32,13 +24,5 @@ export async function GET() {
   // Fallback to BASE_URL environment variable
   const baseUrl = env.server.BASE_URL || '';
 
-  return NextResponse.json(
-    { url: baseUrl },
-    {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Expose-Headers': '*',
-      },
-    },
-  );
+  return NextResponse.json({ url: baseUrl });
 }
