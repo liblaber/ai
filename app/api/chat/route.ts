@@ -21,6 +21,7 @@ import { createImplementationPlan } from '~/lib/.server/llm/create-implementatio
 import { getDatabaseSchema } from '~/lib/schema';
 import { requireUserId } from '~/auth/session';
 import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
+import { AI_SDK_INVALID_KEY_ERROR } from '~/utils/constants';
 
 const WORK_DIR = '/home/project';
 
@@ -347,16 +348,13 @@ async function chatAction(request: NextRequest) {
           dataStream.writeData(currentProgressAnnotation);
           dataStream.writeMessageAnnotation({
             ...currentProgressAnnotation,
-            errorMessage: error?.message || 'Unable to generate response.',
+            errorMessage: getLlmProviderErrorMessage(error),
           });
 
           throw error;
         }
       },
-      onError: (error: any) => {
-        console.log('Error happened!', error);
-        return error.message;
-      },
+      onError: getLlmProviderErrorMessage,
     }).pipeThrough(
       new TransformStream({
         transform: (chunk, controller) => {
@@ -464,4 +462,34 @@ async function trackChatPrompt(
   } catch (telemetryError) {
     logger.error('Failed to track telemetry event', telemetryError);
   }
+}
+
+function getLlmProviderErrorMessage(error: any): string {
+  logger.error('LLM provider error:', error);
+
+  if (isAuthorizationError(error)) {
+    return 'LLM provider responded with authorization error. Please check that your LLM provider API key is valid and has sufficient permissions.';
+  }
+
+  return error?.message || 'Unable to generate response.';
+}
+
+function isAuthorizationError(error: any) {
+  if (error?.statusCode === 401) {
+    return true;
+  }
+
+  const errorMessage = error?.message;
+
+  if (
+    errorMessage &&
+    typeof errorMessage === 'string' &&
+    // There is an error handling issue inside the ai sdk for the invalid keys that contain special characters.
+    // This is the first part of the error message that gets returned.
+    errorMessage.includes(AI_SDK_INVALID_KEY_ERROR)
+  ) {
+    return true;
+  }
+
+  return false;
 }

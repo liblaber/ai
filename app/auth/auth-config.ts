@@ -5,7 +5,18 @@ import { env } from '~/env';
 import { anonymous, createAuthMiddleware } from 'better-auth/plugins';
 import { UserManagementPluginManager } from '~/lib/plugins/user-management/user-management-plugin-manager';
 
-const { BASE_URL } = env.server;
+const { BASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = env.server;
+const { NEXT_PUBLIC_USE_GOOGLE_AUTH } = env.client;
+
+// Validate Google OAuth configuration when enabled
+if (NEXT_PUBLIC_USE_GOOGLE_AUTH) {
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+    throw new Error(
+      'Google OAuth is enabled but required secrets are missing. ' +
+        'Please ensure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are properly configured.',
+    );
+  }
+}
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -14,6 +25,13 @@ export const auth = betterAuth({
   plugins: [anonymous()],
   emailAndPassword: {
     enabled: true,
+  },
+  socialProviders: {
+    google: {
+      clientId: GOOGLE_CLIENT_ID!,
+      clientSecret: GOOGLE_CLIENT_SECRET!,
+      enabled: NEXT_PUBLIC_USE_GOOGLE_AUTH,
+    },
   },
   baseURL: BASE_URL,
   trustedOrigins: [BASE_URL],

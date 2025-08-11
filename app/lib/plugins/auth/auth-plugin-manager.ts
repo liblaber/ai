@@ -1,5 +1,5 @@
 import type { AuthProvider } from '~/lib/plugins/types';
-import { GoogleIcon, TwitchIcon, TwitterIcon, AnonymousIcon } from '~/components/auth/auth-provider-icons';
+import { GoogleIcon, AnonymousIcon } from '~/components/auth/auth-provider-icons';
 
 export class AuthPluginManager {
   static authProviders: AuthProvider[] = [
@@ -8,18 +8,6 @@ export class AuthPluginManager {
       icon: GoogleIcon(),
       label: 'Login with Google',
       provider: 'google',
-    },
-    {
-      pluginId: 'twitch',
-      icon: TwitchIcon(),
-      label: 'Login with Twitch',
-      provider: 'twitch',
-    },
-    {
-      pluginId: 'twitter',
-      icon: TwitterIcon(),
-      label: 'Login with X',
-      provider: 'twitter',
     },
     {
       pluginId: 'anonymous',

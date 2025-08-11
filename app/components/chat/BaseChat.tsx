@@ -122,6 +122,7 @@ export const BaseChat = ({
   ) => {
     if (sendMessage) {
       const message = messageInput || input;
+      workbenchStore.clearCodeErrors();
 
       await sendMessage(event, message, false, pendingUploadedFiles, pendingImageDataList);
     }

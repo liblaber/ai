@@ -18,6 +18,7 @@ export default [
   {
     rules: {
       '@blitz/catch-error-name': 'off',
+      '@blitz/lines-around-comment': 'off',
       '@typescript-eslint/no-this-alias': 'off',
       '@typescript-eslint/no-empty-object-type': 'off',
       '@blitz/comment-syntax': 'off',

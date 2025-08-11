@@ -18,7 +18,7 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
   },
   [PluginType.AUTH]: {
     anonymous: true,
-    google: false,
+    google: env.client.NEXT_PUBLIC_USE_GOOGLE_AUTH,
     twitch: false,
     twitter: false,
   },
@@ -42,8 +42,8 @@ export const PREMIUM_PLUGIN_ACCESS = {
   [PluginType.AUTH]: {
     anonymous: false,
     google: true,
-    twitch: true,
-    twitter: true,
+    twitch: false,
+    twitter: false,
   },
   [PluginType.STARTER]: {
     remix: true,
