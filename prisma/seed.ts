@@ -193,11 +193,11 @@ async function seedRole(organizationId: string, name: string, description: strin
 
 async function seedUserRole(userId: string, roleId: string): Promise<void> {
   try {
-    let userAdminRole = await prisma.userRole.findFirst({
+    const userRole = await prisma.userRole.findFirst({
       where: { userId, roleId },
     });
 
-    if (!userAdminRole) {
+    if (!userRole) {
       await prisma.userRole.create({
         data: {
           userId,
