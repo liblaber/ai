@@ -2,7 +2,7 @@
 
 import { $ } from 'zx';
 
-import { intro, spinner } from '@clack/prompts';
+import { intro, spinner, log } from '@clack/prompts';
 
 const dependencies: string[] = ['node', 'npm', 'pnpm', 'docker', 'dockerCompose'];
 
@@ -80,6 +80,15 @@ const main = async (): Promise<void> => {
       checkSpinner.stop(`${displayName} is installed${versionOutput ? `: ${versionOutput}` : ''}`);
     } catch {
       checkSpinner.stop(`${displayName} is not installed`);
+
+      // If Docker is missing, provide installation guidance
+      if (dependency === 'docker') {
+        log.error(`\n❌ Docker is required but not installed.`);
+        log.info(`👉 Download and install Docker Desktop from: https://www.docker.com/products/docker-desktop/`);
+        log.info(`After installation, restart this script.\n`);
+
+        return;
+      }
 
       if (installCmd) {
         const installSpinner = spinner();
