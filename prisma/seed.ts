@@ -9,6 +9,8 @@ async function seed() {
   await seedInitialAccount(initialUser);
   await seedDefaultAdmin(initialUser.id, organization.id);
   await seedDefaultEnvironment(organization.id);
+  await seedBuilderRole(organization.id);
+  await seedOperatorRole(organization.id);
 
   console.log('🎉 Database seed completed successfully');
 }
@@ -111,7 +113,6 @@ async function seedDefaultEnvironment(organizationId: string): Promise<Environme
           name: 'Default',
           description: 'Default environment',
           organizationId,
-          createdAt: new Date(),
         },
       });
     }
@@ -125,79 +126,113 @@ async function seedDefaultEnvironment(organizationId: string): Promise<Environme
 
 async function seedDefaultAdmin(userId: string, organizationId: string): Promise<void> {
   try {
-    const adminRole = await seedAdminRole(organizationId);
-    await seedAdminUserRole(userId, adminRole.id);
-    await seedAdminPermissions(adminRole.id);
+    const adminRole = await seedRole(organizationId, 'Admin', 'Full system administrator with all privileges');
+    await seedUserRole(userId, adminRole.id);
+
+    const permissions = [{ resource: PermissionResource.all, action: PermissionAction.manage }];
+    await seedPermissions(adminRole.id, permissions);
   } catch (error) {
     console.error('❌ Error seeding default admin user:', error);
     throw error;
   }
 }
 
-async function seedAdminRole(organizationId: string): Promise<Role> {
+async function seedBuilderRole(organizationId: string): Promise<void> {
   try {
-    let adminRole = await prisma.role.findFirst({
-      where: { name: 'Admin' },
-    });
+    const builderRole = await seedRole(organizationId, 'Builder', 'Application developer and app user');
 
-    if (!adminRole) {
-      adminRole = await prisma.role.create({
-        data: {
-          name: 'Admin',
-          description: 'Administrator role with full access',
-          organizationId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      });
-    }
-
-    return adminRole;
+    // All permissions except admin app
+    const permissions = [
+      { resource: PermissionResource.Environment, action: PermissionAction.manage },
+      { resource: PermissionResource.DataSource, action: PermissionAction.manage },
+      { resource: PermissionResource.Website, action: PermissionAction.manage },
+      { resource: PermissionResource.BuilderApp, action: PermissionAction.manage },
+    ];
+    await seedPermissions(builderRole.id, permissions);
   } catch (error) {
-    console.error('❌ Error creating admin role:', error);
+    console.error('❌ Error seeding builder role:', error);
     throw error;
   }
 }
 
-async function seedAdminUserRole(userId: string, adminRoleId: string): Promise<void> {
+async function seedOperatorRole(organizationId: string): Promise<void> {
   try {
-    const userAdminRole = await prisma.userRole.findFirst({
-      where: { userId, roleId: adminRoleId },
+    const operatorRole = await seedRole(organizationId, 'App User', 'End user with app-only access');
+
+    // Access only to websites
+    const permissions = [{ resource: PermissionResource.Website, action: PermissionAction.manage }];
+    await seedPermissions(operatorRole.id, permissions);
+  } catch (error) {
+    console.error('❌ Error seeding operator role:', error);
+    throw error;
+  }
+}
+
+async function seedRole(organizationId: string, name: string, description: string | null = null): Promise<Role> {
+  try {
+    let role = await prisma.role.findFirst({
+      where: { organizationId, name },
     });
 
-    if (!userAdminRole) {
+    if (!role) {
+      role = await prisma.role.create({
+        data: {
+          name,
+          description,
+          organizationId,
+        },
+      });
+    }
+
+    return role;
+  } catch (error) {
+    console.error(`❌ Error creating ${name} role:`, error);
+    throw error;
+  }
+}
+
+async function seedUserRole(userId: string, roleId: string): Promise<void> {
+  try {
+    const userRole = await prisma.userRole.findFirst({
+      where: { userId, roleId },
+    });
+
+    if (!userRole) {
       await prisma.userRole.create({
         data: {
           userId,
-          roleId: adminRoleId,
-          createdAt: new Date(),
+          roleId,
         },
       });
     }
   } catch (error) {
-    console.error('❌ Error creating admin role:', error);
+    console.error('❌ Error creating user role:', error);
     throw error;
   }
 }
 
-async function seedAdminPermissions(roleId: string): Promise<void> {
+async function seedPermissions(
+  roleId: string,
+  permissions: { resource: PermissionResource; action: PermissionAction }[],
+): Promise<void> {
   try {
-    const existingPermission = await prisma.permission.findFirst({
-      where: { roleId, resource: PermissionResource.all, action: PermissionAction.manage },
-    });
-
-    if (!existingPermission) {
-      await prisma.permission.create({
-        data: {
-          roleId,
-          resource: PermissionResource.all,
-          action: PermissionAction.manage,
-          createdAt: new Date(),
-        },
+    for (const { resource, action } of permissions) {
+      const existingPermission = await prisma.permission.findFirst({
+        where: { roleId, resource, action },
       });
+
+      if (!existingPermission) {
+        await prisma.permission.create({
+          data: {
+            roleId,
+            resource,
+            action,
+          },
+        });
+      }
     }
   } catch (error) {
-    console.error('❌ Error creating initial permissions:', error);
+    console.error('❌ Error creating permissions:', error);
     throw error;
   }
 }

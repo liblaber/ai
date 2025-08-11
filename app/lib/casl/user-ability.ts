@@ -42,8 +42,6 @@ export function createAbilityForUser(permissions: Permission[]): AppAbility {
           can(action, PermissionResource.Environment);
         }
 
-        // TODO: associate data source and website permissions with the environment
-
         break;
 
       case PermissionResource.DataSource:
