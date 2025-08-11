@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateSqlQueries, detectDatabaseTypeFromPrompt, type Table } from '~/lib/.server/llm/database-source';
 import { createScopedLogger } from '~/utils/logger';
 import { z } from 'zod';
-import { getLlm } from '~/lib/.server/llm/get-llm';
 import { prisma } from '~/lib/prisma';
 import { requireUserId } from '~/auth/session';
 import { getConnectionProtocol } from '@liblab/data-access/utils/connection';
@@ -26,7 +25,6 @@ export async function POST(request: NextRequest) {
     const { prompt, existingQuery, dataSourceId, suggestedDatabaseType } = requestSchema.parse(body);
     const existingQueries = existingQuery ? [existingQuery] : [];
 
-    const llm = await getLlm();
     let schema: Table[];
     let type: string;
 
@@ -42,7 +40,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Use AI to determine database type from prompt
       const availableTypes = DataAccessor.getAvailableDatabaseTypes();
-      const detectedType = suggestedDatabaseType || (await detectDatabaseTypeFromPrompt(prompt, llm, availableTypes));
+      const detectedType = suggestedDatabaseType || (await detectDatabaseTypeFromPrompt(prompt, availableTypes));
 
       if (!detectedType) {
         return NextResponse.json(
@@ -71,7 +69,6 @@ export async function POST(request: NextRequest) {
     const queries = await generateSqlQueries({
       schema,
       userPrompt: prompt,
-      llm,
       databaseType: type,
       existingQueries,
     });

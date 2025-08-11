@@ -4,10 +4,10 @@ import { PostHog } from 'posthog-node';
 import { getInstanceId } from '~/lib/instance-id';
 import { type UserProfile } from '~/lib/services/userService';
 import { logger } from '~/utils/logger';
-import type { TelemetryEvent } from './telemetry-types';
+import { type TelemetryEvent, TelemetryEventType } from './telemetry-types';
 
 // Re-export for backward compatibility with server-side code
-export { TelemetryEventType } from './telemetry-types';
+export { TelemetryEventType };
 
 class TelemetryManager {
   private _instanceId: string | null = null;
@@ -37,15 +37,14 @@ class TelemetryManager {
   }
 
   async trackTelemetryEvent(event: TelemetryEvent, user?: UserProfile): Promise<void> {
-    if (!this._isTelemetryEnabled(user) || !this._posthogClient) {
+    if (!this._isTelemetryEnabled(event.eventType, user) || !this._posthogClient) {
       return;
     }
 
-    // Machine id is used to uniquely identify events per user
     const eventProperties = {
       ...event.properties,
-      user,
-      instanceId: this._instanceId,
+      userId: user?.id, // No user PII being tracked, only the id
+      instanceId: this._instanceId, // Used to identify events from single liblab ai instance
       nodeVersion: process.version,
       liblabVersion: env.npm_package_version || '0.0.1',
     };
@@ -83,8 +82,12 @@ class TelemetryManager {
     return distinctId;
   }
 
-  private _isTelemetryEnabled(user?: UserProfile): boolean {
-    // Check if telemetry is disabled via environment variable
+  private _isTelemetryEnabled(eventType: TelemetryEventType, user?: UserProfile): boolean {
+    if (eventType === TelemetryEventType.USER_TELEMETRY_CONSENT) {
+      // Track answers on user telemetry consent page
+      return true;
+    }
+
     const telemetryDisabled = clientEnv.NEXT_PUBLIC_DISABLE_TELEMETRY;
 
     if (telemetryDisabled) {

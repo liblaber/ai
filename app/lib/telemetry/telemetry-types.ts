@@ -10,6 +10,7 @@ export enum TelemetryEventType {
   USER_CHAT_PROMPT = 'USER_CHAT_PROMPT',
   USER_APP_DEPLOY = 'USER_APP_DEPLOY',
   BUILT_APP_ERROR = 'BUILT_APP_ERROR',
+  USER_TELEMETRY_CONSENT = 'USER_TELEMETRY_CONSENT',
 }
 
 export interface TelemetryEvent {

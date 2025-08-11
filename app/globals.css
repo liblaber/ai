@@ -81,6 +81,11 @@
   --workbench-width: min(calc(100vw - var(--spacing-chat-width)), 2536px);
   --workbench-inner-width: var(--workbench-width);
   --workbench-left: calc(100% - var(--workbench-width));
+
+  --color-scrollbar: #f7f7f8;
+  --color-scrollbar-dark: #4b5563;
+  --color-scrollbar-dark-hover: #6b7280;
+  --color-scrollbar-hover: #d6dbdc;
 }
 
 html,
@@ -260,5 +265,50 @@ body {
 
   & tr:nth-child(2n) {
     background-color: rgb(var(--color-gray-100));
+  }
+}
+
+/* Custom scrollbar styles for Mac-like appearance */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-scrollbar) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-scrollbar);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-scrollbar-hover);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Dark theme scrollbar */
+  .dark * {
+    scrollbar-color: var(--color-scrollbar-dark) transparent;
+  }
+
+  .dark *::-webkit-scrollbar-thumb {
+    background-color: var(--color-scrollbar-dark);
+  }
+
+  .dark *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-scrollbar-dark-hover);
   }
 }

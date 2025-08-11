@@ -2,7 +2,7 @@ import { logger } from '~/utils/logger';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { DataAccessor } from '@liblab/data-access/dataAccessor';
-import type { Llm } from './get-llm';
+import { getLlm } from './get-llm';
 
 const queryDecisionSchema = z.object({
   shouldUpdateSql: z.boolean(),
@@ -60,7 +60,6 @@ export interface Table {
 export type GenerateSqlQueriesOptions = {
   schema: Table[];
   userPrompt: string;
-  llm: Llm;
   databaseType: string;
   implementationPlan?: string;
   existingQueries?: string[];
@@ -69,7 +68,6 @@ export type GenerateSqlQueriesOptions = {
 export async function generateSqlQueries({
   schema,
   userPrompt,
-  llm,
   databaseType,
   existingQueries,
 }: GenerateSqlQueriesOptions): Promise<SqlQueryOutput | undefined> {
@@ -85,6 +83,8 @@ export async function generateSqlQueries({
   const systemPrompt = accessor.generateSystemPrompt(databaseType, dbSchema, existingQueries, userPrompt);
 
   try {
+    const llm = await getLlm();
+
     logger.info(`Generating SQL for prompt: ${userPrompt}, using model: ${llm.instance.modelId}`);
 
     const result = await generateObject({
@@ -161,9 +161,10 @@ export function formatDbSchemaForLLM(schema: Table[]): string {
 
 export async function detectDatabaseTypeFromPrompt(
   userPrompt: string,
-  llm: Llm,
   availableTypes: string[] = ['postgres', 'mysql', 'sqlite', 'mongodb'],
 ): Promise<string | null> {
+  const llm = await getLlm();
+
   logger.info(`Detecting database type for prompt: ${userPrompt} using model: ${llm.instance.modelId}`);
 
   const systemPrompt = `You are a database expert tasked with analyzing user prompts to determine which type of database they are most likely referring to.
@@ -231,11 +232,8 @@ If the prompt doesn't contain enough information to make a confident determinati
   }
 }
 
-export async function shouldGenerateSqlQueries(
-  userPrompt: string,
-  llm: Llm,
-  existingQueries?: string[],
-): Promise<boolean> {
+export async function shouldGenerateSqlQueries(userPrompt: string, existingQueries?: string[]): Promise<boolean> {
+  const llm = await getLlm();
   logger.info(`Deciding should SQL be generated for prompt: ${userPrompt} using model: ${llm.instance.modelId}`);
 
   const systemPrompt = `You are an experienced software engineer and an SQL expert tasked with determining whether a user's request requires updating existing SQL queries or not.
