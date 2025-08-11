@@ -160,6 +160,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
             ) : (
               <button
                 onClick={handleConnectDataSource}
+                title="Connect external data sources to enhance AI responses"
                 className={classNames(
                   'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',
