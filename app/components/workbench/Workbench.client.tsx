@@ -407,6 +407,7 @@ export const Workbench = memo(
                     <div className="flex overflow-y-auto">
                       <PanelHeaderButton
                         className="mr-1 text-sm"
+                        title="Show/hide terminal panel"
                         onClick={() => {
                           workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
                         }}
@@ -416,6 +417,7 @@ export const Workbench = memo(
                       </PanelHeaderButton>
                       <PanelHeaderButton
                         className="mr-1 text-sm"
+                        title="Download project as ZIP file"
                         onClick={() => {
                           workbenchStore.downloadZip();
                         }}
@@ -423,7 +425,11 @@ export const Workbench = memo(
                         <div className="i-ph:download-simple" />
                         Download Code
                       </PanelHeaderButton>
-                      <PanelHeaderButton className="mr-1 text-sm" onClick={() => setIsPushDialogOpen(true)}>
+                      <PanelHeaderButton
+                        className="mr-1 text-sm"
+                        title={!isGitConnected ? 'Connect to GitHub repository' : 'Manage GitHub repository'}
+                        onClick={() => setIsPushDialogOpen(true)}
+                      >
                         <div className="i-ph:git-branch" />
                         {(() => {
                           if (!isGitConnected) {
@@ -436,7 +442,12 @@ export const Workbench = memo(
                         })()}
                       </PanelHeaderButton>
                       {isGitConnected && (
-                        <PanelHeaderButton className="mr-1 text-sm" onClick={handleSyncFiles} disabled={isSyncing}>
+                        <PanelHeaderButton
+                          className="mr-1 text-sm"
+                          title="Sync local changes with GitHub repository"
+                          onClick={handleSyncFiles}
+                          disabled={isSyncing}
+                        >
                           {isSyncing ? <div className="i-ph:spinner" /> : <div className="i-ph:github-logo" />}
                           {isSyncing ? 'Syncing...' : 'Sync Files'}
                         </PanelHeaderButton>
@@ -448,6 +459,7 @@ export const Workbench = memo(
                   )}
                   <PanelHeaderButton
                     className="mr-1 text-sm"
+                    title={devMode ? 'Switch to preview mode' : 'Switch to code editor'}
                     onClick={() => {
                       workbenchStore.devMode.set(!devMode);
                       workbenchStore.currentView.set(devMode ? 'preview' : 'code');
