@@ -1,5 +1,5 @@
-import { DeprecatedRole, PermissionAction, PermissionResource, PrismaClient } from '@prisma/client';
 import type { Account, Environment, Organization, Role, User } from '@prisma/client';
+import { DeprecatedRole, PermissionAction, PermissionResource, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -12,15 +12,6 @@ async function seed() {
 
   console.log('🎉 Database seed completed successfully');
 }
-
-seed()
-  .catch((e) => {
-    console.error('❌ Error during seeding:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
 
 async function seedOrganization(): Promise<Organization> {
   try {
@@ -37,6 +28,9 @@ async function seedOrganization(): Promise<Organization> {
       organization = await prisma.organization.create({
         data: anonymousOrganization,
       });
+      console.log('✅ Created anonymous organization');
+    } else {
+      console.log('✅ Anonymous organization already exists');
     }
 
     return organization;
@@ -167,12 +161,12 @@ async function seedAdminRole(organizationId: string): Promise<Role> {
 
 async function seedAdminUserRole(userId: string, adminRoleId: string): Promise<void> {
   try {
-    let userAdminRole = await prisma.userRole.findFirst({
+    const userAdminRole = await prisma.userRole.findFirst({
       where: { userId, roleId: adminRoleId },
     });
 
     if (!userAdminRole) {
-      userAdminRole = await prisma.userRole.create({
+      await prisma.userRole.create({
         data: {
           userId,
           roleId: adminRoleId,
@@ -207,3 +201,13 @@ async function seedAdminPermissions(roleId: string): Promise<void> {
     throw error;
   }
 }
+
+seed()
+  .catch((e) => {
+    console.error('❌ Fatal seeding error:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    // Ensure the connection is properly closed
+    await prisma.$disconnect();
+  });

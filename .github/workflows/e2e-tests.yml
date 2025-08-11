@@ -1,0 +1,101 @@
+name: 🧪 E2E Tests
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-tests:
+    name: 🧪 Run E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.tool-versions'
+          cache: 'pnpm'
+
+      - name: 📄 Update .env file
+        run: |
+          # Copy .env.example to .env first
+          cp .env.example .env
+
+          # Set mandatory values in .env because we can't set them interactively through the CLI from GitHub action
+          echo "ANTHROPIC_API_KEY=${{ secrets.DUMMY_ANTHROPIC_API_KEY }}" >> .env
+          echo "DEFAULT_LLM_PROVIDER=Google" >> .env
+          echo "DEFAULT_LLM_MODEL=gemini-2.5-flash" >> .env
+          echo "GOOGLE_GENERATIVE_AI_API_KEY=${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}" >> .env
+          echo "NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }}" >> .env
+          echo "AUTH_SECRET=${{ secrets.AUTH_SECRET }}" >> .env
+          echo "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}" >> .env
+
+      - name: 🐳 Run liblab quickstart
+        run: |
+          # Start the database and app using docker compose directly
+          pnpm run quickstart
+
+          # Wait for the app to be ready
+          echo "⏳ Waiting for the application to be ready..."
+          timeout 300 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 5; done'
+          echo "✅ Application is ready!"
+
+      - name: 📋 Show Docker ai-app container logs
+        run: |
+          echo "📋 Container logs:"
+          docker compose logs --tail=200 ai-app
+
+      - name: 🧪 Install E2E test dependencies
+        working-directory: tests/e2e
+        run: |
+          npm install
+          npx playwright install chromium
+
+      - name: 🧪 Run E2E tests
+        working-directory: tests/e2e
+        run: pnpm test
+        env:
+          BASE_URL: http://localhost:3000
+          CI: true
+
+      - name: 📋 Show Docker ai-app container logs after test run
+        if: always()
+        run: |
+          echo "📋 Container logs:"
+          docker compose logs --tail=200 ai-app
+
+      - name: 📊 Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/e2e/playwright-report/
+          retention-days: 30
+
+      - name: 📊 Upload test videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-videos
+          path: tests/e2e/test-results/
+          retention-days: 30
+
+      - name: 🧹 Cleanup Docker services
+        if: always()
+        run: docker compose down
