@@ -2,7 +2,7 @@
 
 import { existsSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { intro, outro, text, log, spinner } from '@clack/prompts';
+import { intro, outro, text, log, spinner, isCancel } from '@clack/prompts';
 
 // liblab AI Builder Setup Script
 // OS Compatibility: macOS, Linux, Windows
@@ -208,10 +208,15 @@ async function main(): Promise<void> {
 
   // Use select instead of text
   const { select } = await import('@clack/prompts');
-  const providerValue = (await select({
+  const providerValue = await select({
     message: 'Select your AI provider:',
     options: providers.map((p) => ({ value: p.value, label: p.label })),
-  })) as string;
+  });
+
+  if (isCancel(providerValue)) {
+    log.warn('Setup cancelled.');
+    process.exit(0);
+  }
 
   const selected = providers.find((p) => p.value === providerValue);
 
@@ -225,7 +230,7 @@ async function main(): Promise<void> {
     log.info(`✅ ${selected.apiKeyEnv} already exists in .env file. Skipping provider setup.`);
   } else {
     // Prompt for model name
-    const modelName = (await text({
+    const modelNameResult = await text({
       message: `Enter the model name for ${selected.label} (e.g. ${selected.modelExample}):`,
       placeholder: selected.modelExample,
       validate: (value) => {
@@ -235,15 +240,17 @@ async function main(): Promise<void> {
 
         return undefined;
       },
-    })) as string;
+    });
 
-    envContent = updateOrAddEnvVar(envContent, 'DEFAULT_LLM_PROVIDER', selected.enumValue);
-    envContent = updateOrAddEnvVar(envContent, 'DEFAULT_LLM_MODEL', modelName.trim());
-    writeEnvFile(envContent);
-    log.success(`✅ Set DEFAULT_LLM_MODEL and DEFAULT_LLM_PROVIDER in .env file.`);
+    if (isCancel(modelNameResult)) {
+      log.warn('Setup cancelled.');
+      process.exit(0);
+    }
+
+    const modelName = modelNameResult;
 
     // Prompt for API key with regex validation
-    const apiKey = (await text({
+    const apiKeyResult = await text({
       message: selected.apiKeyPrompt,
       placeholder: selected.apiKeyExample,
       validate: (value) => {
@@ -257,10 +264,20 @@ async function main(): Promise<void> {
 
         return undefined;
       },
-    })) as string;
+    });
+
+    if (isCancel(apiKeyResult)) {
+      log.warn('Setup cancelled.');
+      process.exit(0);
+    }
+
+    const apiKey = apiKeyResult;
+
+    envContent = updateOrAddEnvVar(envContent, 'DEFAULT_LLM_PROVIDER', selected.enumValue);
+    envContent = updateOrAddEnvVar(envContent, 'DEFAULT_LLM_MODEL', modelName.trim());
     envContent = updateOrAddEnvVar(envContent, selected.apiKeyEnv, apiKey.trim());
     writeEnvFile(envContent);
-    log.success(`✅ Added ${selected.apiKeyEnv} to .env file.`);
+    log.success(`✅ Set DEFAULT_LLM_MODEL, DEFAULT_LLM_PROVIDER, and ${selected.apiKeyEnv} in .env file.`);
   }
 
   // Check for NGROK_AUTHTOKEN
