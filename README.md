@@ -275,16 +275,16 @@ Some browser add-ons like ad blockers or VPNs might cause problems. If things ar
 
 **Setup**
 
-Run the setup:
-
-```bash
-pnpm run setup
-```
-
 Clone the repo:
 
 ```bash
 git clone https://github.com/liblaber/ai.git
+```
+
+Run the setup:
+
+```bash
+pnpm run setup
 ```
 
 **Start the app**
