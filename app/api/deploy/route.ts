@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
               siteName: newSite.name,
               siteUrl: newSite.url,
               chatId,
-              userId,
+              createdById: userId,
             },
           });
         }
