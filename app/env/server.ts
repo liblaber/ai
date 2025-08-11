@@ -81,7 +81,7 @@ export const env = createEnv({
 
     // LLM provider configuration
     DEFAULT_LLM_PROVIDER: z.enum(PROVIDER_NAMES).default('Anthropic'),
-    DEFAULT_LLM_MODEL: z.string().default('claude-3-5-sonnet-latest'),
+    DEFAULT_LLM_MODEL: z.string().default('claude-4-sonnet-20250514'),
 
     // Local provider configuration
     OLLAMA_API_BASE_URL: z.string().url().default('http://localhost:11434'),
