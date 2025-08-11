@@ -14,6 +14,7 @@ import { classNames } from '~/utils/classNames';
 import { useStore } from '@nanostores/react';
 import { openSettingsPanel, settingsPanelStore } from '~/lib/stores/settings';
 import { deleteConversation, getConversations, type SimpleConversationResponse } from '~/lib/persistence/conversations';
+import { MessageCircle, Search } from 'lucide-react';
 
 const menuVariants = {
   closed: {
@@ -163,12 +164,12 @@ export const Menu = () => {
               href="/"
               className="flex gap-2 items-center bg-accent-50 dark:bg-accent-500/10 text-accent-700 dark:text-accent-300 hover:bg-accent-100 dark:hover:bg-accent-500/20 rounded-lg px-4 py-2 transition-colors"
             >
-              <span className="inline-block i-ph:chat-circle-duotone h-4 w-4" />
+              <MessageCircle className="h-4 w-4" />
               <span className="text-sm font-medium">Start new chat</span>
             </a>
             <div className="relative w-full">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 z-100">
-                <div className="i-ph:magnifying-glass h-4 w-4 text-gray-400 dark:text-gray-500" />
+                <Search className="h-4 w-4 text-gray-400 dark:text-gray-500" />
               </div>
               <input
                 className="w-full bg-gray-100  dark:bg-gray-900 relative pl-9 pr-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-accent-500/50 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-800"
@@ -208,7 +209,7 @@ export const Menu = () => {
                 {dialogContent?.type === 'delete' && (
                   <>
                     <div className="p-6 bg-white dark:bg-gray-950">
-                      <DialogTitle className="text-gray-900 dark:text-white">Delete Chat?</DialogTitle>
+                      <DialogTitle className="text-gray-900 dark:text-white" title="Delete Chat?" />
                       <DialogDescription className="mt-2 text-gray-600 dark:text-gray-400">
                         <p>
                           You are about to delete{' '}

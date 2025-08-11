@@ -1,5 +1,6 @@
 import { classNames } from '~/utils/classNames';
 import { useEffect, useState } from 'react';
+import { Info, XCircle, CheckCircle, Loader2, Plug, Trash2, Save, AlertTriangle } from 'lucide-react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
 import { toast } from 'sonner';
@@ -177,7 +178,7 @@ export default function EditDataSourceForm({
         <div className="space-y-4">
           <div className="flex gap-2 mb-6 items-end">
             <div className="min-w-[160px] flex-1">
-              <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">Data source</label>
+              <label className="mb-3 block text-sm font-medium text-secondary">Data source</label>
               <BaseSelect
                 value={dbType}
                 onChange={(value) => {
@@ -206,9 +207,7 @@ export default function EditDataSourceForm({
           {dbType.value !== SAMPLE_DATABASE && (
             <>
               <div>
-                <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
-                  Database Name
-                </label>
+                <label className="mb-3 block text-sm font-medium text-secondary">Database Name</label>
                 <input
                   type="text"
                   value={dbName}
@@ -216,7 +215,7 @@ export default function EditDataSourceForm({
                   disabled={isSubmitting}
                   className={classNames(
                     'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                    'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary text-base',
+                    'text-primary placeholder-tertiary text-base',
                     'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
                     'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
                     'transition-all duration-200',
@@ -226,9 +225,7 @@ export default function EditDataSourceForm({
                 />
               </div>
               <div>
-                <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
-                  Connection String
-                </label>
+                <label className="mb-3 block text-sm font-medium text-secondary">Connection String</label>
                 <div className="relative">
                   <input
                     type={showConnStr ? 'text' : 'password'}
@@ -237,7 +234,7 @@ export default function EditDataSourceForm({
                     disabled={isSubmitting}
                     className={classNames(
                       'w-full px-4 py-2.5 pr-12 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                      'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary text-base',
+                      'text-primary placeholder-tertiary text-base',
                       'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
                       'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
                       'transition-all duration-200',
@@ -256,7 +253,7 @@ export default function EditDataSourceForm({
                     </span>
                   </button>
                 </div>
-                <label className="mb-3 block !text-[13px] text-liblab-elements-textSecondary mt-2">
+                <label className="mb-3 block !text-[13px] text-secondary mt-2">
                   e.g. {dbType.connectionStringFormat}
                 </label>
               </div>
@@ -266,7 +263,7 @@ export default function EditDataSourceForm({
           {dbType.value === SAMPLE_DATABASE && (
             <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
               <div className="flex items-center gap-2">
-                <div className="i-ph:info w-5 h-5 text-blue-500" />
+                <Info className="w-5 h-5 text-blue-500" />
                 <p className="text-sm text-blue-600 dark:text-blue-400">
                   Sample database cannot be edited. Delete and create a new one if needed.
                 </p>
@@ -278,7 +275,7 @@ export default function EditDataSourceForm({
           {error && !testResult && (
             <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
               <div className="flex items-center gap-2">
-                <div className="i-ph:x-circle w-5 h-5 text-red-500" />
+                <XCircle className="w-5 h-5 text-red-500" />
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               </div>
             </div>
@@ -293,11 +290,9 @@ export default function EditDataSourceForm({
               }`}
             >
               <div className="flex items-center gap-2">
-                <div
-                  className={`i-ph:${
-                    testResult.success ? 'check-circle' : 'x-circle'
-                  } w-5 h-5 ${testResult.success ? 'text-green-500' : 'text-red-500'}`}
-                />
+                <div className={`w-5 h-5 ${testResult.success ? 'text-green-500' : 'text-red-500'}`}>
+                  {testResult.success ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                </div>
                 <p
                   className={`text-sm ${
                     testResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
@@ -330,12 +325,12 @@ export default function EditDataSourceForm({
                 >
                   {isTestingConnection ? (
                     <>
-                      <div className="i-ph:spinner animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Testing...</span>
                     </>
                   ) : (
                     <>
-                      <div className="i-ph:plug-fill" />
+                      <Plug className="w-4 h-4" />
                       <span>Test Connection</span>
                     </>
                   )}
@@ -354,7 +349,7 @@ export default function EditDataSourceForm({
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                 )}
               >
-                <div className="i-ph:trash-bold" />
+                <Trash2 className="w-4 h-4" />
                 <span>Delete</span>
               </button>
               <button
@@ -370,12 +365,12 @@ export default function EditDataSourceForm({
               >
                 {isSubmitting ? (
                   <>
-                    <div className="i-ph:spinner animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Saving...</span>
                   </>
                 ) : (
                   <>
-                    <div className="i-ph:floppy-disk" />
+                    <Save className="w-4 h-4" />
                     <span>Save Changes</span>
                   </>
                 )}
@@ -390,10 +385,10 @@ export default function EditDataSourceForm({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center gap-3 mb-4">
-              <div className="i-ph:warning-circle w-6 h-6 text-amber-500" />
-              <h3 className="text-lg font-semibold text-liblab-elements-textPrimary">Confirm Save Changes</h3>
+              <AlertTriangle className="w-6 h-6 text-amber-500" />
+              <h3 className="text-lg font-semibold text-primary">Confirm Save Changes</h3>
             </div>
-            <p className="text-sm text-liblab-elements-textSecondary mb-6">
+            <p className="text-sm text-secondary mb-6">
               Are you sure you want to save these changes to the data source? This action will update the connection
               settings.
             </p>

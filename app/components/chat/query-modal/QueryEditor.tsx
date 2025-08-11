@@ -1,3 +1,4 @@
+import { List, Play } from 'lucide-react';
 import { CodeMirrorEditor } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { Button } from '~/components/ui/Button';
 
@@ -26,7 +27,7 @@ export const QueryEditor = ({
           className="text-xs bg-[#2E2E2E] text-[#A78BFA] hover:bg-[#3E3E3E] hover:text-[#A78BFA] px-2 py-1 flex items-center gap-1"
           onClick={onFormatQuery}
         >
-          <div className="i-ph:list w-4 h-4" />
+          <List className="w-4 h-4" />
           Format
         </Button>
         <Button
@@ -34,7 +35,7 @@ export const QueryEditor = ({
           onClick={onTestQuery}
           disabled={isTesting}
         >
-          <div className="i-ph:play w-4 h-4" />
+          <Play className="w-4 h-4" />
           {isTesting ? 'Running...' : 'Run Test Query'}
         </Button>
       </div>

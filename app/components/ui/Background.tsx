@@ -1,7 +1,7 @@
 export const Background = () => (
   <div className="fixed inset-0 overflow-hidden animate-fadeIn pointer-events-none z-0 flex justify-center w-screen">
     <div className="absolute inset-0 pointer-events-none z-0 bg-[radial-gradient(circle,_transparent_20%,_rgba(0,0,0,0.9)_70%)]"></div>
-    <svg className="h-125vh mt-[50px]" viewBox="0 0 1280 1032" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg className="h-[125vh] mt-[50px]" viewBox="0 0 1280 1032" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M639.608 -227.86L640.08 297.59V526.599L639.632 1051.76"
         stroke="#F7F7F8"

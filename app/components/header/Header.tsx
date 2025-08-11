@@ -8,6 +8,7 @@ import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
 import { Logo } from '~/components/Logo';
 import { UserMenu } from '~/components/auth/UserMenu';
 import { useSession } from '~/auth/auth-client';
+import { Menu } from 'lucide-react';
 
 interface Props {
   showMenuIcon?: boolean;
@@ -21,11 +22,11 @@ export function Header({ showMenuIcon = true }: Props) {
     <header
       className={classNames('flex items-center p-5 border-b h-[var(--header-height)] z-10', {
         'border-transparent': !chat.started,
-        'border-liblab-elements-borderColor': chat.started,
+        'border-depth-3': chat.started,
       })}
     >
-      <div className="flex items-center gap-2 z-logo text-liblab-elements-textPrimary cursor-pointer">
-        {showMenuIcon && <ClientOnly>{() => session?.user && <div className="i-liblab:ic_menu text-xl" />}</ClientOnly>}
+      <div className="flex items-center gap-2 z-logo text-primary cursor-pointer">
+        {showMenuIcon && <ClientOnly>{() => session?.user && <Menu className="text-xl" />}</ClientOnly>}
         <a href="/" className="ml-1 font-semibold text-accent flex items-center">
           <div className="h-8 flex items-center text-black dark:text-white">
             <Logo />
@@ -34,7 +35,7 @@ export function Header({ showMenuIcon = true }: Props) {
       </div>
       {chat.started && (
         <>
-          <span className="flex-1 px-4 truncate text-center text-liblab-elements-textPrimary">
+          <span className="flex-1 px-4 truncate text-center text-primary">
             <ClientOnly>{() => <ChatDescription />}</ClientOnly>
           </span>
           <ClientOnly>

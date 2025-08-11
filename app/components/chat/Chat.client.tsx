@@ -38,7 +38,7 @@ import type { FileMap } from '~/lib/stores/files';
 import { useTrackStreamProgress } from '~/components/chat/useTrackStreamProgress';
 import type { ProgressAnnotation } from '~/types/context';
 import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
-import { TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 
 type DatabaseUrlResponse = {
   url: string;

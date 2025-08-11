@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { ModelInfo } from '~/lib/modules/llm/types';
 import { classNames } from '~/utils/classNames';
+import { ChevronDown, Search } from 'lucide-react';
 
 interface ModelSelectorProps {
   model?: string;
@@ -155,7 +156,7 @@ export const ModelSelector = ({
 
   if (providerList.length === 0) {
     return (
-      <div className="mb-2 p-4 rounded-lg border border-liblab-elements-borderColor bg-liblab-elements-prompt-background text-liblab-elements-textPrimary">
+      <div className="mb-2 p-4 rounded-lg border border-depth-3 bg-depth-2/80 text-primary">
         <p className="text-center">
           No providers are currently enabled. Please enable at least one provider in the settings to start using the
           chat.
@@ -181,7 +182,7 @@ export const ModelSelector = ({
             setModel(firstModel.name);
           }
         }}
-        className="flex-1 p-2 rounded-lg border border-liblab-elements-borderColor bg-liblab-elements-prompt-background text-liblab-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-liblab-elements-focus transition-all"
+        className="flex-1 p-2 rounded-lg border border-depth-3 bg-depth-2/80 text-primary focus:outline-none focus:ring-2 focus:ring-accent transition-all"
       >
         {providerList.map((provider: ProviderInfo) => (
           <option key={provider.name} value={provider.name}>
@@ -193,11 +194,11 @@ export const ModelSelector = ({
       <div className="relative flex-1 lg:max-w-[70%]" onKeyDown={handleKeyDown} ref={dropdownRef}>
         <div
           className={classNames(
-            'w-full p-2 rounded-lg border border-liblab-elements-borderColor',
-            'bg-liblab-elements-prompt-background text-liblab-elements-textPrimary',
-            'focus-within:outline-none focus-within:ring-2 focus-within:ring-liblab-elements-focus',
+            'w-full p-2 rounded-lg border border-depth-3',
+            'bg-depth-2/80 text-primary',
+            'focus-within:outline-none focus-within:ring-2 focus-within:ring-accent',
             'transition-all cursor-pointer',
-            isModelDropdownOpen ? 'ring-2 ring-liblab-elements-focus' : undefined,
+            isModelDropdownOpen ? 'ring-2 ring-accent' : undefined,
           )}
           onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
           onKeyDown={(e) => {
@@ -216,16 +217,18 @@ export const ModelSelector = ({
             <div className="truncate">{modelList.find((m) => m.name === model)?.label || 'Select model'}</div>
             <div
               className={classNames(
-                'i-ph:caret-down w-4 h-4 text-liblab-elements-textSecondary opacity-75',
+                'w-4 h-4 text-secondary opacity-75',
                 isModelDropdownOpen ? 'rotate-180' : undefined,
               )}
-            />
+            >
+              <ChevronDown className="w-4 h-4" />
+            </div>
           </div>
         </div>
 
         {isModelDropdownOpen && (
           <div
-            className="absolute z-10 w-full mt-1 py-1 rounded-lg border border-liblab-elements-borderColor bg-liblab-elements-bg-depth-2  shadow-lg"
+            className="absolute z-10 w-full mt-1 py-1 rounded-lg border border-depth-3 bg-depth-2  shadow-lg"
             role="listbox"
             id="model-listbox"
           >
@@ -239,9 +242,9 @@ export const ModelSelector = ({
                   placeholder="Search models..."
                   className={classNames(
                     'w-full pl-8 pr-3 py-1.5 rounded-md text-sm',
-                    'bg-liblab-elements-bg-depth-2 border border-liblab-elements-borderColor',
-                    'text-liblab-elements-textPrimary placeholder:text-liblab-elements-textTertiary',
-                    'focus:outline-none focus:ring-2 focus:ring-liblab-elements-focus',
+                    'bg-depth-2 border border-depth-3',
+                    'text-primary placeholder:text-tertiary',
+                    'focus:outline-none focus:ring-2 focus:ring-accent',
                     'transition-all',
                   )}
                   onClick={(e) => e.stopPropagation()}
@@ -249,7 +252,7 @@ export const ModelSelector = ({
                   aria-label="Search models"
                 />
                 <div className="absolute left-2.5 top-1/2 -translate-y-1/2">
-                  <span className="i-ph:magnifying-glass text-liblab-elements-textTertiary" />
+                  <Search className="w-4 h-4 text-tertiary" />
                 </div>
               </div>
             </div>
@@ -259,21 +262,20 @@ export const ModelSelector = ({
                 'max-h-60 overflow-y-auto',
                 'sm:scrollbar-none',
                 '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2',
-                '[&::-webkit-scrollbar-thumb]:bg-liblab-elements-borderColor',
-                '[&::-webkit-scrollbar-thumb]:hover:bg-liblab-elements-borderColorHover',
+                '[&::-webkit-scrollbar-thumb]:bg-depth-3',
                 '[&::-webkit-scrollbar-thumb]:rounded-full',
-                '[&::-webkit-scrollbar-track]:bg-liblab-elements-bg-depth-2',
+                '[&::-webkit-scrollbar-track]:bg-depth-2',
                 '[&::-webkit-scrollbar-track]:rounded-full',
                 'sm:[&::-webkit-scrollbar]:w-1.5 sm:[&::-webkit-scrollbar]:h-1.5',
-                'sm:hover:[&::-webkit-scrollbar-thumb]:bg-liblab-elements-borderColor/50',
-                'sm:hover:[&::-webkit-scrollbar-thumb:hover]:bg-liblab-elements-borderColor',
+                'sm:hover:[&::-webkit-scrollbar-thumb]:bg-depth-2/50',
+                'sm:hover:[&::-webkit-scrollbar-thumb:hover]:bg-depth-3',
                 'sm:[&::-webkit-scrollbar-track]:bg-transparent',
               )}
             >
               {modelLoading === 'all' || modelLoading === provider?.name ? (
-                <div className="px-3 py-2 text-sm text-liblab-elements-textTertiary">Loading...</div>
+                <div className="px-3 py-2 text-sm text-tertiary">Loading...</div>
               ) : filteredModels.length === 0 ? (
-                <div className="px-3 py-2 text-sm text-liblab-elements-textTertiary">No models found</div>
+                <div className="px-3 py-2 text-sm text-tertiary">No models found</div>
               ) : (
                 filteredModels.map((modelOption, index) => (
                   <div
@@ -285,13 +287,11 @@ export const ModelSelector = ({
                     aria-selected={model === modelOption.name}
                     className={classNames(
                       'px-3 py-2 text-sm cursor-pointer',
-                      'hover:bg-liblab-elements-bg-depth-3',
-                      'text-liblab-elements-textPrimary',
+                      'hover:bg-depth-3',
+                      'text-primary',
                       'outline-none',
-                      model === modelOption.name || focusedIndex === index
-                        ? 'bg-liblab-elements-bg-depth-2'
-                        : undefined,
-                      focusedIndex === index ? 'ring-1 ring-inset ring-liblab-elements-focus' : undefined,
+                      model === modelOption.name || focusedIndex === index ? 'bg-depth-2' : undefined,
+                      focusedIndex === index ? 'ring-1 ring-inset ring-accent' : undefined,
                     )}
                     onClick={(e) => {
                       e.stopPropagation();

@@ -10,6 +10,8 @@ import { openSettingsPanel } from '~/lib/stores/settings';
 import { SendButton } from './SendButton.client';
 import { processImageFile } from '~/utils/fileUtils';
 import { ClientOnly } from '~/components/ui/ClientOnly';
+import { Database } from 'lucide-react';
+import IcAttach from '~/icons/ic_attach.svg';
 
 interface ChatTextareaProps {
   value: string;
@@ -63,7 +65,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
     const fileUploadButton = (
       <IconButton title="Upload file" className="transition-all" onClick={() => handleFileUpload()}>
         <WithTooltip tooltip="Upload file">
-          <div className="i-liblab:ic_attach text-3xl opacity-50 hover:opacity-100" />
+          <IcAttach className="text-3xl opacity-50 hover:opacity-100" />
         </WithTooltip>
       </IconButton>
     );
@@ -90,7 +92,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
     }
 
     return (
-      <div className="relative w-full bg-liblab-elements-bg-depth-3 p-3 rounded-xl border-liblab-elements-borderColorSecondary">
+      <div className="relative w-full bg-depth-3 p-3 rounded-xl border-depth-2">
         <FilePreview
           files={uploadedFiles}
           imageDataList={imageDataList}
@@ -114,9 +116,9 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
             ref={ref}
             className={classNames(
               'w-full pl-4 pt-4 pr-16 rounded-xl outline-none resize-none',
-              'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary bg-liblab-elements-bg-depth-2 text-sm',
+              'text-primary placeholder-tertiary bg-depth-2 text-sm',
               'transition-all duration-200',
-              'hover:border-liblab-elements-focus',
+              'hover:border-accent',
             )}
             onDragEnter={onDragEnter}
             onDragOver={onDragOver}
@@ -166,7 +168,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
                   'text-white',
                 )}
               >
-                <div className="i-ph:database-duotone" />
+                <Database className="w-4 h-4" />
                 <span>Connect Data Source</span>
               </button>
             )}

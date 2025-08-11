@@ -23,6 +23,7 @@ import { chatId, description } from '~/lib/persistence/useConversationHistory';
 import { PublishProgressModal } from '~/components/publish/PublishProgressModal.client';
 import JSZip from 'jszip';
 import type { NetlifySiteInfo } from '~/types/netlify';
+import { AlertTriangle, Rocket, Settings, CodeXml, MessageCircle } from 'lucide-react';
 
 interface ProgressData {
   step: number;
@@ -358,7 +359,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       return (
         <div className="w-48 p-4 text-sm text-gray-700 dark:text-gray-300">
           <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-500">
-            <div className="i-ph:warning w-4 h-4" />
+            <AlertTriangle className="w-4 h-4" />
             Setup Required
           </div>
           <p className="mb-2">To publish your site, you need to set up your Netlify authentication token first.</p>
@@ -373,14 +374,14 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           onClick={handlePublishClick}
           className="w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
         >
-          <div className="i-ph:rocket-launch w-4 h-4" />
+          <Rocket className="w-4 h-4" />
           Publish New Version
         </button>
         <button
           onClick={handleSettings}
           className="w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
         >
-          <div className="i-ph:gear w-4 h-4" />
+          <Settings className="w-4 h-4" />
           Website Settings
         </button>
       </>
@@ -391,13 +392,9 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
     <>
       <div className="flex">
         <div className="relative" ref={dropdownRef}>
-          <div className="flex border border-liblab-elements-borderColor rounded-md overflow-hidden mr-2 text-sm">
-            <Button
-              active
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="px-4 hover:bg-liblab-elements-item-backgroundActive flex items-center gap-2"
-            >
-              <div className="i-ph:rocket-launch w-4 h-4" />
+          <div className="flex border border-depth-3 rounded-md overflow-hidden mr-2 text-sm">
+            <Button active onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="px-4 flex items-center gap-2">
+              <Rocket className="w-4 h-4" />
               Publish
             </Button>
           </div>
@@ -407,7 +404,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
             </div>
           )}
         </div>
-        <div className="flex border border-liblab-elements-borderColor rounded-md overflow-hidden">
+        <div className="flex border border-depth-3 rounded-md overflow-hidden">
           <Button
             active={showChat}
             disabled={isSmallViewport}
@@ -415,9 +412,9 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
               chatStore.setKey('showChat', !showChat);
             }}
           >
-            <div className="i-liblab:chat text-sm" />
+            <MessageCircle className="w-4 h-4" />
           </Button>
-          <div className="w-[1px] bg-liblab-elements-borderColor" />
+          <div className="w-[1px] bg-depth-3" />
           <Button
             active={devMode}
             onClick={() => {
@@ -429,7 +426,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
               workbenchStore.devMode.set(!devMode);
             }}
           >
-            <div className="i-ph:code-bold" />
+            <CodeXml className="w-4 h-4" />
           </Button>
         </div>
       </div>
@@ -464,11 +461,9 @@ function Button({ active = false, disabled = false, children, onClick, className
       className={classNames(
         'flex items-center p-1.5',
         {
-          'bg-liblab-elements-item-backgroundDefault hover:bg-liblab-elements-item-backgroundActive text-liblab-elements-textTertiary hover:text-liblab-elements-textPrimary':
-            !active,
-          'bg-liblab-elements-item-backgroundAccent text-liblab-elements-item-contentAccent': active && !disabled,
-          'bg-liblab-elements-item-backgroundDefault text-alpha-gray-20 dark:text-alpha-white-20 cursor-not-allowed':
-            disabled,
+          'bg-depth-1 text-tertiary hover:text-primary': !active,
+          'bg-accent/10 text-accent hover:bg-depth-3/10 cursor-pointer': active && !disabled,
+          'bg-depth-1 text-alpha-gray-20 dark:text-alpha-white-20 cursor-not-allowed': disabled,
         },
         className,
       )}
