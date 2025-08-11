@@ -388,7 +388,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           <div className="flex border border-liblab-elements-borderColor rounded-md overflow-hidden mr-2 text-sm">
             <Button
               active
-              title="Publish website to hosting platform"
+              title="Publish your site to the web"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="px-4 hover:bg-liblab-elements-item-backgroundActive flex items-center gap-2"
             >
