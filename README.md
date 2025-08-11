@@ -140,79 +140,114 @@ pnpm run docker:start
 
 Before starting, ensure you have all the following installed and configured:
 
-- **Node.js (18 or higher)** - Required for running the application
-  **Option A:** **Single version of Node, using Homebrew (Recommended for most users)**
+<details>
+  <summary><b>Node.js</b> (18 or higher) <em>(Required for running the application)</em></summary>
 
-  ```bash
-  # Install Homebrew if you don't have it
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+<strong>Option A: Single version of Node, using Homebrew (Recommended for most users)</strong>
 
-  # Install Node.js
-  brew install node
-  ```
+```bash
+# Install Homebrew if you don't have it
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-  **Option B: Using Node Version Manager (Recommended for developers)**
+# Install Node.js
+brew install node
+```
 
-  ```bash
-  # Install Homebrew if you don't have it
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+<strong>Option B: Using Node Version Manager (Recommended for developers)</strong>
 
-  # Install NVM
-  brew install nvm
+```bash
+# Install Homebrew if you don't have it
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-  # To make the nvm command available, restart your terminal or run:
-  source ~/.zshrc  # or source ~/.bashrc
+# Install NVM
+brew install nvm
 
-  # Install latest stable Node.js
-  nvm install --lts
-  ```
+# To make the nvm command available, restart your terminal or run:
+source ~/.zshrc  # or source ~/.bashrc
 
-  Verify Installation
+# Install latest stable Node.js
+nvm install --lts
+```
 
-  ```bash
-  node --version  # Should show v18.x.x or higher
-  npm --version   # Should show version number
-  ```
+Verify Installation
 
-- **pnpm** - Package manager (faster than npm)
+```bash
+node --version  # Should show v18.x.x or higher
+npm --version   # Should show version number
+```
 
-  ```bash
-  # Install pnpm globally
-  npm install -g pnpm
+</details>
 
-  # Verify installation
-  pnpm --version
-  ```
+<details>
+  <summary><b>pnpm</b> <em>(Package manager, faster than npm)</em></summary>
 
-- **Anthropic API Key** - Required for AI model access
-  **Step 1:** Create an Anthropic Account
-  1. Go to [console.anthropic.com/signup](https://console.anthropic.com/signup)
-  2. Create an account
-  3. Verify your email
-     **Step 2:** Generate an API Key
-  4. Go to [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
-  5. Click "Create Key"
-  6. Give it a name (e.g., "liblab-ai")
-  7. Copy the API key (starts with `sk-ant-`)
-     **Step 3:** Save your API Key
-     You'll add this to your `.env` file during setup, but keep it handy:
-  ```bash
-  ANTHROPIC_API_KEY=sk-ant-your-api-key-here
-  ```
-- **Ngrok Auth Token** - Required for external tunnel access
-  **Step 1: Create Ngrok Account**
-  1. Go to [ngrok.com](https://ngrok.com/)
-  2. Sign up for a free account
-  3. Verify your email
-     **Step 2: Get Your Auth Token**
-  4. After logging in, go to [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)
-  5. Copy your authtoken (long alphanumeric string)
-     **Step 3: Save Your Auth Token**
-     You'll add this to your `.env` file during setup, but keep it handy:
-  ```bash
-  NGROK_AUTHTOKEN=your-ngrok-authtoken-here
-  ```
-- **Netlify Key** - Optional to run the builder. Required to deploy completed apps.
+```bash
+# Install pnpm globally
+npm install -g pnpm
+
+# Verify installation
+pnpm --version
+```
+
+</details>
+
+<details>
+  <summary><b>Anthropic API Key</b> <em>(Required for AI model access)</em></summary>
+
+<strong>Step 1: Create an Anthropic Account</strong>
+
+1. Go to [console.anthropic.com/signup](https://console.anthropic.com/signup)
+2. Create an account
+3. Verify your email
+
+<strong>Step 2: Generate an API Key</strong> 4. Go to [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) 5. Click "Create Key" 6. Give it a name (e.g., "liblab-ai") 7. Copy the API key (starts with `sk-ant-`)
+
+<strong>Step 3: Save your API Key</strong>
+Add this to your `.env` file during setup, but keep it handy:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-your-api-key-here
+```
+
+</details>
+
+<details>
+  <summary><b>Ngrok Auth Token</b> <em>(Required for external tunnel access)</em></summary>
+
+<strong>Step 1: Create Ngrok Account</strong>
+
+1. Go to [ngrok.com](https://ngrok.com/)
+2. Sign up for a free account
+3. Verify your email
+
+<strong>Step 2: Get Your Auth Token</strong> 4. After logging in, go to [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken) 5. Copy your authtoken (long alphanumeric string)
+
+<strong>Step 3: Save Your Auth Token</strong>
+Add this to your `.env` file during setup, but keep it handy:
+
+```bash
+NGROK_AUTHTOKEN=your-ngrok-authtoken-here
+```
+
+</details>
+
+<details>
+  <summary><b>Netlify Key</b> <em>(Optional to run the builder. Required to deploy completed apps)</em></summary>
+
+<strong>Step 1: Create a Netlify account</strong>
+
+1. Go to [netlify.com](https://netlify.com/)
+2. Sign up for a free account
+
+<strong>Step 2: Generate an auth token</strong> 3. Go to User Settings &gt; Applications &gt; New access token 4. Generate and copy your token
+
+<strong>Step 3: Add the token to your .env file</strong>
+
+```bash
+NETLIFY_AUTH_TOKEN=your-token-here
+```
+
+</details>
 
 [liblab.ai](http://liblab.ai/) runs best on Chrome or Chromium browsers when using a desktop. Mobile browsers don't have full support right now.
 
