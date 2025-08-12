@@ -454,6 +454,8 @@ export class WorkbenchStore {
     const uniqueProjectName = `${projectName}_${timestampHash}`;
 
     for (const [filePath, dirent] of Object.entries(files)) {
+      logger.info(`Processing file: ${filePath}`, JSON.stringify(dirent));
+
       if (dirent?.type === 'file' && !dirent.isBinary) {
         const relativePath = extractRelativePath(filePath);
 
@@ -468,6 +470,11 @@ export class WorkbenchStore {
             currentFolder = currentFolder.folder(pathSegments[i])!;
           }
           currentFolder.file(pathSegments[pathSegments.length - 1], dirent.content);
+        } else if (dirent.type === 'file' && filePath === '/home/project/.env') {
+          const content = dirent.content
+            .replace(/VITE_API_BASE_URL=.+(\n)$/, "VITE_API_BASE_URL='http://localhost:3000'")
+            .concat('\nQUERY_MODE=direct');
+          zip.file(relativePath, content);
         } else {
           // if there's only one segment, it's a file in the root
           zip.file(relativePath, dirent.content);
