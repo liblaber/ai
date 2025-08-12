@@ -262,26 +262,44 @@ export const Preview = memo(({ sendMessage }: Props) => {
     </div>
   );
 
-  const openInNewWindow = (size: WindowSize) => {
-    if (activePreview?.baseUrl) {
-      const match = activePreview.baseUrl.match(/^https?:\/\/([^.]+)\.local-credentialless\.webcontainer-api\.io/);
+  const setDeviceSize = (size: WindowSize) => {
+    const MIN_PREVIEW_WIDTH_PERCENT = 10;
+    const MAX_PREVIEW_WIDTH_PERCENT = 100;
+    const ESTIMATED_PREVIEW_WIDTH_RATIO = 0.5;
 
-      if (match) {
-        const previewId = match[1];
-        const previewUrl = `/webcontainer/preview/${previewId}`;
-        const newWindow = window.open(
-          previewUrl,
-          '_blank',
-          `noopener,noreferrer,width=${size.width},height=${size.height},menubar=no,toolbar=no,location=no,status=no`,
-        );
-
-        if (newWindow) {
-          newWindow.focus();
-        }
-      } else {
-        console.warn('[Preview] Invalid WebContainer URL:', activePreview.baseUrl);
-      }
+    // Enable device mode if not already enabled
+    if (!isDeviceModeOn) {
+      setIsDeviceModeOn(true);
     }
+
+    const calculateTargetPercent = (deviceWidth: number, containerWidth: number) => {
+      if (containerWidth === 0) {
+        return MIN_PREVIEW_WIDTH_PERCENT;
+      }
+
+      const percent = (deviceWidth / containerWidth) * 100;
+
+      return Math.max(MIN_PREVIEW_WIDTH_PERCENT, Math.min(MAX_PREVIEW_WIDTH_PERCENT, percent));
+    };
+
+    const previewContainer = containerRef.current;
+    let targetPercent: number;
+
+    if (previewContainer) {
+      const previewArea = previewContainer.querySelector<HTMLElement>('.flex-1');
+      const availableWidth = previewArea ? previewArea.offsetWidth : previewContainer.offsetWidth;
+      targetPercent = calculateTargetPercent(size.width, availableWidth);
+    } else {
+      // Fallback if container ref is not available yet
+      const screenWidth = window.innerWidth;
+      const estimatedPreviewWidth = screenWidth * ESTIMATED_PREVIEW_WIDTH_RATIO;
+      targetPercent = calculateTargetPercent(size.width, estimatedPreviewWidth);
+    }
+
+    setWidthPercent(targetPercent);
+
+    // Update the selected window size for the dropdown
+    setSelectedWindowSize(size);
   };
 
   return (
@@ -292,12 +310,13 @@ export const Preview = memo(({ sendMessage }: Props) => {
       {!isLoading && !!codeErrors.length && <FixIssuesDialog onFixIssue={onFixIssue} />}
       <div className="bg-depth-2 p-2 flex items-center gap-2">
         <div className="flex items-center gap-2">
-          <IconButton onClick={reloadPreview}>
+          <IconButton onClick={reloadPreview} title="Reload preview">
             <RotateCcw className="w-4 h-4" />
           </IconButton>
           <IconButton
             onClick={() => setIsSelectionMode(!isSelectionMode)}
             className={isSelectionMode ? 'bg-depth-3' : ''}
+            title={isSelectionMode ? 'Exit screenshot mode' : 'Enter screenshot mode'}
           >
             <SquareDashed className="w-4 h-4" />
           </IconButton>
@@ -350,8 +369,9 @@ export const Preview = memo(({ sendMessage }: Props) => {
 
           <div className="flex items-center relative">
             <IconButton
-              onClick={() => openInNewWindow(selectedWindowSize)}
-              title={`Open Preview in ${selectedWindowSize.name} Window`}
+              onClick={() => setDeviceSize(selectedWindowSize)}
+              title={`Set Preview to ${selectedWindowSize.name} Size (${selectedWindowSize.width}×${selectedWindowSize.height})`}
+              className={isDeviceModeOn ? 'bg-liblab-elements-bg-depth-3' : ''}
             >
               <ExternalLink className="w-4 h-4" />
             </IconButton>
@@ -374,7 +394,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
                       onClick={() => {
                         setSelectedWindowSize(size);
                         setIsWindowSizeDropdownOpen(false);
-                        openInNewWindow(size);
+                        setDeviceSize(size);
                       }}
                     >
                       <div className="w-5 h-5 text-[#6B7280] dark:text-gray-400 group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200">

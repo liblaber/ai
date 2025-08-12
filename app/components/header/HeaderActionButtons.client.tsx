@@ -393,7 +393,12 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       <div className="flex">
         <div className="relative" ref={dropdownRef}>
           <div className="flex border border-depth-3 rounded-md overflow-hidden mr-2 text-sm">
-            <Button active onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="px-4 flex items-center gap-2">
+            <Button
+              active
+              title="Publish your site to the web"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="px-4 flex items-center gap-2"
+            >
               <Rocket className="w-4 h-4" />
               Publish
             </Button>
@@ -408,6 +413,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           <Button
             active={showChat}
             disabled={isSmallViewport}
+            title={showChat ? 'Hide chat panel' : 'Show chat panel'}
             onClick={() => {
               chatStore.setKey('showChat', !showChat);
             }}
@@ -417,6 +423,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
           <div className="w-[1px] bg-depth-3" />
           <Button
             active={devMode}
+            title={devMode ? 'Exit code view' : 'Enter code view'}
             onClick={() => {
               if (!showChat) {
                 chatStore.setKey('showChat', true);
@@ -453,9 +460,10 @@ interface ButtonProps {
   children?: any;
   onClick?: VoidFunction;
   className?: string;
+  title?: string;
 }
 
-function Button({ active = false, disabled = false, children, onClick, className }: ButtonProps) {
+function Button({ active = false, disabled = false, children, onClick, className, title }: ButtonProps) {
   return (
     <button
       className={classNames(
@@ -468,6 +476,7 @@ function Button({ active = false, disabled = false, children, onClick, className
         className,
       )}
       onClick={onClick}
+      title={title}
     >
       {children}
     </button>
