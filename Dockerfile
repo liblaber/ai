@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y curl && \
     curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /etc/apt/trusted.gpg.d/cloudflare-main.gpg >/dev/null && \
     echo "deb [signed-by=/etc/apt/trusted.gpg.d/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared jammy main" | tee /etc/apt/sources.list.d/cloudflared.list && \
-    apt-get update && apt-get install -y cloudflared && \
+    apt-get update && apt-get install -y cloudflared locales && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
