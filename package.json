@@ -45,7 +45,7 @@
     "test:e2e:headless": "tsx scripts/run-e2e-tests.ts headless"
   },
   "engines": {
-    "node": ">=18.18.0"
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "1.0.6",
