@@ -2,7 +2,6 @@ import 'dotenv/config';
 import { execSync } from 'child_process';
 import { config } from 'dotenv';
 import path from 'path';
-import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 
 /**
  * Setup for the liblab.ai builder
@@ -16,7 +15,7 @@ const runSetup = async (): Promise<void> => {
     try {
       const telemetryModule = await import('~/lib/telemetry/telemetry-manager');
       const telemetry = await telemetryModule.getTelemetry();
-      await telemetry.trackTelemetryEvent({ eventType: TelemetryEventType.SETUP_SUCCESS });
+      await telemetry.trackTelemetryEvent({ eventType: telemetryModule.TelemetryEventType.SETUP_SUCCESS });
     } catch (telemetryError) {
       console.warn('Failed to track setup success:', (telemetryError as Error).message);
     }
@@ -43,7 +42,7 @@ async function trackSetupError(error: any) {
     const errorInfo = errorUtilsModule.normalizeError(error);
 
     await telemetry.trackTelemetryEvent({
-      eventType: TelemetryEventType.SETUP_ERROR,
+      eventType: telemetryModule.TelemetryEventType.SETUP_ERROR,
       properties: {
         errorMessage: errorInfo.message,
         error: errorInfo,

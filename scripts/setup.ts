@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 
-import { existsSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { intro, outro, text, log, spinner, isCancel } from '@clack/prompts';
+import { intro, isCancel, log, outro, spinner, text } from '@clack/prompts';
 
 // liblab AI Builder Setup Script
 // OS Compatibility: macOS, Linux, Windows
@@ -206,7 +206,6 @@ async function main(): Promise<void> {
     },
   ];
 
-  // Use select instead of text
   const { select } = await import('@clack/prompts');
   const providerValue = await select({
     message: 'Select your AI provider:',
