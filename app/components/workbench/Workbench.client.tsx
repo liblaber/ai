@@ -27,20 +27,20 @@ import { useGitStore } from '~/lib/stores/git';
 import { chatId } from '~/lib/persistence';
 import type { SendMessageFn } from '~/components/chat/Chat.client';
 import {
-  MonitorPlay,
-  CodeXml,
-  FileText,
-  Paintbrush,
-  Braces,
-  Database,
   Box,
-  Terminal,
-  Loader2,
-  Github,
-  Search,
-  Download,
-  GitBranch,
+  Braces,
   CheckCircle,
+  CodeXml,
+  Database,
+  Download,
+  FileText,
+  GitBranch,
+  Github,
+  Loader2,
+  MonitorPlay,
+  Paintbrush,
+  Search,
+  Terminal,
 } from 'lucide-react';
 
 interface WorkspaceProps {
@@ -410,7 +410,7 @@ export const Workbench = memo(
               },
             )}
           >
-            <div className="absolute inset-0 pl-2 pr-4">
+            <div className="absolute inset-0 pl-1 pr-4">
               <div className="h-full flex flex-col bg-depth-2 border border-depth-3 shadow-sm rounded-xl overflow-hidden">
                 <div className="flex items-center px-3 py-1 h-12 border-b border-depth-3">
                   <Slider selected={selectedView} setSelected={setSelectedView} />

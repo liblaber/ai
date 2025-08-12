@@ -1,17 +1,17 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
 import {
-  RotateCcw,
-  SquareDashed,
-  Monitor,
-  Smartphone,
-  Tablet,
+  ChevronDown,
+  ExternalLink,
   Laptop,
-  Monitor as DesktopIcon,
   Maximize2,
   Minimize2,
-  ExternalLink,
-  ChevronDown,
+  Monitor,
+  Monitor as DesktopIcon,
+  RotateCcw,
+  Smartphone,
+  SquareDashed,
+  Tablet,
 } from 'lucide-react';
 import { IconButton } from '~/components/ui/IconButton';
 import { workbenchStore } from '~/lib/stores/workbench';
@@ -371,7 +371,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
             <IconButton
               onClick={() => setDeviceSize(selectedWindowSize)}
               title={`Set Preview to ${selectedWindowSize.name} Size (${selectedWindowSize.width}×${selectedWindowSize.height})`}
-              className={isDeviceModeOn ? 'bg-liblab-elements-bg-depth-3' : ''}
+              className={isDeviceModeOn ? 'bg-depth-3!' : ''}
             >
               <ExternalLink className="w-4 h-4" />
             </IconButton>

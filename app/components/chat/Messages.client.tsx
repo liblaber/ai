@@ -118,7 +118,6 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
               const { role, content, id: messageId, annotations } = message;
               const snapshotId = getMessageSnapshotId(message);
               const isUserMessage = role === 'user';
-              const isFirst = index === 0;
               const isLast = index === messages.length - 1;
               const isHidden = annotations?.includes('hidden');
 
@@ -132,7 +131,6 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
                   className={classNames('flex gap-4 p-6 w-full rounded-xl relative', {
                     'bg-depth-3': isUserMessage || !isStreaming || (isStreaming && !isLast),
                     'bg-gradient-to-b from-depth-3 from-30% to-transparent': isStreaming && isLast,
-                    'mt-2': !isFirst,
                   })}
                 >
                   {!isUserMessage && (

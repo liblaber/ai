@@ -27,10 +27,16 @@ export function Header({ showMenuIcon = true }: Props) {
       })}
     >
       <div className="flex items-center gap-2 z-logo text-primary cursor-pointer">
-        {showMenuIcon && session?.user && (
-          <IconButton size="xl" title="Open sidebar" className="mr-2">
-            <Menu className="text-xl" />
-          </IconButton>
+        {showMenuIcon && (
+          <ClientOnly>
+            {() =>
+              session?.user && (
+                <IconButton size="xl" title="Open sidebar" className="mr-2">
+                  <Menu className="text-xl" />
+                </IconButton>
+              )
+            }
+          </ClientOnly>
         )}
         <a href="/" className="ml-1 font-semibold text-accent flex items-center">
           <div className="h-8 flex items-center text-black dark:text-white">

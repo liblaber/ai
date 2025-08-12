@@ -255,7 +255,7 @@ export const BaseChat = ({
           })}
         >
           <div
-            className={classNames('pt-4 pl-4 pr-2', {
+            className={classNames('pt-4 pl-4 pr-1', {
               'h-full flex flex-col': chatStarted,
             })}
             ref={scrollRef}
@@ -265,7 +265,7 @@ export const BaseChat = ({
                 {() => (
                   <Messages
                     ref={messageRef}
-                    className="flex flex-col w-full flex-1 max-w-chat-width mx-auto rounded-xl overflow-y-scroll z-1"
+                    className="flex flex-col w-full flex-1 gap-2 max-w-chat-width mx-auto rounded-xl overflow-y-scroll z-1"
                     messages={messages}
                     isStreaming={isStreaming}
                     setMessages={setMessages}
