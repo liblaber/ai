@@ -1,4 +1,4 @@
-ARG BASE=node:24
+ARG BASE=node:22
 FROM ${BASE} AS base
 
 WORKDIR /app
