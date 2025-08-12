@@ -35,6 +35,17 @@ services:
     volumes:
       - snapshots_data:/app/snapshots
 
+  mysql:
+    image: mysql
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: always
+
 volumes:
   postgres_data:
   snapshots_data:
+  mysql_data:
