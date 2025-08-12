@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
+import { install, bin } from 'cloudflared';
 
 const CF_LOG_FILE = './cloudflared.log';
 const TUNNEL_CONFIG_FILE = './tunnel.config';
@@ -19,6 +20,7 @@ const setupCloudflaredTunnel = (): string | null => {
   console.log(`⚙️ Setting up Cloudflared quick tunnel for port ${port}...`);
 
   // Start a Cloudflared quick tunnel and redirect logs to a file for parsing
+
   execSync(`cloudflared tunnel --url http://localhost:${port} --no-autoupdate --loglevel info > ${CF_LOG_FILE} 2>&1 &`);
 
   console.log('⏳  Waiting for Cloudflared to initialize...');
@@ -94,6 +96,11 @@ const updateTunnelConfigFile = (tunnelUrl: string): void => {
 
 const runTunnelSetup = async (): Promise<void> => {
   if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
+    if (!fs.existsSync(bin)) {
+      // install cloudflared binary
+      await install(bin);
+    }
+
     console.log(`
 ★═══════════════════════════════════════★
         🦙 liblab tunnel setup 🦙
