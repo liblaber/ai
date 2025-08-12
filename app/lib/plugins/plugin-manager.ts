@@ -12,7 +12,7 @@ import {
 export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
   [PluginType.DATA_ACCESS]: {
     postgres: true,
-    mysql: false,
+    mysql: true,
     sqlite: true,
     mongodb: true,
   },
