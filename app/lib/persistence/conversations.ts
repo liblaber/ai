@@ -1,7 +1,7 @@
 import type { Message } from '@ai-sdk/react';
 import { getLatestSnapshotOrNull, type SnapshotResponse } from '~/lib/persistence/snapshots';
 import { NO_EXECUTE_ACTION_ANNOTATION } from '~/lib/runtime/message-parser';
-import { TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
 
 const CONVERSATIONS_API = '/api/conversations';

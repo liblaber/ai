@@ -6,6 +6,21 @@ import Cookies from 'js-cookie';
 import { LockSlash } from 'iconsax-reactjs';
 import { useGitStore } from '~/lib/stores/git';
 import { env } from '~/env/client';
+import {
+  Loader2,
+  Github,
+  ExternalLink,
+  Zap,
+  CheckCircle,
+  ChevronDown,
+  Users,
+  BookOpen,
+  Star,
+  GitFork,
+  GitCommit,
+  GitBranch,
+  Clock,
+} from 'lucide-react';
 
 interface GitHubUserResponse {
   login: string;
@@ -72,7 +87,7 @@ interface GitHubConnection {
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-full min-h-[400px]">
     <div className="flex flex-col items-center gap-3">
-      <div className="i-ph:spinner-gap w-8 h-8 animate-spin text-gray-500 dark:text-gray-400" />
+      <Loader2 className="w-8 h-8 animate-spin text-gray-500 dark:text-gray-400" />
       <span className="text-sm text-gray-500 dark:text-gray-400">Loading GitHub connection...</span>
     </div>
   </div>
@@ -292,12 +307,10 @@ export default function GitHubTab() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <div className="i-ph:github-logo w-5 h-5 text-accent-500" />
-        <h2 className="text-lg font-medium text-liblab-elements-textPrimary">GitHub Settings</h2>
+        <Github className="w-5 h-5 text-accent-500" />
+        <h2 className="text-lg font-medium text-primary">GitHub Settings</h2>
       </motion.div>
-      <p className="text-sm text-liblab-elements-textSecondary mb-6">
-        Manage your GitHub connection and repository settings
-      </p>
+      <p className="text-sm text-secondary mb-6">Manage your GitHub connection and repository settings</p>
 
       <div className="grid grid-cols-1 gap-4">
         <Suspense fallback={<LoadingFallback />}>
@@ -310,13 +323,13 @@ export default function GitHubTab() {
           >
             <div className="p-6 space-y-6">
               <div className="flex items-center gap-2">
-                <div className="i-ph:github-logo w-5 h-5 text-liblab-elements-textPrimary" />
-                <h3 className="text-base font-medium text-liblab-elements-textPrimary">GitHub Connection</h3>
+                <Github className="w-5 h-5 text-primary" />
+                <h3 className="text-base font-medium text-primary">GitHub Connection</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-liblab-elements-textSecondary mb-2">Token Type</label>
+                  <label className="block text-sm text-secondary mb-2">Token Type</label>
                   <select
                     value={connection.tokenType}
                     onChange={(e) =>
@@ -327,7 +340,7 @@ export default function GitHubTab() {
                       'w-full px-3 py-2 rounded-lg text-sm',
                       'bg-[#F8F8F8] dark:bg-[#1A1A1A]',
                       'border border-[#E5E5E5] dark:border-[#333333]',
-                      'text-liblab-elements-textPrimary',
+                      'text-primary',
                       'focus:outline-none focus:ring-1 focus:ring-accent-500',
                       'disabled:opacity-50',
                     )}
@@ -338,7 +351,7 @@ export default function GitHubTab() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-liblab-elements-textSecondary mb-2">
+                  <label className="block text-sm text-secondary mb-2">
                     {connection.tokenType === 'classic' ? 'Personal Access Token' : 'Fine-grained Token'}
                   </label>
                   <input
@@ -353,12 +366,12 @@ export default function GitHubTab() {
                       'w-full px-3 py-2 rounded-lg text-sm',
                       'bg-[#F8F8F8] dark:bg-[#1A1A1A]',
                       'border border-[#E5E5E5] dark:border-[#333333]',
-                      'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary',
+                      'text-primary placeholder-tertiary',
                       'focus:outline-none focus:ring-1 focus:ring-accent-500',
                       'disabled:opacity-50',
                     )}
                   />
-                  <div className="mt-2 text-sm text-liblab-elements-textSecondary">
+                  <div className="mt-2 text-sm text-secondary">
                     <a
                       href={`https://github.com/settings/${connection.tokenType === 'classic' ? 'tokens/new' : 'personal-access-tokens/new'}`}
                       target="_blank"
@@ -366,7 +379,7 @@ export default function GitHubTab() {
                       className="text-accent-500 hover:underline inline-flex items-center gap-1"
                     >
                       Get your token
-                      <div className="i-ph:arrow-square-out w-10 h-5" />
+                      <ExternalLink className="w-10 h-5" />
                     </a>
                     <div className="mt-2">
                       <p className="font-medium">Required scopes:</p>
@@ -396,19 +409,19 @@ export default function GitHubTab() {
                     disabled={isConnecting || !connection.token}
                     className={classNames(
                       'px-4 py-2 rounded-lg text-sm flex items-center gap-2',
-                      'bg-accent-500 text-white',
+                      'bg-accent-500 text-depth-1',
                       'hover:bg-accent-600',
                       'disabled:opacity-50 disabled:cursor-not-allowed',
                     )}
                   >
                     {isConnecting ? (
                       <>
-                        <div className="i-ph:spinner-gap animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         Connecting...
                       </>
                     ) : (
                       <>
-                        <div className="i-ph:plug-charging w-4 h-4" />
+                        <Zap className="w-4 h-4" />
                         Connect
                       </>
                     )}
@@ -428,8 +441,8 @@ export default function GitHubTab() {
                 )}
 
                 {connection.user && (
-                  <span className="text-sm text-liblab-elements-textSecondary flex items-center gap-1">
-                    <div className="i-ph:check-circle w-4 h-4" />
+                  <span className="text-sm text-secondary flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" />
                     Connected to GitHub
                   </span>
                 )}
@@ -446,34 +459,34 @@ export default function GitHubTab() {
                       />
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-medium text-liblab-elements-textPrimary">
+                          <h3 className="text-lg font-medium text-primary">
                             {connection.user.name || connection.user.login}
                           </h3>
-                          <div
+                          <ChevronDown
                             className={classNames(
-                              'i-ph:caret-down w-4 h-4 text-liblab-elements-textSecondary transition-transform',
+                              'w-4 h-4 text-secondary transition-transform',
                               isStatsExpanded ? 'rotate-180' : '',
                             )}
                           />
                         </div>
                         {connection.user.bio && (
-                          <p className="text-sm text-start text-liblab-elements-textSecondary">{connection.user.bio}</p>
+                          <p className="text-sm text-start text-secondary">{connection.user.bio}</p>
                         )}
-                        <div className="flex gap-4 mt-2 text-sm text-liblab-elements-textSecondary">
+                        <div className="flex gap-4 mt-2 text-sm text-secondary">
                           <span className="flex items-center gap-1">
-                            <div className="i-ph:users w-4 h-4" />
+                            <Users className="w-4 h-4" />
                             {connection.user.followers} followers
                           </span>
                           <span className="flex items-center gap-1">
-                            <div className="i-ph:book-bookmark w-4 h-4" />
+                            <BookOpen className="w-4 h-4" />
                             {connection.user.public_repos} public repos
                           </span>
                           <span className="flex items-center gap-1">
-                            <div className="i-ph:star w-4 h-4" />
+                            <Star className="w-4 h-4" />
                             {connection.stats.totalStars} stars
                           </span>
                           <span className="flex items-center gap-1">
-                            <div className="i-ph:git-fork w-4 h-4" />
+                            <GitFork className="w-4 h-4" />
                             {connection.stats.totalForks} forks
                           </span>
                         </div>
@@ -485,7 +498,7 @@ export default function GitHubTab() {
                     <div className="pt-4">
                       {connection.stats.organizations.length > 0 && (
                         <div className="mb-6">
-                          <h4 className="text-sm font-medium text-liblab-elements-textPrimary mb-3">Organizations</h4>
+                          <h4 className="text-sm font-medium text-primary mb-3">Organizations</h4>
                           <div className="flex flex-wrap gap-3">
                             {connection.stats.organizations.map((org) => (
                               <a
@@ -496,7 +509,7 @@ export default function GitHubTab() {
                                 className="flex items-center gap-2 p-2 rounded-lg bg-[#F8F8F8] dark:bg-[#1A1A1A] hover:bg-[#F0F0F0] dark:hover:bg-[#252525] transition-colors"
                               >
                                 <img src={org.avatar_url} alt={org.login} className="w-6 h-6 rounded-md" />
-                                <span className="text-sm text-liblab-elements-textPrimary">{org.login}</span>
+                                <span className="text-sm text-primary">{org.login}</span>
                               </a>
                             ))}
                           </div>
@@ -505,7 +518,7 @@ export default function GitHubTab() {
 
                       {/* Languages Section */}
                       <div className="mb-6">
-                        <h4 className="text-sm font-medium text-liblab-elements-textPrimary mb-3">Top Languages</h4>
+                        <h4 className="text-sm font-medium text-primary mb-3">Top Languages</h4>
                         <div className="flex flex-wrap gap-2">
                           {Object.entries(connection.stats.languages)
                             .sort(([, a], [, b]) => b - a)
@@ -523,12 +536,12 @@ export default function GitHubTab() {
 
                       {/* Recent Activity Section */}
                       <div className="mb-6">
-                        <h4 className="text-sm font-medium text-liblab-elements-textPrimary mb-3">Recent Activity</h4>
+                        <h4 className="text-sm font-medium text-primary mb-3">Recent Activity</h4>
                         <div className="space-y-3">
                           {connection.stats.recentActivity.map((event) => (
                             <div key={event.id} className="p-3 rounded-lg bg-[#F8F8F8] dark:bg-[#1A1A1A] text-sm">
-                              <div className="flex items-center gap-2 text-liblab-elements-textPrimary">
-                                <div className="i-ph:git-commit w-4 h-4 text-liblab-elements-textSecondary" />
+                              <div className="flex items-center gap-2 text-primary">
+                                <GitCommit className="w-4 h-4 text-secondary" />
                                 <span className="font-medium">{event.type.replace('Event', '')}</span>
                                 <span>on</span>
                                 <a
@@ -540,7 +553,7 @@ export default function GitHubTab() {
                                   {event.repo.name}
                                 </a>
                               </div>
-                              <div className="mt-1 text-xs text-liblab-elements-textSecondary">
+                              <div className="mt-1 text-xs text-secondary">
                                 {new Date(event.created_at).toLocaleDateString()} at{' '}
                                 {new Date(event.created_at).toLocaleTimeString()}
                               </div>
@@ -552,33 +565,31 @@ export default function GitHubTab() {
                       {/* Additional Stats */}
                       <div className="grid grid-cols-4 gap-4 mb-6">
                         <div className="p-4 rounded-lg bg-[#F8F8F8] dark:bg-[#1A1A1A]">
-                          <div className="text-sm text-liblab-elements-textSecondary">Member Since</div>
-                          <div className="text-lg font-medium text-liblab-elements-textPrimary">
+                          <div className="text-sm text-secondary">Member Since</div>
+                          <div className="text-lg font-medium text-primary">
                             {new Date(connection.user.created_at).toLocaleDateString()}
                           </div>
                         </div>
                         <div className="p-4 rounded-lg bg-[#F8F8F8] dark:bg-[#1A1A1A]">
-                          <div className="text-sm text-liblab-elements-textSecondary">Public Gists</div>
-                          <div className="text-lg font-medium text-liblab-elements-textPrimary">
-                            {connection.stats.totalGists}
-                          </div>
+                          <div className="text-sm text-secondary">Public Gists</div>
+                          <div className="text-lg font-medium text-primary">{connection.stats.totalGists}</div>
                         </div>
                         <div className="p-4 rounded-lg bg-[#F8F8F8] dark:bg-[#1A1A1A]">
-                          <div className="text-sm text-liblab-elements-textSecondary">Organizations</div>
-                          <div className="text-lg font-medium text-liblab-elements-textPrimary">
+                          <div className="text-sm text-secondary">Organizations</div>
+                          <div className="text-lg font-medium text-primary">
                             {connection.stats.organizations.length}
                           </div>
                         </div>
                         <div className="p-4 rounded-lg bg-[#F8F8F8] dark:bg-[#1A1A1A]">
-                          <div className="text-sm text-liblab-elements-textSecondary">Languages</div>
-                          <div className="text-lg font-medium text-liblab-elements-textPrimary">
+                          <div className="text-sm text-secondary">Languages</div>
+                          <div className="text-lg font-medium text-primary">
                             {Object.keys(connection.stats.languages).length}
                           </div>
                         </div>
                       </div>
 
                       {/* Repositories Section */}
-                      <h4 className="text-sm font-medium text-liblab-elements-textPrimary mb-3">Recent Repositories</h4>
+                      <h4 className="text-sm font-medium text-primary mb-3">Recent Repositories</h4>
                       <div className="space-y-3">
                         {connection.stats.repos.map((repo) => (
                           <a
@@ -590,31 +601,21 @@ export default function GitHubTab() {
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <h5 className="text-sm font-medium text-liblab-elements-textPrimary flex items-center gap-2">
-                                  <div className="i-ph:git-repository w-4 h-4 text-liblab-elements-textSecondary" />
+                                <h5 className="text-sm font-medium text-primary flex items-center gap-2">
+                                  <GitBranch className="w-4 h-4 text-secondary" />
                                   {repo.name}
                                 </h5>
-                                {repo.description && (
-                                  <p className="text-xs text-liblab-elements-textSecondary mt-1">{repo.description}</p>
-                                )}
-                                <div className="flex items-center gap-2 mt-2 text-xs text-liblab-elements-textSecondary">
-                                  <span className="flex items-center gap-1">
-                                    <div className="i-ph:git-branch w-3 h-3" />
-                                    {repo.default_branch}
-                                  </span>
-                                  <span>•</span>
-                                  <span>Updated {new Date(repo.updated_at).toLocaleDateString()}</span>
+                                {repo.description && <p className="text-xs text-secondary mt-1">{repo.description}</p>}
+                                <div className="flex items-center gap-2 mt-2 text-xs text-secondary">
+                                  <GitBranch className="w-3 h-3" />
+                                  {repo.default_branch}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3 text-xs text-liblab-elements-textSecondary">
-                                <span className="flex items-center gap-1">
-                                  <div className="i-ph:star w-3 h-3" />
-                                  {repo.stargazers_count}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <div className="i-ph:git-fork w-3 h-3" />
-                                  {repo.forks_count}
-                                </span>
+                              <div className="flex items-center gap-3 text-xs text-secondary">
+                                <Star className="w-3 h-3" />
+                                {repo.stargazers_count}
+                                <GitFork className="w-3 h-3" />
+                                {repo.forks_count}
                               </div>
                             </div>
                           </a>
@@ -628,15 +629,13 @@ export default function GitHubTab() {
               {/* Remote Changes Pull Interval Settings */}
               <div className="mt-6 border-t border-[#E5E5E5] dark:border-[#1A1A1A] pt-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="i-ph:clock w-5 h-5 text-liblab-elements-textPrimary" />
-                  <h3 className="text-base font-medium text-liblab-elements-textPrimary">Remote Changes Settings</h3>
+                  <Clock className="w-5 h-5 text-primary" />
+                  <h3 className="text-base font-medium text-primary">Remote Changes Settings</h3>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm text-liblab-elements-textSecondary mb-2">
-                      Pull Interval (seconds)
-                    </label>
+                    <label className="block text-sm text-secondary mb-2">Pull Interval (seconds)</label>
                     <div className="flex items-center gap-4">
                       <input
                         type="number"
@@ -649,13 +648,13 @@ export default function GitHubTab() {
                           'w-24 px-3 py-2 rounded-lg text-sm',
                           'bg-[#F8F8F8] dark:bg-[#1A1A1A]',
                           'border border-[#E5E5E5] dark:border-[#333333]',
-                          'text-liblab-elements-textPrimary',
+                          'text-primary',
                           'focus:outline-none focus:ring-1 focus:ring-accent-500',
                         )}
                       />
-                      <span className="text-sm text-liblab-elements-textSecondary">seconds</span>
+                      <span className="text-sm text-secondary">seconds</span>
                     </div>
-                    <p className="mt-2 text-xs text-liblab-elements-textSecondary">
+                    <p className="mt-2 text-xs text-secondary">
                       How often to check for remote changes. Minimum 5 seconds.
                     </p>
                   </div>

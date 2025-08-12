@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
+import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
 

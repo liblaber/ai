@@ -1,5 +1,7 @@
 import { memo } from 'react';
+import { Settings } from 'lucide-react';
 import { IconButton } from '~/components/ui/IconButton';
+
 interface SettingsButtonProps {
   onClick: () => void;
 }
@@ -8,10 +10,11 @@ export const SettingsButton = memo(({ onClick }: SettingsButtonProps) => {
   return (
     <IconButton
       onClick={onClick}
-      icon="i-ph:gear"
       size="xl"
       title="Settings"
-      className="text-[#666] hover:text-liblab-elements-textPrimary hover:bg-liblab-elements-item-backgroundActive/10 transition-colors"
-    />
+      className="text-[#666] hover:text-primary hover:bg-depth-3/10 transition-colors"
+    >
+      <Settings className="w-5 h-5" />
+    </IconButton>
   );
 });

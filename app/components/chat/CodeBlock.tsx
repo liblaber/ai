@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { type BundledLanguage, bundledLanguages, codeToHtml, isSpecialLang, type SpecialLanguage } from 'shiki';
+import { Clipboard } from 'lucide-react';
 import { classNames } from '~/utils/classNames';
 import { createScopedLogger } from '~/utils/logger';
 
@@ -55,7 +56,7 @@ export const CodeBlock = ({
     <div className={classNames('relative group text-left', className)}>
       <div
         className={classNames(
-          'CopyButtonContainer bg-transparant absolute top-[10px] right-[10px] rounded-md z-10 text-lg flex items-center justify-center opacity-0 group-hover:opacity-100',
+          'absolute top-[10px] right-[10px] rounded-md z-10 text-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity',
           {
             'rounded-l-0 opacity-100': copied,
           },
@@ -64,16 +65,16 @@ export const CodeBlock = ({
         {!disableCopy && (
           <button
             className={classNames(
-              'flex items-center bg-accent-500 p-[6px] justify-center before:bg-white before:rounded-l-md before:text-gray-500 before:border-r before:border-gray-300 rounded-md transition-theme',
+              'relative flex items-center bg-accent-500 p-[6px] justify-center rounded-md transition-theme',
               {
-                'before:opacity-0': !copied,
-                'before:opacity-100': copied,
+                'before:content-["Copied"] before:absolute before:left-[-53px] before:px-1.5 before:py-0.5 before:h-[30px] before:text-xs before:bg-white before:text-gray-500 before:rounded before:border before:border-gray-300':
+                  copied,
               },
             )}
             title="Copy Code"
             onClick={() => copyToClipboard()}
           >
-            <div className="i-ph:clipboard-text-duotone"></div>
+            <Clipboard className="w-4 h-4" />
           </button>
         )}
       </div>

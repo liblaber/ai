@@ -5,11 +5,11 @@ import type { FileMap } from '~/lib/stores/files';
 import type { EditorDocument } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { type Change, diffLines } from 'diff';
 import { getHighlighter } from 'shiki';
-import '~/styles/diff-view.css';
 import { diffFiles, extractRelativePath } from '~/utils/diff';
 import { ActionRunner } from '~/lib/runtime/action-runner';
 import type { FileHistory } from '~/types/actions';
 import { getLanguageFromExtension } from '~/utils/getLanguageFromExtension';
+import { AlertCircle, AlertTriangle, File, Files, FileX, Maximize2, Minimize2 } from 'lucide-react';
 
 interface CodeComparisonProps {
   beforeCode: string;
@@ -39,10 +39,12 @@ interface FullscreenButtonProps {
 const FullscreenButton = memo(({ onClick, isFullscreen }: FullscreenButtonProps) => (
   <button
     onClick={onClick}
-    className="ml-4 p-1 rounded hover:bg-liblab-elements-bg-depth-3 text-liblab-elements-textTertiary hover:text-liblab-elements-textPrimary transition-colors"
+    className="ml-4 p-1 rounded hover:bg-depth-3 text-tertiary hover:text-primary transition-colors"
     title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
   >
-    <div className={isFullscreen ? 'i-ph:corners-in' : 'i-ph:corners-out'} />
+    <div className={isFullscreen ? 'w-4 h-4' : 'w-4 h-4'}>
+      {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+    </div>
   </button>
 ));
 
@@ -53,7 +55,7 @@ const FullscreenOverlay = memo(({ isFullscreen, children }: { isFullscreen: bool
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-6">
-      <div className="w-full h-full max-w-[90vw] max-h-[90vh] bg-liblab-elements-bg-depth-2 rounded-lg border border-liblab-elements-borderColor shadow-xl overflow-hidden">
+      <div className="w-full h-full max-w-[90vw] max-h-[90vh] bg-depth-2 rounded-lg border border-depth-3 shadow-xl overflow-hidden">
         {children}
       </div>
     </div>
@@ -311,10 +313,8 @@ const processChanges = (beforeCode: string, afterCode: string) => {
   }
 };
 
-const lineNumberStyles =
-  'w-9 shrink-0 pl-2 py-1 text-left font-mono text-liblab-elements-textTertiary border-r border-liblab-elements-borderColor bg-liblab-elements-bg-depth-1';
-const lineContentStyles =
-  'px-1 py-1 font-mono whitespace-pre flex-1 group-hover:bg-liblab-elements-bg-depth-2 text-liblab-elements-textPrimary';
+const lineNumberStyles = 'w-9 shrink-0 pl-2 py-1 text-left font-mono text-tertiary border-r border-depth-3 bg-depth-1';
+const lineContentStyles = 'px-1 py-1 font-mono whitespace-pre flex-1 group-hover:bg-depth-3 text-primary';
 const diffPanelStyles = 'h-full overflow-auto diff-panel-content';
 
 // Updated color styles for better consistency
@@ -327,16 +327,16 @@ const diffLineStyles = {
 const changeColorStyles = {
   added: 'text-green-700 dark:text-green-500 bg-green-500/10 dark:bg-green-500/20',
   removed: 'text-red-700 dark:text-red-500 bg-red-500/10 dark:bg-red-500/20',
-  unchanged: 'text-liblab-elements-textPrimary',
+  unchanged: 'text-primary',
 };
 
 const renderContentWarning = (type: 'binary' | 'error') => (
   <div className="h-full flex items-center justify-center p-4">
-    <div className="text-center text-liblab-elements-textTertiary">
-      <div className={`i-ph:${type === 'binary' ? 'file-x' : 'warning-circle'} text-4xl text-red-400 mb-2 mx-auto`} />
-      <p className="font-medium text-liblab-elements-textPrimary">
-        {type === 'binary' ? 'Binary file detected' : 'Error processing file'}
-      </p>
+    <div className="text-center text-tertiary">
+      <div className={`w-12 h-12 text-red-400 mb-2 mx-auto`}>
+        {type === 'binary' ? <FileX className="w-12 h-12" /> : <AlertTriangle className="w-12 h-12" />}
+      </div>
+      <p className="font-medium text-primary">{type === 'binary' ? 'Binary file detected' : 'Error processing file'}</p>
       <p className="text-sm mt-1">
         {type === 'binary' ? 'Diff view is not available for binary files' : 'Could not generate diff preview'}
       </p>
@@ -354,15 +354,13 @@ const NoChangesView = ({
   highlighter: any;
 }) => (
   <div className="h-full flex flex-col items-center justify-center p-4">
-    <div className="text-center text-liblab-elements-textTertiary">
-      <div className="i-ph:files text-4xl text-green-400 mb-2 mx-auto" />
-      <p className="font-medium text-liblab-elements-textPrimary">Files are identical</p>
+    <div className="text-center text-tertiary">
+      <Files className="w-12 h-12 text-green-400 mb-2 mx-auto" />
+      <p className="font-medium text-primary">Files are identical</p>
       <p className="text-sm mt-1">Both versions match exactly</p>
     </div>
-    <div className="mt-4 w-full max-w-2xl bg-liblab-elements-bg-depth-1 rounded-lg border border-liblab-elements-borderColor overflow-hidden">
-      <div className="p-2 text-xs font-bold text-liblab-elements-textTertiary border-b border-liblab-elements-borderColor">
-        Current Content
-      </div>
+    <div className="mt-4 w-full max-w-2xl bg-depth-1 rounded-lg border border-depth-3 overflow-hidden">
+      <div className="p-2 text-xs font-bold text-tertiary border-b border-depth-3">Current Content</div>
       <div className="overflow-auto max-h-96">
         {beforeCode.split('\n').map((line, index) => (
           <div key={index} className="flex group min-w-fit">
@@ -448,7 +446,7 @@ const CodeLine = memo(
       <div className="flex group min-w-fit">
         <div className={lineNumberStyles}>{lineNumber + 1}</div>
         <div className={`${lineContentStyles} ${bgColor}`}>
-          <span className="mr-2 text-liblab-elements-textTertiary">
+          <span className="mr-2 text-tertiary">
             {type === 'added' && <span className="text-green-700 dark:text-green-500">+</span>}
             {type === 'removed' && <span className="text-red-700 dark:text-red-500">-</span>}
             {type === 'unchanged' && ' '}
@@ -508,8 +506,8 @@ const FileInfo = memo(
     const showStats = additions > 0 || deletions > 0;
 
     return (
-      <div className="flex items-center bg-liblab-elements-bg-depth-1 p-2 text-sm text-liblab-elements-textPrimary shrink-0">
-        <div className="i-ph:file mr-2 h-4 w-4 shrink-0" />
+      <div className="flex items-center bg-depth-1 p-2 text-sm text-primary shrink-0">
+        <File className="mr-2 h-4 w-4 shrink-0" />
         <span className="truncate">{filename}</span>
         <span className="ml-auto shrink-0 flex items-center gap-2">
           {hasChanges ? (
@@ -521,7 +519,7 @@ const FileInfo = memo(
                 </div>
               )}
               <span className="text-yellow-600 dark:text-yellow-400">Modified</span>
-              <span className="text-liblab-elements-textTertiary text-xs">{new Date().toLocaleTimeString()}</span>
+              <span className="text-tertiary text-xs">{new Date().toLocaleTimeString()}</span>
             </>
           ) : (
             <span className="text-green-700 dark:text-green-400">No Changes</span>
@@ -703,7 +701,7 @@ export const DiffView = memo(({ fileHistory, setFileHistory }: DiffViewProps) =>
 
   if (!selectedFile || !currentDocument) {
     return (
-      <div className="flex w-full h-full justify-center items-center bg-liblab-elements-bg-depth-1 text-liblab-elements-textPrimary">
+      <div className="flex w-full h-full justify-center items-center bg-depth-1 text-primary">
         Select a file to view differences
       </div>
     );
@@ -733,9 +731,9 @@ export const DiffView = memo(({ fileHistory, setFileHistory }: DiffViewProps) =>
   } catch (error) {
     console.error('DiffView render error:', error);
     return (
-      <div className="flex w-full h-full justify-center items-center bg-liblab-elements-bg-depth-1 text-red-400">
+      <div className="flex w-full h-full justify-center items-center bg-depth-1 text-red-400">
         <div className="text-center">
-          <div className="i-ph:warning-circle text-4xl mb-2" />
+          <AlertCircle className="w-12 h-12 mb-2" />
           <p>Failed to render diff view</p>
         </div>
       </div>
