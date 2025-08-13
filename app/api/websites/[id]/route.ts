@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const website = await prisma.website.findFirst({
       where: {
         id: websiteId,
-        userId,
+        createdById: userId,
       },
     });
 
@@ -77,7 +77,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const website = await prisma.website.findFirst({
       where: {
         id: websiteId,
-        userId,
+        createdById: userId,
       },
     });
 
@@ -90,7 +90,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const updatedWebsite = await prisma.website.update({
       where: {
         id: websiteId,
-        userId,
+        createdById: userId,
       },
       data: updateData,
     });
@@ -123,7 +123,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const website = await prisma.website.findFirst({
     where: {
       id: websiteId,
-      userId,
+      createdById: userId,
     },
   });
 
@@ -141,7 +141,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     await prisma.website.delete({
       where: {
         id: websiteId,
-        userId,
+        createdById: userId,
       },
     });
 

@@ -37,7 +37,7 @@ const Control = ({ children, controlIcon, ...props }: ControlWithIconProps) => {
             display: 'flex',
             alignItems: 'center',
             paddingLeft: '10px',
-            color: 'var(--liblab-elements-textSecondary)',
+            color: 'var(--color-secondary)',
           }}
         >
           {controlIcon}
@@ -70,7 +70,7 @@ const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> =
   control: (base) => ({
     ...base,
     minWidth: '300px',
-    backgroundColor: 'var(--liblab-elements-bg-depth-4)', // gray-700
+    backgroundColor: 'var(--color-depth-4)', // gray-700
     border: '1px solid transparent',
     boxShadow: 'none',
     outline: 'none !important',
@@ -78,7 +78,7 @@ const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> =
     minHeight: '36px',
     height: '36px',
     fontSize: '0.875rem', // text-sm
-    color: 'var(--liblab-elements-textPrimary)',
+    color: 'var(--color-primary)',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -88,22 +88,22 @@ const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> =
     },
     '&:active': {
       outline: 'none',
-      border: '1px solid var(--liblab-elements-borderColorActive)',
+      border: '1px solid var(--color-accent)',
     },
     '&:focus-visible': {
-      border: '1px solid var(--liblab-elements-borderColorActive)',
+      border: '1px solid var(--color-accent)',
     },
     '&:focus': {
-      border: '1px solid var(--liblab-elements-borderColorActive)',
+      border: '1px solid var(--color-accent)',
     },
   }),
   menu: (base) => ({
     ...base,
-    backgroundColor: 'var(--liblab-elements-bg-depth-2) !important',
+    backgroundColor: 'var(--color-depth-2) !important',
     boxShadow: '0 4px 6px 2px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
     marginTop: '0.25rem',
     cursor: 'pointer',
-    border: '2px solid var(--liblab-elements-borderColor)',
+    border: '2px solid var(--color-depth-2)',
     borderRadius: '0.5rem',
     zIndex: 9999,
     textAlign: 'initial',
@@ -116,17 +116,17 @@ const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> =
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected
-      ? 'var(--liblab-elements-bg-depth-2)'
+      ? 'var(--color-depth-2)'
       : state.isFocused
-        ? 'var(--liblab-elements-bg-depth-3)'
+        ? 'var(--color-depth-3)'
         : 'transparent',
-    color: 'var(--liblab-elements-textPrimary)',
+    color: 'var(--color-primary)',
     fontSize: '0.875rem',
     '&:hover': {
-      color: 'var(--liblab-elements-messages-linkColor)',
+      color: 'var(--color-link)',
     },
     '&:active': {
-      backgroundColor: 'var(--liblab-elements-bg-depth-2)',
+      backgroundColor: 'var(--color-depth-2)',
     },
     padding: '5px',
     cursor: 'pointer',
@@ -136,7 +136,7 @@ const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> =
   }),
   singleValue: (base) => ({
     ...base,
-    color: 'var(--liblab-elements-textPrimary)',
+    color: 'var(--color-primary)',
     fontSize: '0.875rem',
   }),
   valueContainer: (base) => ({
@@ -145,7 +145,7 @@ const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> =
   }),
   placeholder: (base) => ({
     ...base,
-    color: 'var(--liblab-elements-textTertiary)',
+    color: 'var(--color-tertiary)',
     fontSize: '0.875rem',
     fontFamily: 'sans-serif',
   }),
@@ -155,38 +155,38 @@ const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> =
   }),
   dropdownIndicator: (base) => ({
     ...base,
-    color: 'var(--liblab-elements-textSecondary)',
+    color: 'var(--color-secondary)',
     '&:hover': {
-      color: 'var(--liblab-elements-textPrimary)',
+      color: 'var(--color-primary)',
     },
   }),
   clearIndicator: (base) => ({
     ...base,
-    color: 'var(--liblab-elements-textSecondary)',
+    color: 'var(--color-secondary)',
     '&:hover': {
-      color: 'var(--liblab-elements-textPrimary)',
+      color: 'var(--color-primary)',
     },
   }),
   input: (base) => ({
     ...base,
-    color: 'var(--liblab-elements-textPrimary)',
+    color: 'var(--color-primary)',
     fontSize: '0.875rem',
     fontFamily: 'sans-serif',
   }),
   multiValue: (base) => ({
     ...base,
-    backgroundColor: 'var(--liblab-elements-bg-depth-2)',
+    backgroundColor: 'var(--color-depth-2)',
   }),
   multiValueLabel: (base) => ({
     ...base,
-    color: 'var(--liblab-elements-textPrimary)',
+    color: 'var(--color-primary)',
   }),
   multiValueRemove: (base) => ({
     ...base,
-    color: 'var(--liblab-elements-textSecondary)',
+    color: 'var(--color-secondary)',
     '&:hover': {
-      backgroundColor: 'var(--liblab-elements-bg-depth-3)',
-      color: 'var(--liblab-elements-textPrimary)',
+      backgroundColor: 'var(--color-depth-3)',
+      color: 'var(--color-primary)',
     },
   }),
 });

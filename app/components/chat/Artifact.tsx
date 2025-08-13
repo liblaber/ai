@@ -8,6 +8,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { classNames } from '~/utils/classNames';
 import { cubicEasingFn } from '~/utils/easings';
 import { WORK_DIR } from '~/utils/constants';
+import { Check, ChevronDown, ChevronUp, Circle, Files, LoaderCircle, Terminal, X } from 'lucide-react';
 
 const highlighterOptions = {
   langs: ['shell'],
@@ -64,10 +65,10 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
   }, [actions]);
 
   return (
-    <div className="artifact flex flex-col overflow-hidden rounded-xl w-full transition-border duration-150">
+    <div className="artifact flex flex-col overflow-hidden rounded-xl w-full transition-border duration-150 my-6">
       <div className="flex">
         <button
-          className="flex items-stretch bg-liblab-elements-artifacts-background hover:bg-liblab-elements-artifacts-backgroundHover w-full overflow-hidden"
+          className="flex items-stretch bg-depth-2 hover:bg-depth-2/50 w-full overflow-hidden"
           onClick={() => {
             workbenchStore.devMode.set(true);
             workbenchStore.currentView.set('code');
@@ -76,22 +77,14 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
           {artifact.type == 'bundled' && (
             <>
               <div className="p-4">
-                {allActionFinished ? (
-                  <div className={'i-ph:files-light'} style={{ fontSize: '2rem' }}></div>
-                ) : (
-                  <div className={'i-svg-spinners:90-ring-with-bg'} style={{ fontSize: '2rem' }}></div>
-                )}
+                {allActionFinished ? <Files className="w-8 h-8" /> : <Circle className="w-8 h-8 animate-spin" />}
               </div>
-              <div className="bg-liblab-elements-artifacts-borderColor w-[1px]" />
+              <div className="bg-depth-2 w-[1px]" />
             </>
           )}
           <div className="px-5 p-3.5 w-full text-left">
-            <div className="w-full text-liblab-elements-textPrimary font-medium leading-5 text-sm">
-              {artifact?.title}
-            </div>
-            <div className="w-full w-full text-liblab-elements-textSecondary text-xs mt-0.5">
-              Click for the code view
-            </div>
+            <div className="w-full text-primary font-medium leading-5 text-sm">{artifact?.title}</div>
+            <div className="w-full text-secondary text-xs mt-0.5">Click for the code view</div>
           </div>
         </button>
         <AnimatePresence>
@@ -101,14 +94,16 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
               animate={{ width: 'auto' }}
               exit={{ width: 0 }}
               transition={{ duration: 0.15, ease: cubicEasingFn }}
-              className="bg-liblab-elements-artifacts-background hover:bg-liblab-elements-artifacts-backgroundHover"
+              className="bg-depth-2 hover:bg-depth-2/50"
               onClick={devMode ? toggleActions : undefined}
             >
               <div className="p-4">
                 {!devMode && !allActionFinished ? (
                   <div className="i-svg-spinners:90-ring-with-bg"></div>
                 ) : (
-                  <div className={showActions ? 'i-ph:caret-up-bold' : 'i-ph:caret-down-bold'}></div>
+                  <div className={showActions ? 'w-4 h-4' : 'w-4 h-4'}>
+                    {showActions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
                 )}
               </div>
             </motion.button>
@@ -124,9 +119,9 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
             exit={{ height: '0px' }}
             transition={{ duration: 0.15 }}
           >
-            <div className="bg-liblab-elements-artifacts-borderColor h-[1px]" />
+            <div className="border-depth-2 h-[1px]" />
 
-            <div className="p-5 text-left bg-liblab-elements-actions-background">
+            <div className="p-5 text-left bg-depth-2">
               <ActionList actions={actions} />
             </div>
           </motion.div>
@@ -175,10 +170,12 @@ function openArtifactInWorkbench(filePath: any) {
 const ActionList = ({ actions }: ActionListProps) => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-      <ul className="list-none space-y-2.5">
+      <ul className="pl-0!">
         {actions.map((action, index) => {
           const { status, type, content } = action;
           const isLast = index === actions.length - 1;
+
+          console.log('Status:', status);
 
           return (
             <motion.li
@@ -186,6 +183,7 @@ const ActionList = ({ actions }: ActionListProps) => {
               variants={actionVariants}
               initial="hidden"
               animate="visible"
+              className="list-none"
               transition={{
                 duration: 0.2,
                 ease: cubicEasingFn,
@@ -196,24 +194,24 @@ const ActionList = ({ actions }: ActionListProps) => {
                   {status === 'running' ? (
                     <>
                       {type !== 'start' ? (
-                        <div className="i-svg-spinners:90-ring-with-bg"></div>
+                        <LoaderCircle className="w-4 h-4 animate-spin" />
                       ) : (
-                        <div className="i-ph:terminal-window-duotone"></div>
+                        <Terminal className="w-4 h-4" />
                       )}
                     </>
                   ) : status === 'pending' ? (
-                    <div className="i-ph:circle-duotone"></div>
+                    <Circle className="w-4 h-4" />
                   ) : status === 'complete' ? (
-                    <div className="i-ph:check"></div>
+                    <Check className="w-4 h-4" />
                   ) : status === 'failed' || status === 'aborted' ? (
-                    <div className="i-ph:x"></div>
+                    <X className="w-4 h-4" />
                   ) : null}
                 </div>
                 {type === 'file' ? (
                   <div>
                     Create{' '}
                     <code
-                      className="bg-liblab-elements-messages-inlineCode-background text-xs text-liblab-elements-artifacts-inlineCode-text px-1.5 py-1 rounded-md text-liblab-elements-item-contentAccent hover:underline cursor-pointer"
+                      className="bg-depth-3 !text-xs px-1.5 py-1 rounded-md text-accent! hover:underline cursor-pointer"
                       onClick={() => openArtifactInWorkbench(action.filePath)}
                     >
                       {action.filePath}
@@ -256,19 +254,19 @@ const ActionList = ({ actions }: ActionListProps) => {
 function getIconColor(status: ActionState['status']) {
   switch (status) {
     case 'pending': {
-      return 'text-liblab-elements-textTertiary';
+      return 'text-tertiary';
     }
     case 'running': {
-      return 'text-liblab-elements-loader-progress';
+      return 'text-accent';
     }
     case 'complete': {
-      return 'text-liblab-elements-icon-success';
+      return 'text-success';
     }
     case 'aborted': {
-      return 'text-liblab-elements-textSecondary';
+      return 'text-secondary';
     }
     case 'failed': {
-      return 'text-liblab-elements-icon-error';
+      return 'text-failed';
     }
     default: {
       return undefined;

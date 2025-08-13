@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { Button } from '~/components/ui/Button';
-import { format } from 'sql-formatter';
 import type { ApiError } from '~/types/api-error';
 import { AiGeneration } from '~/components/chat/query-modal/AiGeneration';
 import { QueryResults } from '~/components/chat/query-modal/QueryResults';
@@ -57,45 +56,35 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
     }
   }, [isOpen, queryId]);
 
-  const formatSql = (sql: string) => {
-    if (!dataSource) {
-      return sql;
+  const formatQuery = async (query: string): Promise<string> => {
+    if (!dataSource || !query) {
+      return query;
     }
 
     try {
-      const connectionDetails = new URL(dataSource.connectionString);
-      const type = connectionDetails.protocol.replace(':', '');
-
-      return format(sql, {
-        language: type as
-          | 'bigquery'
-          | 'db2'
-          | 'db2i'
-          | 'duckdb'
-          | 'hive'
-          | 'mariadb'
-          | 'mysql'
-          | 'tidb'
-          | 'n1ql'
-          | 'plsql'
-          | 'postgresql'
-          | 'redshift'
-          | 'spark'
-          | 'sqlite'
-          | 'sql'
-          | 'trino'
-          | 'transactsql'
-          | 'singlestoredb'
-          | 'snowflake'
-          | 'tsql',
-        keywordCase: 'upper',
-        linesBetweenQueries: 1,
-        tabWidth: 2,
-        useTabs: false,
+      const response = await fetch('/api/format-query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          dataSourceId: dataSource.id,
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to format query');
+      }
+
+      const { formattedQuery } = (await response.json()) as { formattedQuery: string };
+
+      return formattedQuery;
     } catch (err) {
-      setError(`Failed to format SQL: ${err}`);
-      return sql;
+      console.error('Failed to format query:', err);
+
+      // Return unformatted query on error
+      return query;
     }
   };
 
@@ -111,7 +100,8 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
       }
 
       const data = (await response.json()) as string;
-      setQuery(formatSql(data));
+      const formatted = await formatQuery(data);
+      setQuery(formatted);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch query');
     } finally {
@@ -123,7 +113,7 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
     try {
       setError(null);
 
-      const formattedQuery = formatSql(query || '');
+      const formattedQuery = await formatQuery(query || '');
       const response = await fetch(`/api/queries/${queryId}`, {
         method: 'PUT',
         headers: {
@@ -137,7 +127,8 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
       }
 
       const updatedQuery = (await response.json()) as string;
-      setQuery(formatSql(updatedQuery));
+      const formatted = await formatQuery(updatedQuery);
+      setQuery(formatted);
 
       if (onUpdateAndRegenerate) {
         onUpdateAndRegenerate(updatedQuery);
@@ -183,7 +174,7 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
     }
   };
 
-  const handleGenerateSql = async (dataSourceId: string) => {
+  const handleGenerateQuery = async (dataSourceId: string) => {
     if (!userPrompt.trim()) {
       return;
     }
@@ -201,24 +192,30 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate SQL');
+        throw new Error('Failed to generate query');
       }
 
       const data = (await response.json()) as string;
-      setQuery(formatSql(data));
+      const formatted = await formatQuery(data);
+      setQuery(formatted);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate SQL');
+      setError(err instanceof Error ? err.message : 'Failed to generate query');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleFormatSql = () => {
+  const handleFormatQuery = async () => {
     if (!query) {
       return;
     }
 
-    setQuery(formatSql(query));
+    try {
+      const formatted = await formatQuery(query);
+      setQuery(formatted);
+    } catch (err) {
+      console.error('Failed to format query:', err);
+    }
   };
 
   return (
@@ -231,7 +228,7 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
           <div className="p-6 flex flex-col h-full">
             {isLoading ? (
               <div className="flex items-center justify-center flex-1">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-liblab-elements-textPrimary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
               <>
@@ -239,7 +236,7 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
                   <QueryEditor
                     query={query}
                     onQueryChange={setQuery}
-                    onFormatQuery={handleFormatSql}
+                    onFormatQuery={handleFormatQuery}
                     onTestQuery={handleTestQuery}
                     isTesting={isTesting}
                     queryId={queryId}
@@ -252,7 +249,7 @@ export const QueryModal = ({ isOpen, onOpenChange, queryId, onUpdateAndRegenerat
                   <AiGeneration
                     userPrompt={userPrompt}
                     onPromptChange={setUserPrompt}
-                    onGenerateQuery={() => handleGenerateSql(dataSourceId)}
+                    onGenerateQuery={() => handleGenerateQuery(dataSourceId)}
                     isGenerating={isGenerating}
                   />
 

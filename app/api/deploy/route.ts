@@ -9,7 +9,8 @@ import AdmZip from 'adm-zip';
 import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
 import { requireUserId } from '~/auth/session';
-import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
+import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import { userService } from '~/lib/services/userService';
 import { env as serverEnv } from '~/env/server';
 
@@ -281,7 +282,7 @@ export async function POST(request: NextRequest) {
               siteName: newSite.name,
               siteUrl: newSite.url,
               chatId,
-              userId,
+              createdById: userId,
             },
           });
         }
@@ -571,7 +572,7 @@ export async function POST(request: NextRequest) {
               website = await prisma.website.update({
                 where: {
                   id: websiteId,
-                  userId,
+                  createdById: userId,
                 },
                 data: {
                   siteId: siteInfo.id,
@@ -594,7 +595,7 @@ export async function POST(request: NextRequest) {
                   siteName: siteInfo.name,
                   siteUrl: latestDeploy.links.permalink,
                   chatId: siteInfo.chatId,
-                  userId,
+                  createdById: userId,
                 },
               });
               logger.info(

@@ -10,7 +10,7 @@
     "quickstart": "pnpm run setup && pnpm run docker:start",
     "setup": "pnpm i && pnpm run prisma:generate && tsx setup.ts",
     "build": "next build",
-    "dev": "pnpm prisma generate && tsx scripts/dev-with-db.ts && tsx pre-start.ts && next dev",
+    "dev": "pnpm prisma generate && tsx scripts/dev-with-db.ts && tsx pre-start.ts && next dev --turbo",
     "test": "jest",
     "start": "tsx setup-tunnel.ts && tsx run-migrations.ts && next start",
     "prod": "pnpm run build && pnpm run start",
@@ -57,6 +57,8 @@
     "@ai-sdk/openai": "^1.1.2",
     "@ai-sdk/react": "^1.2.12",
     "@anthropic-ai/sdk": "^0.39.0",
+    "@casl/ability": "^6.7.3",
+    "@casl/prisma": "^1.5.1",
     "@clack/prompts": "^0.11.0",
     "@codemirror/autocomplete": "^6.18.3",
     "@codemirror/commands": "^6.7.1",
@@ -98,6 +100,7 @@
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.4",
     "@t3-oss/env-nextjs": "^0.13.8",
+    "@tailwindcss/postcss": "^4.1.11",
     "@tanstack/react-virtual": "^3.13.0",
     "@uiw/codemirror-theme-tokyo-night": "^4.23.11",
     "@unocss/webpack": "^66.3.3",
@@ -126,7 +129,9 @@
     "js-cookie": "^3.0.5",
     "jspdf": "^3.0.1",
     "jszip": "^3.10.1",
+    "lucide-react": "^0.539.0",
     "mime": "^4.0.4",
+    "mongodb": "^6.18.0",
     "mysql2": "^3.14.1",
     "nanostores": "^0.10.3",
     "netlify": "^13.3.4",
@@ -135,6 +140,7 @@
     "ollama-ai-provider": "^0.15.2",
     "path-browserify": "^1.0.1",
     "pg": "^8.14.1",
+    "postcss": "^8.5.6",
     "posthog-js": "^1.258.2",
     "posthog-node": "^3.1.8",
     "react": "^18.3.1",
@@ -159,6 +165,7 @@
     "sql-formatter": "^15.5.2",
     "sqlite": "^5.1.1",
     "tailwind-merge": "^2.2.1",
+    "tailwindcss": "^4.1.11",
     "unist-util-visit": "^5.0.0",
     "vite-plugin-node-polyfills": "^0.22.0",
     "wrangler": "^4.14.1",
@@ -172,6 +179,7 @@
     "@iconify/types": "^2.0.0",
     "@octokit/types": "^13.6.2",
     "@prisma/client": "^6.5.0",
+    "@svgr/webpack": "^8.1.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@types/adm-zip": "^0.5.7",
@@ -187,6 +195,7 @@
     "@types/react": "^18.3.12",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18.3.1",
+    "@types/react-svg": "^5.0.0",
     "@types/sqlite3": "^3.1.11",
     "@unocss/postcss": "^66.3.3",
     "@unocss/reset": "^0.61.9",
@@ -236,8 +245,8 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "prettier --write",
+      "eslint --fix"
     ],
     "*.{json,md,css,scss}": [
       "prettier --write"
