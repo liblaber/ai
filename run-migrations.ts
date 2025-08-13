@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
+import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import { normalizeError } from '~/lib/telemetry/error-utils';
 import { execSync } from 'child_process';
 
@@ -12,21 +13,18 @@ const runMigrations = async (): Promise<void> => {
 
   // Run Prisma migrations
   console.log('⏳ Running Prisma migrations...');
-
   execSync('npx prisma migrate deploy', { stdio: 'inherit' });
   console.log('✅ Prisma migrations completed successfully');
 
   if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
     console.log('⏳ Setting up sample database...');
-
     execSync('tsx scripts/setup-sample-db.ts', { stdio: 'inherit' });
 
     console.log('🌱 Running database seed...');
-
     execSync('npm run prisma:seed', { stdio: 'inherit' });
   }
 
-  console.log('⏳  Migrations completed successfully');
+  console.log('✅ Migrations completed successfully');
 };
 
 async function trackAppError(error: any) {
@@ -52,15 +50,22 @@ async function trackAppError(error: any) {
   }
 }
 
-// Add error handling for the entire runMigrations function
 const runMigrationsWithErrorHandling = async (): Promise<void> => {
   try {
     await runMigrations();
   } catch (error) {
+    console.error('❌ Migration/seeding failed:', error);
     await trackAppError(error);
-
     process.exit(1);
   }
 };
 
-runMigrationsWithErrorHandling();
+runMigrationsWithErrorHandling()
+  .then(() => {
+    console.log('✅ Migration script completed, the app can now start safely\n');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('❌ Fatal error in migration script:', error);
+    process.exit(1);
+  });

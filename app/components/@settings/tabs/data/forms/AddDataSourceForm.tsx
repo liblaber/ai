@@ -1,7 +1,9 @@
 import { classNames } from '~/utils/classNames';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { XCircle, CheckCircle, Loader2, Plug, Save } from 'lucide-react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
+import { z } from 'zod';
 import { BaseSelect } from '~/components/ui/Select';
 import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/database/SelectDatabaseTypeOptions';
 import {
@@ -19,6 +21,11 @@ interface DataSourceResponse {
     id: string;
   };
 }
+
+const testConnectionResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
 
 interface AddDataSourceFormProps {
   isSubmitting: boolean;
@@ -55,7 +62,17 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
           body: formData,
         });
 
-        const data = (await response.json()) as TestConnectionResponse;
+        const responseText = await response.text();
+
+        let data: TestConnectionResponse;
+
+        try {
+          const parsedResponse = JSON.parse(responseText);
+          data = testConnectionResponseSchema.parse(parsedResponse);
+        } catch (parseError) {
+          console.error('Response validation error:', parseError);
+          throw new Error(`Invalid response format: ${responseText.substring(0, 200)}...`);
+        }
         setTestResult(data);
 
         if (!data.success) {
@@ -162,7 +179,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
         <div className="space-y-4">
           <div className="flex gap-2 mb-6 items-end">
             <div className="min-w-[160px] flex-1">
-              <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">Data source</label>
+              <label className="mb-3 block text-sm font-medium text-secondary">Data source</label>
               <BaseSelect
                 value={dbType}
                 onChange={(value) => {
@@ -188,9 +205,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
           {dbType.value !== SAMPLE_DATABASE && (
             <>
               <div>
-                <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
-                  Database Name
-                </label>
+                <label className="mb-3 block text-sm font-medium text-secondary">Database Name</label>
                 <input
                   type="text"
                   value={dbName}
@@ -198,7 +213,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   disabled={isSubmitting}
                   className={classNames(
                     'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                    'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary text-base',
+                    'text-primary placeholder-tertiary text-base',
                     'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
                     'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
                     'transition-all duration-200',
@@ -208,9 +223,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                 />
               </div>
               <div>
-                <label className="mb-3 block text-sm font-medium text-liblab-elements-textSecondary">
-                  Connection String
-                </label>
+                <label className="mb-3 block text-sm font-medium text-secondary">Connection String</label>
                 <input
                   type="text"
                   value={connStr}
@@ -218,7 +231,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   disabled={isSubmitting}
                   className={classNames(
                     'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                    'text-liblab-elements-textPrimary placeholder-liblab-elements-textTertiary text-base',
+                    'text-primary placeholder-tertiary text-base',
                     'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
                     'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
                     'transition-all duration-200',
@@ -226,7 +239,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   )}
                   placeholder={`${dbType.connectionStringFormat}`}
                 />
-                <label className="mb-3 block !text-[13px] text-liblab-elements-textSecondary mt-2">
+                <label className="mb-3 block !text-[13px] text-secondary mt-2">
                   e.g. {dbType.connectionStringFormat}
                 </label>
               </div>
@@ -236,7 +249,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
           {error && !testResult && (
             <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
               <div className="flex items-center gap-2">
-                <div className="i-ph:x-circle w-5 h-5 text-red-500" />
+                <XCircle className="w-5 h-5 text-red-500" />
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               </div>
             </div>
@@ -251,11 +264,9 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
               }`}
             >
               <div className="flex items-center gap-2">
-                <div
-                  className={`i-ph:${
-                    testResult.success ? 'check-circle' : 'x-circle'
-                  } w-5 h-5 ${testResult.success ? 'text-green-500' : 'text-red-500'}`}
-                />
+                <div className={`w-5 h-5 ${testResult.success ? 'text-green-500' : 'text-red-500'}`}>
+                  {testResult.success ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                </div>
                 <p
                   className={`text-sm ${
                     testResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
@@ -281,19 +292,19 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   disabled={isTestingConnection || isSubmitting || !connStr}
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                    'bg-blue-500 hover:bg-blue-600',
-                    'text-gray-950 dark:text-gray-950',
-                    'disabled:opacity-50 disabled:cursor-not-allowed',
+                    'bg-depth-1 bg-depth-1/50 ',
+                    'text-primary',
+                    'disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
                   )}
                 >
                   {isTestingConnection ? (
                     <>
-                      <div className="i-ph:spinner animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Testing...</span>
                     </>
                   ) : (
                     <>
-                      <div className="i-ph:plug-fill" />
+                      <Plug className="w-4 h-4" />
                       <span>Test Connection</span>
                     </>
                   )}
@@ -309,17 +320,17 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',
                   'text-gray-950 dark:text-gray-950',
-                  'disabled:opacity-50 disabled:cursor-not-allowed',
+                  'disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
                 )}
               >
                 {isSubmitting ? (
                   <>
-                    <div className="i-ph:spinner animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Creating...</span>
                   </>
                 ) : (
                   <>
-                    <div className="i-ph:floppy-disk" />
+                    <Save className="w-4 h-4" />
                     <span>Create</span>
                   </>
                 )}

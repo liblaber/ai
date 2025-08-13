@@ -81,7 +81,7 @@ export const env = createEnv({
 
     // LLM provider configuration
     DEFAULT_LLM_PROVIDER: z.enum(PROVIDER_NAMES).default('Anthropic'),
-    DEFAULT_LLM_MODEL: z.string().default('claude-3-5-sonnet-latest'),
+    DEFAULT_LLM_MODEL: z.string().default('claude-4-sonnet-20250514'),
 
     // Local provider configuration
     OLLAMA_API_BASE_URL: z.string().url().default('http://localhost:11434'),
@@ -94,8 +94,8 @@ export const env = createEnv({
     NETLIFY_AUTH_TOKEN: z.string().optional(),
 
     // Google OAuth configuration
-    GOOGLE_CLIENT_ID: z.string().default(''),
-    GOOGLE_CLIENT_SECRET: z.string().default(''),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
 
     // Development configuration
     npm_package_version: z.string().optional(),

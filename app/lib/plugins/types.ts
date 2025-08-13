@@ -5,7 +5,7 @@ export enum PluginType {
   USER_MANAGEMENT = 'user-management',
 }
 
-export type DataAccessPluginId = 'postgres' | 'mysql' | 'sqlite';
+export type DataAccessPluginId = 'postgres' | 'mysql' | 'sqlite' | 'mongodb';
 export type AuthPluginId = 'anonymous' | 'google' | 'twitch' | 'twitter';
 export type StarterPluginId = 'remix' | 'next';
 export type UserManagementPluginId = 'single-user' | 'multi-user';

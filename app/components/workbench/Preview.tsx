@@ -1,5 +1,18 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
+import {
+  ChevronDown,
+  ExternalLink,
+  Laptop,
+  Maximize2,
+  Minimize2,
+  Monitor,
+  Monitor as DesktopIcon,
+  RotateCcw,
+  Smartphone,
+  SquareDashed,
+  Tablet,
+} from 'lucide-react';
 import { IconButton } from '~/components/ui/IconButton';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
@@ -15,14 +28,14 @@ interface WindowSize {
   name: string;
   width: number;
   height: number;
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const WINDOW_SIZES: WindowSize[] = [
-  { name: 'Mobile', width: 375, height: 667, icon: 'i-ph:device-mobile' },
-  { name: 'Tablet', width: 768, height: 1024, icon: 'i-ph:device-tablet' },
-  { name: 'Laptop', width: 1366, height: 768, icon: 'i-ph:laptop' },
-  { name: 'Desktop', width: 1920, height: 1080, icon: 'i-ph:monitor' },
+  { name: 'Mobile', width: 375, height: 667, icon: Smartphone },
+  { name: 'Tablet', width: 768, height: 1024, icon: Tablet },
+  { name: 'Laptop', width: 1366, height: 768, icon: Laptop },
+  { name: 'Desktop', width: 1920, height: 1080, icon: DesktopIcon },
 ];
 
 type Props = {
@@ -249,26 +262,44 @@ export const Preview = memo(({ sendMessage }: Props) => {
     </div>
   );
 
-  const openInNewWindow = (size: WindowSize) => {
-    if (activePreview?.baseUrl) {
-      const match = activePreview.baseUrl.match(/^https?:\/\/([^.]+)\.local-credentialless\.webcontainer-api\.io/);
+  const setDeviceSize = (size: WindowSize) => {
+    const MIN_PREVIEW_WIDTH_PERCENT = 10;
+    const MAX_PREVIEW_WIDTH_PERCENT = 100;
+    const ESTIMATED_PREVIEW_WIDTH_RATIO = 0.5;
 
-      if (match) {
-        const previewId = match[1];
-        const previewUrl = `/webcontainer/preview/${previewId}`;
-        const newWindow = window.open(
-          previewUrl,
-          '_blank',
-          `noopener,noreferrer,width=${size.width},height=${size.height},menubar=no,toolbar=no,location=no,status=no`,
-        );
-
-        if (newWindow) {
-          newWindow.focus();
-        }
-      } else {
-        console.warn('[Preview] Invalid WebContainer URL:', activePreview.baseUrl);
-      }
+    // Enable device mode if not already enabled
+    if (!isDeviceModeOn) {
+      setIsDeviceModeOn(true);
     }
+
+    const calculateTargetPercent = (deviceWidth: number, containerWidth: number) => {
+      if (containerWidth === 0) {
+        return MIN_PREVIEW_WIDTH_PERCENT;
+      }
+
+      const percent = (deviceWidth / containerWidth) * 100;
+
+      return Math.max(MIN_PREVIEW_WIDTH_PERCENT, Math.min(MAX_PREVIEW_WIDTH_PERCENT, percent));
+    };
+
+    const previewContainer = containerRef.current;
+    let targetPercent: number;
+
+    if (previewContainer) {
+      const previewArea = previewContainer.querySelector<HTMLElement>('.flex-1');
+      const availableWidth = previewArea ? previewArea.offsetWidth : previewContainer.offsetWidth;
+      targetPercent = calculateTargetPercent(size.width, availableWidth);
+    } else {
+      // Fallback if container ref is not available yet
+      const screenWidth = window.innerWidth;
+      const estimatedPreviewWidth = screenWidth * ESTIMATED_PREVIEW_WIDTH_RATIO;
+      targetPercent = calculateTargetPercent(size.width, estimatedPreviewWidth);
+    }
+
+    setWidthPercent(targetPercent);
+
+    // Update the selected window size for the dropdown
+    setSelectedWindowSize(size);
   };
 
   return (
@@ -277,17 +308,21 @@ export const Preview = memo(({ sendMessage }: Props) => {
         <div className="z-iframe-overlay w-full h-full absolute" onClick={() => setIsPortDropdownOpen(false)} />
       )}
       {!isLoading && !!codeErrors.length && <FixIssuesDialog onFixIssue={onFixIssue} />}
-      <div className="bg-liblab-elements-bg-depth-2 p-2 flex items-center gap-2">
+      <div className="bg-depth-2 p-2 flex items-center gap-2">
         <div className="flex items-center gap-2">
-          <IconButton icon="i-ph:arrow-clockwise" onClick={reloadPreview} />
+          <IconButton onClick={reloadPreview} title="Reload preview">
+            <RotateCcw className="w-4 h-4" />
+          </IconButton>
           <IconButton
-            icon="i-ph:selection"
             onClick={() => setIsSelectionMode(!isSelectionMode)}
-            className={isSelectionMode ? 'bg-liblab-elements-bg-depth-3' : ''}
-          />
+            className={isSelectionMode ? 'bg-depth-3' : ''}
+            title={isSelectionMode ? 'Exit screenshot mode' : 'Enter screenshot mode'}
+          >
+            <SquareDashed className="w-4 h-4" />
+          </IconButton>
         </div>
 
-        <div className="flex-grow flex items-center gap-1 bg-liblab-elements-preview-addressBar-background border border-liblab-elements-borderColor text-liblab-elements-preview-addressBar-text rounded-full px-3 py-1 text-sm hover:bg-liblab-elements-preview-addressBar-backgroundHover hover:focus-within:bg-liblab-elements-preview-addressBar-backgroundActive focus-within:bg-liblab-elements-preview-addressBar-backgroundActive focus-within-border-liblab-elements-borderColorActive focus-within:text-liblab-elements-preview-addressBar-textActive">
+        <div className="flex-grow flex items-center gap-1 bg-depth-1 border border-depth-3 text-secondary rounded-full px-3 py-1 text-sm hover:bg-depth-3 hover:focus-within:bg-depth-1 focus-within:bg-depth-1 focus-within-border-accent focus-within:text-primary">
           <input
             title="URL"
             ref={inputRef}
@@ -322,29 +357,31 @@ export const Preview = memo(({ sendMessage }: Props) => {
           )}
 
           <IconButton
-            icon="i-ph:devices"
             onClick={toggleDeviceMode}
             title={isDeviceModeOn ? 'Switch to Responsive Mode' : 'Switch to Device Mode'}
-          />
+          >
+            <Monitor className="w-4 h-4" />
+          </IconButton>
 
-          <IconButton
-            icon={isFullscreen ? 'i-ph:arrows-in' : 'i-ph:arrows-out'}
-            onClick={toggleFullscreen}
-            title={isFullscreen ? 'Exit Full Screen' : 'Full Screen'}
-          />
+          <IconButton onClick={toggleFullscreen} title={isFullscreen ? 'Exit Full Screen' : 'Full Screen'}>
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </IconButton>
 
           <div className="flex items-center relative">
             <IconButton
-              icon="i-ph:arrow-square-out"
-              onClick={() => openInNewWindow(selectedWindowSize)}
-              title={`Open Preview in ${selectedWindowSize.name} Window`}
-            />
+              onClick={() => setDeviceSize(selectedWindowSize)}
+              title={`Set Preview to ${selectedWindowSize.name} Size (${selectedWindowSize.width}×${selectedWindowSize.height})`}
+              className={isDeviceModeOn ? 'bg-depth-3!' : ''}
+            >
+              <ExternalLink className="w-4 h-4" />
+            </IconButton>
             <IconButton
-              icon="i-ph:caret-down"
               onClick={() => setIsWindowSizeDropdownOpen(!isWindowSizeDropdownOpen)}
               className="ml-1"
               title="Select Window Size"
-            />
+            >
+              <ChevronDown className="w-4 h-4" />
+            </IconButton>
 
             {isWindowSizeDropdownOpen && (
               <>
@@ -357,17 +394,17 @@ export const Preview = memo(({ sendMessage }: Props) => {
                       onClick={() => {
                         setSelectedWindowSize(size);
                         setIsWindowSizeDropdownOpen(false);
-                        openInNewWindow(size);
+                        setDeviceSize(size);
                       }}
                     >
-                      <div
-                        className={`${size.icon} w-5 h-5 text-[#6B7280] dark:text-gray-400 group-hover:text-liblab-elements-item-contentAccent dark:group-hover:text-liblab-elements-item-contentAccent transition-colors duration-200`}
-                      />
+                      <div className="w-5 h-5 text-[#6B7280] dark:text-gray-400 group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200">
+                        <size.icon className="w-5 h-5" />
+                      </div>
                       <div className="flex flex-col">
-                        <span className="font-medium group-hover:text-liblab-elements-item-contentAccent dark:group-hover:text-liblab-elements-item-contentAccent transition-colors duration-200">
+                        <span className="font-medium group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200">
                           {size.name}
                         </span>
-                        <span className="text-xs text-[#6B7280] dark:text-gray-400 group-hover:text-liblab-elements-item-contentAccent dark:group-hover:text-liblab-elements-item-contentAccent transition-colors duration-200">
+                        <span className="text-xs text-[#6B7280] dark:text-gray-400 group-hover:text-accent dark:group-hover:text-accent transition-colors duration-200">
                           {size.width} × {size.height}
                         </span>
                       </div>
@@ -380,13 +417,13 @@ export const Preview = memo(({ sendMessage }: Props) => {
         </div>
       </div>
 
-      <div className="flex-1 border-t border-liblab-elements-borderColor flex justify-center items-center overflow-auto">
+      <div className="flex-1 border-t border-depth-3 flex justify-center items-center overflow-auto">
         <div
           style={{
             width: isDeviceModeOn ? `${widthPercent}%` : '100%',
             height: '100%',
             overflow: 'visible',
-            background: 'var(--liblab-elements-bg-depth-2)',
+            background: 'var(--color-depth-2)',
             position: 'relative',
             display: 'flex',
           }}
@@ -396,7 +433,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
               <iframe
                 ref={iframeRef}
                 title="preview"
-                className="border-none w-full h-full bg-white"
+                className="border-none w-full h-full"
                 src={iframeUrl}
                 sandbox="allow-scripts allow-forms allow-popups allow-modals allow-storage-access-by-user-activation allow-same-origin"
                 allow="cross-origin-isolated"
@@ -412,7 +449,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
                 hidden={isLoading}
               />
               {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-liblab-elements-bg-depth-2 z-50">
+                <div className="absolute inset-0 flex items-center justify-center bg-depth-2 z-50">
                   {<PreviewLoader message={loadingText} />}
                 </div>
               )}
@@ -423,7 +460,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
               />
             </>
           ) : (
-            <div className="flex w-full h-full justify-center items-center bg-liblab-elements-bg-depth-2 text-liblab-elements-textPrimary">
+            <div className="flex w-full h-full justify-center items-center bg-depth-2 text-primary">
               {<PreviewLoader message={loadingText} />}
             </div>
           )}

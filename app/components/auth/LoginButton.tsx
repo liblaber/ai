@@ -1,6 +1,6 @@
 'use client';
-import React, { useEffect } from 'react';
-import { signIn, useSession } from '~/auth/auth-client';
+import React from 'react';
+import { signIn } from '~/auth/auth-client';
 import {
   Description as DialogDescription,
   Root as DialogRoot,
@@ -16,20 +16,6 @@ import type { AuthProvider, AuthProviderType } from '~/lib/plugins/types';
 export function LoginButton() {
   const { isLoginModalOpen, toggleLoginModal, loginModalTitle } = useAuth();
   const { socialProviders, anonymousProvider } = useAuthProvidersPlugin();
-  const { data: session } = useSession();
-
-  useEffect(() => {
-    // Allow auto login only if the anonymous plugin is enabled
-    if (!anonymousProvider) {
-      return;
-    }
-
-    if (session?.user) {
-      return;
-    }
-
-    loginAnonymous();
-  }, [anonymousProvider]);
 
   const handleProviderLogin = async (provider: AuthProviderType) => {
     toggleLoginModal(false);
@@ -37,7 +23,7 @@ export function LoginButton() {
     try {
       switch (provider) {
         case 'anonymous': {
-          await loginAnonymous();
+          await signIn.anonymous();
           break;
         }
         default:
@@ -65,23 +51,21 @@ export function LoginButton() {
   return (
     <DialogRoot open={isLoginModalOpen} onOpenChange={toggleLoginModal}>
       <DialogTrigger asChild>
-        <button className="px-4 py-2 rounded-md font-medium text-sm bg-white border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all shadow-sm hover:shadow text-liblab-elements-button-primary-text">
+        <button className="px-4 py-2 rounded-md font-medium text-sm bg-white border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all shadow-sm hover:shadow text-gray-900">
           Log in
         </button>
       </DialogTrigger>
 
       <Dialog
-        className="sm:max-w-[500px] w-[500px] rounded-lg shadow-xs bg-gray-500 bg-opacity-70 border border-liblab-elements-borderColor backdrop-blur-[2px] flex flex-col items-center justify-center min-h-[400px]"
+        className="sm:max-w-[500px] w-[500px] rounded-lg shadow-xs bg-gray-500 bg-opacity-70 border border-depth-3 backdrop-blur-[2px] flex flex-col items-center justify-center min-h-[400px]"
         onClose={() => toggleLoginModal(false)}
         onBackdrop={() => toggleLoginModal(false)}
       >
         <div className="w-full flex flex-col items-center justify-center">
           <DialogTitle asChild>
-            <h2 className="text-center text-lg font-medium mb-4 mt-0 text-liblab-elements-textPrimary">
-              {loginModalTitle || 'Log in'}
-            </h2>
+            <h2 className="text-center text-lg font-medium mb-4 mt-0 text-primary">{loginModalTitle || 'Log in'}</h2>
           </DialogTitle>
-          <DialogDescription className="text-center text-sm mb-8 text-liblab-elements-textSecondary">
+          <DialogDescription className="text-center text-sm mb-8 text-secondary">
             Please log in to continue.
           </DialogDescription>
 
@@ -96,7 +80,7 @@ export function LoginButton() {
                   <div className="w-full border-t border-gray-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="bg-[#0A0A0A] px-2 text-liblab-elements-textSecondary">OR</span>
+                  <span className="bg-[#0A0A0A] px-2 text-secondary">OR</span>
                 </div>
               </div>
             )}
@@ -108,24 +92,3 @@ export function LoginButton() {
     </DialogRoot>
   );
 }
-
-const loginAnonymous = async () => {
-  try {
-    // Sign in the anonymous user (should be pre-created by seed)
-    const { error: signInError } = await signIn.email({
-      email: 'anonymous@anonymous.com',
-      password: 'password1234',
-      rememberMe: true,
-    });
-
-    if (signInError) {
-      console.error('Failed to sign in anonymous user:', signInError);
-      return;
-    }
-
-    // Refresh the landing page after successful login to show data sources connection modal
-    window.location.reload();
-  } catch (error: any) {
-    throw new Error(`Anonymous login failed: ${error?.message}`);
-  }
-};

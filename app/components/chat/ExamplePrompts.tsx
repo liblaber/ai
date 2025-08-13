@@ -24,7 +24,7 @@ export function ExamplePrompts(sendMessage?: { (event: React.UIEvent, messageInp
               onClick={(event) => {
                 sendMessage?.(event, examplePrompt.text);
               }}
-              className="border border-liblab-elements-borderColor rounded-full bg-gray-100  hover:bg-gray-100 dark:bg-gray-950 dark:hover:bg-gray-900 text-liblab-elements-textSecondary hover:text-liblab-elements-textPrimary px-3 py-1 text-xs transition-theme"
+              className="border border-depth-3 rounded-full bg-gray-100  hover:bg-gray-100 dark:bg-gray-950 dark:hover:bg-gray-900 text-secondary hover:text-primary px-3 py-1 text-xs transition-theme"
             >
               {examplePrompt.text}
             </button>

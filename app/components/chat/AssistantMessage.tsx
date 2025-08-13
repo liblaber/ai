@@ -5,6 +5,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { WORK_DIR } from '~/utils/constants';
 import { Button } from '~/components/ui/Button';
 import { Card } from '~/components/ui/Card';
+import { Info, RotateCcw } from 'lucide-react';
 
 interface AssistantMessageProps {
   content: string;
@@ -62,27 +63,27 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
   return (
     <div className="overflow-hidden w-full">
       <>
-        <div className="flex gap-2 items-center text-sm text-liblab-elements-textSecondary my-1.5">
+        <div className="flex gap-2 items-center text-sm text-secondary my-1.5">
           {(codeContext || chatSummary) && !errorMessage && (
-            <Popover side="right" align="start" trigger={<div className="i-ph:info" />}>
+            <Popover side="right" align="start" trigger={<Info className="w-4 h-4" />}>
               {chatSummary && (
-                <div className="max-w-chat">
+                <div className="max-w-chat-width">
                   <div className="summary max-h-96 flex flex-col">
-                    <h2 className="border border-liblab-elements-borderColor rounded-md p4">Summary</h2>
-                    <div style={{ zoom: 0.7 }} className="overflow-y-auto m4">
+                    <h2 className="border border-depth-3 rounded-md p-4 text-lg font-semibold">Summary</h2>
+                    <div style={{ zoom: 0.7 }} className="overflow-y-auto m-4">
                       <Markdown>{chatSummary}</Markdown>
                     </div>
                   </div>
                   {codeContext && (
-                    <div className="code-context flex flex-col p4 border border-liblab-elements-borderColor rounded-md">
-                      <h2>Context</h2>
-                      <div className="flex gap-4 mt-4 liblab" style={{ zoom: 0.6 }}>
+                    <div className="code-context flex flex-col p-4 border border-depth-3 rounded-md">
+                      <h2 className="text-lg font-semibold">Context</h2>
+                      <div className="flex gap-4 mt-4" style={{ zoom: 0.6 }}>
                         {codeContext.map((x) => {
                           const normalized = normalizedFilePath(x);
                           return (
                             <>
                               <code
-                                className="bg-liblab-elements-artifacts-inlineCode-background text-liblab-elements-artifacts-inlineCode-text px-1.5 py-1 rounded-md text-liblab-elements-item-contentAccent hover:underline cursor-pointer"
+                                className="text-primary px-1.5 py-1 rounded-md text-accent hover:underline cursor-pointer"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -109,7 +110,7 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
           )}
         </div>
       </>
-      <div className="text-liblab-elements-textPrimary">
+      <div className="text-primary">
         {errorMessage ? (
           <>
             <p className="mt-2">Unfortunately, your request has failed with the following error:</p>{' '}
@@ -117,7 +118,7 @@ export const AssistantMessage = ({ content, annotations, onRetry, error }: Assis
               <p>{errorMessage}</p>
             </Card>
             <Button variant="secondary" size="sm" className="mt-4" onClick={() => onRetry(errorMessage)}>
-              <div className="i-ph:arrow-clockwise w-3 h-3 mr-2" />
+              <RotateCcw className="w-3 h-3 mr-2" />
               Retry
             </Button>
           </>

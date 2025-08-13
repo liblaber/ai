@@ -127,6 +127,7 @@ export const BaseChat = ({
   ) => {
     if (sendMessage) {
       const message = messageInput || input;
+      workbenchStore.clearCodeErrors();
 
       await sendMessage(event, message, false, pendingUploadedFiles, pendingImageDataList);
     }
@@ -323,15 +324,20 @@ export const BaseChat = ({
       <div
         ref={scrollRef}
         className={classNames('flex flex-col lg:flex-row overflow-y-auto w-full h-full', {
-          '!h-90vh': !chatStarted,
+          '!h-[90vh]': !chatStarted,
         })}
         style={{
           paddingTop: bannerHeight > 0 ? `${bannerHeight}px` : undefined,
         }}
       >
-        <div className={classNames('Chat flex flex-col flex-grow lg:min-w-[var(--chat-min-width)] h-full')}>
+        <div
+          className={classNames('flex flex-col flex-grow max-w-chat-width h-full', {
+            'data-[chat-visible=false]:transition-all data-[chat-visible=false]:duration-300 data-[chat-visible=false]:will-change-transform data-[chat-visible=false]:will-change-opacity data-[chat-visible=false]:-translate-x-1/2 data-[chat-visible=false]:opacity-0': true,
+            'opacity-100': true,
+          })}
+        >
           <div
-            className={classNames('pt-6 px-2 sm:px-4', {
+            className={classNames('pt-4 pl-4 pr-1', {
               'h-full flex flex-col': chatStarted,
             })}
             ref={scrollRef}
@@ -341,7 +347,7 @@ export const BaseChat = ({
                 {() => (
                   <Messages
                     ref={messageRef}
-                    className="flex flex-col w-full flex-1 max-w-chat mx-auto rounded-xl overflow-y-scroll z-1"
+                    className="flex flex-col w-full flex-1 gap-2 max-w-chat-width mx-auto rounded-xl overflow-y-scroll z-1"
                     messages={messages}
                     isStreaming={isStreaming}
                     setMessages={setMessages}
@@ -354,7 +360,7 @@ export const BaseChat = ({
 
             <div
               className={classNames('flex flex-col gap-4 w-full mx-auto z-prompt mb-6 mt-4', {
-                'sticky bottom-2 max-w-chat': chatStarted,
+                'sticky bottom-2 max-w-chat-width': chatStarted,
                 'max-w-homepage-textarea': !chatStarted,
               })}
             >
@@ -399,13 +405,11 @@ export const BaseChat = ({
                   }}
                   onDragLeave={(e) => {
                     e.preventDefault();
-                    (e.currentTarget as HTMLTextAreaElement).style.border =
-                      '1px solid var(--liblab-elements-borderColor)';
+                    (e.currentTarget as HTMLTextAreaElement).style.border = '1px solid rgb(30 33 37)';
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
-                    (e.currentTarget as HTMLTextAreaElement).style.border =
-                      '1px solid var(--liblab-elements-borderColor)';
+                    (e.currentTarget as HTMLTextAreaElement).style.border = '1px solid rgb(30 33 37)';
 
                     const files = Array.from(e.dataTransfer.files);
                     files.forEach((file) => {

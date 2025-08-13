@@ -4,12 +4,13 @@ import { motion } from 'framer-motion';
 import { CloseCircle } from 'iconsax-reactjs';
 import { useStore } from '@nanostores/react';
 import { websiteStore } from '~/lib/stores/websiteStore';
+import { Check, X, ExternalLink, Rocket, Copy } from 'lucide-react';
 
 interface PublishProgressModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCancel: () => void;
-  mode: 'publish' | 'settings';
+  mode: 'publish' | 'settings' | 'initializing';
   onPublishClick: () => void;
 }
 
@@ -26,7 +27,7 @@ const PUBLISH_STEPS = [
 // Main Component
 export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublishClick }: PublishProgressModalProps) {
   // State
-  const { website, isLoading, deploymentProgress, deploymentLogs } = useStore(websiteStore);
+  const { website, isLoading, deploymentProgress, deploymentLogs, errorLogs } = useStore(websiteStore);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const [isCopying, setIsCopying] = useState(false);
 
@@ -73,9 +74,9 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
 
   // Render Functions
   const renderLoadingState = () => (
-    <div className="flex flex-col items-center justify-center h-full">
+    <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
       <div className="animate-spin rounded-full h-12 w-12 border-4 border-accent-500 border-t-transparent mb-4" />
-      <div className="text-gray-700 dark:text-gray-300">Creating site...</div>
+      <div className="text-gray-700 dark:text-gray-300">Initializing...</div>
     </div>
   );
 
@@ -102,9 +103,9 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
               })}
             >
               {isCompleted ? (
-                <div className="i-ph:check w-4 h-4" />
+                <Check className="w-4 h-4" />
               ) : isError ? (
-                <div className="i-ph:x w-4 h-4" />
+                <X className="w-4 h-4" />
               ) : (
                 <span className="text-sm font-medium">{index + 1}</span>
               )}
@@ -157,7 +158,7 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
               className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
             >
               View
-              <div className="i-ph:arrow-square-out w-4 h-4" />
+              <ExternalLink className="w-4 h-4" />
             </a>
           )}
         </div>
@@ -167,7 +168,7 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
             onClick={onPublishClick}
             className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
           >
-            <div className="i-ph:rocket-launch w-4 h-4" />
+            <Rocket className="w-4 h-4" />
             Publish New Version
           </button>
 
@@ -178,12 +179,12 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
             >
               {isCopying ? (
                 <>
-                  <div className="i-ph:check w-4 h-4" />
+                  <Check className="w-4 h-4" />
                   Copied!
                 </>
               ) : (
                 <>
-                  <div className="i-ph:copy w-4 h-4" />
+                  <Copy className="w-4 h-4" />
                   Copy Link
                 </>
               )}
@@ -233,7 +234,7 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
             </h3>
 
             {(() => {
-              if (isLoading && mode === 'settings' && !website) {
+              if (mode === 'initializing' || (isLoading && mode === 'settings' && !website)) {
                 return renderLoadingState();
               }
 
@@ -269,6 +270,56 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
 
                 if (deploymentProgress?.status === 'success') {
                   return renderSettingsView();
+                }
+
+                if (deploymentProgress?.status === 'error') {
+                  const handleCopyErrorLogs = () => {
+                    const errorLogsText = errorLogs.join('\n');
+                    navigator.clipboard.writeText(errorLogsText);
+                    setIsCopying(true);
+                    setTimeout(() => {
+                      setIsCopying(false);
+                    }, 2000);
+                  };
+
+                  return (
+                    <div className="text-red-600 dark:text-red-400">
+                      <div className="mb-4">Deployment failed. Please check the logs for more details.</div>
+                      <div className="bg-white dark:bg-gray-800 rounded-md p-4 h-64 overflow-y-auto font-mono text-sm border border-gray-200 dark:border-gray-700">
+                        {deploymentLogs
+                          .filter((log) => !errorLogs.includes(log))
+                          .map((log, index) => (
+                            <div key={index} className="text-gray-600 dark:text-gray-400">
+                              {log}
+                            </div>
+                          ))}
+                        {errorLogs.map((log, index) => (
+                          <div key={index} className="text-red-600 dark:text-red-400">
+                            {log}
+                          </div>
+                        ))}
+                        <div ref={logsEndRef} />
+                      </div>
+                      <div className="flex justify-end mt-4">
+                        <button
+                          onClick={handleCopyErrorLogs}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+                        >
+                          {isCopying ? (
+                            <>
+                              <div className="i-ph:check w-4 h-4" />
+                              Copied!
+                            </>
+                          ) : (
+                            <>
+                              <div className="i-ph:copy w-4 h-4" />
+                              Copy Error Logs
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
                 }
               } else {
                 // Settings mode

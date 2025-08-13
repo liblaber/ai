@@ -31,6 +31,8 @@ body,
     --border: oklch(0.9276 0.0058 264.53);
     --input: oklch(0.922 0 0);
     --ring: oklch(0.708 0 0);
+    --scrollbar-thumb: oklch(0.4461 0.0263 256.8);
+    --scrollbar-thumb-hover: oklch(0.551 0.0234 264.36);
     --chart-1: oklch(0.5 0.15 250); /* Deep Blue */
     --chart-1-stroke: oklch(0.35 0.15 250);
     --chart-2: oklch(0.6 0.12 235); /* Blue */
@@ -86,6 +88,8 @@ body,
     --border: oklch(0.269 0 0);
     --input: oklch(0.269 0 0);
     --ring: oklch(0.439 0 0);
+    --scrollbar-thumb: oklch(0.9764 0.001 286.38);
+    --scrollbar-thumb-hover: oklch(0.8879 0.0056 211.04);
     --chart-1: oklch(0.6 0.15 250); /* Deep Blue */
     --chart-1-stroke: oklch(0.45 0.15 250);
     --chart-2: oklch(0.7 0.12 235); /* Blue */
@@ -128,5 +132,50 @@ body,
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Custom scrollbar styles for Mac-like appearance */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Dark theme scrollbar */
+  .dark * {
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+
+  .dark *::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+  }
+
+  .dark *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
   }
 }

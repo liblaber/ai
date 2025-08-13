@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ServiceStatus } from './types';
 import { ProviderStatusCheckerFactory } from './provider-factory';
+import { CheckCircle, AlertTriangle, XCircle, HelpCircle, Loader2 } from 'lucide-react';
 
 export default function ServiceStatusTab() {
   const [serviceStatuses, setServiceStatuses] = useState<ServiceStatus[]>([]);
@@ -71,20 +72,20 @@ export default function ServiceStatusTab() {
   const getStatusIcon = (status: ServiceStatus['status']) => {
     switch (status) {
       case 'operational':
-        return 'i-ph:check-circle';
+        return <CheckCircle className="w-5 h-5" />;
       case 'degraded':
-        return 'i-ph:warning';
+        return <AlertTriangle className="w-5 h-5" />;
       case 'down':
-        return 'i-ph:x-circle';
+        return <XCircle className="w-5 h-5" />;
       default:
-        return 'i-ph:question';
+        return <HelpCircle className="w-5 h-5" />;
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin i-ph:circle-notch w-8 h-8 text-accent-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-accent-500" />
       </div>
     );
   }
@@ -92,7 +93,7 @@ export default function ServiceStatusTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-red-500 dark:text-red-400">
-        <div className="i-ph:warning w-8 h-8 mb-2" />
+        <AlertTriangle className="w-8 h-8 mb-2" />
         <p>{error}</p>
       </div>
     );
@@ -109,7 +110,7 @@ export default function ServiceStatusTab() {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{service.provider}</h3>
               <div className={`flex items-center ${getStatusColor(service.status)}`}>
-                <div className={`${getStatusIcon(service.status)} w-5 h-5 mr-2`} />
+                <div className="mr-2">{getStatusIcon(service.status)}</div>
                 <span className="capitalize">{service.status}</span>
               </div>
             </div>

@@ -84,30 +84,43 @@ export const getStarterTemplateFiles = async (databaseUrl?: string): Promise<Fil
 
     return writeSensitiveDataToEnvFile(data.files, databaseUrl);
   } catch (error) {
-    console.error('Error fetching starter template:', error);
-    throw error;
+    logger.error('Error fetching starter template:', error);
+
+    // Return empty files instead of throwing to prevent UI crashes
+    return {};
   }
 };
 
 export async function getStarterTemplateMessages(title: string, databaseUrl: string): Promise<Message[]> {
-  const starterFiles = await getStarterTemplateFiles(databaseUrl);
+  try {
+    const starterFiles = await getStarterTemplateFiles(databaseUrl);
 
-  await loadFileMapIntoContainer(starterFiles);
+    // If no files returned, don't create starter template messages
+    if (!starterFiles || Object.keys(starterFiles).length === 0) {
+      logger.warn('No starter template files available, skipping starter template setup');
+      return [];
+    }
 
-  return [
-    {
-      id: `1-${new Date().getTime()}`,
-      role: MessageRole.User,
-      content: 'Import the starter template repository',
-      annotations: ['hidden'],
-    },
-    {
-      id: `2-${new Date().getTime()}`,
-      role: MessageRole.Assistant,
-      content: getStarterTemplateArtifact(title, starterFiles),
-      annotations: ['hidden'],
-    },
-  ];
+    await loadFileMapIntoContainer(starterFiles);
+
+    return [
+      {
+        id: `1-${new Date().getTime()}`,
+        role: MessageRole.User,
+        content: 'Import the starter template repository',
+        annotations: ['hidden'],
+      },
+      {
+        id: `2-${new Date().getTime()}`,
+        role: MessageRole.Assistant,
+        content: getStarterTemplateArtifact(title, starterFiles),
+        annotations: ['hidden'],
+      },
+    ];
+  } catch (error) {
+    logger.error('Error creating starter template messages:', error);
+    return [];
+  }
 }
 
 function getStarterTemplateArtifact(title: string, files: FileMap): string {

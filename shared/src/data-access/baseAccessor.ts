@@ -60,6 +60,34 @@ export interface BaseAccessor {
    */
   close: () => Promise<void>;
 
+  /**
+   * Generates a sample schema for demonstration purposes when no real data source is connected
+   * @returns Array of Table objects representing a sample schema for this database type
+   */
+  generateSampleSchema: () => Table[];
+
+  /**
+   * Formats a query string for display purposes
+   * @param query - The raw query string to format
+   * @returns The formatted query string
+   */
+  formatQuery: (query: string) => string;
+
+  /**
+   * Generates the appropriate system prompt for query generation based on database type
+   * @param databaseType - The database type identifier
+   * @param dbSchema - The formatted database schema
+   * @param existingQueries - Optional array of existing queries
+   * @param userPrompt - The user's query request
+   * @returns The system prompt for this database type
+   */
+  generateSystemPrompt: (
+    databaseType: string,
+    dbSchema: string,
+    existingQueries: string[] | undefined,
+    userPrompt: string,
+  ) => string;
+
   /** A human-readable label identifying this accessor type */
   readonly label: string;
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useSession } from '~/auth/auth-client';
+import { useEffect, useRef } from 'react';
+import { signIn, useSession } from '~/auth/auth-client';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { usePluginStore } from '~/lib/plugins/plugin-store';
 import type { DataSourceType } from '~/lib/stores/dataSourceTypes';
@@ -12,6 +12,8 @@ import { useUserStore } from '~/lib/stores/user';
 import { DATA_SOURCE_CONNECTION_ROUTE, TELEMETRY_CONSENT_ROUTE } from '~/lib/constants/routes';
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
 import type { UserProfile } from '~/lib/services/userService';
+import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
+import type { DataSource } from '~/components/@settings/tabs/data/DataTab';
 
 export interface RootData {
   user: UserProfile | null;
@@ -36,63 +38,165 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
   const { setDataSources } = useDataSourcesStore();
   const { setPluginAccess } = usePluginStore();
   const { setDataSourceTypes } = useDataSourceTypesStore();
-  const { setUser, clearUser, user } = useUserStore();
+  const { setUser } = useUserStore();
+  const { anonymousProvider } = useAuthProvidersPlugin();
   const router = useRouter();
+  const isLoggingIn = useRef(false);
 
   useEffect(() => {
-    if (!session?.user) {
-      clearUser();
-      return;
-    }
+    const loadUserData = async () => {
+      if (!rootData.user && !session?.user && anonymousProvider && !isLoggingIn.current) {
+        await loginAnonymous();
+      }
 
-    // Set data sources
-    if (rootData.dataSources) {
-      setDataSources(rootData.dataSources);
-    }
-
-    // Set plugin access
-    if (rootData.pluginAccess) {
-      setPluginAccess(rootData.pluginAccess);
-    }
-
-    // Set data source types
-    if (rootData.dataSourceTypes) {
-      setDataSourceTypes(rootData.dataSourceTypes);
-    }
-
-    // Set user profile
-    if (rootData.user) {
-      setUser(rootData.user);
-
-      // Redirect to telemetry consent screen if user hasn't answered yet (when telemetryEnabled is null)
-      if (rootData.user.telemetryEnabled === null) {
-        const currentPath = window.location.pathname;
-
-        if (currentPath !== TELEMETRY_CONSENT_ROUTE) {
-          router.push(TELEMETRY_CONSENT_ROUTE);
-        }
-
+      if (!rootData.user && !session?.user && anonymousProvider && isLoggingIn.current) {
+        console.debug('⏳ Anonymous login in progress, waiting...');
         return;
       }
 
-      if (rootData.user.telemetryEnabled) {
-        initializeClientTelemetry(rootData.user);
+      if (!rootData.user && !session?.user) {
+        console.debug('❌ No session available');
+        return;
       }
+
+      // Set plugin access and data source types (always available from server)
+      if (rootData.pluginAccess) {
+        setPluginAccess(rootData.pluginAccess);
+      }
+
+      if (rootData.dataSourceTypes) {
+        setDataSourceTypes(rootData.dataSourceTypes);
+      }
+
+      // Handle user data
+      let currentUser = rootData.user;
+
+      if (!currentUser && session?.user) {
+        console.debug('🔄 Fetching user data...');
+        currentUser = await fetchUserData();
+        setUser(currentUser);
+      } else if (currentUser) {
+        setUser(currentUser);
+      }
+
+      // Handle data sources
+      let currentDataSources = rootData.dataSources || [];
+
+      if ((!rootData.dataSources || rootData.dataSources.length === 0) && session?.user) {
+        console.debug('🔄 Fetching data sources...');
+        currentDataSources = await fetchDataSources();
+        setDataSources(currentDataSources);
+      } else if (rootData.dataSources) {
+        setDataSources(rootData.dataSources);
+      }
+
+      // Handle user onboarding flow with telemetry and data sources
+      if (currentUser) {
+        // Redirect to telemetry consent screen if user hasn't answered yet
+        if (currentUser.telemetryEnabled === null) {
+          const currentPath = window.location.pathname;
+
+          if (currentPath !== TELEMETRY_CONSENT_ROUTE) {
+            router.push(TELEMETRY_CONSENT_ROUTE);
+            return;
+          }
+        }
+
+        // Initialize telemetry if enabled
+        if (currentUser.telemetryEnabled) {
+          initializeClientTelemetry(currentUser);
+        }
+
+        // Redirect to data source connection if no data sources exist
+        if (currentDataSources.length === 0) {
+          const currentPath = window.location.pathname;
+
+          if (currentPath !== DATA_SOURCE_CONNECTION_ROUTE) {
+            router.push(DATA_SOURCE_CONNECTION_ROUTE);
+            return;
+          }
+        }
+      }
+
+      console.debug('✅ Data loading and redirects completed');
+    };
+
+    loadUserData();
+  }, [session?.user, anonymousProvider, rootData, router]);
+
+  const fetchUserData = async (): Promise<UserProfile> => {
+    try {
+      const userResponse = await fetch('/api/me');
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const userData = (await userResponse.json()) as {
+        success: boolean;
+        user: UserProfile;
+      };
+
+      console.debug('✅ User data fetched successfully');
+
+      return userData.user;
+    } catch (error) {
+      console.error('❌ Failed to fetch user data:', error);
+      throw Error('Failed to fetch user data');
     }
+  };
 
-    // Redirect to data source connection if no data sources exist
-    if (rootData.dataSources && rootData.dataSources.length === 0) {
-      const currentPath = window.location.pathname;
+  const fetchDataSources = async (): Promise<DataSource[]> => {
+    try {
+      const dataSourcesResponse = await fetch('/api/data-sources');
 
-      if (currentPath !== DATA_SOURCE_CONNECTION_ROUTE) {
-        router.push(DATA_SOURCE_CONNECTION_ROUTE);
+      if (!dataSourcesResponse.ok) {
+        throw new Error('Failed to fetch data sources');
       }
 
-      router.push(DATA_SOURCE_CONNECTION_ROUTE);
+      const dataSourcesData = (await dataSourcesResponse.json()) as {
+        success: boolean;
+        dataSources: DataSource[];
+      };
 
+      console.log('✅ Data sources fetched successfully');
+
+      return dataSourcesData.dataSources;
+    } catch (error) {
+      console.error('❌ Failed to fetch data sources:', error);
+      throw new Error('Failed to fetch data sources');
+    }
+  };
+
+  const loginAnonymous = async () => {
+    if (isLoggingIn.current) {
+      console.debug('⏳ Login already in progress, skipping...');
       return;
     }
-  }, [session?.user, rootData, setDataSources, setPluginAccess, setDataSourceTypes, setUser, clearUser, user, router]);
+
+    isLoggingIn.current = true;
+
+    try {
+      console.debug('🔐 Attempting anonymous login...');
+
+      const { error: signInError } = await signIn.email({
+        email: 'anonymous@anonymous.com',
+        password: 'password1234',
+        rememberMe: true,
+      });
+
+      if (signInError) {
+        console.error('❌ Failed to sign in anonymous user:', signInError);
+        return;
+      }
+
+      console.debug('✅ Anonymous login successful');
+    } catch (error: any) {
+      console.error(`❌ Anonymous login failed: ${error?.message}`);
+    } finally {
+      isLoggingIn.current = false;
+    }
+  };
 
   return <>{children}</>;
 }

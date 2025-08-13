@@ -26,6 +26,22 @@ import { PushToGitHubDialog } from '~/components/@settings/tabs/connections/comp
 import { useGitStore } from '~/lib/stores/git';
 import { chatId } from '~/lib/persistence';
 import type { SendMessageFn } from '~/components/chat/Chat.client';
+import {
+  Box,
+  Braces,
+  CheckCircle,
+  CodeXml,
+  Database,
+  Download,
+  FileText,
+  GitBranch,
+  Github,
+  Loader2,
+  MonitorPlay,
+  Paintbrush,
+  Search,
+  Terminal,
+} from 'lucide-react';
 
 interface WorkspaceProps {
   chatStarted?: boolean;
@@ -68,7 +84,7 @@ const FileModifiedDropdown = memo(
         <Popover className="relative">
           {({ open }: { open: boolean }) => (
             <>
-              <Popover.Button className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-liblab-elements-bg-depth-2 hover:bg-liblab-elements-bg-depth-3 transition-colors text-liblab-elements-textPrimary border border-liblab-elements-borderColor">
+              <Popover.Button className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-depth-2 hover:bg-depth-3 transition-colors text-primary border border-depth-3">
                 <span className="font-medium">File Changes</span>
                 {hasChanges && (
                   <span className="w-5 h-5 rounded-full bg-accent-500/20 text-accent-500 text-xs flex items-center justify-center border border-accent-500/30">
@@ -85,7 +101,7 @@ const FileModifiedDropdown = memo(
                 leaveFrom="transform scale-100 opacity-100"
                 leaveTo="transform scale-95 opacity-0"
               >
-                <Popover.Panel className="absolute right-0 z-20 mt-2 w-80 origin-top-right rounded-xl bg-liblab-elements-bg-depth-2 shadow-xl border border-liblab-elements-borderColor">
+                <Popover.Panel className="absolute right-0 z-20 mt-2 w-80 origin-top-right rounded-xl bg-depth-2 shadow-xl border border-depth-3">
                   <div className="p-2">
                     <div className="relative mx-2 mb-2">
                       <input
@@ -93,10 +109,10 @@ const FileModifiedDropdown = memo(
                         placeholder="Search files..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg bg-liblab-elements-bg-depth-1 border border-liblab-elements-borderColor focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                        className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg bg-depth-1 border border-depth-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                       />
-                      <div className="absolute left-2 top-1/2 -translate-y-1/2 text-liblab-elements-textTertiary">
-                        <div className="i-ph:magnifying-glass" />
+                      <div className="absolute left-2 top-1/2 -translate-y-1/2 text-tertiary">
+                        <Search className="w-4 h-4" />
                       </div>
                     </div>
 
@@ -110,22 +126,22 @@ const FileModifiedDropdown = memo(
                             <button
                               key={filePath}
                               onClick={() => onSelectFile(filePath)}
-                              className="w-full px-3 py-2 text-left rounded-md hover:bg-liblab-elements-bg-depth-1 transition-colors group bg-transparent"
+                              className="w-full px-3 py-2 text-left rounded-md hover:bg-depth-1 transition-colors group bg-transparent"
                             >
                               <div className="flex items-center gap-2">
-                                <div className="shrink-0 w-5 h-5 text-liblab-elements-textTertiary">
+                                <div className="shrink-0 w-5 h-5 text-tertiary">
                                   {['typescript', 'javascript', 'jsx', 'tsx'].includes(language) && (
-                                    <div className="i-ph:file-js" />
+                                    <FileText className="w-5 h-5" />
                                   )}
-                                  {['css', 'scss', 'less'].includes(language) && <div className="i-ph:paint-brush" />}
-                                  {language === 'html' && <div className="i-ph:code" />}
-                                  {language === 'json' && <div className="i-ph:brackets-curly" />}
-                                  {language === 'python' && <div className="i-ph:file-text" />}
-                                  {language === 'markdown' && <div className="i-ph:article" />}
-                                  {['yaml', 'yml'].includes(language) && <div className="i-ph:file-text" />}
-                                  {language === 'sql' && <div className="i-ph:database" />}
-                                  {language === 'dockerfile' && <div className="i-ph:cube" />}
-                                  {language === 'shell' && <div className="i-ph:terminal" />}
+                                  {['css', 'scss', 'less'].includes(language) && <Paintbrush className="w-5 h-5" />}
+                                  {language === 'html' && <CodeXml className="w-5 h-5" />}
+                                  {language === 'json' && <Braces className="w-5 h-5" />}
+                                  {language === 'python' && <FileText className="w-5 h-5" />}
+                                  {language === 'markdown' && <FileText className="w-5 h-5" />}
+                                  {['yaml', 'yml'].includes(language) && <FileText className="w-5 h-5" />}
+                                  {language === 'sql' && <Database className="w-5 h-5" />}
+                                  {language === 'dockerfile' && <Box className="w-5 h-5" />}
+                                  {language === 'shell' && <Terminal className="w-5 h-5" />}
                                   {![
                                     'typescript',
                                     'javascript',
@@ -143,17 +159,15 @@ const FileModifiedDropdown = memo(
                                     'tsx',
                                     'scss',
                                     'less',
-                                  ].includes(language) && <div className="i-ph:file-text" />}
+                                  ].includes(language) && <FileText className="w-5 h-5" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between gap-2">
                                     <div className="flex flex-col min-w-0">
-                                      <span className="truncate text-sm font-medium text-liblab-elements-textPrimary">
+                                      <span className="truncate text-sm font-medium text-primary">
                                         {filePath.split('/').pop()}
                                       </span>
-                                      <span className="truncate text-xs text-liblab-elements-textTertiary">
-                                        {filePath}
-                                      </span>
+                                      <span className="truncate text-xs text-tertiary">{filePath}</span>
                                     </div>
                                     {(() => {
                                       // Calculate diff stats
@@ -214,13 +228,13 @@ const FileModifiedDropdown = memo(
                         })
                       ) : (
                         <div className="flex flex-col items-center justify-center p-4 text-center">
-                          <div className="w-12 h-12 mb-2 text-liblab-elements-textTertiary">
-                            <div className="i-ph:file-dashed" />
+                          <div className="w-12 h-12 mb-2 text-tertiary">
+                            <FileText className="w-12 h-12" />
                           </div>
-                          <p className="text-sm font-medium text-liblab-elements-textPrimary">
+                          <p className="text-sm font-medium text-primary">
                             {searchQuery ? 'No matching files' : 'No modified files'}
                           </p>
-                          <p className="text-xs text-liblab-elements-textTertiary mt-1">
+                          <p className="text-xs text-tertiary mt-1">
                             {searchQuery ? 'Try another search' : 'Changes will appear here as you edit'}
                           </p>
                         </div>
@@ -229,15 +243,15 @@ const FileModifiedDropdown = memo(
                   </div>
 
                   {hasChanges && (
-                    <div className="border-t border-liblab-elements-borderColor p-2">
+                    <div className="border-t border-depth-3 p-2">
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(filteredFiles.map(([filePath]) => filePath).join('\n'));
                           toast('File list copied to clipboard', {
-                            icon: <div className="i-ph:check-circle text-accent-500" />,
+                            icon: <CheckCircle className="w-4 h-4 text-accent-500" />,
                           });
                         }}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-liblab-elements-bg-depth-1 hover:bg-liblab-elements-bg-depth-3 transition-colors text-liblab-elements-textTertiary hover:text-liblab-elements-textPrimary"
+                        className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-depth-1 hover:bg-depth-3 transition-colors text-tertiary hover:text-primary"
                       >
                         Copy File List
                       </button>
@@ -299,8 +313,6 @@ export const Workbench = memo(
     const gitMetadata = useGitStore((state) => (currentChatId ? state.getGitMetadata(currentChatId) : null));
 
     const isGitConnected = gitMetadata?.gitUrl && !gitMetadata.isDisconnected;
-
-    // const modifiedFiles = Array.from(useStore(workbenchStore.unsavedFiles).keys());
 
     const hasPreview = useStore(computed(workbenchStore.previews, (previews) => previews.length > 0));
     const devMode = useStore(workbenchStore.devMode);
@@ -391,40 +403,46 @@ export const Workbench = memo(
         <motion.div animate={'open'} variants={workbenchVariants} className="z-workbench">
           <div
             className={classNames(
-              'fixed top-[calc(var(--header-height)+1.5rem)] bottom-6 w-[var(--workbench-inner-width)] mr-4 z-0 transition-[left,width] duration-200 liblab-ease-cubic-bezier left-[var(--workbench-left)]',
+              'fixed top-[calc(var(--header-height)+1rem)] bottom-6 w-[var(--workbench-inner-width)] mr-4 z-0 transition-[left,width] duration-200 liblab-ease-cubic-bezier left-[var(--workbench-left)]',
               {
                 'w-full': isSmallViewport,
                 'left-0': isSmallViewport,
               },
             )}
           >
-            <div className="absolute inset-0 px-2 lg:px-4">
-              <div className="h-full flex flex-col bg-liblab-elements-bg-depth-2 border border-liblab-elements-borderColor shadow-sm rounded-xl overflow-hidden">
-                <div className="flex items-center px-3 py-1 h-12 border-b border-liblab-elements-borderColor">
+            <div className="absolute inset-0 pl-1 pr-4">
+              <div className="h-full flex flex-col bg-depth-2 border border-depth-3 shadow-sm rounded-xl overflow-hidden">
+                <div className="flex items-center px-3 py-1 h-12 border-b border-depth-3">
                   <Slider selected={selectedView} setSelected={setSelectedView} />
                   <div className="ml-auto" />
                   {devMode && selectedView === 'code' && (
                     <div className="flex overflow-y-auto">
                       <PanelHeaderButton
                         className="mr-1 text-sm"
+                        title="Show/hide terminal panel"
                         onClick={() => {
                           workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
                         }}
                       >
-                        <div className="i-ph:terminal" />
+                        <Terminal className="w-4 h-4" />
                         Toggle Terminal
                       </PanelHeaderButton>
                       <PanelHeaderButton
                         className="mr-1 text-sm"
+                        title="Download project as ZIP file"
                         onClick={() => {
                           workbenchStore.downloadZip();
                         }}
                       >
-                        <div className="i-ph:download-simple" />
+                        <Download className="w-4 h-4" />
                         Download Code
                       </PanelHeaderButton>
-                      <PanelHeaderButton className="mr-1 text-sm" onClick={() => setIsPushDialogOpen(true)}>
-                        <div className="i-ph:git-branch" />
+                      <PanelHeaderButton
+                        className="mr-1 text-sm"
+                        title={!isGitConnected ? 'Connect to GitHub repository' : 'Manage GitHub repository'}
+                        onClick={() => setIsPushDialogOpen(true)}
+                      >
+                        <GitBranch className="w-4 h-4" />
                         {(() => {
                           if (!isGitConnected) {
                             return 'Connect GitHub';
@@ -436,8 +454,13 @@ export const Workbench = memo(
                         })()}
                       </PanelHeaderButton>
                       {isGitConnected && (
-                        <PanelHeaderButton className="mr-1 text-sm" onClick={handleSyncFiles} disabled={isSyncing}>
-                          {isSyncing ? <div className="i-ph:spinner" /> : <div className="i-ph:github-logo" />}
+                        <PanelHeaderButton
+                          className="mr-1 text-sm"
+                          title="Sync local changes with GitHub repository"
+                          onClick={handleSyncFiles}
+                          disabled={isSyncing}
+                        >
+                          {isSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Github className="w-4 h-4" />}
                           {isSyncing ? 'Syncing...' : 'Sync Files'}
                         </PanelHeaderButton>
                       )}
@@ -448,12 +471,13 @@ export const Workbench = memo(
                   )}
                   <PanelHeaderButton
                     className="mr-1 text-sm"
+                    title={devMode ? 'Switch to preview mode' : 'Switch to code editor'}
                     onClick={() => {
                       workbenchStore.devMode.set(!devMode);
                       workbenchStore.currentView.set(devMode ? 'preview' : 'code');
                     }}
                   >
-                    {devMode ? <div className="i-ph:monitor-play" /> : <div className="i-ph:code" />}
+                    {devMode ? <MonitorPlay className="w-4 h-4" /> : <CodeXml className="w-4 h-4" />}
                     {devMode ? 'Exit Code View' : 'Enter Code View'}
                   </PanelHeaderButton>
                 </div>

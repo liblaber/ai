@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { CheckCircle, Shield } from 'lucide-react';
 import { Button } from '~/components/ui/Button';
 import { Header } from '~/components/header/Header';
-import { useSession } from '~/auth/auth-client';
 import { useUserStore } from '~/lib/stores/user';
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
@@ -19,16 +19,10 @@ export default function TelemetryConsentPage() {
   const [isAccepting, setIsAccepting] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { data: session } = useSession();
   const { user, setUser } = useUserStore();
   const { dataSourceTypes } = useDataSourceTypesStore();
 
   const handleTelemetryConsent = async (telemetryEnabled: boolean) => {
-    if (!session?.user) {
-      setError('User session not found');
-      return;
-    }
-
     // Set the appropriate loading state
     if (telemetryEnabled) {
       setIsAccepting(true);
@@ -85,38 +79,43 @@ export default function TelemetryConsentPage() {
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-liblab-elements-bg-depth-1">
+    <div className="flex flex-col h-full w-full bg-depth-1">
       <Header showMenuIcon={false} />
       <div className="h-full bg-gray-950 flex items-center justify-center p-4">
         <div className="w-full max-w-[620px] h-[560px]">
-          <h1 className="text-2xl text-liblab-elements-textPrimary mb-6 text-center">Help us improve liblab ai</h1>
+          <h1 className="text-2xl text-primary mb-6 text-center">Help us improve liblab ai</h1>
           <div className="mb-6">
-            <p className="text-center text-base font-light text-liblab-elements-textPrimary mb-4">
-              We collect anonymous usage data to help us improve liblab ai. This includes:
+            <p className="text-center text-base font-light text-primary mb-4">
+              We collect anonymous usage data to help make liblab ai better for everyone. This includes:
             </p>
             <div className="space-y-3 text-sm text-gray-300">
               <div className="flex items-start gap-3">
-                <span className="i-ph:check-circle-fill text-green-400 mt-0.5 flex-shrink-0" />
-                <span>Error reports to help us fix bugs and improve reliability</span>
+                <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <span>Error reports to identify bugs and improve stability</span>
               </div>
               <div className="flex items-start gap-3">
                 <span className="i-ph:check-circle-fill text-green-400 mt-0.5 flex-shrink-0" />
-                <span>Usage patterns to understand how features are being used</span>
+                <span>Usage patterns to understand how features are used</span>
               </div>
               <div className="flex items-start gap-3">
-                <span className="i-ph:check-circle-fill text-green-400 mt-0.5 flex-shrink-0" />
-                <span>Performance metrics to optimize the application</span>
+                <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <span>Performance metrics to optimize speed and responsiveness</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                <span>
+                  Prompts sent to the LLM to enhance the quality of generated outputs and improve prompt understanding
+                </span>
               </div>
             </div>
             <div className="mt-6 p-4 bg-gray-800 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <span className="i-ph:shield-check-fill text-blue-400 text-lg" />
-                <span className="font-medium text-[var(--liblab-elements-textPrimary)] text-sm">
-                  Your privacy is protected
-                </span>
+                <Shield className="w-5 h-5 text-blue-400" />
+                <span className="font-medium text-[var(--color-primary)] text-sm">Your privacy is protected</span>
               </div>
               <div className="text-gray-400 text-[13px] leading-snug">
-                We do not collect any personal information, chat content, built apps code or any other sensitive data.
+                We do not collect any personal information, built app code, user data, or chat responses from the LLM,
+                only the prompts you send. All data is anonymized and used solely to improve the product.
               </div>
             </div>
           </div>

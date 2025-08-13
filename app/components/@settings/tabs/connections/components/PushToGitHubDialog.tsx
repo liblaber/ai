@@ -13,6 +13,7 @@ import { openSettingsPanel } from '~/lib/stores/settings';
 import { CloseCircle } from 'iconsax-reactjs';
 import { useGitStore } from '~/lib/stores/git';
 import { Button } from '~/components/ui/Button';
+import { CheckCircle, Copy, Github, User, GitBranch, Loader2 } from 'lucide-react';
 
 interface PushToGitHubDialogProps {
   isOpen: boolean;
@@ -166,17 +167,15 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                 <div className="p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-green-500">
-                      <div className="i-ph:check-circle w-5 h-5" />
+                      <CheckCircle className="w-5 h-5" />
                       <h3 className="text-lg font-medium">Successfully pushed to GitHub</h3>
                     </div>
                   </div>
 
-                  <div className="bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 rounded-lg p-3 text-left">
-                    <p className="text-xs text-liblab-elements-textSecondary dark:text-liblab-elements-textSecondary-dark mb-2">
-                      Repository URL
-                    </p>
+                  <div className="bg-depth-2 dark:bg-depth-3 rounded-lg p-3 text-left">
+                    <p className="text-xs text-secondary dark:text-secondary-dark mb-2">Repository URL</p>
                     <div className="flex items-center gap-2">
-                      <code className="flex-1 text-sm bg-liblab-elements-background dark:bg-liblab-elements-background-dark px-3 py-2 rounded border border-liblab-elements-borderColor dark:border-liblab-elements-borderColor-dark text-liblab-elements-textPrimary dark:text-liblab-elements-textPrimary-dark font-mono">
+                      <code className="flex-1 text-sm  px-3 py-2 rounded border border-depth-3 dark:border-depth-3-dark text-primary dark:text-primary-dark font-mono">
                         {createdRepoUrl}
                       </code>
                       <motion.button
@@ -188,23 +187,23 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                       >
-                        <div className="i-ph:copy w-4 h-4" />
+                        <Copy className="w-4 h-4" />
                       </motion.button>
                     </div>
                   </div>
 
-                  <div className="bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 rounded-lg p-3">
-                    <p className="text-xs text-liblab-elements-textSecondary dark:text-liblab-elements-textSecondary-dark mb-2">
+                  <div className="bg-depth-2 dark:bg-depth-3 rounded-lg p-3">
+                    <p className="text-xs text-secondary dark:text-secondary-dark mb-2">
                       Pushed Files ({pushedFiles.length})
                     </p>
                     <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
                       {pushedFiles.map((file) => (
                         <div
                           key={file.path}
-                          className="flex items-center justify-between py-1 text-sm text-liblab-elements-textPrimary dark:text-liblab-elements-textPrimary-dark"
+                          className="flex items-center justify-between py-1 text-sm text-primary dark:text-primary-dark"
                         >
                           <span className="font-mono truncate flex-1">{file.path}</span>
-                          <span className="text-xs text-liblab-elements-textSecondary dark:text-liblab-elements-textSecondary-dark ml-2">
+                          <span className="text-xs text-secondary dark:text-secondary-dark ml-2">
                             {formatSize(file.size)}
                           </span>
                         </div>
@@ -219,7 +218,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       rel="noopener noreferrer"
                       className="px-4 py-2 rounded-lg bg-accent-500 text-primary hover:bg-accent-600 text-sm inline-flex items-center gap-2"
                     >
-                      <div className="i-ph:github-logo w-4 h-4" />
+                      <Github className="w-4 h-4" />
                       View Repository
                     </motion.a>
                     <motion.button
@@ -229,7 +228,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       }}
                       className="px-4 py-2 rounded-lg bg-[#F5F5F5] dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-400 hover:bg-[#E5E5E5] dark:hover:bg-[#252525] text-sm inline-flex items-center gap-2"
                     >
-                      <div className="i-ph:copy w-4 h-4" />
+                      <Copy className="w-4 h-4" />
                       Copy URL
                     </motion.button>
                     <motion.button
@@ -274,19 +273,19 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     initial={{ scale: 0.8 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="mx-auto w-12 h-12 rounded-xl bg-liblab-elements-bg-depth-3 flex items-center justify-center text-accent-500"
+                    className="mx-auto w-12 h-12 rounded-xl bg-depth-3 flex items-center justify-center text-accent-500"
                   >
-                    <div className="i-ph:github-logo w-6 h-6" />
+                    <Github className="w-6 h-6" />
                   </motion.div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">GitHub Connection Required</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Please connect your GitHub account first.</p>
                   <motion.button
-                    className="px-4 py-2 rounded-lg bg-accent-500 text-white text-sm hover:bg-accent-600 inline-flex items-center gap-2"
+                    className="px-4 py-2 rounded-lg bg-accent-500 text-gray-900 text-sm hover:bg-accent-600 inline-flex items-center gap-2"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleConnectGitHub}
                   >
-                    <div className="i-ph:user" />
+                    <User />
                     Connect GitHub
                   </motion.button>
                 </div>
@@ -328,9 +327,9 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       initial={{ scale: 0.8 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.1 }}
-                      className="w-10 h-10 rounded-xl bg-liblab-elements-bg-depth-3 flex items-center justify-center text-accent-500"
+                      className="w-10 h-10 rounded-xl bg-depth-3 flex items-center justify-center text-accent-500"
                     >
-                      <div className="i-ph:git-branch w-5 h-5" />
+                      <GitBranch className="w-5 h-5" />
                     </motion.div>
                     <div>
                       <Dialog.Title className="text-lg font-medium text-gray-900 dark:text-white">
@@ -351,7 +350,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     </Dialog.Close>
                   </div>
 
-                  <div className="flex items-center gap-3 mb-6 p-3 bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 rounded-lg">
+                  <div className="flex items-center gap-3 mb-6 p-3 bg-depth-2 dark:bg-depth-3 rounded-lg">
                     <img src={user?.avatar_url} alt={user?.login} className="w-10 h-10 rounded-full" />
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name || user?.login}</p>
@@ -364,11 +363,11 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       href={gitMetadata.gitUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 rounded-lg p-4 hover:bg-liblab-elements-bg-depth-3 dark:hover:bg-liblab-elements-bg-depth-4 transition-colors"
+                      className="block bg-depth-2 dark:bg-depth-3 rounded-lg p-4 hover:bg-depth-3 dark:hover:bg-depth-3 transition-colors"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="i-ph:github-logo w-4 h-4 text-accent-500" />
+                          <Github className="w-4 h-4 text-accent-500" />
                           <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                             {gitMetadata.gitUrl.split('/').pop()?.replace('.git', '')}
                           </h4>
@@ -407,9 +406,9 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     initial={{ scale: 0.8 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="w-10 h-10 rounded-xl bg-liblab-elements-bg-depth-3 flex items-center justify-center text-accent-500"
+                    className="w-10 h-10 rounded-xl bg-depth-3 flex items-center justify-center text-accent-500"
                   >
-                    <div className="i-ph:git-branch w-5 h-5" />
+                    <GitBranch className="w-5 h-5" />
                   </motion.div>
                   <div>
                     <Dialog.Title className="text-lg font-medium text-gray-900 dark:text-white">
@@ -430,7 +429,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                   </Dialog.Close>
                 </div>
 
-                <div className="flex items-center gap-3 mb-6 p-3 bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 rounded-lg">
+                <div className="flex items-center gap-3 mb-6 p-3 bg-depth-2 dark:bg-depth-3 rounded-lg">
                   <img src={user.avatar_url} alt={user.login} className="w-10 h-10 rounded-full" />
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name || user.login}</p>
@@ -448,11 +447,11 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                         <motion.button
                           type="button"
                           onClick={handleReconnect}
-                          className="w-full p-3 text-left rounded-lg bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 hover:bg-liblab-elements-bg-depth-3 dark:hover:bg-liblab-elements-bg-depth-4 transition-colors group"
+                          className="w-full p-3 text-left rounded-lg bg-depth-2 dark:bg-depth-3 hover:bg-depth-3 dark:hover:bg-depth-3 transition-colors group"
                         >
                           <div className="flex items-center justify-between text-white hover:text-accent-500">
                             <div className="flex items-center gap-2">
-                              <div className="i-ph:github-logo w-4 h-4" />
+                              <Github className="w-4 h-4" />
                               <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-accent-500">
                                 {gitMetadata.gitUrl.split('/').pop()?.replace('.git', '')}
                               </span>
@@ -489,7 +488,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                       value={repoName}
                       onChange={handleRepoNameChange}
                       placeholder="my-awesome-project"
-                      className="w-full px-4 py-2 rounded-lg bg-liblab-elements-bg-depth-2 dark:bg-liblab-elements-bg-depth-3 border border-[#E5E5E5] dark:border-[#1A1A1A] text-gray-900 dark:text-white placeholder-gray-400"
+                      className="w-full px-4 py-2 rounded-lg bg-depth-2 dark:bg-depth-3 border border-[#E5E5E5] dark:border-[#1A1A1A] text-gray-900 dark:text-white placeholder-gray-400"
                       required
                     />
                     <div className="flex items-center gap-2">
@@ -518,7 +517,7 @@ export function PushToGitHubDialog({ isOpen, onClose, onPush }: PushToGitHubDial
                     >
                       {isLoading ? (
                         <>
-                          <div className="i-ph:spinner-gap-bold animate-spin w-4" />
+                          <Loader2 className="w-4 animate-spin" />
                           Connecting...
                         </>
                       ) : (

@@ -10,7 +10,7 @@ export function UserMenu() {
   if (isPending) {
     return (
       <IconButton className="bg-transparent">
-        <div className="i-svg-spinners:90-ring-with-bg text-liblab-elements-loader-progress text-xl animate-spin"></div>
+        <div className="i-svg-spinners:90-ring-with-bg text-accent text-xl animate-spin"></div>
       </IconButton>
     );
   }

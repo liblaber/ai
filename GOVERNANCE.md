@@ -221,7 +221,7 @@ Changes to this governance document require:
 
 ## Contact Information
 
-- **General Questions**: [GitHub Issues](https://github.com/liblaber/liblab.ai/issues)
+- **General Questions**: [GitHub Issues](https://github.com/liblaber/ai/issues)
 - **General Inquiries**: [community@liblab.ai](mailto:community@liblab.ai)
 
 ---

@@ -44,7 +44,7 @@ export const IconButton = forwardRef(
       <button
         ref={ref}
         className={classNames(
-          'flex items-center text-liblab-elements-item-contentDefault bg-initial bg-transparent enabled:hover:text-liblab-elements-item-contentActive rounded-md p-1  disabled:cursor-not-allowed',
+          'flex items-center text-secondary bg-initial bg-transparent enabled:hover:text-primary rounded-md p-1  disabled:cursor-not-allowed',
           {
             [classNames('opacity-30', disabledClassName)]: disabled,
           },

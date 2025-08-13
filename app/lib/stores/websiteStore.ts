@@ -35,6 +35,7 @@ interface WebsiteState {
   error: string | null;
   deploymentProgress: DeploymentProgress | null;
   deploymentLogs: string[];
+  errorLogs: string[];
 }
 
 const initialState: WebsiteState = {
@@ -43,12 +44,21 @@ const initialState: WebsiteState = {
   error: null,
   deploymentProgress: null,
   deploymentLogs: [],
+  errorLogs: [],
 };
 
 export const websiteStore = atom<WebsiteState>(initialState);
 
 export const setWebsite = (website: Website | null) => {
   websiteStore.set({ ...websiteStore.get(), website });
+};
+
+export const addErrorLogs = (...logs: string[]) => {
+  const state = websiteStore.get();
+  websiteStore.set({
+    ...state,
+    errorLogs: [...state.errorLogs, ...logs],
+  });
 };
 
 export const setLoading = (isLoading: boolean) => {
@@ -73,39 +83,7 @@ export const addDeploymentLog = (log: string) => {
 
 export const clearDeploymentLogs = () => {
   websiteStore.set({ ...websiteStore.get(), deploymentLogs: [] });
-};
-
-export const updateWebsite = async (websiteId: string, updates: Partial<Website>) => {
-  try {
-    setLoading(true);
-    setError(null);
-
-    const formData = new FormData();
-    Object.entries(updates).forEach(([key, value]) => {
-      if (typeof value === 'object') {
-        formData.append(key, JSON.stringify(value));
-      } else {
-        formData.append(key, String(value));
-      }
-    });
-
-    const response = await fetch(`/api/websites/${websiteId}`, {
-      method: 'PATCH',
-      body: formData,
-    });
-
-    const data = (await response.json()) as WebsiteResponse;
-
-    if (response.ok && data.website) {
-      setWebsite(data.website);
-    } else {
-      setError(data.error || 'Failed to update website');
-    }
-  } catch (error) {
-    setError(error instanceof Error ? error.message : 'Failed to update website');
-  } finally {
-    setLoading(false);
-  }
+  websiteStore.set({ ...websiteStore.get(), errorLogs: [] });
 };
 
 export const fetchWebsite = async (chatId: string) => {

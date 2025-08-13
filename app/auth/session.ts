@@ -1,4 +1,5 @@
 import { auth } from './auth-config';
+import { getUserAbility } from '~/lib/casl/user-ability';
 
 type Session = Awaited<ReturnType<typeof auth.api.getSession>>;
 
@@ -14,4 +15,15 @@ export async function requireUserId(request: Request) {
   }
 
   return session.user.id;
+}
+
+export async function requireUserAbility(request: Request) {
+  const userId = await requireUserId(request);
+  const userAbility = await getUserAbility(userId);
+
+  if (!userAbility) {
+    throw new Error('User ability not found');
+  }
+
+  return { userId, userAbility };
 }

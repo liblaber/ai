@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CheckCircle, Lock } from 'lucide-react';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
@@ -137,15 +138,15 @@ export default function DataSourceConnectionPage() {
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-liblab-elements-bg-depth-1">
+    <div className="flex flex-col h-full w-full bg-depth-1">
       <Header showMenuIcon={false} />
       <div className="h-full bg-gray-950 flex items-center justify-center p-4">
         <div className="w-full max-w-[620px] h-[560px]">
-          <h1 className="text-2xl text-liblab-elements-textPrimary mb-6 text-center">Let's connect your data source</h1>
+          <h1 className="text-2xl text-primary mb-6 text-center">Let's connect your data source</h1>
           <div className="mb-6">
-            <p className="text-center text-base font-light text-liblab-elements-textPrimary">
-              Continue with a sample database or connect your own database. More options, such as MongoDB and Github are
-              coming soon!
+            <p className="text-center text-base font-light text-primary">
+              Continue with a sample database or connect your own database. More options, such as Github and other
+              integrations are coming soon!
             </p>
           </div>
           <div className="flex gap-2 mb-6 items-end">
@@ -210,7 +211,7 @@ export default function DataSourceConnectionPage() {
               >
                 {isSuccess ? (
                   <div className="flex items-center gap-2">
-                    <span className="i-ph:check-circle-fill text-lg" />
+                    <CheckCircle className="w-5 h-5" />
                     Data Source Connected
                   </div>
                 ) : isTesting ? (
@@ -222,10 +223,8 @@ export default function DataSourceConnectionPage() {
               <div>
                 <div className="border-b border-gray-700 mb-7" />
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="i-ph:lock-fill text-lg text-gray-400 !text-[var(--liblab-elements-textPrimary)]" />
-                  <span className="font-medium text-[var(--liblab-elements-textPrimary)] text-sm">
-                    100% Secure & Encrypted
-                  </span>
+                  <Lock className="w-5 h-5 text-gray-400 !text-primary" />
+                  <span className="font-medium text-primary text-sm">100% Secure & Encrypted</span>
                 </div>
                 <div className="text-gray-400 text-[13px] leading-snug">
                   Your company's data is protected through AES-256 encryption, HTTPS with TLS 1.2/1.3, and strict
@@ -246,7 +245,7 @@ export default function DataSourceConnectionPage() {
               >
                 {isSuccess ? (
                   <div className="flex items-center gap-2">
-                    <span className="i-ph:check-circle-fill text-lg" />
+                    <CheckCircle className="w-5 h-5" />
                     Data Source Connected
                   </div>
                 ) : isConnecting ? (
