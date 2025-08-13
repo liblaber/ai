@@ -21,7 +21,7 @@ import { AUTOFIX_ATTEMPT_EVENT } from '~/lib/error-handler';
 import { useSession } from '~/auth/auth-client';
 import type { SendMessageFn } from './Chat.client';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { detectBrowser } from '~/lib/utils/browser-detection';
+import { detectBrowser, type BrowserInfo } from '~/lib/utils/browser-detection';
 import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
 
 export interface PendingPrompt {
@@ -91,7 +91,15 @@ export const BaseChat = ({
   const [progressAnnotations, setProgressAnnotations] = useState<ProgressAnnotation[]>([]);
   const { dataSources } = useDataSourcesStore();
   const { data: session } = useSession();
-  const [browserInfo] = useState(() => detectBrowser());
+  const [browserInfo, setBrowserInfo] = useState<BrowserInfo>(() => ({
+    name: 'Other',
+    version: 'unknown',
+    supportsWebContainers: true,
+  }));
+
+  useEffect(() => {
+    setBrowserInfo(detectBrowser());
+  }, []);
 
   useEffect(() => {
     if (data) {

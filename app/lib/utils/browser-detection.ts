@@ -55,7 +55,7 @@ export function detectBrowser(): BrowserInfo {
     return {
       name: 'Other',
       version: 'unknown',
-      supportsWebContainers: false,
+      supportsWebContainers: true, // Default to true on server to prevent flash
     };
   }
 
