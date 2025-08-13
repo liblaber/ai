@@ -1,13 +1,12 @@
 import type { TabType, TabVisibilityConfig } from './types';
-import { Building, CopySuccess, Data, People, type IconProps } from 'iconsax-reactjs';
-import type { ComponentType } from 'react';
+import { Building, Database, GitBranch, type LucideIcon, Rocket, Users } from 'lucide-react';
 
-export const TAB_ICONS: Record<TabType, string | ComponentType<IconProps>> = {
-  data: Data,
-  github: 'i-ph:github-logo',
-  'deployed-apps': CopySuccess,
+export const TAB_ICONS: Record<TabType, string | LucideIcon> = {
+  data: Database,
+  github: GitBranch,
+  'deployed-apps': Rocket,
   organization: Building,
-  members: People,
+  members: Users,
 };
 
 export const TAB_LABELS: Record<TabType, string> = {

@@ -1,6 +1,7 @@
 import { components } from 'react-select';
 import { SampleDatabaseTooltip } from './SampleDatabaseTooltip';
 import { Lock } from 'iconsax-reactjs';
+import { Check } from 'lucide-react';
 import { SAMPLE_DATABASE, useDataSourceTypesPlugin } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
 
 export const SingleValueWithTooltip = (props: any) => {
@@ -44,20 +45,22 @@ export function SelectDatabaseTypeOptions(props: any) {
               <span>{opt.label}</span>
             </div>
             {props.selectProps.value?.value === opt.value && (
-              <span className="i-ph:check-bold text-base text-gray-100 ml-2" />
+              <span className="text-base text-gray-100 ml-2">
+                <Check className="w-4 h-4" />
+              </span>
             )}
           </div>
         </components.Option>
       ))}
       {lockedDataSourceOptions.length > 0 && (
-        <div className="text-liblab-elements-textPrimary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
+        <div className="text-primary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
           Premium (requires license)
         </div>
       )}
       {lockedDataSourceOptions.map((opt) => (
         <div
           key={opt.value}
-          className="flex hover:cursor-not-allowed items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-60 cursor-default"
+          className="flex hover:cursor-not-allowed items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-primary font-medium opacity-60 cursor-default"
         >
           <span className="flex items-center gap-2">
             {opt.label}
@@ -66,14 +69,12 @@ export function SelectDatabaseTypeOptions(props: any) {
         </div>
       ))}
       {comingSoonDataSourceOptions.length > 0 && (
-        <div className="text-liblab-elements-textPrimary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">
-          Coming soon
-        </div>
+        <div className="text-primary text-xs mt-2 mb-2 px-3 font-light cursor-default opacity-70">Coming soon</div>
       )}
       {comingSoonDataSourceOptions.map((opt) => (
         <div
           key={opt.value}
-          className="hover:cursor-not-allowed flex items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-liblab-elements-textPrimary font-medium opacity-60 cursor-default"
+          className="hover:cursor-not-allowed flex items-center justify-between w-full px-3 py-2 rounded-lg text-left text-sm text-primary font-medium opacity-60 cursor-default"
         >
           <span className="flex items-center gap-2">
             {opt.label}

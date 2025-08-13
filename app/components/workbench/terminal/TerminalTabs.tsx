@@ -1,5 +1,6 @@
 import { useStore } from '@nanostores/react';
 import React, { memo, useEffect, useRef, useState } from 'react';
+import { ChevronDown, Code, Plus } from 'lucide-react';
 import { type ImperativePanelHandle, Panel } from 'react-resizable-panels';
 import { IconButton } from '~/components/ui/IconButton';
 import { shortcutEventEmitter } from '~/lib/hooks';
@@ -76,8 +77,8 @@ export const TerminalTabs = memo(() => {
       }}
     >
       <div className="h-full">
-        <div className="bg-liblab-elements-terminals-background h-full flex flex-col">
-          <div className="flex items-center bg-liblab-elements-bg-depth-2 border-y border-liblab-elements-borderColor gap-1.5 min-h-[34px] p-2">
+        <div className="bg-depth-1 h-full flex flex-col">
+          <div className="flex items-center bg-depth-2 border-y border-depth-3 gap-1.5 min-h-[34px] p-2">
             {Array.from({ length: terminalCount }, (_, index) => {
               const isActive = activeTerminal === index;
 
@@ -88,15 +89,13 @@ export const TerminalTabs = memo(() => {
                     className={classNames(
                       'flex items-center text-sm cursor-pointer gap-1.5 px-3 py-2 h-full whitespace-nowrap rounded-full',
                       {
-                        'bg-liblab-elements-terminals-buttonBackground text-liblab-elements-textSecondary hover:text-liblab-elements-textPrimary':
-                          isActive,
-                        'bg-liblab-elements-bg-depth-2 text-liblab-elements-textSecondary hover:bg-liblab-elements-terminals-buttonBackground':
-                          !isActive,
+                        'bg-depth-3 text-secondary hover:text-primary': isActive,
+                        'bg-depth-2 text-secondary hover:bg-depth-3': !isActive,
                       },
                     )}
                     onClick={() => setActiveTerminal(index)}
                   >
-                    <div className="i-liblab:ic_code text-xl opacity-50" />
+                    <Code className="text-xl opacity-50" />
                     Terminal {terminalCount > 1 && index + 1}
                   </button>
                 </React.Fragment>
@@ -104,19 +103,22 @@ export const TerminalTabs = memo(() => {
             })}
             {terminalCount < MAX_TERMINALS && (
               <IconButton
-                icon="i-liblab:ic_plus_circ"
                 className="enabled:opacity-50 enabled:hover:opacity-100"
                 size="2xl"
                 onClick={addTerminal}
-              />
+                title="Add Terminal"
+              >
+                <Plus className="w-4 h-4" />
+              </IconButton>
             )}
             <IconButton
               className="ml-auto"
-              icon="i-ph:caret-down"
               title="Close"
               size="md"
               onClick={() => workbenchStore.toggleTerminal(false)}
-            />
+            >
+              <ChevronDown className="w-4 h-4" />
+            </IconButton>
           </div>
           {Array.from({ length: terminalCount }, (_, index) => {
             const isActive = activeTerminal === index;

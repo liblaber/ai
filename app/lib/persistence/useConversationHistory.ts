@@ -52,14 +52,17 @@ export function useConversationHistory(id?: string) {
 
     getConversation(id)
       .then(async (conversation) => {
-        if (!(conversation && conversation.messages.length > 0)) {
+        if (!conversation) {
           router.replace('/');
+          return;
         }
+
+        setInitialMessages(conversation.messages || []);
 
         const snapshot = conversation?.snapshot;
 
         if (!snapshot) {
-          toast.error('Failed to load chat history');
+          setReady(true);
           return;
         }
 
@@ -78,8 +81,6 @@ export function useConversationHistory(id?: string) {
             logger.error('Failed to load snapshot into container', reason);
           });
 
-        setInitialMessages(conversation.messages);
-
         if (conversation.dataSourceId && conversation.dataSourceId !== selectedDataSourceId) {
           setSelectedDataSourceId(conversation.dataSourceId);
         }
@@ -92,6 +93,9 @@ export function useConversationHistory(id?: string) {
       .catch((error) => {
         console.error(error);
         toast.error(error.message);
+
+        // Redirect to main chat page if conversation not found
+        router.replace('/chat');
       });
   }, [id, router, selectedDataSourceId, setSelectedDataSourceId]);
 
@@ -152,14 +156,9 @@ export function useConversationHistory(id?: string) {
   };
 }
 
-export function navigateChat(nextId: string) {
-  /**
-   * FIXME: Using the intended navigate function causes a rerender for <Chat /> that breaks the app.
-   *
-   * `navigate(`/chat/${nextId}`, { replace: true });`
-   */
-  const url = new URL(window.location.href);
-  url.pathname = `/chat/${nextId}`;
-
-  window.history.replaceState({}, '', url);
+export function updateNavigationChat(nextId: string | undefined) {
+  if (nextId && window.location.pathname === '/chat') {
+    const newPath = `/chat/${nextId}`;
+    window.history.replaceState(null, '', newPath);
+  }
 }

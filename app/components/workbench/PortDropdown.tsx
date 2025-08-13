@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef } from 'react';
+import { Plug } from 'lucide-react';
 import { IconButton } from '~/components/ui/IconButton';
 import type { PreviewInfo } from '~/lib/stores/previews';
 
@@ -48,16 +49,16 @@ export const PortDropdown = memo(
 
     return (
       <div className="relative z-port-dropdown" ref={dropdownRef}>
-        <IconButton icon="i-ph:plug" onClick={() => setIsDropdownOpen(!isDropdownOpen)} />
+        <IconButton onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+          <Plug className="w-4 h-4" />
+        </IconButton>
         {isDropdownOpen && (
-          <div className="absolute right-0 mt-2 bg-liblab-elements-bg-depth-2 border border-liblab-elements-borderColor rounded shadow-sm min-w-[140px] dropdown-animation">
-            <div className="px-4 py-2 border-b border-liblab-elements-borderColor text-sm font-semibold text-liblab-elements-textPrimary">
-              Ports
-            </div>
+          <div className="absolute right-0 mt-2 bg-depth-2 border border-depth-3 rounded shadow-sm min-w-[140px] dropdown-animation">
+            <div className="px-4 py-2 border-b border-depth-3 text-sm font-semibold text-primary">Ports</div>
             {sortedPreviews.map((preview) => (
               <div
                 key={preview.port}
-                className="flex items-center px-4 py-2 cursor-pointer hover:bg-liblab-elements-item-backgroundActive"
+                className="flex items-center px-4 py-2 cursor-pointer hover:bg-depth-3"
                 onClick={() => {
                   setActivePreviewIndex(preview.index);
                   setIsDropdownOpen(false);
@@ -66,9 +67,7 @@ export const PortDropdown = memo(
               >
                 <span
                   className={
-                    activePreviewIndex === preview.index
-                      ? 'text-liblab-elements-item-contentAccent'
-                      : 'text-liblab-elements-item-contentDefault group-hover:text-liblab-elements-item-contentActive'
+                    activePreviewIndex === preview.index ? 'text-accent' : 'text-secondary group-hover:text-primary'
                   }
                 >
                   {preview.port}

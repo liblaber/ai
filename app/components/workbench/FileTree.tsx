@@ -5,6 +5,7 @@ import { createScopedLogger, renderLogger } from '~/utils/logger';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import type { FileHistory } from '~/types/actions';
 import { type Change, diffLines } from 'diff';
+import { ChevronDown, ChevronRight, Circle, File as FileIcon } from 'lucide-react';
 
 const logger = createScopedLogger('FileTree');
 
@@ -205,7 +206,7 @@ function ContextMenuItem({ onSelect, children }: { onSelect?: () => void; childr
   return (
     <ContextMenu.Item
       onSelect={onSelect}
-      className="flex items-center gap-2 px-2 py-1.5 outline-0 text-sm text-liblab-elements-textPrimary cursor-pointer ws-nowrap text-liblab-elements-item-contentDefault hover:text-liblab-elements-item-contentActive hover:bg-liblab-elements-item-backgroundActive rounded-md"
+      className="flex items-center gap-2 px-2 py-1.5 outline-0 text-sm text-primary cursor-pointer ws-nowrap text-secondary hover:text-primary hover:bg-depth-3 rounded-md"
     >
       <span className="size-4 shrink-0"></span>
       <span>{children}</span>
@@ -220,9 +221,9 @@ function FileContextMenu({ onCopyPath, onCopyRelativePath, children }: FolderCon
       <ContextMenu.Portal>
         <ContextMenu.Content
           style={{ zIndex: 998 }}
-          className="border border-liblab-elements-borderColor rounded-md z-context-menu bg-liblab-elements-bg-depth-1 dark:bg-liblab-elements-bg-depth-2 data-[state=open]:animate-in animate-duration-100 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-98 w-56"
+          className="border border-depth-3 rounded-md z-context-menu bg-depth-1 dark:bg-depth-2 data-[state=open]:animate-in animate-duration-100 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-98 w-56"
         >
-          <ContextMenu.Group className="p-1 border-b-px border-solid border-liblab-elements-borderColor">
+          <ContextMenu.Group className="p-1 border-b-px border-solid border-depth-3">
             <ContextMenuItem onSelect={onCopyPath}>Copy path</ContextMenuItem>
             <ContextMenuItem onSelect={onCopyRelativePath}>Copy relative path</ContextMenuItem>
           </ContextMenu.Group>
@@ -237,17 +238,16 @@ function Folder({ folder, collapsed, selected = false, onCopyPath, onCopyRelativ
     <FileContextMenu onCopyPath={onCopyPath} onCopyRelativePath={onCopyRelativePath}>
       <NodeButton
         className={classNames('group', {
-          'bg-transparent text-liblab-elements-item-contentDefault hover:text-liblab-elements-item-contentActive hover:bg-liblab-elements-item-backgroundActive':
-            !selected,
-          'bg-liblab-elements-item-backgroundAccent text-liblab-elements-item-contentAccent': selected,
+          'bg-transparent text-secondary hover:text-primary hover:bg-depth-3': !selected,
+          'bg-accent/10 text-accent': selected,
         })}
         depth={folder.depth}
         iconClasses={classNames({
-          'i-ph:caret-right scale-98': collapsed,
-          'i-ph:caret-down scale-98': !collapsed,
+          'scale-98': true,
         })}
         onClick={onClick}
       >
+        {collapsed ? <ChevronRight className="w-4 h-4 scale-98" /> : <ChevronDown className="w-4 h-4 scale-98" />}
         {folder.name}
       </NodeButton>
     </FileContextMenu>
@@ -320,21 +320,21 @@ function File({
     <FileContextMenu onCopyPath={onCopyPath} onCopyRelativePath={onCopyRelativePath}>
       <NodeButton
         className={classNames('group', {
-          'bg-transparent hover:bg-liblab-elements-item-backgroundActive text-liblab-elements-item-contentDefault':
-            !selected,
-          'bg-liblab-elements-item-backgroundAccent text-liblab-elements-item-contentAccent': selected,
+          'bg-transparent hover:bg-depth-3 text-secondary': !selected,
+          'bg-accent/10 text-accent': selected,
         })}
         depth={depth}
-        iconClasses={classNames('i-liblab:ic_doc scale-98', {
-          'group-hover:text-liblab-elements-item-contentActive': !selected,
+        iconClasses={classNames('scale-98', {
+          'group-hover:text-primary': !selected,
         })}
         onClick={onClick}
       >
         <div
-          className={classNames('flex items-center', {
-            'group-hover:text-liblab-elements-item-contentActive': !selected,
+          className={classNames('flex items-center gap-1', {
+            'group-hover:text-primary': !selected,
           })}
         >
+          <FileIcon className="w-4 h-4 scale-98 shrink-0" />
           <div className="flex-1 truncate pr-2">{name}</div>
           <div className="flex items-center gap-1">
             {showStats && (
@@ -343,7 +343,7 @@ function File({
                 {deletions > 0 && <span className="text-red-500">-{deletions}</span>}
               </div>
             )}
-            {unsavedChanges && <span className="i-ph:circle-fill scale-68 shrink-0 text-orange-500" />}
+            {unsavedChanges && <Circle className="w-3 h-3 scale-68 shrink-0 text-orange-500" />}
           </div>
         </div>
       </NodeButton>
@@ -370,7 +370,7 @@ function NodeButton({ depth, iconClasses, onClick, className, children }: Button
       onClick={() => onClick?.()}
     >
       <div className={classNames('scale-120 shrink-0', iconClasses)}></div>
-      <div className="truncate w-full text-left">{children}</div>
+      <div className="flex gap-1 items-center truncate w-full text-left">{children}</div>
     </button>
   );
 }
