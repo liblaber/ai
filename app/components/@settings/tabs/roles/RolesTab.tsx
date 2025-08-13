@@ -36,6 +36,14 @@ export default function RolesTab() {
     fetchRoles();
   }, []);
 
+  const handleRoleUpdate = (updatedRole: Role) => {
+    setRoles((prevRoles) => prevRoles.map((role) => (role.id === updatedRole.id ? { ...role, ...updatedRole } : role)));
+
+    if (selectedRole && selectedRole.id === updatedRole.id) {
+      setSelectedRole(updatedRole);
+    }
+  };
+
   const filteredRoles = useMemo(
     () => roles.filter((role) => role.name.toLowerCase().includes(searchQuery.toLowerCase())),
     [roles, searchQuery],
@@ -56,7 +64,7 @@ export default function RolesTab() {
   }
 
   if (selectedRole) {
-    return <RoleDetails role={selectedRole} onBack={() => setSelectedRole(null)} />;
+    return <RoleDetails role={selectedRole} onBack={() => setSelectedRole(null)} onRoleUpdate={handleRoleUpdate} />;
   }
 
   return (
