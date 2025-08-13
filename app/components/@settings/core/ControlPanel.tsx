@@ -5,13 +5,14 @@ import * as RadixDialog from '@radix-ui/react-dialog';
 import { classNames } from '~/utils/classNames';
 import {
   closeSettingsPanel,
+  resetControlPanelHeader,
   resetTabConfiguration,
   settingsPanelStore,
   tabConfigurationStore,
 } from '~/lib/stores/settings';
 import type { TabType, TabVisibilityConfig } from './types';
 import { DEFAULT_TAB_CONFIG, TAB_ICONS, TAB_LABELS } from './constants';
-import { CloseCircle } from 'iconsax-reactjs';
+import { ControlPanelHeader } from './ControlPanelHeader';
 import { Settings } from 'lucide-react';
 
 // Import all tab components
@@ -151,6 +152,9 @@ export const ControlPanel = () => {
   const handleTabClick = (tabId: TabType) => {
     setActiveTab(tabId);
 
+    // Reset the header when switching tabs
+    resetControlPanelHeader();
+
     // Store the selected tab
     localStorage.setItem(LAST_ACCESSED_TAB_KEY, tabId);
   };
@@ -224,21 +228,16 @@ export const ControlPanel = () => {
 
               {/* Main Content */}
               <div className="flex-1 flex flex-col min-w-[650px]">
+                <ControlPanelHeader />
+
                 <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 relative">
-                  <div className="absolute top-4 right-4 z-10">
-                    <CloseCircle
-                      variant="Bold"
-                      className="w-6 h-6 text-gray-500 dark:text-white hover:text-gray-700 dark:hover:text-gray-400 transition-colors cursor-pointer"
-                      onClick={handleClose}
-                    />
-                  </div>
                   <motion.div
                     key={activeTab || 'home'}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="p-6 pt-16"
+                    className="p-6"
                   >
                     {activeTab ? (
                       getTabComponent(activeTab)
