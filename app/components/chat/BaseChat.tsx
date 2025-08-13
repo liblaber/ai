@@ -3,7 +3,7 @@
  * Preventing TS checks with files presented in the video for a better presentation.
  */
 import type { JSONValue, Message } from 'ai';
-import React, { type RefCallback, useEffect, useRef, useState } from 'react';
+import React, { type RefCallback, useEffect, useState } from 'react';
 import { ClientOnly } from '~/components/ui/ClientOnly';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { Workbench, WorkbenchProvider } from '~/components/workbench/Workbench.client';
@@ -22,7 +22,7 @@ import { useSession } from '~/auth/auth-client';
 import type { SendMessageFn } from './Chat.client';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { detectBrowser } from '~/lib/utils/browser-detection';
-import { toast } from 'sonner';
+import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
 
 export interface PendingPrompt {
   input: string;
@@ -92,8 +92,6 @@ export const BaseChat = ({
   const { dataSources } = useDataSourcesStore();
   const { data: session } = useSession();
   const [browserInfo] = useState(() => detectBrowser());
-  const [bannerHeight, setBannerHeight] = useState(0);
-  const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (data) {
@@ -239,96 +237,14 @@ export const BaseChat = ({
     };
   }, [sendAutofixMessage]);
 
-  // Measure banner height for dynamic content padding
-  useEffect(() => {
-    if (bannerRef.current && !browserInfo.supportsWebContainers) {
-      const resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          setBannerHeight(entry.contentRect.height);
-        }
-      });
-
-      resizeObserver.observe(bannerRef.current);
-
-      // Set initial height
-      setBannerHeight(bannerRef.current.offsetHeight);
-
-      return () => {
-        resizeObserver.disconnect();
-      };
-    } else {
-      setBannerHeight(0);
-      return undefined;
-    }
-  }, [browserInfo.supportsWebContainers]);
-
   const baseChat = (
     <div className={classNames('BaseChat relative flex h-full w-full overflow-hidden')} data-chat-visible={showChat}>
-      {/* Universal Browser Compatibility Notice */}
-      {!browserInfo.supportsWebContainers && (
-        <div
-          ref={bannerRef}
-          className="fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 p-3 z-50"
-        >
-          <div className="flex items-center justify-between max-w-6xl mx-auto">
-            <div className="flex items-center">
-              <div className="text-blue-600 mr-3">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-blue-900">Limited Browser Support</h4>
-                <p className="text-xs text-blue-800">
-                  This browser has limited WebContainer functionality. For the best experience, use Chrome or Edge.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                const currentUrl = window.location.href;
-
-                navigator.clipboard
-                  .writeText(currentUrl)
-                  .then(() => {
-                    toast.success('URL copied to clipboard! Paste it in Chrome or Edge for full functionality.');
-                  })
-                  .catch(() => {
-                    // Fallback to prompt for browsers that don't support clipboard API
-                    const userInput = prompt('Copy this URL to open in Chrome or Edge:', currentUrl);
-
-                    if (userInput !== null) {
-                      toast.success('Please open the URL in Chrome or Edge for full functionality.');
-                    }
-                  });
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors duration-200 flex items-center flex-shrink-0"
-            >
-              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000-16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Open in Chrome
-            </button>
-          </div>
-        </div>
-      )}
       {session?.user && <Menu />}
       <div
         ref={scrollRef}
         className={classNames('flex flex-col lg:flex-row overflow-y-auto w-full h-full', {
           '!h-[90vh]': !chatStarted,
         })}
-        style={{
-          paddingTop: bannerHeight > 0 ? `${bannerHeight}px` : undefined,
-        }}
       >
         <div
           className={classNames('flex flex-col flex-grow max-w-chat-width h-full', {
@@ -449,6 +365,9 @@ export const BaseChat = ({
           )}
         </ClientOnly>
       </div>
+
+      {/* Browser Compatibility Modal */}
+      <BrowserCompatibilityModal isOpen={!browserInfo.supportsWebContainers} />
     </div>
   );
 

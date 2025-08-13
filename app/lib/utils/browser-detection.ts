@@ -1,5 +1,5 @@
 export interface BrowserInfo {
-  name: 'Chrome' | 'Firefox' | 'Safari' | 'Edge' | 'Other';
+  name: 'Chrome' | 'Firefox' | 'Safari' | 'Edge' | 'Brave' | 'Opera' | 'Other';
   version: string;
   supportsWebContainers: boolean;
 }
@@ -14,7 +14,13 @@ interface BrowserConfig {
 const BROWSER_CONFIGS: BrowserConfig[] = [
   {
     name: 'Chrome',
-    userAgentCheck: (ua) => ua.includes('Chrome') && !ua.includes('Edg'),
+    userAgentCheck: (ua) => ua.includes('Chrome') && !ua.includes('Edg') && !ua.includes('Brave'),
+    versionRegex: /Chrome\/([0-9.]+)/,
+    supportsWebContainers: true,
+  },
+  {
+    name: 'Brave',
+    userAgentCheck: (ua) => ua.includes('Brave') || (ua.includes('Chrome') && ua.includes('Brave')),
     versionRegex: /Chrome\/([0-9.]+)/,
     supportsWebContainers: true,
   },
@@ -25,6 +31,12 @@ const BROWSER_CONFIGS: BrowserConfig[] = [
     supportsWebContainers: true,
   },
   {
+    name: 'Opera',
+    userAgentCheck: (ua) => ua.includes('OPR') || ua.includes('Opera'),
+    versionRegex: /(?:OPR|Opera)\/([0-9.]+)/,
+    supportsWebContainers: true,
+  },
+  {
     name: 'Firefox',
     userAgentCheck: (ua) => ua.includes('Firefox'),
     versionRegex: /Firefox\/([0-9.]+)/,
@@ -32,7 +44,7 @@ const BROWSER_CONFIGS: BrowserConfig[] = [
   },
   {
     name: 'Safari',
-    userAgentCheck: (ua) => ua.includes('Safari') && !ua.includes('Chrome'),
+    userAgentCheck: (ua) => ua.includes('Safari') && !ua.includes('Chrome') && !ua.includes('OPR'),
     versionRegex: /Safari\/([0-9.]+)/,
     supportsWebContainers: false,
   },
