@@ -12,7 +12,7 @@ export async function executeQuery<T>(query: string, params?: string[]): Promise
   let result: { data: T[] };
 
   try {
-    if (import.meta.env.VITE_PROD) {
+    if (import.meta.env.QUERY_MODE === 'direct') {
       result = await executeQueryDirectly<T>(query, params);
     } else {
       result = await executeQueryThroughProxy<T>(query, params);

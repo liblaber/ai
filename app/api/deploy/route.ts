@@ -462,6 +462,9 @@ export async function POST(request: NextRequest) {
           await runCommand('netlify', ['env:set', 'NODE_ENV', 'production'], tempDir, {
             NETLIFY_AUTH_TOKEN: token,
           });
+          await runCommand('netlify', ['env:set', 'QUERY_MODE', 'direct'], tempDir, {
+            NETLIFY_AUTH_TOKEN: token,
+          });
           logger.info('Netlify configuration completed', JSON.stringify({ chatId }));
         } catch (error: any) {
           handleErrorResponse(

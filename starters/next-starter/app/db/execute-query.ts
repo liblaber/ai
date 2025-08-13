@@ -12,7 +12,7 @@ export async function executeQuery<T>(query: string, params?: string[]): Promise
   let result: { data: T[] };
 
   try {
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.QUERY_MODE === 'direct') {
       result = await executeQueryDirectly(query, params);
     } else {
       result = await executeQueryThroughProxy<T>(query, params);
