@@ -10,7 +10,7 @@
     "quickstart": "pnpm run setup && pnpm run docker:start",
     "setup": "pnpm i && pnpm run prisma:generate && tsx setup.ts",
     "build": "next build",
-    "dev": "pnpm prisma generate && tsx scripts/dev-with-db.ts && tsx pre-start.ts && next dev --turbo",
+    "dev": "tsx scripts/dev-with-db.ts && tsx pre-start.ts && next dev --turbo",
     "test": "jest",
     "start": "tsx setup-tunnel.ts && tsx run-migrations.ts && next start",
     "prod": "pnpm run build && pnpm run start",
