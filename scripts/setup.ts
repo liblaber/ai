@@ -279,6 +279,35 @@ async function main(): Promise<void> {
     log.success(`✅ Set DEFAULT_LLM_MODEL, DEFAULT_LLM_PROVIDER, and ${selected.apiKeyEnv} in .env file.`);
   }
 
+  // Check for Netlify
+  const netlifySpinner = spinner();
+  netlifySpinner.start('📋 Checking for NETLIFY_AUTH_TOKEN');
+
+  if (!hasEnvVar(envContent, 'NETLIFY_AUTH_TOKEN')) {
+    netlifySpinner.stop('⚠️ NETLIFY_AUTH_TOKEN not found or empty in .env file.');
+    log.info('📖 Get your token from: https://app.netlify.com/user/applications');
+
+    const netlifyToken = await text({
+      message: 'Please enter your Netlify auth token (optional):',
+      placeholder: '',
+    });
+
+    if (isCancel(netlifyToken)) {
+      log.warn('Setup cancelled.');
+      process.exit(0);
+    }
+
+    if (netlifyToken && netlifyToken.trim()) {
+      envContent = updateOrAddEnvVar(envContent, 'NETLIFY_AUTH_TOKEN', netlifyToken.trim());
+      writeEnvFile(envContent);
+      log.success('✅ Added NETLIFY_AUTH_TOKEN to .env file.');
+    } else {
+      log.warn('⚠️ Skipped Netlify auth token.');
+    }
+  } else {
+    netlifySpinner.stop('✅ NETLIFY_AUTH_TOKEN already exists.');
+  }
+
   outro('🎉 liblab AI Setup Complete!');
 }
 
