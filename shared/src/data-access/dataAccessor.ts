@@ -24,8 +24,10 @@ export class DataAccessor {
 
   static getByDatabaseType(databaseType: string): BaseAccessor | null {
     const allAccessors = this._getAllAccessors();
-    const accessorClass = allAccessors.find((acc: BaseAccessorConstructor) => acc.pluginId === databaseType);
-
+    const accessorClass = allAccessors.find((acc: BaseAccessorConstructor) =>
+      databaseType.toLowerCase().startsWith(acc.pluginId),
+    );
+    
     if (!accessorClass) {
       return null;
     }
