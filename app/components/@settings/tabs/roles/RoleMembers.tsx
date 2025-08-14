@@ -39,7 +39,6 @@ export default function RoleMembers({ role, onRoleUpdate }: RoleMembersProps) {
           ...role,
           users: members.filter((member) => member.id !== memberId),
         });
-        toast.success(`Member removed from role "${role.name}"`);
       } else {
         toast.error(data.error || 'Failed to remove member from role');
       }

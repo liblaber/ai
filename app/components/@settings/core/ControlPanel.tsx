@@ -150,6 +150,10 @@ export const ControlPanel = () => {
   };
 
   const handleTabClick = (tabId: TabType) => {
+    if (activeTab === tabId) {
+      return;
+    }
+
     setActiveTab(tabId);
 
     // Reset the header when switching tabs
