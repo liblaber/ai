@@ -6,7 +6,7 @@
 
 1. **Local Connection**: Your database credentials are stored locally on your machine and never sent to external servers
 2. **App Generation**: When you build an app, it runs in a secure web container that displays live dashboards with your data
-3. **Secure Tunneling**: Since the web container can't directly access your local database, we use ngrok to create a secure tunnel
+3. **Secure Tunneling**: Since the web container can't directly access your local database, we use cloudflared to create a secure tunnel
 4. **End-to-End Encryption**: Every database request, response, query, and data output is encrypted using AES-256 encryption
 
 ## Your Encryption Key

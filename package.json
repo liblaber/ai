@@ -113,6 +113,7 @@
     "chalk": "^5.4.1",
     "chart.js": "^4.4.7",
     "class-variance-authority": "^0.7.0",
+    "cloudflared": "^0.7.1",
     "clsx": "^2.1.0",
     "date-fns": "^3.6.0",
     "diff": "^5.2.0",
@@ -237,6 +238,7 @@
     },
     "onlyBuiltDependencies": [
       "better-sqlite3",
+      "cloudflared",
       "sqlite3"
     ]
   },

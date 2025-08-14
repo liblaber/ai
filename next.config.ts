@@ -108,46 +108,33 @@ const nextConfig: NextConfig = {
 
   // Headers
   async headers() {
-    return [
+    const headers = [
       {
-        source: '/((?!api/execute-query).*)',
+        source: '/((?!api/).*)',
         headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
-          },
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
-          },
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
-          },
-        ],
-      },
-      {
-        source: '/api/execute-query',
-        headers: [
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET, POST, PUT, DELETE, OPTIONS',
-          },
-          {
-            key: 'Access-Control-Allow-Headers',
-            value: '*',
-          },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
         ],
       },
     ];
+
+    // Permissive CORS for all API routes only in local environment (Cloudflared quick tunnels)
+    if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
+      headers.push({
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: '*' },
+          { key: 'Access-Control-Expose-Headers', value: '*' },
+        ],
+      });
+    }
+
+    return headers;
   },
 };
 

@@ -42,7 +42,6 @@ jobs:
           echo "DEFAULT_LLM_PROVIDER=Google" >> .env
           echo "DEFAULT_LLM_MODEL=gemini-2.5-flash" >> .env
           echo "GOOGLE_GENERATIVE_AI_API_KEY=${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}" >> .env
-          echo "NGROK_AUTHTOKEN=${{ secrets.NGROK_AUTHTOKEN }}" >> .env
           echo "AUTH_SECRET=${{ secrets.AUTH_SECRET }}" >> .env
           echo "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}" >> .env
 
