@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { resetControlPanelHeader, setControlPanelHeader } from '~/lib/stores/settings';
+import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import { toast } from 'sonner';
 import type { Role } from './types';
+import RoleMembers from './RoleMembers';
+import { classNames } from '~/utils/classNames';
 
+const ROLE_TABS = ['Members', 'Environments', 'Data Sources', 'Apps'];
 interface RoleDetailsProps {
   role: Role;
   onBack(): void;
@@ -13,6 +17,7 @@ export default function RoleDetails({ role, onBack, onRoleUpdate }: RoleDetailsP
   const [roleName, setRoleName] = useState(role.name);
   const [roleDescription, setRoleDescription] = useState(role.description);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('Members');
 
   useEffect(() => {
     setControlPanelHeader({
@@ -25,6 +30,19 @@ export default function RoleDetails({ role, onBack, onRoleUpdate }: RoleDetailsP
       resetControlPanelHeader();
     };
   }, [role.name]);
+
+  const getTabComponent = (tab: string) => {
+    switch (tab) {
+      case 'Members':
+        return <RoleMembers role={role} onRoleUpdate={onRoleUpdate} />;
+      case 'Environments':
+      case 'Data Sources':
+      case 'Apps':
+        return <div className="p-4 text-gray-400">This feature is coming soon!</div>;
+      default:
+        return null;
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -69,7 +87,7 @@ export default function RoleDetails({ role, onBack, onRoleUpdate }: RoleDetailsP
           type="text"
           value={roleName}
           onChange={(e) => setRoleName(e.target.value)}
-          className="w-full px-2 py-1 rounded-lg bg-gray-700 border border-gray-600 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-2 py-1 rounded-lg bg-gray-700 border border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Enter role name"
         />
       </div>
@@ -82,10 +100,41 @@ export default function RoleDetails({ role, onBack, onRoleUpdate }: RoleDetailsP
           type="text"
           value={roleDescription}
           onChange={(e) => setRoleDescription(e.target.value)}
-          className="w-full px-2 py-1 rounded-lg bg-gray-700 border border-gray-600 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-2 py-1 rounded-lg bg-gray-700 border border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Enter role description"
         />
       </div>
+      <div className="mt-6">
+        <ToggleGroup.Root
+          type="single"
+          className="flex items-center space-x-2"
+          value={activeTab}
+          onValueChange={(value) => {
+            if (value) {
+              setActiveTab(value);
+            }
+          }}
+          aria-label="Role tabs"
+        >
+          {ROLE_TABS.map((tab) => (
+            <ToggleGroup.Item
+              key={tab}
+              value={tab}
+              className={classNames(
+                'data-[state=on]:bg-gray-600',
+                'data-[state=on]:text-white',
+                'data-[state=off]:text-gray-300',
+                'data-[state=off]:hover:bg-gray-700/50',
+                'cursor-pointer flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+              )}
+              data-state={activeTab === tab ? 'on' : 'off'}
+            >
+              {tab}
+            </ToggleGroup.Item>
+          ))}
+        </ToggleGroup.Root>
+      </div>
+      <div className="mt-4">{getTabComponent(activeTab)}</div>
 
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
         <div className="flex justify-end">
