@@ -73,31 +73,22 @@ export const BrowserCompatibilityModal: React.FC<BrowserCompatibilityModalProps>
         </div>
 
         {/* Title */}
-        <h2 className="text-3xl font-bold text-center mb-6" style={{ color: 'rgb(var(--color-primary))' }}>
-          Browser Not Supported
-        </h2>
+        <h2 className="text-3xl font-bold text-center text-primary mb-6">Browser Not Supported</h2>
 
         {/* Description */}
-        <p className="text-center mb-10 text-lg leading-relaxed" style={{ color: 'rgb(var(--color-secondary))' }}>
+        <p className="text-center mb-10 text-lg leading-relaxed text-secondary">
           This application needs advanced browser features to run code and build applications directly in your browser.
           Please switch to a supported browser for the full interactive experience.
         </p>
 
         {/* Supported Browsers List */}
         <div className="mb-10">
-          <h3 className="text-lg font-semibold mb-6 text-center" style={{ color: 'rgb(var(--color-primary))' }}>
-            Supported Browsers:
-          </h3>
+          <h3 className="text-lg font-semibold mb-6 text-center text-primary">Supported Browsers:</h3>
           <div className="grid grid-cols-2 gap-3">
             {['Chrome', 'Edge', 'Brave', 'Opera'].map((browser) => (
               <div
                 key={browser}
-                className="flex items-center justify-center py-3 px-4 rounded-lg transition-all duration-200 relative group"
-                style={{
-                  backgroundColor: 'rgb(var(--color-depth-2))',
-                  color: 'rgb(var(--color-primary))',
-                  border: '1px solid rgb(var(--color-accent-800))',
-                }}
+                className="flex items-center justify-center py-3 px-4 rounded-lg transition-all duration-200 relative group bg-depth-2 text-primary border border-accent-800"
               >
                 <span
                   className="w-3 h-3 rounded-full mr-3"
