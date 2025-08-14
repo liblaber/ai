@@ -14,7 +14,6 @@ export type DataSourceOption = {
 export const SAMPLE_DATABASE = 'sample';
 export const DEFAULT_DATA_SOURCES: DataSourceOption[] = [
   { value: SAMPLE_DATABASE, label: 'Sample Database', connectionStringFormat: '', status: 'available' },
-  { value: 'mongo', label: 'Mongo', connectionStringFormat: '', status: 'coming-soon' },
   { value: 'hubspot', label: 'Hubspot', connectionStringFormat: '', status: 'coming-soon' },
   { value: 'salesforce', label: 'Salesforce', connectionStringFormat: '', status: 'coming-soon' },
   { value: 'jira', label: 'Jira', connectionStringFormat: '', status: 'coming-soon' },

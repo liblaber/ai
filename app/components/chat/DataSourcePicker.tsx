@@ -3,6 +3,7 @@ import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import type { SelectOption } from '~/components/ui/Select';
 import { BaseSelect } from '~/components/ui/Select';
 import { components } from 'react-select';
+import IcDatabase from '~/icons/ic_database.svg';
 
 interface DataSourcePickerProps {
   onAddNew?: () => void;
@@ -57,18 +58,18 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
     singleValue: (base: any) => ({
       ...base,
       margin: '0',
-      color: 'var(--liblab-elements-textPrimary)',
+      color: 'var(--color-primary)',
       fontSize: '14px',
     }),
     menu: (base: any) => ({
       ...base,
       minWidth: '200px',
       borderRadius: '1rem',
-      backgroundColor: 'var(--liblab-elements-bg-depth-2) !important',
+      backgroundColor: 'var(--color-depth-2)',
       boxShadow: '0 4px 6px 2px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       marginTop: '0.25rem',
       cursor: 'pointer',
-      border: '2px solid var(--liblab-elements-borderColor)',
+      border: '2px solid var(--color-depth-3)',
       zIndex: 9999,
       textAlign: 'initial',
     }),
@@ -76,13 +77,13 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
     option: (base: any, state: any) => ({
       ...base,
       fontSize: '14px',
-      backgroundColor: state.isSelected || state.isFocused ? 'var(--liblab-elements-bg-depth-2)' : 'transparent',
-      color: 'var(--liblab-elements-textPrimary)',
+      backgroundColor: state.isSelected || state.isFocused ? 'var(--color-depth-2)' : 'transparent',
+      color: 'var(--color-primary)',
       '&:hover': {
-        color: 'var(--liblab-elements-messages-linkColor)',
+        color: 'var(--color-link)',
       },
       '&:active': {
-        backgroundColor: 'var(--liblab-elements-bg-depth-2)',
+        backgroundColor: 'var(--color-depth-2)',
       },
       cursor: 'pointer',
       display: 'flex',
@@ -94,9 +95,9 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
     dropdownIndicator: (base: any) => ({
       ...base,
       padding: '0 2px',
-      color: 'var(--liblab-elements-textPrimary)',
+      color: 'var(--color-primary)',
       '&:hover': {
-        color: 'var(--liblab-elements-textPrimary)',
+        color: 'var(--color-primary)',
       },
     }),
   };
@@ -117,7 +118,7 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
         width="auto"
         minWidth="auto"
         isSearchable={false}
-        controlIcon={<span className="i-liblab:ic_database text-xl" />}
+        controlIcon={<IcDatabase className="text-xl" />}
         isDisabled={disabled}
         components={{ DropdownIndicator }}
         styles={customStyles}

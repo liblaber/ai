@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
 
   const websites = await prisma.website.findMany({
     where: {
-      userId,
+      createdById: userId,
     },
     orderBy: {
       createdAt: 'desc',
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     await prisma.website.delete({
       where: {
         id: websiteId,
-        userId,
+        createdById: userId,
       },
     });
 

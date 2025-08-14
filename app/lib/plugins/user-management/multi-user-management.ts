@@ -1,6 +1,6 @@
 import { capitalizeFirstLetter, isFreeEmailDomain } from '~/lib/.server/llm/utils';
 import type { UserManagementPlugin } from './user-management-plugin-manager';
-import { UserRole, type Organization } from '@prisma/client';
+import { DeprecatedRole, type Organization } from '@prisma/client';
 
 export class MultiUserManagement implements UserManagementPlugin {
   static pluginId = 'multi-user';
@@ -48,7 +48,7 @@ export class MultiUserManagement implements UserManagementPlugin {
       where: { organizationId: organization.id },
     });
 
-    const role: UserRole = existingMembers === 0 ? UserRole.ADMIN : UserRole.MEMBER;
+    const role: DeprecatedRole = existingMembers === 0 ? DeprecatedRole.ADMIN : DeprecatedRole.MEMBER;
 
     await prisma.user.update({
       where: { id: userId },

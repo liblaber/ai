@@ -5,7 +5,8 @@ import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
 import { messageService } from '~/lib/services/messageService';
 import { requireUserId } from '~/auth/session';
-import { getTelemetry, TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
+import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import { userService } from '~/lib/services/userService';
 
 export async function POST(

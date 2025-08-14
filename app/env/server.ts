@@ -90,7 +90,6 @@ export const env = createEnv({
     ...getProviderSchemas(),
 
     // Third-party service tokens
-    NGROK_AUTHTOKEN: z.string(),
     NETLIFY_AUTH_TOKEN: z.string().optional(),
 
     // Google OAuth configuration

@@ -32,6 +32,8 @@ dist-ssr
 .wrangler
 _worker.bundle
 
+.claude
+
 Modelfile
 modelfiles
 
@@ -48,8 +50,6 @@ docs/instructions/Roadmap.md
 queries.db
 liblab.db
 sample.db
-
-ngrok.log
 
 snapshots
 

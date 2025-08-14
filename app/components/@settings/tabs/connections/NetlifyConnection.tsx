@@ -11,6 +11,7 @@ import {
   updateNetlifyConnection,
 } from '~/lib/stores/netlify';
 import type { NetlifyUser } from '~/types/netlify';
+import { Loader2, Zap, Plug, CheckCircle, Globe, Clock, GitBranch, Info } from 'lucide-react';
 
 export default function NetlifyConnection() {
   const connection = useStore(netlifyConnection);
@@ -86,7 +87,7 @@ export default function NetlifyConnection() {
               crossOrigin="anonymous"
               src="https://cdn.simpleicons.org/netlify"
             />
-            <h3 className="text-base font-medium text-liblab-elements-textPrimary">Netlify Connection</h3>
+            <h3 className="text-base font-medium text-primary">Netlify Connection</h3>
           </div>
         </div>
 
@@ -104,12 +105,12 @@ export default function NetlifyConnection() {
             >
               {connecting ? (
                 <>
-                  <div className="i-ph:spinner-gap animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Connecting...
                 </>
               ) : (
                 <>
-                  <div className="i-ph:plug-charging w-4 h-4" />
+                  <Zap className="w-4 h-4" />
                   Connect
                 </>
               )}
@@ -127,11 +128,11 @@ export default function NetlifyConnection() {
                     'hover:bg-red-600',
                   )}
                 >
-                  <div className="i-ph:plug w-4 h-4" />
+                  <Plug className="w-4 h-4" />
                   Disconnect
                 </button>
-                <span className="text-sm text-liblab-elements-textSecondary flex items-center gap-1">
-                  <div className="i-ph:check-circle w-4 h-4 text-green-500" />
+                <span className="text-sm text-secondary flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
                   Connected to Netlify
                 </span>
               </div>
@@ -146,20 +147,20 @@ export default function NetlifyConnection() {
                 className="w-12 h-12 rounded-full border-2 border-[#00AD9F]"
               />
               <div>
-                <h4 className="text-sm font-medium text-liblab-elements-textPrimary">{connection.user.full_name}</h4>
-                <p className="text-sm text-liblab-elements-textSecondary">{connection.user.email}</p>
+                <h4 className="text-sm font-medium text-primary">{connection.user.full_name}</h4>
+                <p className="text-sm text-secondary">{connection.user.email}</p>
               </div>
             </div>
 
             {fetchingStats ? (
-              <div className="flex items-center gap-2 text-sm text-liblab-elements-textSecondary">
-                <div className="i-ph:spinner-gap w-4 h-4 animate-spin" />
+              <div className="flex items-center gap-2 text-sm text-secondary">
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Fetching Netlify sites...
               </div>
             ) : connection.stats ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium text-liblab-elements-textPrimary">Your Sites</h4>
+                  <h4 className="text-sm font-medium text-primary">Your Sites</h4>
                   <button
                     onClick={() => setIsSitesExpanded(!isSitesExpanded)}
                     className="text-sm text-[#00AD9F] hover:underline"
@@ -180,11 +181,11 @@ export default function NetlifyConnection() {
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <h5 className="text-sm font-medium text-liblab-elements-textPrimary flex items-center gap-2">
-                              <div className="i-ph:globe w-4 h-4 text-[#00AD9F]" />
+                            <h5 className="text-sm font-medium text-primary flex items-center gap-2">
+                              <Globe className="w-4 h-4 text-[#00AD9F]" />
                               {site.name}
                             </h5>
-                            <div className="flex items-center gap-2 mt-2 text-xs text-liblab-elements-textSecondary">
+                            <div className="flex items-center gap-2 mt-2 text-xs text-secondary">
                               <a
                                 href={site.url}
                                 target="_blank"
@@ -197,7 +198,7 @@ export default function NetlifyConnection() {
                                 <>
                                   <span>•</span>
                                   <span className="flex items-center gap-1">
-                                    <div className="i-ph:clock w-3 h-3" />
+                                    <Clock className="w-3 h-3" />
                                     {new Date(site.published_deploy.published_at).toLocaleDateString()}
                                   </span>
                                 </>
@@ -205,9 +206,9 @@ export default function NetlifyConnection() {
                             </div>
                           </div>
                           {site.build_settings?.provider && (
-                            <div className="text-xs text-liblab-elements-textSecondary px-2 py-1 rounded-md bg-[#F0F0F0] dark:bg-[#252525]">
+                            <div className="text-xs text-secondary px-2 py-1 rounded-md bg-[#F0F0F0] dark:bg-[#252525]">
                               <span className="flex items-center gap-1">
-                                <div className="i-ph:git-branch w-3 h-3" />
+                                <GitBranch className="w-3 h-3" />
                                 {site.build_settings.provider}
                               </span>
                             </div>
@@ -217,8 +218,8 @@ export default function NetlifyConnection() {
                     ))}
                   </div>
                 ) : isSitesExpanded ? (
-                  <div className="text-sm text-liblab-elements-textSecondary flex items-center gap-2">
-                    <div className="i-ph:info w-4 h-4" />
+                  <div className="text-sm text-secondary flex items-center gap-2">
+                    <Info className="w-4 h-4" />
                     No sites found in your Netlify account
                   </div>
                 ) : null}

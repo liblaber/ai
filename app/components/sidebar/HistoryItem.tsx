@@ -1,9 +1,11 @@
+import type { ForwardedRef } from 'react';
+import { forwardRef } from 'react';
 import { useParams } from 'next/navigation';
-import { classNames } from '~/utils/classNames';
+import { Check, Copy, Download, Edit, Trash } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import WithTooltip from '~/components/ui/Tooltip';
+import { classNames } from '~/utils/classNames';
 import { useEditChatDescription } from '~/lib/hooks';
-import { type ForwardedRef, forwardRef } from 'react';
 import type { SimpleConversationResponse } from '~/lib/persistence/conversations';
 
 interface HistoryItemProps {
@@ -45,25 +47,22 @@ export function HistoryItem({ item, onDelete, onDuplicate, exportChat }: History
           />
           <button
             type="submit"
-            className="i-ph:check h-4 w-4 text-gray-500 hover:text-accent-500 transition-colors"
+            className="h-4 w-4 text-gray-500 hover:text-accent-500 transition-colors"
             onMouseDown={handleSubmit}
-          />
+          >
+            <Check className="h-4 w-4" />
+          </button>
         </form>
       ) : (
         <a href={`/chat/${item.id}`} className="flex w-full relative truncate block">
           <WithTooltip tooltip={currentDescription}>
             <span className="truncate pr-24">{currentDescription}</span>
           </WithTooltip>
-          <div
-            className={classNames(
-              'absolute right-0 top-0 bottom-0 flex items-center bg-white dark:bg-gray-950 group-hover:bg-gray-50/80 dark:group-hover:bg-gray-800/30 px-2',
-              { 'bg-gray-50/80 dark:bg-gray-800/30': isActiveChat },
-            )}
-          >
+          <div className={classNames('absolute right-0 top-0 bottom-0 flex items-center px-2')}>
             <div className="flex items-center gap-2.5 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
               <ChatActionButton
                 toolTipContent="Export"
-                icon="i-ph:download-simple h-4 w-4"
+                icon={<Download className="h-4 w-4" />}
                 onClick={(event) => {
                   event.preventDefault();
                   exportChat(item.id);
@@ -72,13 +71,13 @@ export function HistoryItem({ item, onDelete, onDuplicate, exportChat }: History
               {onDuplicate && (
                 <ChatActionButton
                   toolTipContent="Duplicate"
-                  icon="i-ph:copy h-4 w-4"
+                  icon={<Copy className="h-4 w-4" />}
                   onClick={() => onDuplicate?.(item.id)}
                 />
               )}
               <ChatActionButton
                 toolTipContent="Rename"
-                icon="i-ph:pencil-fill h-4 w-4"
+                icon={<Edit className="h-4 w-4" />}
                 onClick={(event) => {
                   event.preventDefault();
                   toggleEditMode();
@@ -87,7 +86,7 @@ export function HistoryItem({ item, onDelete, onDuplicate, exportChat }: History
               <Dialog.Trigger asChild>
                 <ChatActionButton
                   toolTipContent="Delete"
-                  icon="i-ph:trash h-4 w-4"
+                  icon={<Trash className="h-4 w-4" />}
                   className="hover:text-red-500"
                   onClick={(event) => {
                     event.preventDefault();
@@ -112,7 +111,7 @@ const ChatActionButton = forwardRef(
       onClick,
     }: {
       toolTipContent: string;
-      icon: string;
+      icon: React.ReactNode;
       className?: string;
       onClick: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
       btnTitle?: string;
@@ -124,9 +123,11 @@ const ChatActionButton = forwardRef(
         <button
           ref={ref}
           type="button"
-          className={`text-gray-400 dark:text-gray-500 hover:text-accent-500 dark:hover:text-accent-400 transition-colors ${icon} ${className ? className : ''}`}
+          className={`text-gray-400 dark:text-gray-500 hover:text-accent-500 dark:hover:text-accent-400 cursor-pointer transition-colors ${className ? className : ''}`}
           onClick={onClick}
-        />
+        >
+          {icon}
+        </button>
       </WithTooltip>
     );
   },

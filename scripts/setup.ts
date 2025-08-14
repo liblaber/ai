@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 
-import { existsSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { intro, outro, text, log, spinner, isCancel } from '@clack/prompts';
+import { intro, isCancel, log, outro, spinner, text } from '@clack/prompts';
 
 // liblab AI Builder Setup Script
 // OS Compatibility: macOS, Linux, Windows
@@ -277,30 +277,6 @@ async function main(): Promise<void> {
     envContent = updateOrAddEnvVar(envContent, selected.apiKeyEnv, apiKey.trim());
     writeEnvFile(envContent);
     log.success(`✅ Set DEFAULT_LLM_MODEL, DEFAULT_LLM_PROVIDER, and ${selected.apiKeyEnv} in .env file.`);
-  }
-
-  // Check for NGROK_AUTHTOKEN
-  const ngrokSpinner = spinner();
-  ngrokSpinner.start('📋 Checking for NGROK_AUTHTOKEN');
-
-  if (!hasEnvVar(envContent, 'NGROK_AUTHTOKEN')) {
-    ngrokSpinner.stop('⚠️ NGROK_AUTHTOKEN not found or empty in .env file.');
-    log.info('📖 Get your token from: https://dashboard.ngrok.com/get-started/your-authtoken');
-
-    const ngrokToken = (await text({
-      message: 'Please enter your ngrok auth token (optional):',
-      placeholder: '2abc123def456',
-    })) as string;
-
-    if (ngrokToken && ngrokToken.trim()) {
-      envContent = updateOrAddEnvVar(envContent, 'NGROK_AUTHTOKEN', ngrokToken.trim());
-      writeEnvFile(envContent);
-      log.success('✅ Added NGROK_AUTHTOKEN to .env file.');
-    } else {
-      log.warn('⚠️ Skipped ngrok auth token. External tunneling will be disabled.');
-    }
-  } else {
-    ngrokSpinner.stop('✅ NGROK_AUTHTOKEN already exists.');
   }
 
   // Check for Netlify

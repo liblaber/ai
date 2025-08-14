@@ -18,7 +18,6 @@ export interface ProviderInfo {
   }) => LanguageModelV1;
   getApiKeyLink?: string;
   labelForGetApiKey?: string;
-  icon?: string;
 }
 export interface ProviderConfig {
   baseUrlKey?: string;

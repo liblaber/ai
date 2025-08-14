@@ -1,4 +1,4 @@
-import { type Organization, UserRole } from '@prisma/client';
+import { type Organization, DeprecatedRole } from '@prisma/client';
 import type { UserManagementPlugin } from './user-management-plugin-manager';
 import { userService } from '~/lib/services/userService';
 import { capitalizeFirstLetter, isFreeEmailDomain } from '~/lib/.server/llm/utils';
@@ -33,7 +33,7 @@ export class SingleUserManagement implements UserManagementPlugin {
     });
 
     await userService.updateUser(userId, {
-      role: UserRole.ADMIN,
+      role: DeprecatedRole.ADMIN,
       organizationId: organization.id,
     });
   }

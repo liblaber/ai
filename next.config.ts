@@ -1,9 +1,8 @@
-import UnoCSS from 'unocss/webpack';
 import type { NextConfig } from 'next';
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
-  // Enable Turbopack (moved from experimental.turbo)
+  // Enable Turbopack for development
   turbopack: {
     rules: {
       '*.svg': {
@@ -11,6 +10,14 @@ const nextConfig: NextConfig = {
         as: '*.js',
       },
     },
+  },
+  devIndicators: {
+    position: 'bottom-right',
+  },
+
+  // SASS configuration
+  sassOptions: {
+    includePaths: ['./app/styles'],
   },
 
   // Enable TypeScript
@@ -33,32 +40,40 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // Webpack configuration for node polyfills and other customizations
-  webpack: (config, { isServer }) => {
-    // Node polyfills for client-side
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        crypto: false,
-        stream: false,
-        url: false,
-        zlib: false,
-        http: false,
-        https: false,
-        assert: false,
-        os: false,
-        path: false,
-        buffer: 'buffer',
-        process: 'process/browser',
-        util: 'util',
-      };
+  // Webpack configuration for production builds only
+  webpack: (config, { isServer, dev }) => {
+    // Only apply webpack configuration for production builds
+    if (!dev) {
+      // Node polyfills for client-side
+      if (!isServer) {
+        config.resolve.fallback = {
+          ...config.resolve.fallback,
+          fs: false,
+          net: false,
+          tls: false,
+          crypto: false,
+          stream: false,
+          url: false,
+          zlib: false,
+          http: false,
+          https: false,
+          assert: false,
+          os: false,
+          path: false,
+          buffer: 'buffer',
+          process: 'process/browser',
+          util: 'util',
+        };
+      }
+
+      config.cache = true;
     }
 
-    config.cache = true;
-    config.plugins.push(UnoCSS());
+    // Add SVG handling for both development and production
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ['@svgr/webpack'],
+    });
 
     return config;
   },
@@ -93,46 +108,33 @@ const nextConfig: NextConfig = {
 
   // Headers
   async headers() {
-    return [
+    const headers = [
       {
-        source: '/((?!api/execute-query).*)',
+        source: '/((?!api/).*)',
         headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
-          },
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
-          },
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
-          },
-        ],
-      },
-      {
-        source: '/api/execute-query',
-        headers: [
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET, POST, PUT, DELETE, OPTIONS',
-          },
-          {
-            key: 'Access-Control-Allow-Headers',
-            value: '*',
-          },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
         ],
       },
     ];
+
+    // Permissive CORS for all API routes only in local environment (Cloudflared quick tunnels)
+    if (process.env.NEXT_PUBLIC_ENV_NAME === 'local') {
+      headers.push({
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: '*' },
+          { key: 'Access-Control-Expose-Headers', value: '*' },
+        ],
+      });
+    }
+
+    return headers;
   },
 };
 

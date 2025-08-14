@@ -1,4 +1,5 @@
 import { type PropsWithChildren, useState } from 'react';
+import { Brain } from 'lucide-react';
 
 const ThoughtBox = ({ title, children }: PropsWithChildren<{ title: string }>) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -7,7 +8,7 @@ const ThoughtBox = ({ title, children }: PropsWithChildren<{ title: string }>) =
     <div
       onClick={() => setIsExpanded(!isExpanded)}
       className={`
-        bg-liblab-elements-bg-depth-2
+        bg-depth-2
         shadow-md
         rounded-lg
         cursor-pointer
@@ -15,14 +16,13 @@ const ThoughtBox = ({ title, children }: PropsWithChildren<{ title: string }>) =
         duration-300
         ${isExpanded ? 'max-h-96' : 'max-h-13'}
         overflow-auto
-        border border-liblab-elements-borderColor
+        border border-depth-3
       `}
     >
-      <div className="p-4 flex items-center gap-4 rounded-lg  text-liblab-elements-textSecondary font-medium leading-5 text-sm  border border-liblab-elements-borderColor">
-        <div className="i-ph:brain-thin text-2xl" />
+      <div className="p-4 flex items-center gap-4 rounded-lg  text-secondary font-medium leading-5 text-sm  border border-depth-3">
+        <Brain className="text-2xl" />
         <div className="div">
-          <span> {title}</span>{' '}
-          {!isExpanded && <span className="text-liblab-elements-textTertiary"> - Click to expand</span>}
+          <span> {title}</span> {!isExpanded && <span className="text-tertiary"> - Click to expand</span>}
         </div>
       </div>
       <div

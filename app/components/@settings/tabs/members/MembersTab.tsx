@@ -1,8 +1,9 @@
-import * as Tooltip from '@radix-ui/react-tooltip';
+import { useState, useEffect, useMemo } from 'react';
+import { ChevronDown, Check, Search } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { useEffect, useMemo, useState } from 'react';
-import { useUserStore } from '~/lib/stores/user';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import { toast } from 'sonner';
+import { useUserStore } from '~/lib/stores/user';
 
 interface Member {
   id: string;
@@ -32,7 +33,7 @@ function RoleDropdown({ value, onChange, triggerClassName }: RoleDropdownProps) 
           }
         >
           {value === 'ADMIN' ? 'Admin' : 'Member'}
-          <div className="i-ph:caret-down w-4 h-4" />
+          <ChevronDown className="w-4 h-4" />
         </button>
       </DropdownMenu.Trigger>
 
@@ -50,7 +51,7 @@ function RoleDropdown({ value, onChange, triggerClassName }: RoleDropdownProps) 
                   onSelect={() => onChange('ADMIN')}
                 >
                   Admin
-                  {value === 'ADMIN' && <div className="i-ph:check w-4 h-4" />}
+                  {value === 'ADMIN' && <Check className="w-4 h-4" />}
                 </DropdownMenu.Item>
               </Tooltip.Trigger>
               <Tooltip.Portal>
@@ -72,7 +73,7 @@ function RoleDropdown({ value, onChange, triggerClassName }: RoleDropdownProps) 
                   onSelect={() => onChange('MEMBER')}
                 >
                   Member
-                  {value === 'MEMBER' && <div className="i-ph:check w-4 h-4" />}
+                  {value === 'MEMBER' && <Check className="w-4 h-4" />}
                 </DropdownMenu.Item>
               </Tooltip.Trigger>
               <Tooltip.Portal>
@@ -188,7 +189,7 @@ export default function MembersTab() {
 
         <div className="relative px-2">
           <div className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
-            <div className="i-ph:magnifying-glass w-4 h-4 text-gray-400" />
+            <Search className="w-4 h-4 text-gray-400" />
           </div>
           <input
             type="text"
