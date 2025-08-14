@@ -94,7 +94,7 @@ export default function TelemetryConsentPage() {
                 <span>Error reports to identify bugs and improve stability</span>
               </div>
               <div className="flex items-start gap-3">
-                <span className="i-ph:check-circle-fill text-green-400 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
                 <span>Usage patterns to understand how features are used</span>
               </div>
               <div className="flex items-start gap-3">

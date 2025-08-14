@@ -130,7 +130,7 @@ function getStarterTemplateArtifact(title: string, files: FileMap): string {
     .join('\n');
 
   return `I imported the following files:\n${fileList}\n
-<liblabArtifact id="imported-files" title="${title}" type="bundled">\n
+<liblabArtifact id="imported-files" title="${title}">\n
 <liblabAction type="shell">pnpm install</liblabAction>\n
 </liblabArtifact>`;
 }
