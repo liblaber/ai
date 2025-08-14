@@ -21,6 +21,8 @@ import { AUTOFIX_ATTEMPT_EVENT } from '~/lib/error-handler';
 import { useSession } from '~/auth/auth-client';
 import type { SendMessageFn } from './Chat.client';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { detectBrowser, type BrowserInfo } from '~/lib/utils/browser-detection';
+import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
 
 export interface PendingPrompt {
   input: string;
@@ -89,6 +91,15 @@ export const BaseChat = ({
   const [progressAnnotations, setProgressAnnotations] = useState<ProgressAnnotation[]>([]);
   const { dataSources } = useDataSourcesStore();
   const { data: session } = useSession();
+  const [browserInfo, setBrowserInfo] = useState<BrowserInfo>(() => ({
+    name: 'Other',
+    version: 'unknown',
+    supportsWebContainers: true,
+  }));
+
+  useEffect(() => {
+    setBrowserInfo(detectBrowser());
+  }, []);
 
   useEffect(() => {
     if (data) {
@@ -235,12 +246,7 @@ export const BaseChat = ({
   }, [sendAutofixMessage]);
 
   const baseChat = (
-    <div
-      className={classNames('relative flex h-full w-full overflow-hidden', {
-        'data-[chat-visible=false]:[--workbench-inner-width:100%] data-[chat-visible=false]:[--workbench-left:0]': true,
-      })}
-      data-chat-visible={showChat}
-    >
+    <div className={classNames('BaseChat relative flex h-full w-full overflow-hidden')} data-chat-visible={showChat}>
       {session?.user && <Menu />}
       <div
         ref={scrollRef}
@@ -367,6 +373,9 @@ export const BaseChat = ({
           )}
         </ClientOnly>
       </div>
+
+      {/* Browser Compatibility Modal */}
+      <BrowserCompatibilityModal isOpen={!browserInfo.supportsWebContainers} />
     </div>
   );
 
