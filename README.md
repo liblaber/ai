@@ -91,26 +91,6 @@ ANTHROPIC_API_KEY=sk-ant-your-api-key-here
 </details>
 
 <details>
-  <summary><b>Ngrok Auth Token</b> <em>(Required for external tunnel access)</em></summary>
-
-<strong>Step 1: Create Ngrok Account</strong>
-
-1. Go to [ngrok.com](https://ngrok.com/)
-2. Sign up for a free account
-3. Verify your email
-
-<strong>Step 2: Get Your Auth Token</strong> 4. After logging in, go to [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken) 5. Copy your authtoken (long alphanumeric string)
-
-<strong>Step 3: Save Your Auth Token</strong>
-Add this to your `.env` file during setup, but keep it handy:
-
-```bash
-NGROK_AUTHTOKEN=your-ngrok-authtoken-here
-```
-
-</details>
-
-<details>
   <summary><b>Netlify Key</b> <em>(Optional to run the builder. Required to deploy completed apps)</em></summary>
 
 <strong>Step 1: Create a Netlify account</strong>
@@ -235,26 +215,6 @@ Add this to your `.env` file during setup, but keep it handy:
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-your-api-key-here
-```
-
-</details>
-
-<details>
-  <summary><b>Ngrok Auth Token</b> <em>(Required for external tunnel access)</em></summary>
-
-<strong>Step 1: Create Ngrok Account</strong>
-
-1. Go to [ngrok.com](https://ngrok.com/)
-2. Sign up for a free account
-3. Verify your email
-
-<strong>Step 2: Get Your Auth Token</strong> 4. After logging in, go to [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken) 5. Copy your authtoken (long alphanumeric string)
-
-<strong>Step 3: Save Your Auth Token</strong>
-Add this to your `.env` file during setup, but keep it handy:
-
-```bash
-NGROK_AUTHTOKEN=your-ngrok-authtoken-here
 ```
 
 </details>
