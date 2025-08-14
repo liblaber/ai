@@ -317,6 +317,7 @@ async function main(): Promise<void> {
     });
 
     if (isCancel(netlifyToken)) {
+      log.warn('Setup cancelled.');
       process.exit(0);
     }
 
