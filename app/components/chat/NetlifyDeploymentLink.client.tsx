@@ -1,4 +1,5 @@
 import { useStore } from '@nanostores/react';
+import { Rocket } from 'lucide-react';
 import { fetchNetlifyStats, netlifyConnection } from '~/lib/stores/netlify';
 import { chatId } from '~/lib/persistence/useConversationHistory';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -28,21 +29,18 @@ export function NetlifyDeploymentLink() {
             href={deployedSite.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-liblab-elements-item-backgroundActive text-liblab-elements-textSecondary hover:text-[#00AD9F] z-50"
+            className="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-depth-3 text-secondary hover:text-[#00AD9F] z-50"
             onClick={(e) => {
               e.stopPropagation(); // Add this to prevent click from bubbling up
             }}
           >
-            <div className="i-ph:rocket-launch w-5 h-5" />
+            <Rocket className="w-5 h-5" />
           </a>
         </Tooltip.Trigger>
         <Tooltip.Portal>
-          <Tooltip.Content
-            className="px-3 py-2 rounded bg-liblab-elements-bg-depth-3 text-liblab-elements-textPrimary text-xs z-50"
-            sideOffset={5}
-          >
+          <Tooltip.Content className="px-3 py-2 rounded bg-depth-3 text-primary text-xs z-50" sideOffset={5}>
             {deployedSite.url}
-            <Tooltip.Arrow className="fill-liblab-elements-bg-depth-3" />
+            <Tooltip.Arrow className="fill-depth-3" />
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>

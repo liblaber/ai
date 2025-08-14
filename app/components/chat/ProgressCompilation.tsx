@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState } from 'react';
 import type { ProgressAnnotation } from '~/types/context';
 import { classNames } from '~/utils/classNames';
-import { cubicEasingFn } from '~/utils/easings';
+import { Check, ChevronDown, ChevronUp, LoaderCircle, X } from 'lucide-react';
 
 export default function ProgressCompilation({ data }: { data?: ProgressAnnotation[] }) {
   const [progressList, setProgressList] = React.useState<ProgressAnnotation[]>([]);
@@ -37,19 +37,13 @@ export default function ProgressCompilation({ data }: { data?: ProgressAnnotatio
     <AnimatePresence>
       <div
         className={classNames(
-          'bg-liblab-elements-bg-depth-2',
-          'border border-liblab-elements-borderColor',
-          'shadow-lg rounded-lg  relative w-full max-w-chat mx-auto z-prompt',
+          'bg-depth-2',
+          'border border-depth-3',
+          'shadow-lg rounded-lg  relative w-full mx-auto z-prompt',
           'p-1',
         )}
       >
-        <div
-          className={classNames(
-            'bg-liblab-elements-item-backgroundAccent',
-            'p-1 rounded-lg text-liblab-elements-item-contentAccent',
-            'flex ',
-          )}
-        >
+        <div className={classNames('bg-accent/10', 'p-1 rounded-lg text-accent', 'flex ')}>
           <div className="flex-1">
             <AnimatePresence>
               {expanded ? (
@@ -70,14 +64,10 @@ export default function ProgressCompilation({ data }: { data?: ProgressAnnotatio
             </AnimatePresence>
           </div>
           <motion.button
-            initial={{ width: 0 }}
-            animate={{ width: 'auto' }}
-            exit={{ width: 0 }}
-            transition={{ duration: 0.15, ease: cubicEasingFn }}
-            className=" p-1 rounded-lg bg-liblab-elements-item-backgroundAccent hover:bg-liblab-elements-artifacts-backgroundHover"
+            className="flex items-center justify-center w-6 h-6 rounded-md hover:bg-depth-3 transition-colors"
             onClick={() => setExpanded((v) => !v)}
           >
-            <div className={expanded ? 'i-ph:caret-up-bold' : 'i-ph:caret-down-bold'}></div>
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </motion.button>
         </div>
       </div>
@@ -97,11 +87,11 @@ const ProgressItem = ({ progress }: { progress: ProgressAnnotation }) => {
       <div className="flex items-center gap-1.5 ">
         <div>
           {progress.status === 'in-progress' ? (
-            <div className="i-svg-spinners:90-ring-with-bg"></div>
+            <LoaderCircle className="w-4 h-4 animate-spin" />
           ) : progress.status === 'complete' ? (
-            <div className="i-ph:check text-green-500"></div>
+            <Check className="w-4 h-4 text-green-500" />
           ) : progress.status === 'error' ? (
-            <div className="i-ph:x text-red-500"></div>
+            <X className="w-4 h-4 text-red-500" />
           ) : null}
         </div>
         {/* {x.label} */}

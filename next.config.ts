@@ -1,9 +1,8 @@
-import UnoCSS from 'unocss/webpack';
 import type { NextConfig } from 'next';
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
-  // Enable Turbopack (moved from experimental.turbo)
+  // Enable Turbopack for development
   turbopack: {
     rules: {
       '*.svg': {
@@ -11,6 +10,14 @@ const nextConfig: NextConfig = {
         as: '*.js',
       },
     },
+  },
+  devIndicators: {
+    position: 'bottom-right',
+  },
+
+  // SASS configuration
+  sassOptions: {
+    includePaths: ['./app/styles'],
   },
 
   // Enable TypeScript
@@ -33,32 +40,40 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // Webpack configuration for node polyfills and other customizations
-  webpack: (config, { isServer }) => {
-    // Node polyfills for client-side
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        crypto: false,
-        stream: false,
-        url: false,
-        zlib: false,
-        http: false,
-        https: false,
-        assert: false,
-        os: false,
-        path: false,
-        buffer: 'buffer',
-        process: 'process/browser',
-        util: 'util',
-      };
+  // Webpack configuration for production builds only
+  webpack: (config, { isServer, dev }) => {
+    // Only apply webpack configuration for production builds
+    if (!dev) {
+      // Node polyfills for client-side
+      if (!isServer) {
+        config.resolve.fallback = {
+          ...config.resolve.fallback,
+          fs: false,
+          net: false,
+          tls: false,
+          crypto: false,
+          stream: false,
+          url: false,
+          zlib: false,
+          http: false,
+          https: false,
+          assert: false,
+          os: false,
+          path: false,
+          buffer: 'buffer',
+          process: 'process/browser',
+          util: 'util',
+        };
+      }
+
+      config.cache = true;
     }
 
-    config.cache = true;
-    config.plugins.push(UnoCSS());
+    // Add SVG handling for both development and production
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ['@svgr/webpack'],
+    });
 
     return config;
   },

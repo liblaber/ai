@@ -1,4 +1,3 @@
-import type { ComponentType } from 'react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useStore } from '@nanostores/react';
@@ -12,15 +11,15 @@ import {
 } from '~/lib/stores/settings';
 import type { TabType, TabVisibilityConfig } from './types';
 import { DEFAULT_TAB_CONFIG, TAB_ICONS, TAB_LABELS } from './constants';
-import type { IconProps } from 'iconsax-reactjs';
 import { CloseCircle } from 'iconsax-reactjs';
+import { Settings } from 'lucide-react';
 
 // Import all tab components
 import DataTab from '~/components/@settings/tabs/data/DataTab';
 import DeployedAppsTab from '~/components/@settings/tabs/deployed-apps/DeployedAppsTab';
 import GitHubTab from '~/components/@settings/tabs/connections/GitHubTab';
 import { useUserStore } from '~/lib/stores/user';
-import { UserRole } from '@prisma/client';
+import { DeprecatedRole } from '@prisma/client';
 import OrganizationTab from '~/components/@settings/tabs/organization/OrganizationTab';
 import MembersTab from '~/components/@settings/tabs/members/MembersTab';
 
@@ -64,8 +63,8 @@ const TabSection = ({ title, tabs, activeTab, onTabClick }: TabSectionProps) => 
                 <div className={classNames(TAB_ICONS[tabId] as string, 'w-full h-full')} />
               ) : (
                 (() => {
-                  const Icon = TAB_ICONS[tabId] as ComponentType<IconProps>;
-                  return <Icon variant="Bold" size={20} />;
+                  const Icon = TAB_ICONS[tabId];
+                  return <Icon size={20} />;
                 })()
               )}
             </div>
@@ -212,7 +211,7 @@ export const ControlPanel = () => {
                 <div className="flex-1 overflow-y-auto p-4">
                   <TabSection title="Workspace" tabs={visibleTabs} activeTab={activeTab} onTabClick={handleTabClick} />
 
-                  {role === UserRole.ADMIN && (
+                  {role === DeprecatedRole.ADMIN && (
                     <div className="mt-6">
                       <TabSection title="Admin" tabs={adminTabs} activeTab={activeTab} onTabClick={handleTabClick} />
                     </div>
@@ -243,7 +242,9 @@ export const ControlPanel = () => {
                     ) : (
                       <div className="flex items-center justify-center h-full">
                         <div className="text-center">
-                          <div className="i-ph:gear-six-fill w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                          <div className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-4">
+                            <Settings className="w-12 h-12" />
+                          </div>
                           <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Welcome to Control Panel
                           </h3>

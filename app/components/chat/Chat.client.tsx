@@ -8,7 +8,7 @@ import { useStore } from '@nanostores/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useMessageParser, useShortcuts, useSnapScroll } from '~/lib/hooks';
-import { chatId, description, navigateChat, useConversationHistory } from '~/lib/persistence';
+import { chatId, description, updateNavigationChat, useConversationHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { FIX_ANNOTATION, MessageRole, PROMPT_COOKIE_KEY } from '~/utils/constants';
@@ -38,7 +38,7 @@ import type { FileMap } from '~/lib/stores/files';
 import { useTrackStreamProgress } from '~/components/chat/useTrackStreamProgress';
 import type { ProgressAnnotation } from '~/types/context';
 import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
-import { TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 
 type DatabaseUrlResponse = {
   url: string;
@@ -124,6 +124,7 @@ export const ChatImpl = ({
   const files = useStore(workbenchStore.files);
   const { contextOptimizationEnabled } = useSettings();
   const [dataSourceUrl, setDataSourceUrl] = useState<string>('');
+  const [shouldUpdateUrl, setShouldUpdateUrl] = useState(false);
 
   useEffect(() => {
     chatStore.setKey('started', chatStarted);
@@ -135,6 +136,28 @@ export const ChatImpl = ({
 
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const messagesRef = useRef<Message[]>([]);
+
+  // Update URL when component unmounts or page unloads
+  useEffect(() => {
+    const updateUrlOnExit = () => updateNavigationChat(chatId.get());
+
+    // Update URL when page is about to unload (user refreshing/leaving)
+    window.addEventListener('beforeunload', updateUrlOnExit);
+
+    // Update URL when component unmounts
+    return () => {
+      window.removeEventListener('beforeunload', updateUrlOnExit);
+      updateUrlOnExit();
+    };
+  }, []);
+
+  // Update URL when shouldUpdateUrl becomes true (after streaming and async operations complete)
+  useEffect(() => {
+    if (shouldUpdateUrl) {
+      updateNavigationChat(chatId.get());
+      setShouldUpdateUrl(false);
+    }
+  }, [shouldUpdateUrl]);
 
   const {
     messages,
@@ -158,25 +181,40 @@ export const ChatImpl = ({
       contextOptimization: contextOptimizationEnabled,
     },
     sendExtraMessageFields: true,
-    onError: async (e) => {
+    onError: (e) => {
       logger.error('Request failed', e);
+      setFakeLoading(false); // Reset loading state on error
       toast.error(
         'There was an error processing your request: ' + (e.message ? e.message : 'No details were returned'),
       );
 
-      const latestSnapshot = await getLatestSnapshotOrNull(chatId.get()!);
-      let fileMapToRevertTo: FileMap;
+      // Handle error recovery asynchronously to avoid Suspense issues
+      setTimeout(async () => {
+        try {
+          const latestSnapshot = await getLatestSnapshotOrNull(chatId.get()!);
+          let fileMapToRevertTo: FileMap;
 
-      if (latestSnapshot) {
-        fileMapToRevertTo = latestSnapshot.fileMap;
-      } else {
-        fileMapToRevertTo = await getStarterTemplateFiles(dataSourceUrl);
-      }
+          if (latestSnapshot) {
+            fileMapToRevertTo = latestSnapshot.fileMap;
+          } else {
+            // For new conversations, try to get starter template but don't fail if it doesn't work
+            try {
+              fileMapToRevertTo = await getStarterTemplateFiles(dataSourceUrl);
+            } catch (starterError) {
+              logger.warn('Could not load starter template during error recovery, using empty file map:', starterError);
+              fileMapToRevertTo = {};
+            }
+          }
 
-      await loadPreviousFileMapIntoContainer(fileMapToRevertTo);
+          await loadPreviousFileMapIntoContainer(fileMapToRevertTo);
+        } catch (error) {
+          logger.error('Error during error recovery:', error);
+        }
+      }, 0);
     },
     onFinish: async ({ id, content }) => {
       setData(undefined);
+      setFakeLoading(false);
 
       logger.debug('Finished streaming');
 
@@ -198,6 +236,9 @@ export const ChatImpl = ({
             }
           }
         }
+
+        // Set flag to update URL after all async operations are complete
+        setShouldUpdateUrl(true);
       }, 2000);
     },
     initialMessages,
@@ -416,10 +457,14 @@ export const ChatImpl = ({
     setFakeLoading(true);
 
     // Generate a new chat ID right away to use in the request
-    if (!chatId.get()) {
-      const conversationId = await createConversation(datasourceId);
+    let conversationId = chatId.get();
+
+    if (!conversationId) {
+      conversationId = await createConversation(datasourceId);
       chatId.set(conversationId);
-      navigateChat(conversationId);
+
+      // Don't update URL during active chat - causes component unmounting
+      // Store the conversation ID for potential future navigation
     }
 
     const dataSourceUrlResponse = await fetch(`/api/data-sources/${datasourceId}/url`);
@@ -444,27 +489,23 @@ export const ChatImpl = ({
         toast.warning('Failed to import starter template\n Continuing with blank template');
       }
 
-      return null;
+      return [];
     });
 
-    // wait for 1.5 second to let the terminal shell be ready
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const userMessage = {
+      id: createId(),
+      role: 'user' as const,
+      content: formatMessageWithModelInfo({
+        messageContent,
+        firstUserMessage: true,
+        dataSourceId: selectedDataSourceId!,
+        dataList,
+      }),
+      experimental_attachments: createExperimentalAttachments(dataList, files),
+    };
 
-    if (starterTemplateMessages) {
-      setMessages([
-        ...starterTemplateMessages,
-        {
-          id: createId(),
-          role: 'user',
-          content: formatMessageWithModelInfo({
-            messageContent,
-            firstUserMessage: true,
-            dataSourceId: selectedDataSourceId!,
-            dataList,
-          }),
-          experimental_attachments: createExperimentalAttachments(dataList, files),
-        },
-      ]);
+    if (starterTemplateMessages && starterTemplateMessages.length > 0) {
+      setMessages([...starterTemplateMessages, userMessage]);
 
       await reload({
         body: {
@@ -478,28 +519,17 @@ export const ChatImpl = ({
       setImageDataList([]);
 
       textareaRef.current?.blur();
-      setFakeLoading(false);
 
       return;
     }
 
     // If template selection failed, proceed with normal conversation without a template
-    setMessages([
-      {
-        id: createId(),
-        role: 'user',
-        content: formatMessageWithModelInfo({
-          messageContent,
-          dataSourceId: selectedDataSourceId!,
-        }),
-      },
-    ]);
+    setMessages([userMessage]);
     await reload({
       body: {
         conversationId: chatId.get(),
       },
     });
-    setFakeLoading(false);
     setInput('');
     Cookies.remove(PROMPT_COOKIE_KEY);
 

@@ -41,8 +41,8 @@ const WithTooltip = forwardRef(
               max-h-[300px]
               select-none
               rounded-md
-              bg-liblab-elements-bg-depth-2
-              text-liblab-elements-textPrimary
+              bg-depth-2
+              text-primary
               text-sm
               leading-tight
               shadow-lg
@@ -63,7 +63,7 @@ const WithTooltip = forwardRef(
             <div className="break-words">{tooltip}</div>
             <Tooltip.Arrow
               className={`
-                fill-liblab-elements-bg-depth-3
+                fill-depth-3
                 ${arrowClassName}
               `}
               width={12}

@@ -14,6 +14,7 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
     postgres: true,
     mysql: true,
     sqlite: true,
+    mongodb: true,
   },
   [PluginType.AUTH]: {
     anonymous: true,
@@ -36,6 +37,7 @@ export const PREMIUM_PLUGIN_ACCESS = {
     postgres: true,
     mysql: true,
     sqlite: true,
+    mongodb: true,
   },
   [PluginType.AUTH]: {
     anonymous: false,

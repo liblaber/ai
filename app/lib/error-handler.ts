@@ -3,7 +3,7 @@ import type { CodeError } from '~/types/actions';
 import { streamingState } from './stores/streaming';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
-import { TelemetryEventType } from '~/lib/telemetry/telemetry-manager';
+import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import { chatId } from '~/lib/persistence';
 import { createScopedLogger } from '~/utils/logger';
 
