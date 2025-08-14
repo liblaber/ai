@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { CloseCircle } from 'iconsax-reactjs';
 import { useStore } from '@nanostores/react';
 import { websiteStore } from '~/lib/stores/websiteStore';
-import { Check, X, ExternalLink, Rocket, Copy } from 'lucide-react';
+import { Check, Copy, ExternalLink, Rocket, X } from 'lucide-react';
 
 interface PublishProgressModalProps {
   isOpen: boolean;
@@ -307,12 +307,12 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
                         >
                           {isCopying ? (
                             <>
-                              <div className="i-ph:check w-4 h-4" />
+                              <Check className="w-4 h-4 text-green-500" />
                               Copied!
                             </>
                           ) : (
                             <>
-                              <div className="i-ph:copy w-4 h-4" />
+                              <Copy className="w-4 h-4" />
                               Copy Error Logs
                             </>
                           )}

@@ -8,7 +8,6 @@ export default class OllamaProvider extends BaseProvider {
   name = 'Ollama';
   getApiKeyLink = 'https://ollama.com/download';
   labelForGetApiKey = 'Download Ollama';
-  icon = 'i-ph:cloud-arrow-down';
   config = {
     baseUrlKey: 'OLLAMA_API_BASE_URL',
   };

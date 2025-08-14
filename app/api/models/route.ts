@@ -10,7 +10,6 @@ export async function GET() {
     name: provider.name,
     getApiKeyLink: provider.getApiKeyLink,
     labelForGetApiKey: provider.labelForGetApiKey,
-    icon: provider.icon,
   };
 
   return NextResponse.json({
