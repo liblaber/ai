@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CircleMinus, Plus, Search, Trash2 } from 'lucide-react';
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { classNames } from '~/utils/classNames';
@@ -101,8 +101,8 @@ export default function RoleMembers({ role, onRoleUpdate, onAssignMembers }: Rol
 
         <div className="space-y-px pb-4">
           {filteredMembers.map((member, index) => (
-            <>
-              <div key={member.id} className="group flex items-center justify-between p-4">
+            <React.Fragment key={member.id}>
+              <div className="group flex items-center justify-between p-4">
                 <div className="space-y-1">
                   <div className="text-sm text-white">{member.name}</div>
                   <div className="text-sm text-gray-400">{member.email}</div>
@@ -121,7 +121,7 @@ export default function RoleMembers({ role, onRoleUpdate, onAssignMembers }: Rol
                 </div>
               </div>
               {index < filteredMembers.length - 1 && <hr className="border-gray-700/50" />}
-            </>
+            </React.Fragment>
           ))}
         </div>
       </div>
