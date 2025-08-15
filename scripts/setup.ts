@@ -103,7 +103,7 @@ async function main(): Promise<void> {
       envContent = updateOrAddEnvVar(envContent, 'AUTH_SECRET', authSecret);
       writeEnvFile(envContent);
     } catch (error) {
-      log.error('Failed to generate auth secret: ' + error);
+      log.error(`Failed to generate auth secret: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
     }
   }
