@@ -3,6 +3,7 @@ import { generateObject } from 'ai';
 import { z } from 'zod';
 import { DataAccessor } from '@liblab/data-access/dataAccessor';
 import { getLlm } from './get-llm';
+import { getConnectionProtocol } from '@liblab/data-access/utils/connection';
 
 const queryDecisionSchema = z.object({
   shouldUpdateSql: z.boolean(),
@@ -60,7 +61,7 @@ export interface Table {
 export type GenerateSqlQueriesOptions = {
   schema: Table[];
   userPrompt: string;
-  databaseType: string;
+  connectionString: string;
   implementationPlan?: string;
   existingQueries?: string[];
 };
@@ -68,19 +69,20 @@ export type GenerateSqlQueriesOptions = {
 export async function generateSqlQueries({
   schema,
   userPrompt,
-  databaseType,
+  connectionString,
   existingQueries,
 }: GenerateSqlQueriesOptions): Promise<SqlQueryOutput | undefined> {
   const dbSchema = formatDbSchemaForLLM(schema);
 
   // Get the appropriate accessor for this database type
-  const accessor = DataAccessor.getByDatabaseType(databaseType);
+  const accessor = DataAccessor.getAccessor(connectionString);
 
   if (!accessor) {
-    throw new Error(`No accessor found for database type: ${databaseType}`);
+    const protocol = getConnectionProtocol(connectionString);
+    throw new Error(`No accessor found for database type: ${protocol}`);
   }
 
-  const systemPrompt = accessor.generateSystemPrompt(databaseType, dbSchema, existingQueries, userPrompt);
+  const systemPrompt = accessor.generateSystemPrompt(accessor.label, dbSchema, existingQueries, userPrompt);
 
   try {
     const llm = await getLlm();

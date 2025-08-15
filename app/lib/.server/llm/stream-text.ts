@@ -136,13 +136,10 @@ ${props.summary}
       where: { id: currentDataSourceId, createdById: userId },
     });
 
-    const connectionDetails = new URL(dataSource.connectionString);
-    const type = connectionDetails.protocol.replace(':', '');
-
     const sqlQueries = await generateSqlQueries({
       schema,
       userPrompt: lastUserMessage,
-      databaseType: type,
+      connectionString: dataSource.connectionString,
       implementationPlan,
       existingQueries,
     });
