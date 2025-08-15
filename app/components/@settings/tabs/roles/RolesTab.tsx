@@ -69,8 +69,8 @@ export default function RolesTab() {
         role={selectedRole}
         onBack={() => setSelectedRole(null)}
         onRoleUpdate={handleRoleUpdate}
-        onRoleDelete={() => {
-          fetchRoles();
+        onRoleDelete={(roleId: string) => {
+          setRoles((prevRoles) => prevRoles.filter((role) => role.id !== roleId));
           setSelectedRole(null);
         }}
       />

@@ -14,7 +14,7 @@ interface RoleDetailsProps {
   role: Role;
   onBack(): void;
   onRoleUpdate: (updatedRole: Role) => void;
-  onRoleDelete: () => void;
+  onRoleDelete: (roleId: string) => void;
 }
 
 export default function RoleDetails({ role, onBack, onRoleUpdate, onRoleDelete }: RoleDetailsProps) {
@@ -94,7 +94,7 @@ export default function RoleDetails({ role, onBack, onRoleUpdate, onRoleDelete }
 
       if (data.success) {
         toast.success('Role deleted successfully');
-        onRoleDelete();
+        onRoleDelete(role.id);
       } else {
         toast.error(data.error || 'Failed to delete role');
       }
