@@ -221,9 +221,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   openSettings: () => {
     set({
       isOpen: true,
-      selectedTab: 'user',
-
-      // Always open to user tab
+      selectedTab: 'user', // Always open to user tab
     });
   },
 
@@ -239,11 +237,20 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   },
 }));
 
+export interface ControlPanelHeader {
+  title: string | null;
+  onBack: (() => void) | null;
+}
+
 export const settingsPanelStore = atom({
   isOpen: false,
   selectedTab: 'data' as string | null,
   showAddForm: false,
   isHomepageSource: false,
+  header: {
+    title: null,
+    onBack: null,
+  } as ControlPanelHeader,
 });
 
 export const openSettingsPanel = (
@@ -251,9 +258,41 @@ export const openSettingsPanel = (
   showAddForm: boolean = false,
   isHomepageSource = false,
 ) => {
-  settingsPanelStore.set({ isOpen: true, selectedTab: tab, showAddForm, isHomepageSource });
+  settingsPanelStore.set({
+    isOpen: true,
+    selectedTab: tab,
+    showAddForm,
+    isHomepageSource,
+    header: { title: null, onBack: null },
+  });
 };
 
 export const closeSettingsPanel = () => {
-  settingsPanelStore.set({ isOpen: false, selectedTab: null, showAddForm: false, isHomepageSource: false });
+  settingsPanelStore.set({
+    isOpen: false,
+    selectedTab: null,
+    showAddForm: false,
+    isHomepageSource: false,
+    header: { title: null, onBack: null },
+  });
+};
+
+export const setControlPanelHeader = (newHeader: Partial<ControlPanelHeader>) => {
+  const currentStore = settingsPanelStore.get();
+  settingsPanelStore.set({
+    ...currentStore,
+    header: { ...currentStore.header, ...newHeader },
+  });
+};
+
+export const resetControlPanelHeader = () => {
+  const currentStore = settingsPanelStore.get();
+
+  // Only update if it's not already in its default state
+  if (currentStore.header.title !== null || currentStore.header.onBack !== null) {
+    settingsPanelStore.set({
+      ...currentStore,
+      header: { title: null, onBack: null },
+    });
+  }
 };

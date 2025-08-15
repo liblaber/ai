@@ -11,11 +11,25 @@ export async function getRole(id: string): Promise<Role | null> {
 }
 
 export async function getRoles(): Promise<Role[]> {
-  return prisma.role.findMany({
+  const roles = await prisma.role.findMany({
     include: {
       permissions: true,
+      users: {
+        include: {
+          user: true,
+        },
+      },
     },
   });
+
+  return roles.map((role) => ({
+    ...role,
+    users: role.users.map((user) => ({
+      id: user.user.id,
+      name: user.user.name,
+      email: user.user.email,
+    })),
+  }));
 }
 
 export async function createRole(
