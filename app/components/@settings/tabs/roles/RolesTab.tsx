@@ -15,26 +15,26 @@ export default function RolesTab() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
   useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        setIsLoading(true);
-
-        const response = await fetch('/api/roles');
-        const data: LoaderData = await response.json();
-
-        if (data.roles) {
-          setRoles(data.roles);
-        }
-      } catch (error) {
-        console.error('Error fetching roles:', error);
-        toast.error('Failed to fetch roles');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchRoles();
   }, []);
+
+  const fetchRoles = async () => {
+    try {
+      setIsLoading(true);
+
+      const response = await fetch('/api/roles');
+      const data: LoaderData = await response.json();
+
+      if (data.roles) {
+        setRoles(data.roles);
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      toast.error('Failed to fetch roles');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleRoleUpdate = (updatedRole: Role) => {
     setRoles((prevRoles) => prevRoles.map((role) => (role.id === updatedRole.id ? { ...role, ...updatedRole } : role)));
@@ -64,7 +64,17 @@ export default function RolesTab() {
   }
 
   if (selectedRole) {
-    return <RoleDetails role={selectedRole} onBack={() => setSelectedRole(null)} onRoleUpdate={handleRoleUpdate} />;
+    return (
+      <RoleDetails
+        role={selectedRole}
+        onBack={() => setSelectedRole(null)}
+        onRoleUpdate={handleRoleUpdate}
+        onRoleDelete={() => {
+          fetchRoles();
+          setSelectedRole(null);
+        }}
+      />
+    );
   }
 
   return (

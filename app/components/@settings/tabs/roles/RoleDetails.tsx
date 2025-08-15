@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { resetControlPanelHeader, setControlPanelHeader } from '~/lib/stores/settings';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
+import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { resetControlPanelHeader, setControlPanelHeader } from '~/lib/stores/settings';
+import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import type { Role } from './types';
 import RoleMembers from './RoleMembers';
 import AssignRoleMembers from './AssignRoleMembers';
@@ -12,14 +14,17 @@ interface RoleDetailsProps {
   role: Role;
   onBack(): void;
   onRoleUpdate: (updatedRole: Role) => void;
+  onRoleDelete: () => void;
 }
 
-export default function RoleDetails({ role, onBack, onRoleUpdate }: RoleDetailsProps) {
+export default function RoleDetails({ role, onBack, onRoleUpdate, onRoleDelete }: RoleDetailsProps) {
   const [roleName, setRoleName] = useState(role.name);
   const [roleDescription, setRoleDescription] = useState(role.description);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('Members');
   const [showAssignedMembers, setShowAssignedMembers] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     setControlPanelHeader({
@@ -74,6 +79,30 @@ export default function RoleDetails({ role, onBack, onRoleUpdate }: RoleDetailsP
       toast.error('Failed to update role');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+
+      const response = await fetch(`/api/roles/${role.id}`, {
+        method: 'DELETE',
+      });
+
+      const data: { success: boolean; error?: string } = await response.json();
+
+      if (data.success) {
+        toast.success('Role deleted successfully');
+        onRoleDelete();
+      } else {
+        toast.error(data.error || 'Failed to delete role');
+      }
+    } catch (error) {
+      console.error('Error deleting role:', error);
+      toast.error('Failed to delete role');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -157,7 +186,22 @@ export default function RoleDetails({ role, onBack, onRoleUpdate }: RoleDetailsP
       <div className="mt-4 min-h-74">{getTabComponent(activeTab)}</div>
 
       <div className="sticky bottom-0 left-0 right-0 -m-6 border-t border-gray-800 bg-gray-50 dark:bg-gray-900">
-        <div className="flex justify-end p-4">
+        <div className="flex justify-between p-4">
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className={classNames(
+              'inline-flex items-center gap-2 px-3 py-1.75 text-sm rounded-lg transition-colors',
+              'border border-gray-600',
+              'bg-gray-100 hover:bg-gray-200',
+              'dark:bg-gray-900 dark:hover:bg-gray-800',
+              'text-gray-800 dark:text-gray-200',
+              'cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
+            )}
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Delete</span>
+          </button>
+
           <button
             onClick={handleSave}
             disabled={isSaveDisabled}
@@ -167,6 +211,64 @@ export default function RoleDetails({ role, onBack, onRoleUpdate }: RoleDetailsP
           </button>
         </div>
       </div>
+
+      <DialogRoot open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <Dialog>
+          <div className="rounded-xl bg-white dark:bg-[#0A0A0A] border border-[#E5E5E5] dark:border-[#1A1A1A] overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-[#F5F5F5] dark:bg-[#1A1A1A] border border-[#E5E5E5] dark:border-[#1A1A1A]">
+                    <Trash2 className="w-5 h-5 text-tertiary" />
+                  </div>
+                  <div>
+                    <DialogTitle title={`Delete "${role.name}" role`} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm text-secondary">
+                  This action cannot be undone. All permissions associated with this role will be removed from the
+                  members.
+                </p>
+                {role.users.length > 0 && (
+                  <p className="text-sm text-secondary">
+                    This role is currently assigned to {role.users.length} member(s).
+                  </p>
+                )}
+                <p className="text-sm text-secondary">Are you sure you want to delete the role "{role.name}"?</p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
+                <DialogClose asChild>
+                  <button
+                    className={classNames(
+                      'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                      'bg-[#F5F5F5] hover:bg-[#E5E5E5]',
+                      'dark:bg-[#1A1A1A] dark:hover:bg-[#2A2A2A]',
+                      'text-primary',
+                    )}
+                  >
+                    Cancel
+                  </button>
+                </DialogClose>
+                <button
+                  onClick={handleDelete}
+                  className={classNames(
+                    'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                    'bg-red-500 hover:bg-red-600',
+                    'text-white',
+                  )}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Dialog>
+      </DialogRoot>
     </div>
   );
 }
