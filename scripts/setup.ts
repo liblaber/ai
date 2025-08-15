@@ -2,7 +2,7 @@
 
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { intro, isCancel, log, outro, select, spinner, text } from '@clack/prompts';
+import { intro, isCancel, log, outro, select, text } from '@clack/prompts';
 
 // liblab AI Builder Setup Script
 // OS Compatibility: macOS, Linux, Windows
@@ -71,17 +71,14 @@ function getEnvVarValue(envContent: string, key: string): string | null {
 }
 
 async function main(): Promise<void> {
-  intro('🦙 liblab.ai');
-
-  const installSpinner = spinner();
-  installSpinner.start('Installing...');
+  intro('🦙 liblab.ai Setup');
 
   // Check for .env file and create if it doesn't exist
   if (!existsSync('.env')) {
     if (existsSync('.env.example')) {
       copyFileSync('.env.example', '.env');
     } else {
-      installSpinner.stop('❌ .env.example file not found. Please ensure .env.example exists.');
+      log.error('.env.example file not found. Please ensure .env.example exists.');
       process.exit(1);
     }
   }
@@ -106,8 +103,7 @@ async function main(): Promise<void> {
       envContent = updateOrAddEnvVar(envContent, 'AUTH_SECRET', authSecret);
       writeEnvFile(envContent);
     } catch (error) {
-      installSpinner.stop('❌ Failed to generate auth secret');
-      log.error(`Error: ${error}`);
+      log.error('Failed to generate auth secret: ' + error);
       process.exit(1);
     }
   }
@@ -119,13 +115,10 @@ async function main(): Promise<void> {
       envContent = updateOrAddEnvVar(envContent, 'ENCRYPTION_KEY', encryptionKey);
       writeEnvFile(envContent);
     } catch (error) {
-      installSpinner.stop('❌ Failed to generate encryption key');
-      log.error(`Error: ${error}`);
+      log.error('Failed to generate encryption key: ' + error);
       process.exit(1);
     }
   }
-
-  installSpinner.stop('✅ Setup complete!');
 
   const providers = [
     {
