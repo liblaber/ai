@@ -4,6 +4,7 @@ import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import { toast } from 'sonner';
 import type { Role } from './types';
 import RoleMembers from './RoleMembers';
+import AssignRoleMembers from './AssignRoleMembers';
 import { classNames } from '~/utils/classNames';
 
 const ROLE_TABS = ['Members', 'Environments', 'Data Sources', 'Apps'];
@@ -18,6 +19,7 @@ export default function RoleDetails({ role, onBack, onRoleUpdate }: RoleDetailsP
   const [roleDescription, setRoleDescription] = useState(role.description);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('Members');
+  const [showAssignedMembers, setShowAssignedMembers] = useState(false);
 
   useEffect(() => {
     setControlPanelHeader({
@@ -34,7 +36,9 @@ export default function RoleDetails({ role, onBack, onRoleUpdate }: RoleDetailsP
   const getTabComponent = (tab: string) => {
     switch (tab) {
       case 'Members':
-        return <RoleMembers role={role} onRoleUpdate={onRoleUpdate} />;
+        return (
+          <RoleMembers role={role} onRoleUpdate={onRoleUpdate} onAssignMembers={() => setShowAssignedMembers(true)} />
+        );
       case 'Environments':
       case 'Data Sources':
       case 'Apps':
@@ -75,6 +79,22 @@ export default function RoleDetails({ role, onBack, onRoleUpdate }: RoleDetailsP
 
   const isSaveDisabled =
     isSaving || roleName.trim() === '' || (role.name === roleName && role.description === roleDescription);
+
+  if (showAssignedMembers) {
+    return (
+      <AssignRoleMembers
+        role={role}
+        onRoleUpdate={onRoleUpdate}
+        closeAssignMembers={() => {
+          setShowAssignedMembers(false);
+          setControlPanelHeader({
+            title: `Edit "${role.name}"`,
+            onBack,
+          });
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-3">

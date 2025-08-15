@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { CircleMinus, Search, Trash2 } from 'lucide-react';
+import { CircleMinus, Plus, Search, Trash2 } from 'lucide-react';
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
@@ -9,9 +9,10 @@ import type { Role, User } from './types';
 type RoleMembersProps = {
   role: Role;
   onRoleUpdate: (updatedRole: Role) => void;
+  onAssignMembers: () => void;
 };
 
-export default function RoleMembers({ role, onRoleUpdate }: RoleMembersProps) {
+export default function RoleMembers({ role, onRoleUpdate, onAssignMembers }: RoleMembersProps) {
   const { user } = useUserStore();
   const currentUserId = user?.id;
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,17 +65,33 @@ export default function RoleMembers({ role, onRoleUpdate }: RoleMembersProps) {
 
   return (
     <div className="space-y-2">
-      <div className="relative">
-        <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
-          <Search className="w-4 h-4 text-gray-400" />
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+            <Search className="w-4 h-4 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-9 pl-7 pr-2.5 py-2 rounded-[50px] bg-gray-600/50 text-sm text-white placeholder-gray-400 focus:outline-none"
+            placeholder="Search members..."
+          />
         </div>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-[566px] h-9 pl-7 pr-2.5 py-2 rounded-[50px] bg-gray-600/50 text-sm text-white placeholder-gray-400 focus:outline-none"
-          placeholder="Search..."
-        />
+        <button
+          onClick={onAssignMembers}
+          className={classNames(
+            'inline-flex items-center gap-2 px-3 py-1.75 text-sm rounded-lg transition-colors',
+            'border border-gray-600',
+            'bg-gray-100 hover:bg-gray-200',
+            'dark:bg-gray-900 dark:hover:bg-gray-800',
+            'text-gray-800 dark:text-gray-200',
+            'cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
+          )}
+        >
+          <Plus className="w-4 h-4 text-white" />
+          Assign Members
+        </button>
       </div>
 
       <div>
@@ -82,26 +99,29 @@ export default function RoleMembers({ role, onRoleUpdate }: RoleMembersProps) {
           <span>Assigned Member</span>
         </div>
 
-        <div className="space-y-px">
-          {filteredMembers.map((member) => (
-            <div key={member.id} className="group flex items-center justify-between p-4 border-b border-gray-700/50">
-              <div className="space-y-1">
-                <div className="text-sm text-white">{member.name}</div>
-                <div className="text-sm text-gray-400">{member.email}</div>
+        <div className="space-y-px pb-4">
+          {filteredMembers.map((member, index) => (
+            <>
+              <div key={member.id} className="group flex items-center justify-between p-4">
+                <div className="space-y-1">
+                  <div className="text-sm text-white">{member.name}</div>
+                  <div className="text-sm text-gray-400">{member.email}</div>
+                </div>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                  {member.id !== currentUserId && (
+                    <button
+                      onClick={() => {
+                        setSelectedMember(member);
+                        setShowDeleteConfirm(true);
+                      }}
+                    >
+                      <CircleMinus className="w-5 h-5 text-red-500 hover:text-red-400 cursor-pointer" />
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                {member.id !== currentUserId && (
-                  <button
-                    onClick={() => {
-                      setSelectedMember(member);
-                      setShowDeleteConfirm(true);
-                    }}
-                  >
-                    <CircleMinus className="w-5 h-5 text-red-500 hover:text-red-400 cursor-pointer" />
-                  </button>
-                )}
-              </div>
-            </div>
+              {index < filteredMembers.length - 1 && <hr className="border-gray-700/50" />}
+            </>
           ))}
         </div>
       </div>
