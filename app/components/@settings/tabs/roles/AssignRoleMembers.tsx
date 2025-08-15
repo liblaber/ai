@@ -31,17 +31,12 @@ export default function AssignRoleMembers({ role, onRoleUpdate, closeAssignMembe
         const data: { members: User[] } = await response.json();
 
         if (data.members) {
-          const membersNotInRole: User[] = data.members
-            .map((member) => {
-              if (!role.users?.some((user) => user.id === member.id)) {
-                return { id: member.id, name: member.name, email: member.email };
-              }
+          const roleUserIds = new Set(role.users?.map((user) => user.id));
+          const membersNotInRoleList: User[] = data.members
+            .filter((member) => !roleUserIds.has(member.id))
+            .map((member) => ({ id: member.id, name: member.name, email: member.email }));
 
-              return null;
-            })
-            .filter((member) => member !== null);
-
-          setMembersNotInRole(membersNotInRole);
+          setMembersNotInRole(membersNotInRoleList);
         }
       } catch (error) {
         console.error('Error fetching organization members:', error);
