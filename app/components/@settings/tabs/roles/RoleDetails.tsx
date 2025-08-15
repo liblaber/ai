@@ -66,7 +66,6 @@ export default function RoleDetails({ role, onBack, onRoleUpdate, onRoleDelete }
       });
 
       const data: { success: boolean; role: Role; error?: string } = await response.json();
-      setIsSaving(false);
 
       if (data.success) {
         onRoleUpdate({ ...role, name: data.role.name, description: data.role.description });

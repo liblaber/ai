@@ -61,6 +61,8 @@ export default function AssignRoleMembers({ role, onRoleUpdate, closeAssignMembe
 
     setIsSaving(true);
 
+    const newRoleUsers = new Map(selectedUsers);
+
     try {
       await Promise.all(
         Array.from(selectedUsers.values()).map((user) =>
@@ -72,7 +74,7 @@ export default function AssignRoleMembers({ role, onRoleUpdate, closeAssignMembe
             if (!res.ok) {
               const failedUser = membersNotInRole.find((m) => m.id === user.id);
               toast.error(`Failed to assign member "${failedUser?.email || 'Unknown'}"`);
-              selectedUsers.delete(user.id);
+              newRoleUsers.delete(user.id);
             }
           }),
         ),
@@ -80,7 +82,7 @@ export default function AssignRoleMembers({ role, onRoleUpdate, closeAssignMembe
 
       const updatedRole = {
         ...role,
-        users: [...(role.users || []), ...Array.from(selectedUsers.values())],
+        users: [...(role.users || []), ...Array.from(newRoleUsers.values())],
       };
       onRoleUpdate(updatedRole);
       closeAssignMembers();
