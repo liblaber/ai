@@ -115,7 +115,7 @@ async function main(): Promise<void> {
       envContent = updateOrAddEnvVar(envContent, 'ENCRYPTION_KEY', encryptionKey);
       writeEnvFile(envContent);
     } catch (error) {
-      log.error('Failed to generate encryption key: ' + error);
+      log.error(`Failed to generate encryption key: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
     }
   }
