@@ -82,7 +82,7 @@ export default function RoleMembers({ role, onRoleUpdate }: RoleMembersProps) {
           <span>Assigned Member</span>
         </div>
 
-        <div className="overflow-y-auto h-89 space-y-px">
+        <div className="space-y-px">
           {filteredMembers.map((member) => (
             <div key={member.id} className="group flex items-center justify-between p-4 border-b border-gray-700/50">
               <div className="space-y-1">

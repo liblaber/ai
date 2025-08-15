@@ -134,10 +134,10 @@ export default function RoleDetails({ role, onBack, onRoleUpdate }: RoleDetailsP
           ))}
         </ToggleGroup.Root>
       </div>
-      <div className="mt-4">{getTabComponent(activeTab)}</div>
+      <div className="mt-4 min-h-74">{getTabComponent(activeTab)}</div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
-        <div className="flex justify-end">
+      <div className="sticky bottom-0 left-0 right-0 -m-6 border-t border-gray-800 bg-gray-50 dark:bg-gray-900">
+        <div className="flex justify-end p-4">
           <button
             onClick={handleSave}
             disabled={isSaveDisabled}
