@@ -84,7 +84,9 @@ const PLACEHOLDER_PATTERNS = [
 ];
 
 function isPlaceholderValue(value: string | null): boolean {
-  if (!value) return false;
+  if (!value) {
+    return false;
+  }
 
   return PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(value.toLowerCase()));
 }
@@ -116,7 +118,9 @@ async function main(): Promise<void> {
   }
 
   // Generate AUTH_SECRET if not exists or if it's a placeholder
-  if (!hasEnvVar(envContent, 'AUTH_SECRET') || isPlaceholderValue(getEnvVarValue(envContent, 'AUTH_SECRET'))) {
+  const authSecretValue = getEnvVarValue(envContent, 'AUTH_SECRET');
+
+  if (!authSecretValue || isPlaceholderValue(authSecretValue)) {
     try {
       const authSecret = generateSecureKey();
       envContent = updateOrAddEnvVar(envContent, 'AUTH_SECRET', authSecret);
@@ -129,7 +133,9 @@ async function main(): Promise<void> {
   }
 
   // Generate ENCRYPTION_KEY if not exists or if it's a placeholder
-  if (!hasEnvVar(envContent, 'ENCRYPTION_KEY') || isPlaceholderValue(getEnvVarValue(envContent, 'ENCRYPTION_KEY'))) {
+  const encryptionKeyValue = getEnvVarValue(envContent, 'ENCRYPTION_KEY');
+
+  if (!encryptionKeyValue || isPlaceholderValue(encryptionKeyValue)) {
     try {
       const encryptionKey = generateSecureKey();
       envContent = updateOrAddEnvVar(envContent, 'ENCRYPTION_KEY', encryptionKey);
@@ -270,13 +276,13 @@ async function main(): Promise<void> {
   const lines = envContent.split('\n');
   const placeholderLines: string[] = [];
 
-  lines.forEach((line, index) => {
+  lines.forEach((line) => {
     if (line.includes('=') && !line.startsWith('#')) {
-      const [key, ...valueParts] = line.split('=');
+      const [, ...valueParts] = line.split('=');
       const value = valueParts.join('=');
 
       if (isPlaceholderValue(value.trim())) {
-        placeholderLines.push(`${key}=${value.trim()}`);
+        placeholderLines.push(line.trim());
       }
     }
   });
