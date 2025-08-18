@@ -22,6 +22,7 @@ export class PreviewsStore {
   isLoading = atom<boolean>(false);
   loadingText = atom<string>('Initializing environment...');
   isCollectingErrors = atom<boolean>(false);
+  isGenerationErrors = atom<boolean>(false);
   isFixingIssues = atom<boolean>(false);
   #availablePreviews = new Map<number, PreviewInfo>();
   #webcontainer: Promise<WebContainer>;
@@ -62,6 +63,7 @@ export class PreviewsStore {
     this.loadingText.set('Your app is loading...');
     this.isLoading.set(true);
     this.isCollectingErrors.set(false);
+    this.isGenerationErrors.set(false);
   }
 
   fixingIssues() {

@@ -21,7 +21,7 @@ import { AUTOFIX_ATTEMPT_EVENT } from '~/lib/error-handler';
 import { useSession } from '~/auth/auth-client';
 import type { SendMessageFn } from './Chat.client';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { detectBrowser, type BrowserInfo } from '~/lib/utils/browser-detection';
+import { type BrowserInfo, detectBrowser } from '~/lib/utils/browser-detection';
 import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
 
 export interface PendingPrompt {
