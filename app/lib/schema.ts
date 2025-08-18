@@ -82,6 +82,7 @@ export async function setSchemaCache(connectionUrl: string, schema: any): Promis
     create: {
       connectionHash: hash,
       schemaData: JSON.stringify(schema),
+      suggestions: JSON.stringify([]), // Store as JSON string for SQLite compatibility
     },
   });
 
@@ -100,7 +101,21 @@ export async function getSuggestionsCache(
     where: { connectionHash: hash },
   });
 
-  if (!cached || !cached.suggestions || cached.suggestions.length === 0) {
+  if (!cached || !cached.suggestions) {
+    return null;
+  }
+
+  // Convert suggestions from JSON string to array
+  let suggestions: string[];
+
+  try {
+    suggestions = JSON.parse(cached.suggestions as string);
+  } catch (error) {
+    logger.error('Failed to parse suggestions JSON:', error);
+    return null;
+  }
+
+  if (suggestions.length === 0) {
     return null;
   }
 
@@ -108,7 +123,7 @@ export async function getSuggestionsCache(
     return null;
   }
 
-  return cached.suggestions;
+  return suggestions;
 }
 
 export async function setSuggestionsCache(
@@ -122,12 +137,12 @@ export async function setSuggestionsCache(
     where: { connectionHash: hash },
     update: {
       schemaData: JSON.stringify(schema),
-      suggestions,
+      suggestions: JSON.stringify(suggestions), // Store as JSON string for SQLite compatibility
     },
     create: {
       connectionHash: hash,
       schemaData: JSON.stringify(schema),
-      suggestions,
+      suggestions: JSON.stringify(suggestions), // Store as JSON string for SQLite compatibility
     },
   });
 
