@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
 function updateEnvFileForSqlite(silent: boolean = false): void {
@@ -68,7 +68,7 @@ function updatePrismaSchemaToSqlite(silent: boolean = false): void {
     }
 
     // Remove migrations directory completely
-    execSync('rm -rf prisma/migrations', { stdio: silent ? 'ignore' : 'inherit' });
+    rmSync('prisma/migrations', { recursive: true, force: true });
 
     if (!silent) {
       console.log('✅ Removed existing migrations directory');
