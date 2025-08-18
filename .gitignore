@@ -51,8 +51,6 @@ queries.db
 liblab.db
 sample.db
 
-ngrok.log
-
 snapshots
 
 !app/**/snapshots

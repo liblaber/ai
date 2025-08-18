@@ -1,5 +1,5 @@
 import type { LanguageModelV1 } from 'ai';
-import type { ProviderInfo, ProviderConfig } from './types';
+import type { ProviderConfig, ProviderInfo } from './types';
 import type { IProviderSetting } from '~/types/model';
 import { createOpenAI } from '@ai-sdk/openai';
 import { env } from '~/env';
@@ -10,7 +10,6 @@ export abstract class BaseProvider implements ProviderInfo {
 
   getApiKeyLink?: string;
   labelForGetApiKey?: string;
-  icon?: string;
 
   getProviderBaseUrlAndKey(options: {
     apiKeys?: Record<string, string>;

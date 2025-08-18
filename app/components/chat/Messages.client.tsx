@@ -16,7 +16,7 @@ import { loadPreviousFileMapIntoContainer } from '~/lib/webcontainer/load-file-m
 import { workbenchStore } from '~/lib/stores/workbench';
 import { useRouter } from 'next/navigation';
 import { PROJECT_SETUP_ANNOTATION } from '~/utils/constants';
-import { GitFork, Undo2 } from 'lucide-react';
+import { Ellipsis, GitFork, Undo2 } from 'lucide-react';
 
 interface MessagesProps {
   id?: string;
@@ -186,9 +186,7 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
               );
             })
           : null}
-        {isStreaming && (
-          <div className="text-center w-full text-secondary i-svg-spinners:3-dots-fade text-4xl mt-4"></div>
-        )}
+        {isStreaming && <Ellipsis size={40} className="text-center w-full text-secondary animate-pulse" />}
 
         {rewindDialog.isOpen && (
           <DialogRoot open={rewindDialog.isOpen} onOpenChange={(open) => !open && closeRewindDialog()}>

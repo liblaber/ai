@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState } from 'react';
 import type { ProgressAnnotation } from '~/types/context';
 import { classNames } from '~/utils/classNames';
-import { Check, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, LoaderCircle, X } from 'lucide-react';
 
 export default function ProgressCompilation({ data }: { data?: ProgressAnnotation[] }) {
   const [progressList, setProgressList] = React.useState<ProgressAnnotation[]>([]);
@@ -87,7 +87,7 @@ const ProgressItem = ({ progress }: { progress: ProgressAnnotation }) => {
       <div className="flex items-center gap-1.5 ">
         <div>
           {progress.status === 'in-progress' ? (
-            <div className="i-svg-spinners:90-ring-with-bg"></div>
+            <LoaderCircle className="w-4 h-4 animate-spin" />
           ) : progress.status === 'complete' ? (
             <Check className="w-4 h-4 text-green-500" />
           ) : progress.status === 'error' ? (

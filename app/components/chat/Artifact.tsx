@@ -99,7 +99,7 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
             >
               <div className="p-4">
                 {!devMode && !allActionFinished ? (
-                  <div className="i-svg-spinners:90-ring-with-bg"></div>
+                  <LoaderCircle className="w-4 h-4 animate-spin" />
                 ) : (
                   <div className={showActions ? 'w-4 h-4' : 'w-4 h-4'}>
                     {showActions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
