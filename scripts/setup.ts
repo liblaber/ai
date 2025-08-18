@@ -72,7 +72,7 @@ function getEnvVarValue(envContent: string, key: string): string | null {
 
 function isPlaceholderValue(value: string | null): boolean {
   if (!value) return false;
-  
+
   const placeholderPatterns = [
     /your-auth-secret-here/,
     /your-encryption-key-here/,
@@ -83,10 +83,10 @@ function isPlaceholderValue(value: string | null): boolean {
     /replace-me/,
     /your-key-here/,
     /your-token-here/,
-    /your-password-here/
+    /your-password-here/,
   ];
-  
-  return placeholderPatterns.some(pattern => pattern.test(value.toLowerCase()));
+
+  return placeholderPatterns.some((pattern) => pattern.test(value.toLowerCase()));
 }
 
 async function main(): Promise<void> {
@@ -269,12 +269,12 @@ async function main(): Promise<void> {
   // Scan for any remaining placeholder values and warn about them
   const lines = envContent.split('\n');
   const placeholderLines: string[] = [];
-  
+
   lines.forEach((line, index) => {
     if (line.includes('=') && !line.startsWith('#')) {
       const [key, ...valueParts] = line.split('=');
       const value = valueParts.join('=');
-      
+
       if (isPlaceholderValue(value.trim())) {
         placeholderLines.push(`${key}=${value.trim()}`);
       }
@@ -283,7 +283,7 @@ async function main(): Promise<void> {
 
   if (placeholderLines.length > 0) {
     log.warn('⚠️  Found placeholder values that should be updated:');
-    placeholderLines.forEach(line => {
+    placeholderLines.forEach((line) => {
       log.warn(`   ${line}`);
     });
     log.info('💡 Run the setup script again to generate secure values for these keys.');
