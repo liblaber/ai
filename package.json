@@ -11,6 +11,7 @@
     "setup": "pnpm i && pnpm run prisma:generate && tsx setup.ts",
     "build": "next build",
     "dev": "tsx scripts/dev-with-db.ts && tsx pre-start.ts && next dev --turbo",
+    "try:dev": "cp .env.example .env && pnpm run setup && pnpm run use:sqlite && tsx pre-start.ts && next dev --turbo",
     "test": "jest",
     "start": "tsx setup-tunnel.ts && tsx run-migrations.ts && next start",
     "prod": "pnpm run build && pnpm run start",
@@ -42,7 +43,10 @@
     "test:e2e:headed": "tsx scripts/run-e2e-tests.ts headed",
     "test:e2e:ui": "tsx scripts/run-e2e-tests.ts ui",
     "test:e2e:debug": "tsx scripts/run-e2e-tests.ts debug",
-    "test:e2e:headless": "tsx scripts/run-e2e-tests.ts headless"
+    "test:e2e:headless": "tsx scripts/run-e2e-tests.ts headless",
+    "use:sqlite": "tsx scripts/use-sqlite.ts",
+    "use:postgresql": "tsx scripts/use-postgresql.ts",
+    "migrate:suggestions": "tsx scripts/migrate-suggestions-to-json.ts"
   },
   "engines": {
     "node": ">=22.0.0"
