@@ -70,23 +70,23 @@ function getEnvVarValue(envContent: string, key: string): string | null {
   return null;
 }
 
+const PLACEHOLDER_PATTERNS = [
+  /your-auth-secret-here/,
+  /your-encryption-key-here/,
+  /your-secret-key-here/,
+  /placeholder/,
+  /example/,
+  /change-me/,
+  /replace-me/,
+  /your-key-here/,
+  /your-token-here/,
+  /your-password-here/,
+];
+
 function isPlaceholderValue(value: string | null): boolean {
   if (!value) return false;
 
-  const placeholderPatterns = [
-    /your-auth-secret-here/,
-    /your-encryption-key-here/,
-    /your-secret-key-here/,
-    /placeholder/,
-    /example/,
-    /change-me/,
-    /replace-me/,
-    /your-key-here/,
-    /your-token-here/,
-    /your-password-here/,
-  ];
-
-  return placeholderPatterns.some((pattern) => pattern.test(value.toLowerCase()));
+  return PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(value.toLowerCase()));
 }
 
 async function main(): Promise<void> {
