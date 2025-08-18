@@ -70,6 +70,27 @@ function getEnvVarValue(envContent: string, key: string): string | null {
   return null;
 }
 
+const PLACEHOLDER_PATTERNS = [
+  /your-auth-secret-here/,
+  /your-encryption-key-here/,
+  /your-secret-key-here/,
+  /placeholder/,
+  /example/,
+  /change-me/,
+  /replace-me/,
+  /your-key-here/,
+  /your-token-here/,
+  /your-password-here/,
+];
+
+function isPlaceholderValue(value: string | null): boolean {
+  if (!value) {
+    return false;
+  }
+
+  return PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(value.toLowerCase()));
+}
+
 async function main(): Promise<void> {
   intro('🦙 liblab.ai Setup');
 
@@ -96,24 +117,30 @@ async function main(): Promise<void> {
     }
   }
 
-  // Generate AUTH_SECRET if not exists
-  if (!hasEnvVar(envContent, 'AUTH_SECRET')) {
+  // Generate AUTH_SECRET if not exists or if it's a placeholder
+  const authSecretValue = getEnvVarValue(envContent, 'AUTH_SECRET');
+
+  if (!authSecretValue || isPlaceholderValue(authSecretValue)) {
     try {
       const authSecret = generateSecureKey();
       envContent = updateOrAddEnvVar(envContent, 'AUTH_SECRET', authSecret);
       writeEnvFile(envContent);
+      log.info('✅ Generated new AUTH_SECRET');
     } catch (error) {
       log.error(`Failed to generate auth secret: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
     }
   }
 
-  // Generate ENCRYPTION_KEY if not exists
-  if (!hasEnvVar(envContent, 'ENCRYPTION_KEY')) {
+  // Generate ENCRYPTION_KEY if not exists or if it's a placeholder
+  const encryptionKeyValue = getEnvVarValue(envContent, 'ENCRYPTION_KEY');
+
+  if (!encryptionKeyValue || isPlaceholderValue(encryptionKeyValue)) {
     try {
       const encryptionKey = generateSecureKey();
       envContent = updateOrAddEnvVar(envContent, 'ENCRYPTION_KEY', encryptionKey);
       writeEnvFile(envContent);
+      log.info('✅ Generated new ENCRYPTION_KEY');
     } catch (error) {
       log.error(`Failed to generate encryption key: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
@@ -243,6 +270,29 @@ async function main(): Promise<void> {
       envContent = updateOrAddEnvVar(envContent, 'NETLIFY_AUTH_TOKEN', netlifyToken.trim());
       writeEnvFile(envContent);
     }
+  }
+
+  // Scan for any remaining placeholder values and warn about them
+  const lines = envContent.split('\n');
+  const placeholderLines: string[] = [];
+
+  lines.forEach((line) => {
+    if (line.includes('=') && !line.startsWith('#')) {
+      const [, ...valueParts] = line.split('=');
+      const value = valueParts.join('=');
+
+      if (isPlaceholderValue(value.trim())) {
+        placeholderLines.push(line.trim());
+      }
+    }
+  });
+
+  if (placeholderLines.length > 0) {
+    log.warn('⚠️  Found placeholder values that should be updated:');
+    placeholderLines.forEach((line) => {
+      log.warn(`   ${line}`);
+    });
+    log.info('💡 Run the setup script again to generate secure values for these keys.');
   }
 
   outro('🎉 liblab AI Setup Complete!');
