@@ -24,7 +24,7 @@ import { chatId, description } from '~/lib/persistence/useConversationHistory';
 import { PublishProgressModal } from '~/components/publish/PublishProgressModal.client';
 import JSZip from 'jszip';
 import type { NetlifySiteInfo } from '~/types/netlify';
-import { AlertTriangle, CodeXml, MessageCircle, Rocket, Settings } from 'lucide-react';
+import { AlertTriangle, CodeXml, Lock, MessageCircle, Rocket, Settings } from 'lucide-react';
 
 interface ProgressData {
   step: number;
@@ -412,7 +412,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
         <div className="relative" ref={dropdownRef}>
           <div className="flex border border-depth-3 rounded-md overflow-hidden mr-2 text-sm">
             <Button
-              active
+              active={!isCurrentDataSourceSQLite}
               disabled={isCurrentDataSourceSQLite}
               title={
                 isCurrentDataSourceSQLite
@@ -420,9 +420,11 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
                   : 'Publish your site to the web'
               }
               onClick={() => !isCurrentDataSourceSQLite && setIsDropdownOpen(!isDropdownOpen)}
-              className="px-4 flex items-center gap-2"
+              className={classNames('px-4 flex items-center gap-2', {
+                'opacity-50 grayscale': isCurrentDataSourceSQLite,
+              })}
             >
-              <Rocket className="w-4 h-4" />
+              {isCurrentDataSourceSQLite ? <Lock className="w-4 h-4" /> : <Rocket className="w-4 h-4" />}
               Publish
             </Button>
           </div>
