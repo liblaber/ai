@@ -96,7 +96,7 @@ export default function RoleMembers({ role, onRoleUpdate, onAssignMembers }: Rol
 
       <div>
         <div className="flex justify-between text-sm text-gray-400 px-4 py-2 border-b border-gray-700">
-          <span>Assigned Member</span>
+          <span>Assigned Members</span>
         </div>
 
         <div className="space-y-px pb-4">
