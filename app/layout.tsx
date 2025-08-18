@@ -9,7 +9,6 @@ import PluginManager, { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager'
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import { headers } from 'next/headers';
 import { auth } from '~/auth/auth-config';
-import { logger } from './utils/logger';
 
 const inlineThemeCode = `
   setLiblabTheme();
@@ -34,8 +33,6 @@ async function getRootData() {
     let user = null;
     let dataSources: any[] = [];
     let dataSourceTypes: any[] = [];
-
-    logger.info(JSON.stringify({ headersList, session, user }, null, 2));
 
     if (session?.user) {
       // Get user profile
@@ -73,8 +70,6 @@ async function getRootData() {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const rootData = await getRootData();
-
-  logger.info('Root data', JSON.stringify(rootData));
 
   return (
     <html lang="en" data-theme="dark">
