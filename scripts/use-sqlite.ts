@@ -46,7 +46,6 @@ function updatePrismaSchemaToSqlite(silent: boolean = false): void {
 
   if (!silent) {
     console.log('🔄 Updating Prisma schema to use SQLite...');
-    console.log('📋 Backup created at prisma/schema.prisma.backup');
   }
 
   let schemaContent = readFileSync(prismaSchemaPath, 'utf8');
@@ -93,8 +92,7 @@ function updatePrismaSchemaToSqlite(silent: boolean = false): void {
     console.log('📝 Next steps:');
     console.log('   1. Run: pnpm run dev');
     console.log('');
-    console.log('💡 Note: SchemaCache.suggestions field changed from String[] to Json for SQLite compatibility');
-    console.log('📋 Original schema backed up to prisma/schema.prisma.backup');
+    console.log('💡 Note: SchemaCache.suggestions field changed from String[] to String for SQLite compatibility');
     console.log('✅ Database is ready with initial migration applied');
   }
 }
