@@ -9,6 +9,7 @@ import PluginManager, { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager'
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import { headers } from 'next/headers';
 import { auth } from '~/auth/auth-config';
+import { logger } from './utils/logger';
 
 const inlineThemeCode = `
   setLiblabTheme();
@@ -32,8 +33,9 @@ async function getRootData() {
 
     let user = null;
     let dataSources: any[] = [];
-    let pluginAccess = FREE_PLUGIN_ACCESS;
     let dataSourceTypes: any[] = [];
+
+    logger.info(JSON.stringify({ headersList, session, user }, null, 2));
 
     if (session?.user) {
       // Get user profile
@@ -42,14 +44,15 @@ async function getRootData() {
       // Get data sources for the user
       const userAbility = await getUserAbility(session.user.id);
       dataSources = await getDataSources(userAbility);
-
-      // Initialize plugin manager
-      await PluginManager.getInstance().initialize();
-      pluginAccess = PluginManager.getInstance().getAccessMap();
-
-      // Get available data source types
-      dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
     }
+
+    // Initialize plugin manager
+    await PluginManager.getInstance().initialize();
+
+    const pluginAccess = PluginManager.getInstance().getAccessMap();
+
+    // Get available data source types
+    dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
 
     return {
       user,
@@ -70,6 +73,8 @@ async function getRootData() {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const rootData = await getRootData();
+
+  logger.info('Root data', JSON.stringify(rootData));
 
   return (
     <html lang="en" data-theme="dark">
