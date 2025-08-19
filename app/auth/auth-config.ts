@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '~/lib/prisma';
 import { env } from '~/env';
-import { anonymous, createAuthMiddleware } from 'better-auth/plugins';
+import { anonymous, createAuthMiddleware, organization } from 'better-auth/plugins';
 import { UserManagementPluginManager } from '~/lib/plugins/user-management/user-management-plugin-manager';
 
 const { BASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = env.server;
@@ -22,7 +22,7 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
-  plugins: [anonymous()],
+  plugins: [anonymous(), organization()],
   emailAndPassword: {
     enabled: true,
   },
