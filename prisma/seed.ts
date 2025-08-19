@@ -20,6 +20,7 @@ async function seedOrganization(): Promise<Organization> {
     const anonymousOrganization = {
       name: 'Anonymous',
       domain: 'anonymous.com',
+      slug: 'anonymous',
     };
 
     let organization = await prisma.organization.findUnique({
