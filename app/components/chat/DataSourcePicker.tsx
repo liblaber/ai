@@ -19,6 +19,10 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
       label: ds.name,
     })),
     {
+      value: 'edit-existing',
+      label: 'Edit Data Source',
+    },
+    {
       value: 'add-new',
       label: '+ Add New Data Source',
       isAddNew: true,
