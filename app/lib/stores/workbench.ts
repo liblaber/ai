@@ -468,8 +468,7 @@ export class WorkbenchStore {
             currentFolder = currentFolder.folder(pathSegments[i])!;
           }
           currentFolder.file(pathSegments[pathSegments.length - 1], dirent.content);
-        } else if (dirent.type === 'file' && filePath === toAbsoluteFilePath('.env')) {
-        } else if (dirent.type === 'file' && filePath === toAbsoluteFilePath('.env')) {
+        } else if (dirent?.type === 'file' && filePath === toAbsoluteFilePath('.env')) {
           const lines = dirent.content.split('\n').filter((line) => line.trim() !== '');
           const viteApiUrlIndex = lines.findIndex((line) => line.startsWith('VITE_API_BASE_URL='));
 
