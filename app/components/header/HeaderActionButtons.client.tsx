@@ -24,7 +24,7 @@ import { chatId, description } from '~/lib/persistence/useConversationHistory';
 import { PublishProgressModal } from '~/components/publish/PublishProgressModal.client';
 import JSZip from 'jszip';
 import type { NetlifySiteInfo } from '~/types/netlify';
-import { AlertTriangle, CodeXml, Lock, MessageCircle, Rocket, Settings } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, CodeXml, Lock, MessageCircle, Rocket, Settings } from 'lucide-react';
 
 interface ProgressData {
   step: number;
@@ -55,6 +55,33 @@ interface WebsitesConfigResponse {
 
 interface HeaderActionButtonsProps {}
 
+// Available deployment types
+const DEPLOYMENT_TYPES = [
+  {
+    id: 'netlify',
+    name: 'Netlify',
+    description: 'Deploy to Netlify',
+    icon: '🚀',
+    enabled: true, // Will be updated based on config
+  },
+  {
+    id: 'aws',
+    name: 'AWS (SST)',
+    description: 'Deploy to AWS using SST',
+    icon: '☁️',
+    enabled: true, // Will be updated based on config
+  },
+  {
+    id: 'vercel',
+    name: 'Vercel',
+    description: 'Deploy to Vercel',
+    icon: '⚡',
+    enabled: false, // Placeholder for future
+  },
+] as const;
+
+type DeploymentTypeId = (typeof DEPLOYMENT_TYPES)[number]['id'];
+
 export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   const devMode = useStore(workbenchStore.devMode);
   const { showChat } = useStore(chatStore);
@@ -64,31 +91,58 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDeploymentTypeOpen, setIsDeploymentTypeOpen] = useState(false);
+  const [selectedDeploymentType, setSelectedDeploymentType] = useState<DeploymentTypeId>('netlify');
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentChatId = useStore(chatId);
   const chatDescription = useStore(description);
   const [modalMode, setModalMode] = useState<'publish' | 'settings' | 'initializing'>('publish');
   const [hasNetlifyToken, setHasNetlifyToken] = useState(false);
+  const [deploymentTypesConfig, setDeploymentTypesConfig] = useState(DEPLOYMENT_TYPES);
 
   // we want to disable sqlite deployments since we do not support remote sqlite nor do we copy the source file yet
   const currentDataSource = dataSources.find(({ id }) => id === selectedDataSourceId);
   const isCurrentDataSourceSQLite = currentDataSource?.connectionString?.startsWith('sqlite://') || false;
 
   useEffect(() => {
-    async function checkNetlifyConfig() {
+    async function checkDeploymentConfig() {
       try {
         const response = await fetch('/api/websites/config');
 
         if (response.ok) {
           const data = (await response.json()) as WebsitesConfigResponse;
           setHasNetlifyToken(data.netlify.enabled);
+
+          // Update deployment types based on configuration
+          // Note: AWS availability would need to be checked via backend API
+          // TODO: Add types
+          setDeploymentTypesConfig((prev: any) => {
+            const updatedConfig = prev.map((type: any) => ({
+              ...type,
+              enabled:
+                type.id === 'netlify'
+                  ? data.netlify.enabled
+                  : type.id === 'aws'
+                    ? true // Assume AWS is available for now
+                    : type.enabled,
+            }));
+
+            // If the currently selected deployment type is not enabled, switch to the first enabled one
+            const firstEnabled = updatedConfig.find((type: any) => type.enabled);
+
+            if (firstEnabled && !updatedConfig.find((t: any) => t.id === selectedDeploymentType)?.enabled) {
+              setSelectedDeploymentType(firstEnabled.id);
+            }
+
+            return updatedConfig;
+          });
         }
       } catch (error) {
-        console.error('Failed to check Netlify configuration:', error);
+        console.error('Failed to check deployment configuration:', error);
       }
     }
 
-    checkNetlifyConfig();
+    checkDeploymentConfig();
   }, []);
 
   useEffect(() => {
@@ -97,11 +151,12 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
     }
   }, [currentChatId]);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+        setIsDeploymentTypeOpen(false);
       }
     }
 
@@ -260,6 +315,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       formData.append('websiteId', website?.id || '');
       formData.append('chatId', currentChatId || '');
       formData.append('description', chatDescription || '');
+      formData.append('deploymentType', selectedDeploymentType);
       formData.append('zipFile', zipBlob, 'project.zip');
 
       // Deploy using the API route with zip file
@@ -310,9 +366,11 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
                 }
 
                 localStorage.setItem(`netlify-site-${currentChatId}`, data.data.site.id);
+
+                const deploymentTypeName = deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name;
                 toast.success(
                   <div>
-                    Deployed successfully!{' '}
+                    Deployed successfully to {deploymentTypeName}!{' '}
                     <a href={data.data.deploy.url} target="_blank" rel="noopener noreferrer" className="underline">
                       View site
                     </a>
@@ -361,35 +419,100 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   };
 
   const renderDropdownContent = () => {
-    if (!hasNetlifyToken) {
+    if (!hasNetlifyToken && !deploymentTypesConfig.some((type) => type.enabled)) {
       return (
-        <div className="w-48 p-4 text-sm text-gray-700 dark:text-gray-300">
+        <div className="w-64 p-4 text-sm text-gray-700 dark:text-gray-300">
           <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-500">
             <AlertTriangle className="w-4 h-4" />
             Setup Required
           </div>
-          <p className="mb-2">To publish your site, you need to set up your Netlify authentication token first.</p>
-          <p className="text-xs text-gray-500">Add NETLIFY_AUTH_TOKEN to your environment variables.</p>
+          <p className="mb-2">To publish your site, you need to set up deployment authentication first.</p>
+          <p className="text-xs text-gray-500">
+            Configure NETLIFY_AUTH_TOKEN or AWS credentials in your environment variables.
+          </p>
         </div>
       );
     }
 
     return (
       <>
+        {/* Deployment Type Selector */}
+        <div className="relative">
+          <button
+            onClick={() => setIsDeploymentTypeOpen(!isDeploymentTypeOpen)}
+            className="w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <span>{deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.icon}</span>
+              <span>{deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name}</span>
+            </div>
+            <ChevronDown className="w-4 h-4" />
+          </button>
+
+          {isDeploymentTypeOpen && (
+            <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[#111111] rounded-md shadow-lg border border-[#E5E5E5] dark:border-[#2A2A2A] z-50 max-h-48 overflow-y-auto">
+              {deploymentTypesConfig.map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => {
+                    setSelectedDeploymentType(type.id);
+                    setIsDeploymentTypeOpen(false);
+                  }}
+                  disabled={!type.enabled}
+                  className={classNames('w-full px-4 py-2 text-left text-sm flex items-center justify-between', {
+                    'bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800':
+                      type.enabled,
+                    'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed': !type.enabled,
+                  })}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>{type.icon}</span>
+                    <div className="text-left">
+                      <div className="font-medium">{type.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{type.description}</div>
+                      {!type.enabled && (
+                        <div className="text-xs text-orange-500 dark:text-orange-400">Not configured</div>
+                      )}
+                    </div>
+                  </div>
+                  {selectedDeploymentType === type.id && type.enabled && (
+                    <Check className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  )}
+                  {!type.enabled && (
+                    <div className="text-xs text-gray-400 dark:text-gray-500 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded">
+                      Coming Soon
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="w-full h-px bg-gray-200 dark:bg-gray-700 my-2" />
+
         <button
           onClick={handlePublishClick}
-          disabled={isCurrentDataSourceSQLite}
+          disabled={
+            isCurrentDataSourceSQLite || !deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled
+          }
           className={classNames(
             'w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2',
             {
-              'opacity-50 cursor-not-allowed': isCurrentDataSourceSQLite,
-              'hover:bg-gray-100 dark:hover:bg-gray-800': !isCurrentDataSourceSQLite,
+              'opacity-50 cursor-not-allowed':
+                isCurrentDataSourceSQLite ||
+                !deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled,
+              'hover:bg-gray-100 dark:hover:bg-gray-800':
+                !isCurrentDataSourceSQLite &&
+                !!deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled,
             },
           )}
           title={
             isCurrentDataSourceSQLite
               ? 'SQLite database publishing is not supported'
-              : 'Publish new version of your site'
+              : !deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled
+                ? 'Selected deployment type is not configured'
+                : 'Publish new version of your site'
           }
         >
           <Rocket className="w-4 h-4" />
@@ -424,12 +547,23 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
                 'opacity-50 grayscale': isCurrentDataSourceSQLite,
               })}
             >
-              {isCurrentDataSourceSQLite ? <Lock className="w-4 h-4" /> : <Rocket className="w-4 h-4" />}
+              {isCurrentDataSourceSQLite ? (
+                <Lock className="w-4 h-4" />
+              ) : (
+                <span className="text-sm">
+                  {deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.icon}
+                </span>
+              )}
+              {selectedDeploymentType !== 'netlify' && !isCurrentDataSourceSQLite && (
+                <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                  ({deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name})
+                </span>
+              )}
               Publish
             </Button>
           </div>
           {isDropdownOpen && (
-            <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-[#111111] rounded-md shadow-lg border border-[#E5E5E5] dark:border-[#2A2A2A] z-50">
+            <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-[#111111] rounded-md shadow-lg border border-[#E5E5E5] dark:border-[#2A2A2A] z-50">
               {renderDropdownContent()}
             </div>
           )}
