@@ -6,6 +6,7 @@ import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import { chatId } from '~/lib/persistence';
 import { createScopedLogger } from '~/utils/logger';
+import { env } from '~/env/client';
 
 interface ErrorState {
   lastAutofixAttempt?: number;
@@ -194,6 +195,11 @@ export class ErrorHandler {
   }
 
   #shouldAutofix(now: number) {
+    if (env.NEXT_PUBLIC_DISABLE_AUTOFIX) {
+      logger.debug('Skipping autofix event because NEXT_PUBLIC_DISABLE_AUTOFIX set to true');
+      return false;
+    }
+
     const state = this.#state.get();
 
     return !state.lastAutofixAttempt || now - state.lastAutofixAttempt >= this.#AUTOFIX_COOLDOWN_MS;
