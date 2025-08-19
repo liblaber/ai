@@ -47,6 +47,8 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     const loadUserData = async () => {
       if (!rootData.user && !session?.user && anonymousProvider && !isLoggingIn.current) {
         await loginAnonymous();
+        // this will trigger a re-render, and will re-fetch the data in layout.tsx
+        router.refresh();
       }
 
       if (!rootData.user && !session?.user && anonymousProvider && isLoggingIn.current) {
