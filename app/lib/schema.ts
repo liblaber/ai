@@ -3,7 +3,7 @@ import { createScopedLogger } from '~/utils/logger';
 import { prisma } from '~/lib/prisma';
 import crypto from 'crypto';
 
-import { getDatabaseUrl } from '~/lib/services/datasourceService';
+import { getDatabaseUrl } from '~/lib/services/dataSourceService';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 
 // Cache duration in seconds (31 days)
@@ -11,8 +11,12 @@ const SCHEMA_CACHE_TTL = 60 * 60 * 24 * 31;
 
 const logger = createScopedLogger('get-database-schema');
 
-export const getDatabaseSchema = async (dataSourceId: string, userId: string): Promise<Table[]> => {
-  const connectionUrl = await getDatabaseUrl(userId, dataSourceId);
+export const getDatabaseSchema = async (
+  dataSourceId: string,
+  environmentId: string,
+  userId: string,
+): Promise<Table[]> => {
+  const connectionUrl = await getDatabaseUrl(userId, dataSourceId, environmentId);
 
   if (!connectionUrl) {
     throw new Error('Missing required connection parameters');

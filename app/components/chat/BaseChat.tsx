@@ -10,7 +10,7 @@ import { Workbench, WorkbenchProvider } from '~/components/workbench/Workbench.c
 import { classNames } from '~/utils/classNames';
 import { Messages } from './Messages.client';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { useDataSourcesStore } from '~/lib/stores/dataSources';
+import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 
 import type { CodeError } from '~/types/actions';
 import ProgressCompilation from './ProgressCompilation';
@@ -21,14 +21,14 @@ import { AUTOFIX_ATTEMPT_EVENT } from '~/lib/error-handler';
 import { useSession } from '~/auth/auth-client';
 import type { SendMessageFn } from './Chat.client';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { detectBrowser, type BrowserInfo } from '~/lib/utils/browser-detection';
+import { type BrowserInfo, detectBrowser } from '~/lib/utils/browser-detection';
 import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
 
 export interface PendingPrompt {
   input: string;
   files: string[];
   images: string[];
-  dataSourceId: string | null;
+  environmentDataSource: { dataSourceId: string | null; environmentId: string | null };
 }
 
 const TEXTAREA_MIN_HEIGHT = 100;
@@ -89,7 +89,7 @@ export const BaseChat = ({
   const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
 
   const [progressAnnotations, setProgressAnnotations] = useState<ProgressAnnotation[]>([]);
-  const { dataSources } = useDataSourcesStore();
+  const { environmentDataSources } = useEnvironmentDataSourcesStore();
   const { data: session } = useSession();
   const [browserInfo, setBrowserInfo] = useState<BrowserInfo>(() => ({
     name: 'Other',
@@ -173,7 +173,7 @@ export const BaseChat = ({
       return;
     }
 
-    if (!dataSources.length) {
+    if (!environmentDataSources.length) {
       return;
     }
 
@@ -227,7 +227,7 @@ export const BaseChat = ({
     } finally {
       sessionStorage.removeItem('pendingPrompt');
     }
-  }, [dataSources]);
+  }, [environmentDataSources]);
 
   useEffect(() => {
     const handleAutofixAttempt = ({ detail: { errors } }: CustomEvent<{ errors: CodeError[] }>) => {

@@ -11,12 +11,24 @@ export async function getEnvironment(id: string): Promise<Environment | null> {
   });
 }
 
+export async function getEnvironmentName(id: string): Promise<string | null> {
+  const env = await prisma.environment.findUnique({
+    where: { id },
+    select: {
+      name: true,
+    },
+  });
+
+  return env?.name ?? null;
+}
+
 export async function getEnvironments(): Promise<Environment[]> {
   return prisma.environment.findMany({
     include: {
       dataSources: true,
       websites: true,
     },
+    orderBy: { name: 'asc' },
   });
 }
 

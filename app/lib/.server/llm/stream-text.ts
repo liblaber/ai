@@ -51,8 +51,10 @@ export async function streamText(props: {
 
   let processedMessages = messages.map((message) => {
     if (message.role === MessageRole.User) {
-      const { content, isFirstUserMessage, dataSourceId } = extractPropertiesFromMessage(message);
-      currentDataSourceId = dataSourceId;
+      const { content, isFirstUserMessage } = extractPropertiesFromMessage(message);
+
+      // TODO: @skos The current environmentDataSource from conversation should be passed in to streamText and used here!
+      currentDataSourceId = '';
 
       return { ...message, content, isFirstUserMessage };
     } else if (message.role == MessageRole.Assistant) {
@@ -131,7 +133,9 @@ ${props.summary}
 
   if (isFirstUserMessage(processedMessages) || (await shouldGenerateSqlQueries(lastUserMessage, existingQueries))) {
     const userId = await requireUserId(request);
-    const schema = await getDatabaseSchema(currentDataSourceId, userId);
+
+    // TODO: @skos the schema should be fetched here + the connection string from the top
+    const schema = await getDatabaseSchema(currentDataSourceId, 'pass in environment id', userId);
     const dataSource = await prisma.dataSource.findUniqueOrThrow({
       where: { id: currentDataSourceId, createdById: userId },
     });
@@ -139,7 +143,8 @@ ${props.summary}
     const sqlQueries = await generateSqlQueries({
       schema,
       userPrompt: lastUserMessage,
-      connectionString: dataSource.connectionString,
+      // TODO: @skos pass the actual connection url here, not name!!
+      connectionString: dataSource.name,
       implementationPlan,
       existingQueries,
     });

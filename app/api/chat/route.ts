@@ -14,7 +14,6 @@ import type { StarterPluginId } from '~/lib/plugins/types';
 import type { FileMap } from '~/lib/stores/files';
 import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
-import { prisma } from '~/lib/prisma';
 import { LLMManager } from '~/lib/modules/llm/manager';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import { type UserProfile, userService } from '~/lib/services/userService';
@@ -201,8 +200,13 @@ async function chatAction(request: NextRequest) {
             };
             dataStream.writeData(currentProgressAnnotation);
 
-            const dataSource = await conversationService.getConversationDataSource(conversationId);
-            const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
+            const environmentDataSource =
+              await conversationService.getConversationEnvironmentDataSource(conversationId);
+            const databaseSchema = await getDatabaseSchema(
+              environmentDataSource.dataSourceId,
+              environmentDataSource.environmentId,
+              userId,
+            );
 
             implementationPlan = await createImplementationPlan({
               isFirstUserMessage: !!userMessageProperties.isFirstUserMessage,
@@ -280,6 +284,7 @@ async function chatAction(request: NextRequest) {
 
                 const userId = await requireUserId(request);
                 const user = await userService.getUser(userId);
+
                 await trackChatPrompt(conversationId, currentModel, user, userMessageProperties.content);
               } catch (error) {
                 logger.error('Failed to save prompt', error);
@@ -430,36 +435,22 @@ async function trackChatPrompt(
   userMessage: string,
 ): Promise<void> {
   try {
-    const conversationWithDataSource = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-      include: {
-        dataSource: {
-          select: {
-            connectionString: true,
-          },
+    // TODO: @skos find the environment data source connection string and pass the pluginId (db type) to telemetry
+    const pluginId = DataSourcePluginManager.getAccessorPluginId('the current conversation datasource url');
+
+    const telemetry = await getTelemetry();
+    await telemetry.trackTelemetryEvent(
+      {
+        eventType: TelemetryEventType.USER_CHAT_PROMPT,
+        properties: {
+          conversationId,
+          dataSourceType: pluginId,
+          llmModel,
+          userMessage,
         },
       },
-    });
-
-    if (conversationWithDataSource?.dataSource.connectionString) {
-      const pluginId = DataSourcePluginManager.getAccessorPluginId(
-        conversationWithDataSource.dataSource.connectionString,
-      );
-
-      const telemetry = await getTelemetry();
-      await telemetry.trackTelemetryEvent(
-        {
-          eventType: TelemetryEventType.USER_CHAT_PROMPT,
-          properties: {
-            conversationId,
-            dataSourceType: pluginId,
-            llmModel,
-            userMessage,
-          },
-        },
-        user,
-      );
-    }
+      user,
+    );
   } catch (telemetryError) {
     logger.error('Failed to track telemetry event', telemetryError);
   }

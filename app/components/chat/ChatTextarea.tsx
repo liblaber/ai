@@ -5,7 +5,7 @@ import { IconButton } from '~/components/ui/IconButton';
 import WithTooltip from '~/components/ui/Tooltip';
 import FilePreview from './FilePreview';
 import { ScreenshotStateManager } from './ScreenshotStateManager';
-import { useDataSourcesStore } from '~/lib/stores/dataSources';
+import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { openSettingsPanel } from '~/lib/stores/settings';
 import { SendButton } from './SendButton.client';
 import { processImageFile } from '~/utils/fileUtils';
@@ -56,7 +56,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
     },
     ref,
   ) => {
-    const { dataSources } = useDataSourcesStore();
+    const { environmentDataSources } = useEnvironmentDataSourcesStore();
 
     const handleConnectDataSource = () => {
       openSettingsPanel('data', true);
@@ -157,7 +157,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
         </div>
         <div className="flex justify-between items-center text-sm mt-2">
           <div className="flex gap-1 items-center">
-            {dataSources.length > 0 ? (
+            {environmentDataSources.length > 0 ? (
               <DataSourcePicker onAddNew={handleConnectDataSource} disabled={true} />
             ) : (
               <button

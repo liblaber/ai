@@ -2,7 +2,7 @@ import './styles/index.scss';
 import type { ReactNode } from 'react';
 import { ClientProviders } from './components/ClientProviders';
 import './globals.css';
-import { getDataSources } from '~/lib/services/datasourceService';
+import { getEnvironmentDataSources } from '~/lib/services/dataSourceService';
 import { userService } from '~/lib/services/userService';
 import { getUserAbility } from './lib/casl/user-ability';
 import PluginManager, { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager';
@@ -31,7 +31,7 @@ async function getRootData() {
     });
 
     let user = null;
-    let dataSources: any[] = [];
+    let environmentDataSources: any[] = [];
     let pluginAccess = FREE_PLUGIN_ACCESS;
     let dataSourceTypes: any[] = [];
 
@@ -41,7 +41,7 @@ async function getRootData() {
 
       // Get data sources for the user
       const userAbility = await getUserAbility(session.user.id);
-      dataSources = await getDataSources(userAbility);
+      environmentDataSources = await getEnvironmentDataSources(userAbility);
 
       // Initialize plugin manager
       await PluginManager.getInstance().initialize();
@@ -53,7 +53,7 @@ async function getRootData() {
 
     return {
       user,
-      dataSources,
+      environmentDataSources,
       pluginAccess,
       dataSourceTypes,
     };
@@ -61,7 +61,7 @@ async function getRootData() {
     console.error('Error loading root data:', error);
     return {
       user: null,
-      dataSources: [],
+      environmentDataSources: [],
       pluginAccess: FREE_PLUGIN_ACCESS,
       dataSourceTypes: [],
     };

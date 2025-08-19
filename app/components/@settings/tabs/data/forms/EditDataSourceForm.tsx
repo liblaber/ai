@@ -1,8 +1,7 @@
 import { classNames } from '~/utils/classNames';
 import { useEffect, useState } from 'react';
-import { Info, XCircle, CheckCircle, Loader2, Plug, Trash2, Save, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, Loader2, Plug, Save, Trash2, XCircle } from 'lucide-react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
-import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
 import { toast } from 'sonner';
 import { BaseSelect } from '~/components/ui/Select';
 import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/database/SelectDatabaseTypeOptions';
@@ -13,6 +12,7 @@ import {
   SAMPLE_DATABASE,
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
+import type { DataSource } from '~/lib/services/dataSourceService';
 
 interface DataSourceResponse {
   success: boolean;
@@ -20,6 +20,7 @@ interface DataSourceResponse {
   error?: string;
 }
 
+// TODO: @skos update the form to use EnvironmentDataSource
 interface EditDataSourceFormProps {
   selectedDataSource: DataSource | null;
   isSubmitting: boolean;

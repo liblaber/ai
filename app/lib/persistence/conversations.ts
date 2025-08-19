@@ -33,6 +33,7 @@ type ConversationResponse = {
   createdAt: number;
   updatedAt: number;
   dataSourceId: string;
+  environmentId: string;
 };
 
 export type SimpleConversationResponse = Omit<ConversationResponse, 'messages'>;
@@ -87,6 +88,7 @@ export async function getConversation(id: string): Promise<UIConversation> {
   };
 }
 
+// TODO: @skos this needs to be updated when we introduce EnvironmentDataSource[] on Conversation
 export async function createConversation(dataSourceId: string, messages?: MessageRequest[]): Promise<string> {
   const response = await fetch(CONVERSATIONS_API, {
     method: 'POST',

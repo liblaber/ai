@@ -1,7 +1,8 @@
 import { prisma } from '~/lib/prisma';
-import type { Conversation, Prisma } from '@prisma/client';
+import { type Conversation, type EnvironmentDataSource, type Prisma } from '@prisma/client';
 import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
 
+// TODO: @skos Update the whole service based on the new schema design
 export const conversationService = {
   async getConversation(conversationId: string): Promise<Conversation | null> {
     return await prisma.conversation.findUnique({
@@ -9,12 +10,12 @@ export const conversationService = {
     });
   },
 
-  async getConversationDataSource(conversationId: string) {
+  async getConversationEnvironmentDataSource(conversationId: string): Promise<EnvironmentDataSource> {
     return await prisma.conversation
       .findUniqueOrThrow({
         where: { id: conversationId },
       })
-      .dataSource();
+      .environmentDataSource();
   },
 
   async createConversation(
@@ -56,7 +57,7 @@ export const conversationService = {
         id: true,
         description: true,
         starterId: true,
-        dataSourceId: true,
+        environmentDataSource: true,
         snapshots: true,
         userId: true,
         createdAt: true,
