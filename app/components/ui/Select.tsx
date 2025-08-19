@@ -64,6 +64,7 @@ interface SelectProps<T extends SelectOption = SelectOption> {
   components?: any;
   styles?: Partial<StylesConfig<T, false>>;
   controlIcon?: React.ReactNode;
+  dataTestId?: string;
 }
 
 const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> => ({
@@ -207,6 +208,7 @@ export const BaseSelect = <T extends SelectOption = SelectOption>({
   components: customComponents,
   styles: customStyles,
   controlIcon,
+  dataTestId,
 }: SelectProps<T>) => {
   const defaultStyles = createDefaultStyles<T>();
   const mergedStyles = { ...defaultStyles, ...customStyles };
@@ -219,7 +221,7 @@ export const BaseSelect = <T extends SelectOption = SelectOption>({
 
   return (
     <ClientOnly>
-      <div style={{ width, minWidth }}>
+      <div style={{ width, minWidth }} data-testid={dataTestId}>
         <Select<T>
           value={value}
           onChange={onChange}

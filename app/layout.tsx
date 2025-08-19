@@ -32,7 +32,6 @@ async function getRootData() {
 
     let user = null;
     let dataSources: any[] = [];
-    let pluginAccess = FREE_PLUGIN_ACCESS;
     let dataSourceTypes: any[] = [];
 
     if (session?.user) {
@@ -42,14 +41,15 @@ async function getRootData() {
       // Get data sources for the user
       const userAbility = await getUserAbility(session.user.id);
       dataSources = await getDataSources(userAbility);
-
-      // Initialize plugin manager
-      await PluginManager.getInstance().initialize();
-      pluginAccess = PluginManager.getInstance().getAccessMap();
-
-      // Get available data source types
-      dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
     }
+
+    // Initialize plugin manager
+    await PluginManager.getInstance().initialize();
+
+    const pluginAccess = PluginManager.getInstance().getAccessMap();
+
+    // Get available data source types
+    dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
 
     return {
       user,
