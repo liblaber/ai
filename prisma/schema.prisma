@@ -16,34 +16,55 @@ datasource db {
 }
 
 model DataSource {
-  id               String         @id @default(cuid())
-  name             String
-  connectionString String         @map("connection_string")
-  createdAt        DateTime       @default(now()) @map("created_at")
-  updatedAt        DateTime       @updatedAt @map("updated_at")
-  createdBy        User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  createdById      String         @map("created_by_id")
-  conversations    Conversation[]
-  environments     EnvironmentDataSource[]
+  id           String                  @id @default(cuid())
+  name         String
+  createdAt    DateTime                @default(now()) @map("created_at")
+  updatedAt    DateTime                @updatedAt @map("updated_at")
+  createdBy    User                    @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdById  String                  @map("created_by_id")
+  environments EnvironmentDataSource[]
 
   directPermissions Permission[]
 
   @@map("data_source")
 }
 
+enum DataSourcePropertyType {
+  CONNECTION_URL
+  ACCESS_TOKEN
+  REFRESH_TOKEN
+  CLIENT_ID
+  CLIENT_SECRET
+  API_KEY
+}
+
+model DataSourceProperty {
+  id        String   @id @default(cuid())
+  type      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  environmentVariableId String              @map("environment_variable_id")
+  environmentVariable   EnvironmentVariable @relation(fields: [environmentVariableId], references: [id], onDelete: Cascade)
+
+  environmentId         String                @map("environment_id")
+  dataSourceId          String                @map("data_source_id")
+  environmentDataSource EnvironmentDataSource @relation(fields: [environmentId, dataSourceId], references: [environmentId, dataSourceId])
+}
+
 model Website {
-  id            String        @id @default(cuid())
-  siteId        String?       @map("site_id")
-  siteName      String?       @map("site_name")
-  siteUrl       String?       @map("site_url")
-  chatId        String        @map("chat_id")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  isPublic      Boolean       @default(false) @map("is_public")
-  createdBy     User          @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  createdById   String        @map("created_by_id")
-  environment   Environment?  @relation(fields: [environmentId], references: [id], onDelete: Cascade)
-  environmentId String?       @map("environment_id")
+  id            String       @id @default(cuid())
+  siteId        String?      @map("site_id")
+  siteName      String?      @map("site_name")
+  siteUrl       String?      @map("site_url")
+  chatId        String       @map("chat_id")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  isPublic      Boolean      @default(false) @map("is_public")
+  createdBy     User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdById   String       @map("created_by_id")
+  environmentId String?      @map("environment_id")
+  environment   Environment? @relation(fields: [environmentId], references: [id], onDelete: Cascade)
 
   directPermissions Permission[]
 
@@ -51,29 +72,63 @@ model Website {
 }
 
 model Environment {
-  id             String         @id @default(cuid())
-  name           String
-  description    String?
-  organizationId String?        @map("organization_id")
-  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  dataSources    EnvironmentDataSource[]
-  websites       Website[]
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
-
-  directPermissions  Permission[]
+  id                   String                  @id @default(cuid())
+  name                 String
+  description          String?
+  organizationId       String?                 @map("organization_id")
+  organization         Organization?           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dataSources          EnvironmentDataSource[]
+  websites             Website[]
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @updatedAt @map("updated_at")
+  environmentVariables EnvironmentVariable[]
+  directPermissions    Permission[]
 
   @@unique([name, organizationId])
   @@index([organizationId], name: "idx_environment_organization_id")
   @@map("environment")
 }
 
+enum EnvironmentVariableType {
+  GLOBAL
+  DATA_SOURCE
+}
+
+model EnvironmentVariable {
+  id          String                  @id @default(cuid())
+  key         String
+  value       String
+  description String?
+  type        EnvironmentVariableType
+
+  environmentId String      @map("environment_id")
+  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  createdById String @map("created_by_id")
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  dataSourceProperties DataSourceProperty[]
+
+  @@unique([key, environmentId])
+  @@map("environment_variable")
+}
+
 model EnvironmentDataSource {
   environmentId String      @map("environment_id")
   environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
-  dataSourceId  String      @map("data_source_id")
-  dataSource    DataSource  @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
-  createdAt     DateTime    @default(now()) @map("created_at")
+
+  dataSourceId String     @map("data_source_id")
+  dataSource   DataSource @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
+
+  dataSourceProperties DataSourceProperty[]
+
+  conversations Conversation[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@id([environmentId, dataSourceId])
   @@index([environmentId], name: "idx_environment_data_source_environment_id")
@@ -110,17 +165,20 @@ model Message {
 }
 
 model Conversation {
-  id           String     @id @default(cuid())
-  description  String?
-  starterId    String     @map("starter_id")
-  messages     Message[]
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  snapshots    Snapshot[]
-  dataSourceId String
-  dataSource   DataSource @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
-  User         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId       String
+  id          String     @id @default(cuid())
+  description String?
+  starterId   String     @map("starter_id")
+  messages    Message[]
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  snapshots   Snapshot[]
+
+  environmentId         String                @map("environment_id")
+  dataSourceId          String                @map("data_source_id")
+  environmentDataSource EnvironmentDataSource @relation(fields: [environmentId, dataSourceId], references: [environmentId, dataSourceId])
+
+  User   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
 
   @@map("conversation")
 }
@@ -164,23 +222,24 @@ enum DeprecatedRole {
 }
 
 model User {
-  id             String          @id @default(uuid())
-  name           String
-  email          String
-  emailVerified  Boolean
-  image          String?
-  createdAt      DateTime
-  updatedAt      DateTime
-  sessions       Session[]
-  accounts       Account[]
-  conversations  Conversation[]
-  roles          UserRole[]
-  role           DeprecatedRole  @default(MEMBER)
-  dataSources    DataSource[]
-  websites       Website[]
-  organizationId String?
-  organization   Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  telemetryEnabled Boolean?
+  id                   String                @id @default(uuid())
+  name                 String
+  email                String
+  emailVerified        Boolean
+  image                String?
+  createdAt            DateTime
+  updatedAt            DateTime
+  sessions             Session[]
+  accounts             Account[]
+  conversations        Conversation[]
+  roles                UserRole[]
+  role                 DeprecatedRole        @default(MEMBER)
+  dataSources          DataSource[]
+  websites             Website[]
+  environmentVariables EnvironmentVariable[]
+  organizationId       String?
+  organization         Organization?         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  telemetryEnabled     Boolean?
 
   isAnonymous Boolean?
 
@@ -216,6 +275,7 @@ enum PermissionResource {
   Website
   BuilderApp
   AdminApp
+  EnvironmentVariable
 }
 
 model Permission {
