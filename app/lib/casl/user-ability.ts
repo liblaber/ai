@@ -11,17 +11,17 @@ import { logger } from '~/utils/logger';
 const ABILITY_CACHE: Record<string, AppAbility> = {};
 
 type PrismaSubjects = Subjects<{
-  Environment: Environment;
-  DataSource: DataSource;
-  Website: Website;
+  Environment: Partial<Environment>;
+  DataSource: Partial<DataSource>;
+  Website: Partial<Website>;
 }>;
 
 type NonPrismaSubjects = Exclude<PermissionResource, PrismaResources>;
-type AppSubjects = PrismaSubjects | NonPrismaSubjects;
+export type AppSubjects = PrismaSubjects | NonPrismaSubjects;
 
 export type AppAbility = PureAbility<[PermissionAction, AppSubjects], PrismaQuery>;
 
-export function createAbilityForUser(permissions: Permission[]): AppAbility {
+export function createAbilityForUser(userId: string, permissions: Permission[]): AppAbility {
   const { can, build } = new AbilityBuilder<AppAbility>(createPrismaAbility);
 
   permissions.forEach((permission) => {
@@ -69,6 +69,10 @@ export function createAbilityForUser(permissions: Permission[]): AppAbility {
     }
   });
 
+  // Add ownership rules
+  can(PermissionAction.manage, PermissionResource.DataSource, { createdById: userId });
+  can(PermissionAction.manage, PermissionResource.Website, { createdById: userId });
+
   return build();
 }
 
@@ -78,7 +82,7 @@ export async function getUserAbility(userId: string): Promise<AppAbility> {
   }
 
   const permissions = await getUserPermissions(userId);
-  const userAbility = createAbilityForUser(permissions);
+  const userAbility = createAbilityForUser(userId, permissions);
 
   logger.debug(`Caching user ability for user ID: ${userId}`);
   ABILITY_CACHE[userId] = userAbility;
