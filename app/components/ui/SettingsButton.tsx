@@ -13,6 +13,7 @@ export const SettingsButton = memo(({ onClick }: SettingsButtonProps) => {
       size="xl"
       title="Settings"
       className="text-[#666] hover:text-primary hover:bg-depth-3/10 transition-colors"
+      dataTestId="settings-button"
     >
       <Settings className="w-5 h-5" />
     </IconButton>

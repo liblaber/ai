@@ -2,7 +2,7 @@
 
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { intro, isCancel, log, outro, spinner, text } from '@clack/prompts';
+import { intro, isCancel, log, outro, select, text } from '@clack/prompts';
 
 // liblab AI Builder Setup Script
 // OS Compatibility: macOS, Linux, Windows
@@ -70,105 +70,82 @@ function getEnvVarValue(envContent: string, key: string): string | null {
   return null;
 }
 
+const PLACEHOLDER_PATTERNS = [
+  /your-auth-secret-here/,
+  /your-encryption-key-here/,
+  /your-secret-key-here/,
+  /placeholder/,
+  /example/,
+  /change-me/,
+  /replace-me/,
+  /your-key-here/,
+  /your-token-here/,
+  /your-password-here/,
+];
+
+function isPlaceholderValue(value: string | null): boolean {
+  if (!value) {
+    return false;
+  }
+
+  return PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(value.toLowerCase()));
+}
+
 async function main(): Promise<void> {
-  intro('🦙 liblab AI Setup');
+  intro('🦙 liblab.ai Setup');
 
   // Check for .env file and create if it doesn't exist
-  const envSpinner = spinner();
-  envSpinner.start('📋 Checking for .env file');
-
   if (!existsSync('.env')) {
-    envSpinner.stop('⏳ .env file not found, creating from .env.example');
-
     if (existsSync('.env.example')) {
       copyFileSync('.env.example', '.env');
-      log.success('✅ Created .env file from .env.example.');
     } else {
-      log.error('❌ .env.example file not found. Please ensure .env.example exists.');
+      log.error('.env.example file not found. Please ensure .env.example exists.');
       process.exit(1);
     }
-  } else {
-    envSpinner.stop('✅ .env file already exists.');
   }
 
   let envContent = readEnvFile();
 
   // Copy NEXT_PUBLIC_POSTHOG_KEY from .env.example to .env if it exists
-  const posthogSpinner = spinner();
-  posthogSpinner.start('📋 Checking for NEXT_PUBLIC_POSTHOG_KEY');
-
   if (existsSync('.env.example')) {
     const exampleContent = readFileSync('.env.example', 'utf8');
     const posthogKey = getEnvVarValue(exampleContent, 'NEXT_PUBLIC_POSTHOG_KEY');
 
     if (posthogKey) {
-      if (hasEnvVar(envContent, 'NEXT_PUBLIC_POSTHOG_KEY')) {
-        posthogSpinner.stop('✅ Updated existing NEXT_PUBLIC_POSTHOG_KEY in .env file.');
-      } else {
-        posthogSpinner.stop('✅ Added NEXT_PUBLIC_POSTHOG_KEY to .env file.');
-      }
-
       envContent = updateOrAddEnvVar(envContent, 'NEXT_PUBLIC_POSTHOG_KEY', posthogKey);
       writeEnvFile(envContent);
-    } else {
-      posthogSpinner.stop('⚠️ NEXT_PUBLIC_POSTHOG_KEY not found in .env.example file.');
     }
-  } else {
-    posthogSpinner.stop('⚠️ .env.example not found, skipping NEXT_PUBLIC_POSTHOG_KEY check.');
   }
 
-  // Generate AUTH_SECRET if not exists
-  const authSpinner = spinner();
-  authSpinner.start('📋 Checking for AUTH_SECRET');
+  // Generate AUTH_SECRET if not exists or if it's a placeholder
+  const authSecretValue = getEnvVarValue(envContent, 'AUTH_SECRET');
 
-  if (!hasEnvVar(envContent, 'AUTH_SECRET')) {
-    authSpinner.stop('⏳ Generating auth secret');
-
-    const generateAuthSpinner = spinner();
-    generateAuthSpinner.start('Generating secure auth secret');
-
+  if (!authSecretValue || isPlaceholderValue(authSecretValue)) {
     try {
       const authSecret = generateSecureKey();
-
       envContent = updateOrAddEnvVar(envContent, 'AUTH_SECRET', authSecret);
       writeEnvFile(envContent);
-      generateAuthSpinner.stop('✅ Generated and stored auth secret.');
+      log.info('✅ Generated new AUTH_SECRET');
     } catch (error) {
-      generateAuthSpinner.stop('❌ Failed to generate auth secret');
-      log.error(`Error: ${error}`);
+      log.error(`Failed to generate auth secret: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
     }
-  } else {
-    authSpinner.stop('✅ AUTH_SECRET already exists.');
   }
 
-  // Generate ENCRYPTION_KEY if not exists
-  const encryptionSpinner = spinner();
-  encryptionSpinner.start('📋 Checking for ENCRYPTION_KEY');
+  // Generate ENCRYPTION_KEY if not exists or if it's a placeholder
+  const encryptionKeyValue = getEnvVarValue(envContent, 'ENCRYPTION_KEY');
 
-  if (!hasEnvVar(envContent, 'ENCRYPTION_KEY')) {
-    encryptionSpinner.stop('⏳ Generating AES-256-GCM key');
-
-    const generateEncryptionSpinner = spinner();
-    generateEncryptionSpinner.start('Generating AES-256-GCM encryption key');
-
+  if (!encryptionKeyValue || isPlaceholderValue(encryptionKeyValue)) {
     try {
       const encryptionKey = generateSecureKey();
-
       envContent = updateOrAddEnvVar(envContent, 'ENCRYPTION_KEY', encryptionKey);
       writeEnvFile(envContent);
-      generateEncryptionSpinner.stop('✅ Generated and stored AES-256-GCM encryption key.');
+      log.info('✅ Generated new ENCRYPTION_KEY');
     } catch (error) {
-      generateEncryptionSpinner.stop('❌ Failed to generate encryption key');
-      log.error(`Error: ${error}`);
+      log.error(`Failed to generate encryption key: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
     }
-  } else {
-    encryptionSpinner.stop('✅ ENCRYPTION_KEY already exists.');
   }
-
-  // Prompt for LLM provider(s) using a select, and skip if API key exists
-  log.info('🔑 Configure your AI provider');
 
   const providers = [
     {
@@ -206,7 +183,6 @@ async function main(): Promise<void> {
     },
   ];
 
-  const { select } = await import('@clack/prompts');
   const providerValue = await select({
     message: 'Select your AI provider:',
     options: providers.map((p) => ({ value: p.value, label: p.label })),
@@ -225,9 +201,7 @@ async function main(): Promise<void> {
   }
 
   // If API key already exists, skip provider setup
-  if (hasEnvVar(envContent, selected.apiKeyEnv)) {
-    log.info(`✅ ${selected.apiKeyEnv} already exists in .env file. Skipping provider setup.`);
-  } else {
+  if (!hasEnvVar(envContent, selected.apiKeyEnv)) {
     // Prompt for model name
     const modelNameResult = await text({
       message: `Enter the model name for ${selected.label} (e.g. ${selected.modelExample}):`,
@@ -276,15 +250,10 @@ async function main(): Promise<void> {
     envContent = updateOrAddEnvVar(envContent, 'DEFAULT_LLM_MODEL', modelName.trim());
     envContent = updateOrAddEnvVar(envContent, selected.apiKeyEnv, apiKey.trim());
     writeEnvFile(envContent);
-    log.success(`✅ Set DEFAULT_LLM_MODEL, DEFAULT_LLM_PROVIDER, and ${selected.apiKeyEnv} in .env file.`);
   }
 
   // Check for Netlify
-  const netlifySpinner = spinner();
-  netlifySpinner.start('📋 Checking for NETLIFY_AUTH_TOKEN');
-
   if (!hasEnvVar(envContent, 'NETLIFY_AUTH_TOKEN')) {
-    netlifySpinner.stop('⚠️ NETLIFY_AUTH_TOKEN not found or empty in .env file.');
     log.info('📖 Get your token from: https://app.netlify.com/user/applications');
 
     const netlifyToken = await text({
@@ -300,12 +269,30 @@ async function main(): Promise<void> {
     if (netlifyToken && netlifyToken.trim()) {
       envContent = updateOrAddEnvVar(envContent, 'NETLIFY_AUTH_TOKEN', netlifyToken.trim());
       writeEnvFile(envContent);
-      log.success('✅ Added NETLIFY_AUTH_TOKEN to .env file.');
-    } else {
-      log.warn('⚠️ Skipped Netlify auth token.');
     }
-  } else {
-    netlifySpinner.stop('✅ NETLIFY_AUTH_TOKEN already exists.');
+  }
+
+  // Scan for any remaining placeholder values and warn about them
+  const lines = envContent.split('\n');
+  const placeholderLines: string[] = [];
+
+  lines.forEach((line) => {
+    if (line.includes('=') && !line.startsWith('#')) {
+      const [, ...valueParts] = line.split('=');
+      const value = valueParts.join('=');
+
+      if (isPlaceholderValue(value.trim())) {
+        placeholderLines.push(line.trim());
+      }
+    }
+  });
+
+  if (placeholderLines.length > 0) {
+    log.warn('⚠️  Found placeholder values that should be updated:');
+    placeholderLines.forEach((line) => {
+      log.warn(`   ${line}`);
+    });
+    log.info('💡 Run the setup script again to generate secure values for these keys.');
   }
 
   outro('🎉 liblab AI Setup Complete!');

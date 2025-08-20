@@ -32,7 +32,7 @@ import { extractArtifactTitleFromMessageContent } from '~/utils/artifactMapper';
 import { createCommandsMessage, detectProjectCommands } from '~/utils/projectCommands';
 import { ActionRunner } from '~/lib/runtime/action-runner';
 import { createId } from '@paralleldrive/cuid2';
-import { getLatestSnapshotOrNull } from '~/lib/persistence/snapshots';
+import { getLatestSnapshotOrNull, saveSnapshot } from '~/lib/persistence/snapshots';
 import { loadPreviousFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import type { FileMap } from '~/lib/stores/files';
 import { useTrackStreamProgress } from '~/components/chat/useTrackStreamProgress';
@@ -184,6 +184,7 @@ export const ChatImpl = ({
     onError: (e) => {
       logger.error('Request failed', e);
       setFakeLoading(false); // Reset loading state on error
+      workbenchStore.previewsStore.isGenerationErrors.set(true);
       toast.error(
         'There was an error processing your request: ' + (e.message ? e.message : 'No details were returned'),
       );
@@ -509,9 +510,12 @@ export const ChatImpl = ({
 
       await reload({
         body: {
-          conversationId: chatId.get(),
+          conversationId,
         },
       });
+
+      await saveSnapshot(conversationId);
+
       setInput('');
       Cookies.remove(PROMPT_COOKIE_KEY);
 
@@ -590,6 +594,8 @@ export const ChatImpl = ({
         properties: { conversationId: currentChatId, errorMessage },
       });
     }
+
+    workbenchStore.previewsStore.startLoading();
 
     // Reload the chat to retry the request
     await reload({

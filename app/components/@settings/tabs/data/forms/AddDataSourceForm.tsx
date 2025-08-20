@@ -1,7 +1,7 @@
 import { classNames } from '~/utils/classNames';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { XCircle, CheckCircle, Loader2, Plug, Save } from 'lucide-react';
+import { CheckCircle, Loader2, Plug, Save, XCircle } from 'lucide-react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { z } from 'zod';
 import { BaseSelect } from '~/components/ui/Select';
@@ -222,6 +222,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
             <div className="min-w-[160px] flex-1">
               <label className="mb-3 block text-sm font-medium text-secondary">Data source</label>
               <BaseSelect
+                dataTestId={'add-data-source-select'}
                 value={dbType}
                 onChange={(value) => {
                   setDbType(value as DataSourceOption);

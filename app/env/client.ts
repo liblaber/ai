@@ -9,16 +9,9 @@ export const env = createEnv({
     NEXT_PUBLIC_LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error']).default('info'),
     NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
     NEXT_PUBLIC_POSTHOG_HOST: z.string().optional(),
-    NEXT_PUBLIC_USE_GOOGLE_AUTH: z
-      .preprocess((value) => {
-        return typeof value === 'string' ? JSON.parse(value) : value;
-      }, z.boolean())
-      .default(false),
-    NEXT_PUBLIC_DISABLE_TELEMETRY: z
-      .preprocess((value) => {
-        return typeof value === 'string' ? JSON.parse(value) : value;
-      }, z.boolean())
-      .default(false),
+    NEXT_PUBLIC_DISABLE_AUTOFIX: z.coerce.boolean().default(false),
+    NEXT_PUBLIC_USE_GOOGLE_AUTH: z.coerce.boolean().default(false),
+    NEXT_PUBLIC_DISABLE_TELEMETRY: z.coerce.boolean().default(false),
     NEXT_PUBLIC_GITHUB_ACCESS_TOKEN: z.string().optional(),
   },
   runtimeEnv: {
@@ -31,5 +24,6 @@ export const env = createEnv({
     NEXT_PUBLIC_BASE_URL: process.env.BASE_URL,
     NEXT_PUBLIC_NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_USE_GOOGLE_AUTH: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    NEXT_PUBLIC_DISABLE_AUTOFIX: process.env.NEXT_PUBLIC_DISABLE_AUTOFIX,
   },
 });
