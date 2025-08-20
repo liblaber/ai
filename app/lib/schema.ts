@@ -11,30 +11,58 @@ const SCHEMA_CACHE_TTL = 60 * 60 * 24 * 31;
 
 const logger = createScopedLogger('get-database-schema');
 
-export const getDatabaseSchema = async (dataSourceId: string, userId: string): Promise<Table[]> => {
+export const getDatabaseSchema = async (
+  dataSourceId: string,
+  userId: string,
+  forceRefresh = false,
+): Promise<Table[]> => {
   const connectionUrl = await getDatabaseUrl(userId, dataSourceId);
 
   if (!connectionUrl) {
     throw new Error('Missing required connection parameters');
   }
 
-  const dataAccessor = DataSourcePluginManager.getAccessor(connectionUrl);
+  const dataAccessor = await DataSourcePluginManager.getAccessor(connectionUrl);
   await dataAccessor.initialize(connectionUrl);
 
   try {
     logger.debug('Trying to get the schema from cache...');
 
-    const schemaCache = await getSchemaCache(connectionUrl, SCHEMA_CACHE_TTL);
+    // For Google Sheets, check if we need to force refresh due to improved analysis
+    const isGoogleSheets = connectionUrl.startsWith('sheets://');
+    let shouldForceRefresh = forceRefresh;
 
-    if (schemaCache) {
+    if (isGoogleSheets && !forceRefresh) {
+      const needsRefresh = await shouldRefreshGoogleSheetsCache(connectionUrl);
+      logger.debug(`Google Sheets cache refresh check: ${needsRefresh}`);
+      shouldForceRefresh = needsRefresh;
+    }
+
+    let schemaCache = null;
+
+    if (!shouldForceRefresh) {
+      schemaCache = await getSchemaCache(connectionUrl, SCHEMA_CACHE_TTL);
+    }
+
+    if (schemaCache && !shouldForceRefresh) {
       logger.debug('Schema cache hit!');
       return schemaCache;
     }
 
-    logger.debug('Schema cache miss, fetching remote schema...');
+    if (shouldForceRefresh) {
+      logger.debug('Force refreshing schema cache...');
+    } else {
+      logger.debug('Schema cache miss, fetching remote schema...');
+    }
 
     const schema = await dataAccessor.getSchema();
     logger.debug('Remote schema fetched successfully!');
+
+    // Add semantic mapping version marker for Google Sheets
+    if (isGoogleSheets) {
+      (schema as any)._semantic_mapping_version = 2; // Enhanced semantic mapping with multi-row analysis
+      logger.debug('Added semantic mapping version 2 marker to Google Sheets schema');
+    }
 
     await setSchemaCache(connectionUrl, schema);
     logger.debug('Schema cached successfully!');
@@ -132,6 +160,67 @@ export async function setSuggestionsCache(
   });
 
   return result.id;
+}
+
+export async function clearSchemaCache(connectionUrl: string): Promise<void> {
+  const hash = hashConnectionUrl(connectionUrl);
+
+  await prisma.schemaCache
+    .delete({
+      where: { connectionHash: hash },
+    })
+    .catch(() => {
+      // Ignore if cache doesn't exist
+    });
+
+  logger.debug('Schema cache cleared for connection');
+}
+
+async function shouldRefreshGoogleSheetsCache(connectionUrl: string): Promise<boolean> {
+  const hash = hashConnectionUrl(connectionUrl);
+
+  const cached = await prisma.schemaCache.findUnique({
+    where: { connectionHash: hash },
+  });
+
+  if (!cached) {
+    return false; // No cache exists, normal flow will handle it
+  }
+
+  try {
+    const schema = JSON.parse(cached.schemaData);
+
+    // Version 2: Enhanced semantic mapping with multi-row analysis
+    // If cache doesn't have this version marker, force refresh
+    const currentSemanticVersion = 2;
+
+    if (!schema._semantic_mapping_version || schema._semantic_mapping_version < currentSemanticVersion) {
+      logger.debug(
+        `Google Sheets cache semantic version outdated (${schema._semantic_mapping_version || 'undefined'} < ${currentSemanticVersion}), forcing refresh...`,
+      );
+      return true;
+    }
+
+    // Check if the cached schema has the old generic column names
+    const hasGenericColumns = schema.some((table: any) =>
+      table.columns?.some(
+        (col: any) =>
+          col.name?.match(/^column_[a-h]$/) &&
+          col.description?.includes('Data from column') &&
+          !col.description?.includes('Example values'),
+      ),
+    );
+
+    if (hasGenericColumns) {
+      logger.debug('Google Sheets cache has generic columns, forcing refresh...');
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    logger.warn('Error parsing cached schema, forcing refresh:', error);
+    return true;
+  }
 }
 
 function hashConnectionUrl(url: string): string {

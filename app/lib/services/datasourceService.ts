@@ -49,7 +49,7 @@ export async function createDataSource(data: {
   connectionString: string;
   createdById: string;
 }): Promise<DataSource> {
-  validateDataSource(data.connectionString);
+  await validateDataSource(data.connectionString);
 
   return prisma.dataSource.create({
     data: {
@@ -61,7 +61,7 @@ export async function createDataSource(data: {
 }
 
 export async function updateDataSource(data: { id: string; name: string; connectionString: string; userId: string }) {
-  validateDataSource(data.connectionString);
+  await validateDataSource(data.connectionString);
 
   return prisma.dataSource.update({
     where: { id: data.id, createdById: data.userId },
@@ -97,7 +97,7 @@ export async function getConversationCount(dataSourceId: string, userId: string)
   });
 }
 
-function validateDataSource(connectionString: string) {
-  const accessor = DataSourcePluginManager.getAccessor(connectionString);
+async function validateDataSource(connectionString: string) {
+  const accessor = await DataSourcePluginManager.getAccessor(connectionString);
   accessor.validate(connectionString);
 }

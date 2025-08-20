@@ -10,6 +10,7 @@ import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/
 import { useDataSourceActions, useDataSourcesStore } from '~/lib/stores/dataSources';
 import { useRouter } from 'next/navigation';
 import { Header } from '~/components/header/Header';
+import { GoogleWorkspaceConnector } from '~/components/google-workspace/GoogleWorkspaceConnector';
 import {
   type DataSourceOption,
   DEFAULT_DATA_SOURCES,
@@ -109,6 +110,51 @@ export default function DataSourceConnectionPage() {
     }
   };
 
+  const handleGoogleWorkspaceConnection = async (connection: {
+    type: 'docs' | 'sheets';
+    documentId: string;
+    title: string;
+    url: string;
+    accessToken: string;
+    refreshToken: string;
+  }) => {
+    try {
+      setError(null);
+      setIsConnecting(true);
+
+      const connectionString =
+        connection.type === 'docs'
+          ? `docs://${connection.documentId}@googleapis.com/`
+          : `sheets://${connection.documentId}@googleapis.com/`;
+
+      const formData = new FormData();
+      formData.append('name', connection.title);
+      formData.append('connectionString', connectionString);
+
+      const response = await fetch('/api/data-sources', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = (await response.json()) as ApiResponse;
+
+      if (result.success && result.dataSource) {
+        setIsSuccess(true);
+        refetchDataSources();
+        setSelectedDataSourceId(result.dataSource.id);
+        setTimeout(() => {
+          router.push('/');
+        }, 1000);
+      } else {
+        setError(result.error || 'Failed to create data source');
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
   const handleSampleDatabase = async () => {
     setError(null);
     setIsConnecting(true);
@@ -176,62 +222,91 @@ export default function DataSourceConnectionPage() {
             </div>
           </div>
           {dbType.value !== 'sample' && (
-            <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
-              <div>
-                <Label htmlFor="db-name" className="mb-3 block text-gray-300">
-                  Database Name
-                </Label>
-                <Input
-                  id="db-name"
-                  type="text"
-                  value={dbName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDbName(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="conn-str" className="mb-3 block text-gray-300">
-                  Connection String
-                </Label>
-                <Input
-                  id="conn-str"
-                  type="text"
-                  value={connStr}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConnStr(e.target.value)}
-                />
-                <Label className="mb-3 block !text-[13px] text-gray-300 mt-2">
-                  e.g. {dbType.value}://username:password@host:port/database
-                </Label>
-              </div>
-              {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
-              <Button
-                type="submit"
-                variant="primary"
-                className={`min-w-[150px] max-w-[220px] transition-all duration-300 ${isSuccess ? 'bg-green-500 hover:bg-green-500 !disabled:opacity-100' : ''}`}
-                disabled={!dbName || !connStr || isTesting || isSuccess}
-              >
-                {isSuccess ? (
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5" />
-                    Data Source Connected
+            <>
+              {dbType.value === 'google-docs' ||
+              dbType.value === 'google-sheets' ||
+              dbType.label === 'Google Docs' ||
+              dbType.label === 'Google Sheets' ? (
+                <div className="space-y-6">
+                  {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
+                  <GoogleWorkspaceConnector
+                    type={dbType.value === 'google-docs' || dbType.label === 'Google Docs' ? 'docs' : 'sheets'}
+                    onConnection={handleGoogleWorkspaceConnection}
+                    onError={setError}
+                    isConnecting={isConnecting}
+                    isSuccess={isSuccess}
+                  />
+                  <div>
+                    <div className="border-b border-gray-700 mb-7" />
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lock className="w-5 h-5 text-gray-400 !text-primary" />
+                      <span className="font-medium text-primary text-sm">100% Secure & Encrypted</span>
+                    </div>
+                    <div className="text-gray-400 text-[13px] leading-snug">
+                      Your company's data is protected through AES-256 encryption, HTTPS with TLS 1.2/1.3, and strict
+                      network policies.
+                    </div>
                   </div>
-                ) : isTesting ? (
-                  'Testing...'
-                ) : (
-                  'Test & Continue'
-                )}
-              </Button>
-              <div>
-                <div className="border-b border-gray-700 mb-7" />
-                <div className="flex items-center gap-2 mb-2">
-                  <Lock className="w-5 h-5 text-gray-400 !text-primary" />
-                  <span className="font-medium text-primary text-sm">100% Secure & Encrypted</span>
                 </div>
-                <div className="text-gray-400 text-[13px] leading-snug">
-                  Your company's data is protected through AES-256 encryption, HTTPS with TLS 1.2/1.3, and strict
-                  network policies.
-                </div>
-              </div>
-            </form>
+              ) : (
+                <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
+                  <div>
+                    <Label htmlFor="db-name" className="mb-3 block text-gray-300">
+                      Database Name
+                    </Label>
+                    <Input
+                      id="db-name"
+                      type="text"
+                      value={dbName}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDbName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="conn-str" className="mb-3 block text-gray-300">
+                      Connection String
+                    </Label>
+                    <Input
+                      id="conn-str"
+                      type="text"
+                      value={connStr}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConnStr(e.target.value)}
+                    />
+                    <Label className="mb-3 block !text-[13px] text-gray-300 mt-2">
+                      e.g. {dbType.value}://username:password@host:port/database
+                    </Label>
+                  </div>
+                  {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    className={`min-w-[150px] max-w-[220px] transition-all duration-300 ${isSuccess ? 'bg-green-500 hover:bg-green-500 !disabled:opacity-100' : ''}`}
+                    disabled={!dbName || !connStr || isTesting || isSuccess}
+                  >
+                    {isSuccess ? (
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5" />
+                        Data Source Connected
+                      </div>
+                    ) : isTesting ? (
+                      'Testing...'
+                    ) : (
+                      'Test & Continue'
+                    )}
+                  </Button>
+                  <div>
+                    <div className="border-b border-gray-700 mb-7" />
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lock className="w-5 h-5 text-gray-400 !text-primary" />
+                      <span className="font-medium text-primary text-sm">100% Secure & Encrypted</span>
+                    </div>
+                    <div className="text-gray-400 text-[13px] leading-snug">
+                      Your company's data is protected through AES-256 encryption, HTTPS with TLS 1.2/1.3, and strict
+                      network policies.
+                    </div>
+                  </div>
+                </form>
+              )}
+            </>
           )}
           {dbType.value === SAMPLE_DATABASE && (
             <>

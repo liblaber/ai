@@ -12,6 +12,10 @@ import {
   SAMPLE_DATABASE,
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
+import {
+  GoogleWorkspaceConnector,
+  type GoogleWorkspaceConnection,
+} from '~/components/google-workspace/GoogleWorkspaceConnector';
 
 interface DataSourceResponse {
   success: boolean;
@@ -118,6 +122,43 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     }
   };
 
+  const handleGoogleWorkspaceConnection = async (connection: GoogleWorkspaceConnection) => {
+    try {
+      setError(null);
+      setTestResult(null);
+      setIsSubmitting(true);
+
+      const connectionString =
+        connection.type === 'docs'
+          ? `docs://${connection.documentId}/?auth=oauth2&access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}`
+          : `sheets://${connection.documentId}/?auth=oauth2&access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}`;
+
+      const formData = new FormData();
+      formData.append('name', connection.title);
+      formData.append('connectionString', connectionString);
+
+      const response = await fetch('/api/data-sources', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json<DataSourceResponse>();
+
+      if (result.success) {
+        toast.success('Data source added successfully');
+        onSuccess();
+      } else {
+        setError(result.error || 'Failed to create data source');
+        setTestResult(null);
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      setTestResult(null);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
@@ -204,45 +245,63 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
 
           {dbType.value !== SAMPLE_DATABASE && (
             <>
-              <div>
-                <label className="mb-3 block text-sm font-medium text-secondary">Database Name</label>
-                <input
-                  type="text"
-                  value={dbName}
-                  onChange={(e) => setDbName(e.target.value)}
-                  disabled={isSubmitting}
-                  className={classNames(
-                    'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                    'text-primary placeholder-tertiary text-base',
-                    'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
-                    'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
-                    'transition-all duration-200',
-                    'disabled:opacity-50 disabled:cursor-not-allowed',
-                  )}
-                  placeholder="Enter database name"
+              {dbType.value === 'google-docs' ||
+              dbType.value === 'google-sheets' ||
+              dbType.label === 'Google Docs' ||
+              dbType.label === 'Google Sheets' ? (
+                <GoogleWorkspaceConnector
+                  type={dbType.value === 'google-docs' || dbType.label === 'Google Docs' ? 'docs' : 'sheets'}
+                  onConnection={handleGoogleWorkspaceConnection}
+                  onError={(error) => {
+                    setError(error);
+                    setTestResult(null);
+                  }}
+                  isConnecting={isSubmitting}
+                  isSuccess={false}
                 />
-              </div>
-              <div>
-                <label className="mb-3 block text-sm font-medium text-secondary">Connection String</label>
-                <input
-                  type="text"
-                  value={connStr}
-                  onChange={(e) => setConnStr(e.target.value)}
-                  disabled={isSubmitting}
-                  className={classNames(
-                    'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                    'text-primary placeholder-tertiary text-base',
-                    'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
-                    'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
-                    'transition-all duration-200',
-                    'disabled:opacity-50 disabled:cursor-not-allowed',
-                  )}
-                  placeholder={`${dbType.connectionStringFormat}`}
-                />
-                <label className="mb-3 block !text-[13px] text-secondary mt-2">
-                  e.g. {dbType.connectionStringFormat}
-                </label>
-              </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="mb-3 block text-sm font-medium text-secondary">Data Source Name</label>
+                    <input
+                      type="text"
+                      value={dbName}
+                      onChange={(e) => setDbName(e.target.value)}
+                      disabled={isSubmitting}
+                      className={classNames(
+                        'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                        'text-primary placeholder-tertiary text-base',
+                        'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                        'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                        'transition-all duration-200',
+                        'disabled:opacity-50 disabled:cursor-not-allowed',
+                      )}
+                      placeholder="Enter data source name"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-3 block text-sm font-medium text-secondary">Connection String</label>
+                    <input
+                      type="text"
+                      value={connStr}
+                      onChange={(e) => setConnStr(e.target.value)}
+                      disabled={isSubmitting}
+                      className={classNames(
+                        'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                        'text-primary placeholder-tertiary text-base',
+                        'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                        'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                        'transition-all duration-200',
+                        'disabled:opacity-50 disabled:cursor-not-allowed',
+                      )}
+                      placeholder={`${dbType.connectionStringFormat}`}
+                    />
+                    <label className="mb-3 block !text-[13px] text-secondary mt-2">
+                      e.g. {dbType.connectionStringFormat}
+                    </label>
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -279,65 +338,73 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
           )}
         </div>
 
-        <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {dbType.value !== SAMPLE_DATABASE && (
+        {/* Only show traditional database buttons if not Google Workspace */}
+        {!(
+          dbType.value === 'google-docs' ||
+          dbType.value === 'google-sheets' ||
+          dbType.label === 'Google Docs' ||
+          dbType.label === 'Google Sheets'
+        ) && (
+          <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {dbType.value !== SAMPLE_DATABASE && (
+                  <button
+                    type="button"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      await handleTestConnection();
+                    }}
+                    disabled={isTestingConnection || isSubmitting || !connStr}
+                    className={classNames(
+                      'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                      'bg-depth-1 bg-depth-1/50 ',
+                      'text-primary',
+                      'disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
+                    )}
+                  >
+                    {isTestingConnection ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Testing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plug className="w-4 h-4" />
+                        <span>Test Connection</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    await handleTestConnection();
-                  }}
-                  disabled={isTestingConnection || isSubmitting || !connStr}
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || (dbType.value !== SAMPLE_DATABASE && !connStr)}
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                    'bg-depth-1 bg-depth-1/50 ',
-                    'text-primary',
+                    'bg-accent-500 hover:bg-accent-600',
+                    'text-gray-950 dark:text-gray-950',
                     'disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
                   )}
                 >
-                  {isTestingConnection ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Testing...</span>
+                      <span>Creating...</span>
                     </>
                   ) : (
                     <>
-                      <Plug className="w-4 h-4" />
-                      <span>Test Connection</span>
+                      <Save className="w-4 h-4" />
+                      <span>Create</span>
                     </>
                   )}
                 </button>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting || (dbType.value !== SAMPLE_DATABASE && !connStr)}
-                className={classNames(
-                  'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                  'bg-accent-500 hover:bg-accent-600',
-                  'text-gray-950 dark:text-gray-950',
-                  'disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
-                )}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Creating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    <span>Create</span>
-                  </>
-                )}
-              </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

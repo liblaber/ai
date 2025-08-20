@@ -48,7 +48,7 @@ async function getRootData() {
       pluginAccess = PluginManager.getInstance().getAccessMap();
 
       // Get available data source types
-      dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
+      dataSourceTypes = await DataSourcePluginManager.getAvailableDataSourceTypes();
     }
 
     return {
