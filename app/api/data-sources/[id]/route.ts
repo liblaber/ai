@@ -12,7 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params;
 
-  const dataSource = await getDataSource(id, userId);
+  const dataSource = await getDataSource(id);
 
   if (!dataSource) {
     return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
@@ -28,7 +28,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params;
 
-  const dataSource = await getDataSource(id, userId);
+  const dataSource = await getDataSource(id);
 
   if (!dataSource) {
     return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
@@ -54,7 +54,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const userId = await requireUserId(request);
   const { id } = await params;
 
-  const dataSource = await getDataSource(id, userId);
+  const dataSource = await getDataSource(id);
 
   if (!dataSource) {
     return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
