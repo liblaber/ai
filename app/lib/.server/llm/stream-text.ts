@@ -8,13 +8,9 @@ import { allowedHTMLElements } from '~/utils/markdown';
 import { createScopedLogger } from '~/utils/logger';
 import { createFilesContext, extractPropertiesFromMessage } from './utils';
 import { getFilePaths } from './select-context';
-import { generateSqlQueries, shouldGenerateSqlQueries } from '~/lib/.server/llm/database-source';
-import { getDatabaseSchema } from '~/lib/schema';
-import { mapSqlQueriesToPrompt } from '~/lib/common/prompts/sql';
 import { getLlm } from '~/lib/.server/llm/get-llm';
-import { prisma } from '~/lib/prisma';
-import { requireUserId } from '~/auth/session';
 import type { StarterPluginId } from '~/lib/plugins/types';
+import type { ImplementationPlan } from '~/lib/.server/llm/create-implementation-plan';
 
 export type Messages = Message[];
 
@@ -31,7 +27,8 @@ export async function streamText(props: {
   contextOptimization?: boolean;
   contextFiles?: FileMap;
   summary?: string;
-  implementationPlan?: string;
+  implementationPlan?: ImplementationPlan;
+  additionalDataSourceContext?: string | null;
   messageSliceId?: number;
   request: Request;
 }) {
@@ -44,15 +41,14 @@ export async function streamText(props: {
     contextOptimization,
     contextFiles,
     summary,
-    implementationPlan,
-    request,
+    additionalDataSourceContext,
   } = props;
-  let currentDataSourceId: string | undefined = '';
+
+  logger.debug('STREAM TEXT ADDITIONAL DATA SOURCE CONTEXT', additionalDataSourceContext);
 
   let processedMessages = messages.map((message) => {
     if (message.role === MessageRole.User) {
-      const { content, isFirstUserMessage, dataSourceId } = extractPropertiesFromMessage(message);
-      currentDataSourceId = dataSourceId;
+      const { content, isFirstUserMessage } = extractPropertiesFromMessage(message);
 
       return { ...message, content, isFirstUserMessage };
     } else if (message.role == MessageRole.Assistant) {
@@ -121,38 +117,14 @@ ${props.summary}
     }
   }
 
-  if (implementationPlan) {
-    systemPrompt = `${systemPrompt}
-    Below is the implementation plan that you should follow:\n
-    ${implementationPlan}\n`;
-  }
-
-  const existingQueries = extractSqlQueries(codeContext);
-
-  if (isFirstUserMessage(processedMessages) || (await shouldGenerateSqlQueries(lastUserMessage, existingQueries))) {
-    const userId = await requireUserId(request);
-    const schema = await getDatabaseSchema(currentDataSourceId, userId);
-    const dataSource = await prisma.dataSource.findUniqueOrThrow({
-      where: { id: currentDataSourceId, createdById: userId },
+  if (additionalDataSourceContext) {
+    logger.debug(`Adding additional context queries as the hidden user message`);
+    processedMessages.push({
+      id: generateId(),
+      role: 'user',
+      content: additionalDataSourceContext,
+      annotations: ['hidden'],
     });
-
-    const sqlQueries = await generateSqlQueries({
-      schema,
-      userPrompt: lastUserMessage,
-      connectionString: dataSource.connectionString,
-      implementationPlan,
-      existingQueries,
-    });
-
-    if (sqlQueries?.length) {
-      logger.debug(`Adding SQL queries as the hidden user message`);
-      processedMessages.push({
-        id: generateId(),
-        role: 'user',
-        content: mapSqlQueriesToPrompt(sqlQueries),
-        annotations: ['hidden'],
-      });
-    }
   }
 
   const provider = DEFAULT_PROVIDER;

@@ -16,13 +16,13 @@ import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import { prisma } from '~/lib/prisma';
 import { LLMManager } from '~/lib/modules/llm/manager';
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import { type UserProfile, userService } from '~/lib/services/userService';
 import { createImplementationPlan } from '~/lib/.server/llm/create-implementation-plan';
-import { getDatabaseSchema } from '~/lib/schema';
 import { requireUserId } from '~/auth/session';
-import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
 import { AI_SDK_INVALID_KEY_ERROR } from '~/utils/constants';
+import { resolveDataSourceContextProvider } from '~/lib/plugins/data-source/context-provider/data-source-context-provider';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 const WORK_DIR = '/home/project';
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function chatAction(request: NextRequest) {
-  const userId = await requireUserId(request);
+  await requireUserId(request);
 
   const body = await request.json<{
     messages: Messages;
@@ -55,6 +55,7 @@ async function chatAction(request: NextRequest) {
   }
 
   const conversation = await conversationService.getConversation(conversationId);
+  const dataSource = await conversationService.getConversationDataSource(conversationId);
 
   const cumulativeUsage = {
     completionTokens: 0,
@@ -201,14 +202,10 @@ async function chatAction(request: NextRequest) {
             };
             dataStream.writeData(currentProgressAnnotation);
 
-            const dataSource = await conversationService.getConversationDataSource(conversationId);
-            const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
-
-            implementationPlan = await createImplementationPlan({
+            const implementationPlanResult = await createImplementationPlan({
               isFirstUserMessage: !!userMessageProperties.isFirstUserMessage,
               summary,
               userPrompt: userMessage.content,
-              schema: formatDbSchemaForLLM(databaseSchema),
               onFinish: (response) => {
                 if (response.usage) {
                   logger.debug('createImplementationPlan token usage', JSON.stringify(response.usage));
@@ -218,7 +215,16 @@ async function chatAction(request: NextRequest) {
                 }
               },
             });
-            logger.debug('Created Implementation Plan:', implementationPlan);
+
+            if (implementationPlanResult) {
+              implementationPlan = implementationPlanResult;
+              logger.debug('Created implementation plan:', implementationPlan.implementationPlan);
+              logger.debug(
+                'Requires additional data source context:',
+                implementationPlan.requiresAdditionalDataSourceContext,
+              );
+            }
+
             currentProgressAnnotation = {
               type: 'progress',
               label: 'implementation-plan',
@@ -227,6 +233,57 @@ async function chatAction(request: NextRequest) {
               message: 'Implementation plan created',
             };
             dataStream.writeData(currentProgressAnnotation);
+          }
+
+          let additionalDataSourceContext: string | null = null;
+
+          if (implementationPlan?.requiresAdditionalDataSourceContext) {
+            const dataSourceContextProvider = resolveDataSourceContextProvider(dataSource.type);
+
+            if (dataSourceContextProvider) {
+              currentProgressAnnotation = {
+                type: 'progress',
+                label: 'data-source-context',
+                status: 'in-progress',
+                order: progressCounter++,
+                message: 'Analyzing data source context...',
+              };
+              dataStream.writeData(currentProgressAnnotation);
+
+              const { additionalContext, llmUsage: additionalContextUsage } =
+                await dataSourceContextProvider.getContext({
+                  userPrompt: userMessage.content,
+                  conversationSummary: summary,
+                  implementationPlan: implementationPlan?.implementationPlan,
+                  dataSource,
+                });
+
+              additionalDataSourceContext = additionalContext;
+
+              if (additionalContextUsage) {
+                logger.debug(`Additional context token usage: ${JSON.stringify(additionalContextUsage)}`);
+                cumulativeUsage.completionTokens += additionalContextUsage.completionTokens || 0;
+                cumulativeUsage.promptTokens += additionalContextUsage.promptTokens || 0;
+                cumulativeUsage.totalTokens += additionalContextUsage.totalTokens || 0;
+              }
+
+              if (additionalDataSourceContext) {
+                logger.debug('Additional Data Source Context:', additionalDataSourceContext);
+              } else {
+                logger.debug(`No additional context provided for: ${dataSource.type}`);
+              }
+
+              currentProgressAnnotation = {
+                type: 'progress',
+                label: 'data-source-context',
+                status: 'complete',
+                order: progressCounter++,
+                message: 'Data source context analyzed',
+              };
+              dataStream.writeData(currentProgressAnnotation);
+            } else {
+              logger.debug(`Skipping additional data source context for unsupported type: ${dataSource.type}`);
+            }
           }
 
           // Stream the text
@@ -330,6 +387,7 @@ async function chatAction(request: NextRequest) {
             contextFiles: filteredFiles,
             summary,
             implementationPlan,
+            additionalDataSourceContext,
             messageSliceId,
             request,
           });
@@ -436,14 +494,15 @@ async function trackChatPrompt(
         dataSource: {
           select: {
             connectionString: true,
+            type: true,
           },
         },
       },
     });
 
-    if (conversationWithDataSource?.dataSource.connectionString) {
+    if (conversationWithDataSource?.dataSource?.type) {
       const pluginId = DataSourcePluginManager.getAccessorPluginId(
-        conversationWithDataSource.dataSource.connectionString,
+        conversationWithDataSource?.dataSource.type as DataSourceType,
       );
 
       const telemetry = await getTelemetry();

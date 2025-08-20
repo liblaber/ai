@@ -92,7 +92,7 @@ async function handleApiCall(request: NextRequest, method: string) {
 
     const responseBody = await response.text();
 
-    return new NextResponse(responseBody, {
+    return new NextResponse(response.status === 204 ? null : responseBody, {
       status: response.status,
       statusText: response.statusText,
       headers: responseHeaders,

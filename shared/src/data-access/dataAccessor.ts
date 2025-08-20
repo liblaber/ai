@@ -1,54 +1,39 @@
-import type { BaseAccessor, BaseAccessorConstructor } from './baseAccessor';
+import { type BaseAccessor } from './baseAccessor';
 import { PostgresAccessor } from './accessors/postgres';
 import { MySQLAccessor } from './accessors/mysql';
 import { SQLiteAccessor } from './accessors/sqlite';
 import { MongoDBAccessor } from './accessors/mongodb';
-import type { Table } from '../types';
+import { DataSourceType } from './utils/types';
+import type { BaseDatabaseAccessor } from './baseDatabaseAccessor';
+import { HubspotAccessor } from './accessors/hubspot';
 
 export class DataAccessor {
-  private static _getAllAccessors(): BaseAccessorConstructor[] {
-    return [PostgresAccessor, MySQLAccessor, SQLiteAccessor, MongoDBAccessor];
-  }
-
-  static getAccessor(databaseUrl: string): BaseAccessor {
-    const allAccessors = this._getAllAccessors();
-
-    const accessorClass = allAccessors.find((acc: BaseAccessorConstructor) => acc.isAccessor(databaseUrl));
-
-    if (!accessorClass) {
-      throw new Error(`No accessor found for database URL: ${databaseUrl}`);
+  static getDatabaseAccessor(type: DataSourceType): BaseDatabaseAccessor {
+    switch (type.toUpperCase()) {
+      case DataSourceType.POSTGRES:
+        return new PostgresAccessor();
+      case DataSourceType.MYSQL:
+        return new MySQLAccessor();
+      case DataSourceType.SQLITE:
+        return new SQLiteAccessor();
+      case DataSourceType.MONGODB:
+        return new MongoDBAccessor();
+      default:
+        throw new Error(`No database accessor found for type: ${type}`);
     }
-
-    return new accessorClass();
   }
 
-  static getByDatabaseType(databaseType: string): BaseAccessor | null {
-    const allAccessors = this._getAllAccessors();
-    const accessorClass = allAccessors.find((acc: BaseAccessorConstructor) => acc.pluginId === databaseType);
-
-    if (!accessorClass) {
-      return null;
+  static getAccessor(type: DataSourceType): BaseAccessor {
+    switch (type.toUpperCase()) {
+      case DataSourceType.POSTGRES:
+      case DataSourceType.MYSQL:
+      case DataSourceType.SQLITE:
+      case DataSourceType.MONGODB:
+        return this.getDatabaseAccessor(type);
+      case DataSourceType.HUBSPOT:
+        return new HubspotAccessor();
+      default:
+        throw new Error(`No accessor found for type: ${type}`);
     }
-
-    return new accessorClass();
-  }
-
-  /**
-   * Returns all available database types by reading the pluginId from all registered accessors
-   * @returns Array of available database type strings
-   */
-  static getAvailableDatabaseTypes(): string[] {
-    const allAccessors = this._getAllAccessors();
-    return allAccessors.map((acc: BaseAccessorConstructor) => acc.pluginId);
-  }
-
-  /**
-   * Gets a sample schema for the specified database type
-   * @param databaseType - The database type to get sample schema for
-   * @returns Sample schema or null if database type is not found
-   */
-  static getSampleSchema(databaseType: string): Table[] | null {
-    const accessor = this.getByDatabaseType(databaseType);
-    return accessor ? accessor.generateSampleSchema() : null;
   }
 }

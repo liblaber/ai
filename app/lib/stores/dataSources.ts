@@ -2,10 +2,12 @@ import { create } from 'zustand';
 import { useRouter } from 'next/navigation';
 import { persist } from 'zustand/middleware';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
+import { DataSourceType } from '@liblab/data-access/utils/types';
 
 interface DataSource {
   id: string;
   name: string;
+  type: DataSourceType;
   connectionString: string;
   createdAt: string;
   updatedAt: string;

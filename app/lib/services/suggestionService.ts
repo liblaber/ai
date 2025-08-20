@@ -5,8 +5,9 @@ import { type DataSource } from './datasourceService';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 
 import { logger } from '~/utils/logger';
-import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
 import { getSchemaCache, getSuggestionsCache, setSuggestionsCache } from '~/lib/schema';
+import { formatDbSchemaForPrompt } from '~/lib/plugins/data-source/context-provider/database/utils';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 /**
  * Returns a random subset of suggestions from the provided array
@@ -40,7 +41,7 @@ export async function generateSchemaBasedSuggestions(dataSource: DataSource): Pr
       return getRandomSuggestions(cachedSuggestions, 3);
     }
 
-    const accessor = DataAccessor.getAccessor(dataSource.connectionString);
+    const accessor = DataAccessor.getDatabaseAccessor(dataSource.type as DataSourceType);
 
     await accessor.initialize(dataSource.connectionString);
 
@@ -49,7 +50,7 @@ export async function generateSchemaBasedSuggestions(dataSource: DataSource): Pr
 
       const llm = await getLlm();
 
-      const formattedSchema = formatDbSchemaForLLM(schema);
+      const formattedSchema = formatDbSchemaForPrompt(schema);
 
       const systemPrompt = `You are an expert software architect and data analyst. Your task is to analyze a database schema and generate 12 compelling suggestion prompts that users could use to create meaningful applications, tools, and solutions.
 
