@@ -143,12 +143,21 @@ model Snapshot {
   @@map("snapshot")
 }
 
+enum RoleScope {
+  GENERAL
+  ENVIRONMENT
+  DATA_SOURCE
+  WEBSITE
+}
+
 model Role {
   id             String       @id @default(cuid())
   name           String
   description    String?
   organizationId String       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  scope          RoleScope    @default(GENERAL)
+  resourceId     String?      @map("resource_id")
   users          UserRole[]
   permissions    Permission[]
   createdAt      DateTime     @default(now()) @map("created_at")
