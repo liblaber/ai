@@ -83,6 +83,19 @@ export const userService = {
     return mapToUserProfile(user);
   },
 
+  async getUserByEmail(email: string): Promise<UserProfile | null> {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: userSelectWithRoles,
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    return mapToUserProfile(user);
+  },
+
   async updateUser(userId: string, data: UserUpdateData): Promise<UserProfile> {
     const user = await prisma.user.update({
       where: { id: userId },
