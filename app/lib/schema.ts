@@ -60,8 +60,8 @@ export const getDatabaseSchema = async (
 
     // Add semantic mapping version marker for Google Sheets
     if (isGoogleSheets) {
-      (schema as any)._semantic_mapping_version = 2; // Enhanced semantic mapping with multi-row analysis
-      logger.debug('Added semantic mapping version 2 marker to Google Sheets schema');
+      (schema as any)._semantic_mapping_version = 3; // Enhanced currency parsing for international symbols
+      logger.debug('Added semantic mapping version 3 marker to Google Sheets schema');
     }
 
     await setSchemaCache(connectionUrl, schema);
@@ -192,7 +192,7 @@ async function shouldRefreshGoogleSheetsCache(connectionUrl: string): Promise<bo
 
     // Version 2: Enhanced semantic mapping with multi-row analysis
     // If cache doesn't have this version marker, force refresh
-    const currentSemanticVersion = 2;
+    const currentSemanticVersion = 3;
 
     if (!schema._semantic_mapping_version || schema._semantic_mapping_version < currentSemanticVersion) {
       logger.debug(

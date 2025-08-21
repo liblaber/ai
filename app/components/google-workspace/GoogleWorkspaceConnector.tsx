@@ -5,7 +5,6 @@ import { Button } from '~/components/ui/Button';
 import { Label } from '~/components/ui/Label';
 import { Input } from '~/components/ui/Input';
 import { CheckCircle, ExternalLink, FileText, Table } from 'lucide-react';
-import { classNames } from '~/utils/classNames';
 import { GoogleDocumentPicker } from './GoogleDocumentPicker';
 import { GoogleSpreadsheetPicker } from './GoogleSpreadsheetPicker';
 
@@ -35,7 +34,6 @@ export function GoogleWorkspaceConnector({
   isConnecting = false,
   isSuccess = false,
 }: GoogleWorkspaceConnectorProps) {
-  const [selectedType, setSelectedType] = useState<GoogleWorkspaceType>(type);
   const [connectionName, setConnectionName] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authTokens, setAuthTokens] = useState<{
@@ -77,9 +75,9 @@ export function GoogleWorkspaceConnector({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: selectedType,
+          type,
           scopes:
-            selectedType === 'docs'
+            type === 'docs'
               ? ['https://www.googleapis.com/auth/documents.readonly']
               : ['https://www.googleapis.com/auth/spreadsheets.readonly'],
         }),
@@ -147,7 +145,7 @@ export function GoogleWorkspaceConnector({
     }
 
     const connection: GoogleWorkspaceConnection = {
-      type: selectedType,
+      type,
       documentId: selectedDocument.id,
       title: selectedDocument.title,
       url: selectedDocument.url,
@@ -160,52 +158,10 @@ export function GoogleWorkspaceConnector({
 
   return (
     <div className="space-y-6">
-      {/* Step 1: Choose Document Type */}
-      <div>
-        <Label className="mb-3 block text-primary">Choose Google Workspace Type</Label>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => {
-              setSelectedType('docs');
-              setSelectedDocument(null);
-              setConnectionName('');
-            }}
-            className={classNames(
-              'p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-colors duration-200',
-              selectedType === 'docs'
-                ? 'border-accent-500 bg-accent-500/10 text-accent-400'
-                : 'border-gray-600 hover:border-gray-500 text-secondary',
-            )}
-          >
-            <FileText className="w-8 h-8" />
-            <span className="font-medium">Google Docs</span>
-            <span className="text-xs text-tertiary">Documents & Text</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setSelectedType('sheets');
-              setSelectedDocument(null);
-              setConnectionName('');
-            }}
-            className={classNames(
-              'p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-colors duration-200',
-              selectedType === 'sheets'
-                ? 'border-accent-500 bg-accent-500/10 text-accent-400'
-                : 'border-gray-600 hover:border-gray-500 text-secondary',
-            )}
-          >
-            <Table className="w-8 h-8" />
-            <span className="font-medium">Google Sheets</span>
-            <span className="text-xs text-tertiary">Spreadsheets & Data</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Step 2: Authenticate with Google */}
+      {/* Step 1: Authenticate with Google */}
       <div>
         <Label className="mb-3 block text-gray-300">
-          Step 2: Connect to Google {selectedType === 'docs' ? 'Docs' : 'Sheets'}
+          Step 1: Connect to Google {type === 'docs' ? 'Docs' : 'Sheets'}
         </Label>
 
         {!isAuthenticated ? (
@@ -258,19 +214,19 @@ export function GoogleWorkspaceConnector({
 
         <p className="text-sm text-gray-400 mt-2">
           {!isAuthenticated
-            ? `You'll be redirected to Google to authorize access to your ${selectedType === 'docs' ? 'documents' : 'spreadsheets'}.`
+            ? `You'll be redirected to Google to authorize access to your ${type === 'docs' ? 'documents' : 'spreadsheets'}.`
             : 'Click Re-authorize if you encounter permission errors.'}
         </p>
       </div>
 
-      {/* Step 3: Document Selection */}
+      {/* Step 2: Document Selection */}
       {isAuthenticated && authTokens && (
         <div>
           <Label className="mb-3 block text-gray-300">
-            Step 3: Select {selectedType === 'docs' ? 'Document' : 'Spreadsheet'}
+            Step 2: Select {type === 'docs' ? 'Document' : 'Spreadsheet'}
           </Label>
 
-          {selectedType === 'docs' ? (
+          {type === 'docs' ? (
             <GoogleDocumentPicker
               accessToken={authTokens.access_token}
               onSelect={handleDocumentSelect}
@@ -286,7 +242,7 @@ export function GoogleWorkspaceConnector({
         </div>
       )}
 
-      {/* Step 4: Connection Details */}
+      {/* Step 3: Connection Details */}
       {selectedDocument && (
         <div>
           <Label className="mb-3 block text-gray-300">Connection Name</Label>
@@ -299,23 +255,21 @@ export function GoogleWorkspaceConnector({
 
           <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
             <div className="flex items-start gap-3">
-              {selectedType === 'docs' ? (
+              {type === 'docs' ? (
                 <FileText className="w-5 h-5 text-blue-400 mt-0.5" />
               ) : (
                 <Table className="w-5 h-5 text-green-400 mt-0.5" />
               )}
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-white truncate">{selectedDocument.title}</h3>
-                <p className="text-sm text-gray-400">
-                  {selectedType === 'docs' ? 'Google Document' : 'Google Spreadsheet'}
-                </p>
+                <p className="text-sm text-gray-400">{type === 'docs' ? 'Google Document' : 'Google Spreadsheet'}</p>
                 <a
                   href={selectedDocument.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300 mt-1"
                 >
-                  Open in Google {selectedType === 'docs' ? 'Docs' : 'Sheets'}
+                  Open in Google {type === 'docs' ? 'Docs' : 'Sheets'}
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
@@ -341,7 +295,7 @@ export function GoogleWorkspaceConnector({
             ) : (
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5" />
-                Connect {selectedType === 'docs' ? 'Document' : 'Spreadsheet'}
+                Connect {type === 'docs' ? 'Document' : 'Spreadsheet'}
               </div>
             )}
           </Button>

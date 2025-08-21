@@ -879,7 +879,14 @@ export class GoogleSheetsService {
       /^€[\d,]+\.?\d*$/, // €100.50
       /^£[\d,]+\.?\d*$/, // £250.00
       /^¥[\d,]+\.?\d*$/, // ¥1000
+      /^₡[\d,]+\.?\d*$/, // ₡5,800 (Costa Rican colón)
+      /^₹[\d,]+\.?\d*$/, // ₹1000 (Indian Rupee)
+      /^₽[\d,]+\.?\d*$/, // ₽1000 (Russian Ruble)
+      /^₩[\d,]+\.?\d*$/, // ₩1000 (Korean Won)
+      /^R\$[\d,]+\.?\d*$/, // R$100.50 (Brazilian Real)
+      /^¢[\d,]+\.?\d*$/, // ¢50 (Cents)
       /^\(?\$[\d,]+\.?\d*\)?$/, // ($31.51) for negative amounts
+      /^\(?₡[\d,]+\.?\d*\)?$/, // (₡31.51) for negative amounts
     ];
 
     return currencyPatterns.some((pattern) => pattern.test(value.replace(/\s/g, '')));
