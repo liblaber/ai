@@ -42,6 +42,24 @@ export async function getRoles(): Promise<Role[]> {
   }));
 }
 
+export async function getResourceRoleByUser(
+  scope: ResourceRoleScope,
+  resourceId: string,
+  userId: string,
+): Promise<Role | null> {
+  return await prisma.role.findFirst({
+    where: {
+      scope,
+      resourceId,
+      users: {
+        some: {
+          userId,
+        },
+      },
+    },
+  });
+}
+
 export async function findOrCreateResourceRole(
   scope: ResourceRoleScope,
   resourceId: string,

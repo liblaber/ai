@@ -14,14 +14,14 @@ export async function POST(
   { params }: { params: Promise<{ resource: string; resourceId: string }> },
 ) {
   const { userAbility } = await requireUserAbility(request);
-  const { resource: resourcePath, resourceId } = await params;
-  const resourceTypeDetails = getResourceTypeDetails(resourcePath);
+  const { resource: resourceParam, resourceId } = await params;
+  const resourceConfig = getResourceConfig(resourceParam);
 
-  if (!resourceTypeDetails) {
-    return NextResponse.json({ success: false, error: 'Invalid resource type' }, { status: 400 });
+  if (!resourceConfig) {
+    return NextResponse.json({ success: false, error: 'Invalid route' }, { status: 400 });
   }
 
-  const { fetchFunction, permissionResource, roleScope, resourceLabel } = resourceTypeDetails;
+  const { fetchFunction, permissionResource, roleScope, resourceLabel } = resourceConfig;
 
   const resource = await fetchFunction(resourceId);
 
@@ -60,14 +60,14 @@ export async function POST(
   );
 }
 
-interface ResourceTypeDetails {
+interface ResourceConfig {
   fetchFunction: (id: string) => Promise<any>;
   permissionResource: PermissionResource;
   roleScope: ResourceRoleScope;
   resourceLabel: string;
 }
 
-function getResourceTypeDetails(resourceType: string): ResourceTypeDetails | null {
+function getResourceConfig(resourceType: string): ResourceConfig | null {
   switch (resourceType.toLowerCase()) {
     case 'data-sources':
       return {
