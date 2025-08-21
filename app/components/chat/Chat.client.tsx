@@ -475,8 +475,10 @@ export const ChatImpl = ({
     let conversationId = chatId.get();
 
     if (!conversationId) {
-      // TODO: @skos this needs to be updated when we introduce EnvironmentDataSource[] on Conversation
-      conversationId = await createConversation(environmentDataSource.dataSourceId);
+      conversationId = await createConversation(
+        environmentDataSource.dataSourceId,
+        environmentDataSource.environmentId,
+      );
       chatId.set(conversationId);
 
       // Don't update URL during active chat - causes component unmounting

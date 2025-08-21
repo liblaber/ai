@@ -226,7 +226,7 @@ export default function DataTab() {
             </div>
           </div>
           <EditDataSourceForm
-            // TODO: @skos update the form with the new data structure
+            // @ts-ignore TODO: @skos update the form with the new data structure
             selectedDataSource={selectedEnvironmentDataSource}
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
@@ -261,7 +261,6 @@ export default function DataTab() {
               </p>
             </div>
           ) : (
-            // TODO: @skos check if this is the correct way for the key concat
             environmentDataSources.map((environmentDataSource) => (
               <motion.div
                 key={`${environmentDataSource.environmentId}-${environmentDataSource.dataSourceId}`}

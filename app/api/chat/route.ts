@@ -22,6 +22,7 @@ import { getDatabaseSchema } from '~/lib/schema';
 import { requireUserId } from '~/auth/session';
 import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
 import { AI_SDK_INVALID_KEY_ERROR } from '~/utils/constants';
+import { getDatabaseUrl } from '~/lib/services/dataSourceService';
 
 const WORK_DIR = '/home/project';
 
@@ -435,8 +436,19 @@ async function trackChatPrompt(
   userMessage: string,
 ): Promise<void> {
   try {
-    // TODO: @skos find the environment data source connection string and pass the pluginId (db type) to telemetry
-    const pluginId = DataSourcePluginManager.getAccessorPluginId('the current conversation datasource url');
+    const environmentDataSource = await conversationService.getConversationEnvironmentDataSource(conversationId);
+    const dataSourceUrl = await getDatabaseUrl(
+      user.id,
+      environmentDataSource.dataSourceId,
+      environmentDataSource.environmentId,
+    );
+
+    if (!dataSourceUrl) {
+      logger.warn('No data source URL found for telemetry tracking');
+      return;
+    }
+
+    const pluginId = DataSourcePluginManager.getAccessorPluginId(dataSourceUrl);
 
     const telemetry = await getTelemetry();
     await telemetry.trackTelemetryEvent(

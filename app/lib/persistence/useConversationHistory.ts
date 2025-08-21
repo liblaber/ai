@@ -81,9 +81,8 @@ export function useConversationHistory(id?: string) {
             logger.error('Failed to load snapshot into container', reason);
           });
 
-        // TODO: @skos we need to use environmentId and dataSourceId from conversation
-        if (conversation.dataSourceId && conversation.dataSourceId !== selectedEnvironmentDataSource) {
-          setSelectedEnvironmentDataSource(conversation.dataSourceId);
+        if (conversation.dataSourceId && conversation.dataSourceId !== selectedEnvironmentDataSource.dataSourceId) {
+          setSelectedEnvironmentDataSource(conversation.dataSourceId, conversation.environmentId);
         }
 
         chatId.set(conversation.id);

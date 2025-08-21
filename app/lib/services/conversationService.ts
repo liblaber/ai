@@ -20,6 +20,7 @@ export const conversationService = {
 
   async createConversation(
     dataSourceId: string,
+    environmentId: string,
     userId: string,
     description?: string,
     tx?: Prisma.TransactionClient,
@@ -31,8 +32,13 @@ export const conversationService = {
         User: {
           connect: { id: userId },
         },
-        dataSource: {
-          connect: { id: dataSourceId },
+        environmentDataSource: {
+          connect: {
+            environmentId_dataSourceId: {
+              environmentId,
+              dataSourceId,
+            },
+          },
         },
         description,
         starterId,
@@ -62,6 +68,8 @@ export const conversationService = {
         userId: true,
         createdAt: true,
         updatedAt: true,
+        dataSourceId: true,
+        environmentId: true,
       },
       where: {
         userId,
