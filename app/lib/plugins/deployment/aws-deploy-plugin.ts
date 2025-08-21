@@ -1,20 +1,23 @@
 import type { DeploymentConfig, DeploymentPlugin, DeploymentProgress, DeploymentResult } from '~/lib/plugins/types';
 import { logger } from '~/utils/logger';
-import { mkdir, unlink, writeFile } from 'fs/promises';
+import fs, { mkdir, unlink, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { rimraf } from 'rimraf';
 import AdmZip from 'adm-zip';
 import { prisma } from '~/lib/prisma';
 import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import { userService } from '~/lib/services/userService';
 import { parse } from 'dotenv';
+import rimraf from 'rimraf';
 
 interface CommandResult {
   output: string;
   error: string;
 }
+
+const debugLogPath = '/Users/stevan/Downloads/debug.log';
+const debugProjectPath = '/Users/stevan/Downloads/aws-deploy-debug';
 
 const TOTAL_STEPS = 6;
 
@@ -30,6 +33,14 @@ export class AwsDeployPlugin implements DeploymentPlugin {
   ): Promise<DeploymentResult> {
     const { websiteId, chatId, userId } = config;
     let currentStepIndex = 1;
+
+    if (await this._fileExists(debugProjectPath)) {
+      await rimraf(debugProjectPath);
+    }
+
+    if (await this._fileExists(debugLogPath)) {
+      await unlink(debugLogPath);
+    }
 
     // Check if AWS credentials are configured
     if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
@@ -74,45 +85,35 @@ export class AwsDeployPlugin implements DeploymentPlugin {
       await unlink(zipPath);
       logger.info('Files extracted successfully', JSON.stringify({ chatId }));
 
-      // Check if SST is already configured in the project
-      const sstConfigPath = join(tempDir, 'sst.config.ts');
-      const sstConfigExists = await this._fileExists(sstConfigPath);
+      logger.info('SST not configured, setting up basic SST configuration', JSON.stringify({ chatId }));
+      await onProgress({
+        step: ++currentStepIndex,
+        totalSteps: TOTAL_STEPS,
+        message: 'Setting up SST configuration...',
+        status: 'in_progress',
+      });
 
-      if (!sstConfigExists) {
-        logger.info('SST not configured, setting up basic SST configuration', JSON.stringify({ chatId }));
-        await onProgress({
-          step: ++currentStepIndex,
-          totalSteps: TOTAL_STEPS,
-          message: 'Setting up SST configuration...',
-          status: 'in_progress',
+      await rimraf(join(tempDir, '.sst'));
+      await rimraf(join(tempDir, '.next'));
+
+      // read environment variables from .env file in zip
+      const envFilePath = join(tempDir, '.env');
+      const envFile: Record<string, string> = {};
+
+      if (await this._fileExists(envFilePath)) {
+        const envContentString = await fs.readFile(envFilePath, 'utf-8');
+        const envContent = parse(envContentString);
+        Object.entries(envContent).forEach(([key, value]) => {
+          if (value) {
+            envFile[key] = value;
+          }
         });
-
-        // read environment variables from .env file in zip
-        const envFilePath = join(tempDir, '.env');
-        const envFile: Record<string, string> = {};
-
-        if (await this._fileExists(envFilePath)) {
-          const envContentString = await import('fs/promises').then((fs) => fs.readFile(envFilePath, 'utf-8'));
-          const envContent = parse(envContentString);
-          Object.entries(envContent).forEach(([key, value]) => {
-            if (value) {
-              envFile[key] = value;
-            }
-          });
-        } else {
-          logger.warn('No .env file found in the zip, using default environment variables');
-        }
-
-        // Create basic SST configuration
-        await this._createSstConfig(tempDir, chatId, envFile);
       } else {
-        await onProgress({
-          step: ++currentStepIndex,
-          totalSteps: TOTAL_STEPS,
-          message: 'Using existing SST configuration...',
-          status: 'in_progress',
-        });
+        logger.warn('No .env file found in the zip, using default environment variables');
       }
+
+      // Create basic SST configuration
+      await this._createSstConfig(tempDir, chatId, envFile);
 
       // Install dependencies
       logger.info('Installing dependencies', JSON.stringify({ chatId }));
@@ -123,11 +124,7 @@ export class AwsDeployPlugin implements DeploymentPlugin {
         status: 'in_progress',
       });
 
-      await this._runCommand('pnpm', ['install'], tempDir, {
-        AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID!,
-        AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY!,
-        AWS_REGION: process.env.AWS_REGION || 'us-east-1',
-      });
+      await this._runCommand('pnpm', ['install'], tempDir);
 
       logger.info('Dependencies installed successfully', JSON.stringify({ chatId }));
 
@@ -195,9 +192,18 @@ export class AwsDeployPlugin implements DeploymentPlugin {
         site: siteInfo,
         website,
       };
+    } catch (error: any) {
+      logger.error('Error during AWS deployment', JSON.stringify({ chatId, error: error.message }));
+
+      throw new Error(`AWS deployment failed: ${error.message}`);
     } finally {
       // Clean up temporary directory
       logger.info('Cleaning up temporary directory', JSON.stringify({ chatId, tempDir }));
+      await rimraf(join(tempDir, 'node_modules'));
+      await rimraf(join(tempDir, '.sst'));
+      await rimraf(join(tempDir, '.next'));
+
+      await fs.cp(tempDir, debugProjectPath, { recursive: true });
       await rimraf(tempDir);
     }
   }
@@ -238,7 +244,41 @@ export default $config({
 
     await writeFile(join(tempDir, 'sst.config.ts'), sstConfig);
 
-    await writeFile('/Users/stevan/Downloads/sst.config.ts', sstConfig);
+    const dockerfileContent = `
+    FROM node:lts-alpine AS base
+
+# Stage 1: Install dependencies
+FROM base AS deps
+WORKDIR /app
+COPY package.json package-lock.json* ./
+COPY sst-env.d.ts* ./
+RUN npm i -g pnpm && pnpm i
+
+# Stage 2: Build the application
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# If static pages do not need linked resources
+RUN npm run build
+
+# If static pages need linked resources
+# RUN --mount=type=secret,id=SST_RESOURCE_MyResource,env=SST_RESOURCE_MyResource \\
+#   npm run build
+
+# Stage 3: Production server
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+EXPOSE 3000
+CMD ["node", "server.js"]
+`;
+
+    await writeFile(join(tempDir, 'Dockerfile'), dockerfileContent);
 
     // Create package.json if it doesn't exist
     const packageJsonPath = join(tempDir, 'package.json');
@@ -264,9 +304,40 @@ export default $config({
           typescript: '^5.0.0',
         },
       };
-
       await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
     }
+
+    // add or replace the "output" field in next.config.ts
+    const nextConfigPath = join(tempDir, 'next.config.ts');
+    const nextConfigExists = await this._fileExists(nextConfigPath);
+    let nextConfigContent = nextConfigExists
+      ? await fs.readFile(nextConfigPath, 'utf-8')
+      : `
+    import type { NextConfig } from 'next';
+
+    const nextConfig: NextConfig = {
+      devIndicators: false,
+      eslint: {
+        ignoreDuringBuilds: true,
+      },
+      typescript: {
+        ignoreBuildErrors: true,
+      },
+      output: 'standalone',
+    };
+
+    export default nextConfig;
+    `;
+
+    if (!nextConfigContent.includes("output: 'standalone'")) {
+      // Ensure the output field is set to 'standalone'
+      nextConfigContent = nextConfigContent.replace(
+        'export default nextConfig;',
+        'export default { ...nextConfig, output: "standalone" };',
+      );
+    }
+
+    await writeFile(nextConfigPath, nextConfigContent);
   }
 
   private _generateStageName(chatId: string): string {
@@ -317,14 +388,23 @@ export default $config({
       proc.stdout?.on('data', (data: Buffer) => {
         const message = data.toString();
         output += message;
+        logger.info(message);
       });
 
       proc.stderr?.on('data', (data: Buffer) => {
         const message = data.toString();
         error += message;
+        logger.error(message);
       });
 
       proc.on('close', (code: number | null) => {
+        const outputLog = {
+          error,
+          output,
+        };
+
+        fs.writeFile(debugLogPath, JSON.stringify(outputLog, null, 2));
+
         if (code === 0) {
           resolve({ output, error });
         } else {
@@ -333,6 +413,12 @@ export default $config({
       });
 
       proc.on('error', (err: Error) => {
+        const outputLog = {
+          error,
+          output,
+        };
+
+        fs.writeFile(debugLogPath, JSON.stringify(outputLog, null, 2));
         reject(err);
       });
     });
