@@ -345,6 +345,118 @@ export class GoogleWorkspaceAPIClient {
   }
 
   /**
+   * Update values in a range
+   */
+  async updateValues(
+    spreadsheetId: string,
+    range: string,
+    values: any[][],
+    valueInputOption: 'RAW' | 'USER_ENTERED' = 'USER_ENTERED',
+  ): Promise<any> {
+    const sheetsClient = await this._getSheetsClient();
+
+    return this._executeRequest(async () => {
+      console.log(`Google Sheets API: Updating values in range: ${range}`);
+
+      const response = await sheetsClient.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        valueInputOption,
+        requestBody: {
+          values,
+        },
+      });
+
+      console.log(`Google Sheets API: Update response:`, response.data);
+
+      return {
+        updatedRange: response.data.updatedRange,
+        updatedRows: response.data.updatedRows,
+        updatedColumns: response.data.updatedColumns,
+        updatedCells: response.data.updatedCells,
+      };
+    });
+  }
+
+  /**
+   * Append values to a sheet
+   */
+  async appendValues(
+    spreadsheetId: string,
+    range: string,
+    values: any[][],
+    valueInputOption: 'RAW' | 'USER_ENTERED' = 'USER_ENTERED',
+    insertDataOption: 'OVERWRITE' | 'INSERT_ROWS' = 'INSERT_ROWS',
+  ): Promise<any> {
+    const sheetsClient = await this._getSheetsClient();
+
+    return this._executeRequest(async () => {
+      console.log(`Google Sheets API: Appending values to range: ${range}`);
+
+      const response = await sheetsClient.spreadsheets.values.append({
+        spreadsheetId,
+        range,
+        valueInputOption,
+        insertDataOption,
+        requestBody: {
+          values,
+        },
+      });
+
+      console.log(`Google Sheets API: Append response:`, response.data);
+
+      return {
+        updatedRange: response.data.updates?.updatedRange,
+        updatedRows: response.data.updates?.updatedRows,
+        updatedColumns: response.data.updates?.updatedColumns,
+        updatedCells: response.data.updates?.updatedCells,
+      };
+    });
+  }
+
+  /**
+   * Clear values in a range
+   */
+  async clearValues(spreadsheetId: string, range: string): Promise<any> {
+    const sheetsClient = await this._getSheetsClient();
+
+    return this._executeRequest(async () => {
+      console.log(`Google Sheets API: Clearing values in range: ${range}`);
+
+      const response = await sheetsClient.spreadsheets.values.clear({
+        spreadsheetId,
+        range,
+      });
+
+      console.log(`Google Sheets API: Clear response:`, response.data);
+
+      return {
+        clearedRange: response.data.clearedRange,
+      };
+    });
+  }
+
+  /**
+   * Batch update spreadsheet (for advanced operations like inserting/deleting rows)
+   */
+  async batchUpdate(spreadsheetId: string, requests: any): Promise<any> {
+    const sheetsClient = await this._getSheetsClient();
+
+    return this._executeRequest(async () => {
+      console.log(`Google Sheets API: Batch update with ${requests.requests?.length || 0} requests`);
+
+      const response = await sheetsClient.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: requests,
+      });
+
+      console.log(`Google Sheets API: Batch update response:`, response.data);
+
+      return response.data;
+    });
+  }
+
+  /**
    * Get request statistics
    */
   getRequestStats(): {

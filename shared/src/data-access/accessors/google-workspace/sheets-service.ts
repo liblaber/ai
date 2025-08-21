@@ -55,6 +55,16 @@ export class GoogleSheetsService {
         return this.getAllSheets();
       case 'getValues':
         return this.getValues(parsedQuery.parameters);
+      case 'updateValues':
+        return this.updateValues(parsedQuery.parameters);
+      case 'appendValues':
+        return this.appendValues(parsedQuery.parameters);
+      case 'clearValues':
+        return this.clearValues(parsedQuery.parameters);
+      case 'insertRow':
+        return this.insertRow(parsedQuery.parameters);
+      case 'deleteRow':
+        return this.deleteRow(parsedQuery.parameters);
       default:
         throw new GoogleWorkspaceError(`Unsupported operation: ${parsedQuery.operation}`);
     }
@@ -1299,5 +1309,193 @@ export class GoogleSheetsService {
       row: rowIndex + 1,
       values: row,
     }));
+  }
+
+  /**
+   * Update values in a specific range
+   */
+  async updateValues(parameters?: any): Promise<any[]> {
+    const range = parameters?.range || 'A1';
+    const values = parameters?.values || [];
+    const valueInputOption = parameters?.valueInputOption || 'USER_ENTERED';
+
+    if (!Array.isArray(values)) {
+      throw new GoogleWorkspaceError('Values must be an array');
+    }
+
+    // Clear cache after write operation
+    this.clearCache();
+
+    const result = await this._apiClient.updateValues(this._spreadsheetId, range, values, valueInputOption);
+
+    return [
+      {
+        range: result.updatedRange,
+        updatedRows: result.updatedRows,
+        updatedColumns: result.updatedColumns,
+        updatedCells: result.updatedCells,
+        success: true,
+      },
+    ];
+  }
+
+  /**
+   * Append values to a sheet
+   */
+  async appendValues(parameters?: any): Promise<any[]> {
+    const range = parameters?.range || 'A1';
+    const values = parameters?.values || [];
+    const valueInputOption = parameters?.valueInputOption || 'USER_ENTERED';
+    const insertDataOption = parameters?.insertDataOption || 'INSERT_ROWS';
+
+    if (!Array.isArray(values)) {
+      throw new GoogleWorkspaceError('Values must be an array');
+    }
+
+    // Clear cache after write operation
+    this.clearCache();
+
+    const result = await this._apiClient.appendValues(
+      this._spreadsheetId,
+      range,
+      values,
+      valueInputOption,
+      insertDataOption,
+    );
+
+    return [
+      {
+        range: result.updatedRange,
+        updatedRows: result.updatedRows,
+        updatedColumns: result.updatedColumns,
+        updatedCells: result.updatedCells,
+        success: true,
+      },
+    ];
+  }
+
+  /**
+   * Clear values in a specific range
+   */
+  async clearValues(parameters?: any): Promise<any[]> {
+    const range = parameters?.range || 'A1';
+
+    // Clear cache after write operation
+    this.clearCache();
+
+    const result = await this._apiClient.clearValues(this._spreadsheetId, range);
+
+    return [
+      {
+        range: result.clearedRange,
+        success: true,
+      },
+    ];
+  }
+
+  /**
+   * Insert a new row with data
+   */
+  async insertRow(parameters?: any): Promise<any[]> {
+    const sheetName = parameters?.sheetName;
+    const values = parameters?.values || [];
+    const insertIndex = parameters?.insertIndex; // Optional: where to insert (0-based)
+
+    if (!sheetName) {
+      throw new GoogleWorkspaceError('Sheet name is required for insertRow operation');
+    }
+
+    if (!Array.isArray(values)) {
+      throw new GoogleWorkspaceError('Values must be an array');
+    }
+
+    // If insertIndex is provided, insert at specific position
+    // Otherwise, append to the end
+    if (insertIndex !== undefined) {
+      // Insert row at specific index using batch update
+      const quotedSheetName = this._quoteSheetName(sheetName);
+      await this._apiClient.batchUpdate(this._spreadsheetId, {
+        requests: [
+          {
+            insertDimension: {
+              range: {
+                sheetId: await this._getSheetId(sheetName),
+                dimension: 'ROWS',
+                startIndex: insertIndex,
+                endIndex: insertIndex + 1,
+              },
+              inheritFromBefore: false,
+            },
+          },
+        ],
+      });
+
+      // Then add the values
+      const range = `${quotedSheetName}!${insertIndex + 1}:${insertIndex + 1}`;
+
+      return this.updateValues({ range, values: [values] });
+    } else {
+      // Append to end
+      const quotedSheetName = this._quoteSheetName(sheetName);
+      const range = `${quotedSheetName}!A:A`;
+
+      return this.appendValues({ range, values: [values] });
+    }
+  }
+
+  /**
+   * Delete a row by index
+   */
+  async deleteRow(parameters?: any): Promise<any[]> {
+    const sheetName = parameters?.sheetName;
+    const rowIndex = parameters?.rowIndex; // 0-based row index
+
+    if (!sheetName) {
+      throw new GoogleWorkspaceError('Sheet name is required for deleteRow operation');
+    }
+
+    if (rowIndex === undefined || rowIndex < 0) {
+      throw new GoogleWorkspaceError('Valid rowIndex (0-based) is required for deleteRow operation');
+    }
+
+    // Clear cache after write operation
+    this.clearCache();
+
+    await this._apiClient.batchUpdate(this._spreadsheetId, {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId: await this._getSheetId(sheetName),
+              dimension: 'ROWS',
+              startIndex: rowIndex,
+              endIndex: rowIndex + 1,
+            },
+          },
+        },
+      ],
+    });
+
+    return [
+      {
+        deletedRow: rowIndex,
+        sheetName,
+        success: true,
+      },
+    ];
+  }
+
+  /**
+   * Get sheet ID by name
+   */
+  private async _getSheetId(sheetName: string): Promise<number> {
+    const spreadsheet = await this._getSpreadsheet();
+    const sheet = spreadsheet.sheets?.find((s) => s.properties?.title === sheetName);
+
+    if (!sheet?.properties?.sheetId) {
+      throw new GoogleWorkspaceError(`Sheet "${sheetName}" not found`);
+    }
+
+    return sheet.properties.sheetId;
   }
 }

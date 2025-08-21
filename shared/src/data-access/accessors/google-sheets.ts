@@ -9,7 +9,7 @@ export class GoogleSheetsAccessor implements BaseAccessor {
   static pluginId = 'google-sheets';
   readonly label = 'Google Sheets';
   readonly preparedStatementPlaceholderExample = '{ range: $1, sheetName: $2, valueRenderOption: $3 }';
-  readonly connectionStringFormat = 'sheets://SPREADSHEET_ID/?auth=oauth2&client_id=xxx&scope=spreadsheets.readonly';
+  readonly connectionStringFormat = 'sheets://SPREADSHEET_ID/?auth=oauth2&client_id=xxx&scope=spreadsheets';
 
   private _authManager: GoogleWorkspaceAuthManager | null = null;
   private _apiClient: GoogleWorkspaceAPIClient | null = null;
@@ -113,17 +113,29 @@ export class GoogleSheetsAccessor implements BaseAccessor {
         throw new GoogleWorkspaceError('Google Sheets query must specify an operation');
       }
 
-      if (!['readRange', 'readSheet', 'getAllSheets', 'getValues'].includes(parsedQuery.operation)) {
+      if (
+        ![
+          'readRange',
+          'readSheet',
+          'getAllSheets',
+          'getValues',
+          'updateValues',
+          'appendValues',
+          'clearValues',
+          'insertRow',
+          'deleteRow',
+        ].includes(parsedQuery.operation)
+      ) {
         throw new GoogleWorkspaceError(
-          'Google Sheets query must specify a valid operation (readRange, readSheet, getAllSheets, getValues)',
+          'Google Sheets query must specify a valid operation (readRange, readSheet, getAllSheets, getValues, updateValues, appendValues, clearValues, insertRow, deleteRow)',
         );
       }
 
-      // Check for potentially dangerous parameters
-      const forbiddenKeys = ['eval', 'function', 'script', 'exec', 'formula'];
+      // Check for potentially dangerous parameters (use word boundaries to avoid false positives)
+      const forbiddenKeys = ['\\beval\\b', '\\bfunction\\s*\\(', '\\bscript\\b', '\\bexec\\b'];
       const queryString = JSON.stringify(parsedQuery).toLowerCase();
 
-      if (forbiddenKeys.some((key) => queryString.includes(key))) {
+      if (forbiddenKeys.some((pattern) => new RegExp(pattern).test(queryString))) {
         throw new GoogleWorkspaceError('Query contains forbidden operations');
       }
 
@@ -138,11 +150,12 @@ export class GoogleSheetsAccessor implements BaseAccessor {
 
       // Validate range format if present
       if (parsedQuery.parameters?.range) {
+        // Allow more flexible sheet names (including periods, hyphens, etc.) and single cell references
         const rangePattern =
-          /^([A-Za-z0-9\s_]+!)?[A-Z]+\d*:[A-Z]+\d*$|^([A-Za-z0-9\s_]+!)?[A-Z]:[A-Z]$|^([A-Za-z0-9\s_]+!)?[A-Z]+:[A-Z]+$/;
+          /^([A-Za-z0-9\s._-]+!)?[A-Z]+\d*$|^([A-Za-z0-9\s._-]+!)?[A-Z]+\d*:[A-Z]+\d*$|^([A-Za-z0-9\s._-]+!)?[A-Z]:[A-Z]$|^([A-Za-z0-9\s._-]+!)?[A-Z]+:[A-Z]+$/;
 
         if (!rangePattern.test(parsedQuery.parameters.range)) {
-          throw new GoogleWorkspaceError('Invalid range format. Use A1 notation (e.g., A1:B10, Sheet1!A:Z)');
+          throw new GoogleWorkspaceError('Invalid range format. Use A1 notation (e.g., A1, A1:B10, Sheet1!A:Z)');
         }
       }
     } catch (error) {
