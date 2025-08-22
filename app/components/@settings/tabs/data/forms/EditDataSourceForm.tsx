@@ -47,6 +47,7 @@ interface EditDataSourceFormProps {
   onDelete: () => void;
 }
 
+// TODO: @kapicic when opening the form for editing we do not get correct fields
 export default function EditDataSourceForm({
   selectedDataSource,
   isSubmitting,

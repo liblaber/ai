@@ -12,9 +12,21 @@ interface SelectOption extends BaseSelectOption {
 interface DataSourcePickerProps {
   onAddNew?: () => void;
   disabled?: boolean;
+  placement?: 'top' | 'bottom';
+  onDataSourceChange?: (
+    dataSourceId: string,
+    environmentId: string,
+    dataSourceName: string,
+    environmentName: string,
+  ) => void;
 }
 
-export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, disabled }) => {
+export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({
+  onAddNew,
+  disabled,
+  onDataSourceChange,
+  placement = 'bottom',
+}) => {
   const { environmentDataSources, selectedEnvironmentDataSource, setSelectedEnvironmentDataSource } =
     useEnvironmentDataSourcesStore();
 
@@ -30,6 +42,46 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
       isAddNew: true,
     },
   ];
+
+  const handleDataSourceChange = async (option: SelectOption | null) => {
+    if (option?.value === 'add-new') {
+      onAddNew?.();
+      return;
+    }
+
+    if (!option?.value) {
+      setSelectedEnvironmentDataSource(null, null);
+      return;
+    }
+
+    const [dataSourceId, environmentId] = option.value.split(':');
+    const dataSource = environmentDataSources.find(
+      (eds) => eds.dataSourceId === dataSourceId && eds.environmentId === environmentId,
+    );
+    console.log({ dataSource, dataSourceId, environmentId, option });
+
+    if (!dataSource) {
+      return;
+    }
+
+    // Check if this is actually a change
+    if (
+      selectedEnvironmentDataSource.dataSourceId === dataSourceId &&
+      selectedEnvironmentDataSource.environmentId === environmentId
+    ) {
+      return; // No change needed
+    }
+
+    setSelectedEnvironmentDataSource(dataSourceId, environmentId);
+
+    // Call the prop function to handle the change
+    onDataSourceChange?.(
+      dataSourceId,
+      environmentId,
+      dataSource.dataSource.name,
+      dataSource.environment.name || 'Unknown',
+    );
+  };
 
   const DropdownIndicator = (props: any) => {
     if (disabled) {
@@ -147,27 +199,14 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
     <div className="flex items-center gap-2">
       <BaseSelect
         value={options.find((option) => option.value === selectedValue)}
-        onChange={(option) => {
-          if (option?.value === 'add-new') {
-            onAddNew?.();
-            return;
-          }
-
-          if (option?.value) {
-            // Parse the composite value back into dataSourceId and environmentId
-            const [dataSourceId, environmentId] = option.value.split(':');
-            setSelectedEnvironmentDataSource(dataSourceId, environmentId);
-          } else {
-            setSelectedEnvironmentDataSource(null, null);
-          }
-        }}
+        onChange={handleDataSourceChange}
         options={options}
         isSearchable={false}
         controlIcon={<IcDatabase className="text-xl" />}
         isDisabled={disabled}
         components={{ DropdownIndicator, Option, SingleValue }}
         styles={customStyles}
-        menuPlacement="bottom"
+        menuPlacement={placement}
       />
     </div>
   );

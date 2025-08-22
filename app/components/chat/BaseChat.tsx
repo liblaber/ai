@@ -11,11 +11,15 @@ import { classNames } from '~/utils/classNames';
 import { Messages } from './Messages.client';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
+import { DataSourceChangeWarningModal } from './DataSourceChangeWarningModal';
+import { toast } from 'sonner';
+import { chatId } from '~/lib/persistence/useConversationHistory';
+import { updateConversation } from '~/lib/persistence/conversations';
 
 import type { CodeError } from '~/types/actions';
 import ProgressCompilation from './ProgressCompilation';
 import type { ProgressAnnotation } from '~/types/context';
-import type { ActionRunner } from '~/lib/runtime/action-runner';
+import { ActionRunner } from '~/lib/runtime/action-runner';
 import { ChatTextarea } from './ChatTextarea';
 import { AUTOFIX_ATTEMPT_EVENT } from '~/lib/error-handler';
 import { useSession } from '~/auth/auth-client';
@@ -91,6 +95,18 @@ export const BaseChat = ({
   const [progressAnnotations, setProgressAnnotations] = useState<ProgressAnnotation[]>([]);
   const { environmentDataSources } = useEnvironmentDataSourcesStore();
   const { data: session } = useSession();
+  // const { actionRunner: workbenchActionRunner } = useActionRunner();
+
+  // Data source change modal state
+  const [showDataSourceChangeModal, setShowDataSourceChangeModal] = useState(false);
+  const [pendingDataSourceChange, setPendingDataSourceChange] = useState<{
+    dataSourceId: string;
+    environmentId: string;
+    dataSourceName: string;
+    environmentName: string;
+  } | null>(null);
+  const [isUpdatingDataSource, setIsUpdatingDataSource] = useState(false);
+
   const [browserInfo, setBrowserInfo] = useState<BrowserInfo>(() => ({
     name: 'Other',
     version: 'unknown',
@@ -100,6 +116,88 @@ export const BaseChat = ({
   useEffect(() => {
     setBrowserInfo(detectBrowser());
   }, []);
+
+  // Data source change handlers
+  const handleDataSourceChangeRequest = (
+    dataSourceId: string,
+    environmentId: string,
+    dataSourceName: string,
+    environmentName: string,
+  ) => {
+    setPendingDataSourceChange({
+      dataSourceId,
+      environmentId,
+      dataSourceName,
+      environmentName,
+    });
+    setShowDataSourceChangeModal(true);
+  };
+
+  const handleDataSourceChangeConfirm = async () => {
+    if (!pendingDataSourceChange) {
+      setShowDataSourceChangeModal(false);
+      setPendingDataSourceChange(null);
+
+      return;
+    }
+
+    setIsUpdatingDataSource(true);
+
+    try {
+      // Get the connection string for the new data source
+      const response = await fetch(
+        `/api/data-sources/${pendingDataSourceChange.dataSourceId}/url?environmentId=${pendingDataSourceChange.environmentId}`,
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to get connection string');
+      }
+
+      const data = (await response.json()) as { success: boolean; url?: string; error?: string };
+
+      if (!data.success || !data.url) {
+        throw new Error(data.error || 'No connection string available');
+      }
+
+      // Update the .env file with the new DATABASE_URL
+      const encodedConnectionString = encodeURIComponent(data.url);
+      // TODO: @kapicic we need to update the snapshot with the new connection string as well
+      await ActionRunner.updateEnvironmentVariable('DATABASE_URL', encodedConnectionString);
+
+      // Update the selected data source in the store
+      const { setSelectedEnvironmentDataSource } = useEnvironmentDataSourcesStore.getState();
+      setSelectedEnvironmentDataSource(pendingDataSourceChange.dataSourceId, pendingDataSourceChange.environmentId);
+
+      // Update the current conversation in the database
+      const currentChatId = chatId.get();
+
+      if (currentChatId) {
+        try {
+          await updateConversation(currentChatId, {
+            environmentId: pendingDataSourceChange.environmentId,
+            dataSourceId: pendingDataSourceChange.dataSourceId,
+          });
+        } catch (error) {
+          console.warn('Failed to update conversation data source:', error);
+          // Don't fail the entire operation if conversation update fails
+        }
+      }
+
+      toast.success('Data source changed successfully. Please restart your application.');
+    } catch (error) {
+      console.error('Failed to change data source:', error);
+      toast.error('Failed to change data source. Please try again.');
+    } finally {
+      setIsUpdatingDataSource(false);
+      setShowDataSourceChangeModal(false);
+      setPendingDataSourceChange(null);
+    }
+  };
+
+  const handleDataSourceChangeCancel = () => {
+    setShowDataSourceChangeModal(false);
+    setPendingDataSourceChange(null);
+  };
 
   useEffect(() => {
     if (data) {
@@ -354,6 +452,7 @@ export const BaseChat = ({
                   onSend={handleSendMessage}
                   isStreaming={isStreaming}
                   handleStop={handleStop}
+                  onDataSourceChange={handleDataSourceChangeRequest}
                 />
               )}
             </div>
@@ -376,6 +475,16 @@ export const BaseChat = ({
 
       {/* Browser Compatibility Modal */}
       <BrowserCompatibilityModal isOpen={!browserInfo.supportsWebContainers} />
+
+      {/* Data Source Change Warning Modal */}
+      <DataSourceChangeWarningModal
+        isOpen={showDataSourceChangeModal}
+        onClose={handleDataSourceChangeCancel}
+        onConfirm={handleDataSourceChangeConfirm}
+        newDataSourceName={pendingDataSourceChange?.dataSourceName || ''}
+        newEnvironmentName={pendingDataSourceChange?.environmentName || ''}
+        isLoading={isUpdatingDataSource}
+      />
     </div>
   );
 

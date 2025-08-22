@@ -108,6 +108,60 @@ export class ActionRunner {
     return pid;
   }
 
+  static async updateEnvironmentVariable(envName: string, envValue: string): Promise<void> {
+    try {
+      const webcontainer = await webcontainerPromise();
+      const envFilePath = '.env';
+
+      // Check if .env file exists
+      let currentContent = '';
+
+      try {
+        currentContent = await webcontainer.fs.readFile(envFilePath, 'utf-8');
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_error) {
+        // .env file doesn't exist, create it
+        currentContent = '';
+      }
+
+      // Parse existing environment variables
+      const envLines = currentContent.split('\n');
+      const envMap = new Map<string, string>();
+
+      // Parse existing variables
+      envLines.forEach((line) => {
+        const trimmedLine = line.trim();
+
+        if (trimmedLine && !trimmedLine.startsWith('#')) {
+          const equalIndex = trimmedLine.indexOf('=');
+
+          if (equalIndex > 0) {
+            const key = trimmedLine.substring(0, equalIndex);
+            const value = trimmedLine.substring(equalIndex + 1);
+            envMap.set(key, value);
+          }
+        }
+      });
+
+      // Update or add the new environment variable
+      envMap.set(envName, envValue);
+
+      // Reconstruct the .env file content
+      const newContent = Array.from(envMap.entries())
+        .map(([key, value]) => `${key}=${value}`)
+        .join('\n');
+
+      // Write the updated .env file
+      await webcontainer.fs.writeFile(envFilePath, newContent);
+      logger.debug(`Updated environment variable ${envName} in .env file`);
+    } catch (error) {
+      logger.error('Failed to update environment variable:', error);
+      throw new Error(
+        `Failed to update environment variable ${envName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
   static #getCommandPid(targetCommand: string, psOutput?: string): number | null {
     if (!psOutput) {
       return null;
@@ -199,19 +253,6 @@ export class ActionRunner {
     await this.#currentExecutionPromise;
 
     return;
-  }
-
-  async getFileHistory(filePath: string): Promise<FileHistory | null> {
-    try {
-      const webcontainer = await webcontainerPromise();
-      const historyPath = this.#getHistoryPath(filePath);
-      const content = await webcontainer.fs.readFile(historyPath, 'utf-8');
-
-      return JSON.parse(content);
-    } catch (error) {
-      logger.error('Failed to get file history:', error);
-      return null;
-    }
   }
 
   async saveFileHistory(filePath: string, history: FileHistory) {
@@ -468,7 +509,7 @@ export class ActionRunner {
     this.actions.setKey(id, { ...actions[id], ...newState });
   }
 
-  #getHistoryPath(filePath: string) {
+  async #getHistoryPath(filePath: string) {
     return nodePath.join('.history', filePath);
   }
 

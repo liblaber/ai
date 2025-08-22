@@ -45,7 +45,7 @@ export const conversationService = {
     });
   },
 
-  async updateConversationDescription(
+  async updateConversation(
     conversationId: string,
     userId: string,
     data: Partial<Conversation>,

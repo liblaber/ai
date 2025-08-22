@@ -40,6 +40,8 @@ export type SimpleConversationResponse = Omit<ConversationResponse, 'messages'>;
 
 export type UpdateConversationRequest = {
   description?: string;
+  environmentId?: string;
+  dataSourceId?: string;
 };
 
 type UIConversation = Omit<ConversationResponse, 'messages'> & {

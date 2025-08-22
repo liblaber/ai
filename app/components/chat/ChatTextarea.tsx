@@ -31,6 +31,12 @@ interface ChatTextareaProps {
   onSend: (e: React.UIEvent) => void;
   isStreaming?: boolean;
   handleStop?: () => void;
+  onDataSourceChange?: (
+    dataSourceId: string,
+    environmentId: string,
+    dataSourceName: string,
+    environmentName: string,
+  ) => void;
 }
 
 export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
@@ -53,6 +59,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
       onSend,
       isStreaming = false,
       handleStop,
+      onDataSourceChange,
     },
     ref,
   ) => {
@@ -158,7 +165,12 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
         <div className="flex justify-between items-center text-sm mt-2">
           <div className="flex gap-1 items-center">
             {environmentDataSources.length > 0 ? (
-              <DataSourcePicker onAddNew={handleConnectDataSource} disabled={true} />
+              <DataSourcePicker
+                onAddNew={handleConnectDataSource}
+                disabled={false}
+                onDataSourceChange={onDataSourceChange}
+                placement={'top'}
+              />
             ) : (
               <button
                 onClick={handleConnectDataSource}
