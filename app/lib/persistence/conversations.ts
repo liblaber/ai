@@ -88,7 +88,6 @@ export async function getConversation(id: string): Promise<UIConversation> {
   };
 }
 
-// TODO: @skos this needs to be updated when we introduce EnvironmentDataSource[] on Conversation
 export async function createConversation(
   dataSourceId: string,
   environmentId: string,

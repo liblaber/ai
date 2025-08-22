@@ -21,15 +21,80 @@ ALTER TYPE "public"."PermissionResource" ADD VALUE 'EnvironmentVariable';
 ALTER TABLE "public"."conversation" DROP CONSTRAINT "conversation_dataSourceId_fkey";
 
 -- AlterTable
-ALTER TABLE "public"."conversation" DROP COLUMN "dataSourceId",
-ADD COLUMN     "data_source_id" TEXT NOT NULL,
-ADD COLUMN     "environment_id" TEXT NOT NULL;
+ALTER TABLE "public"."conversation"
+ADD COLUMN     "data_source_id" TEXT,
+ADD COLUMN     "environment_id" TEXT;
+
+
+
+UPDATE "public"."conversation"
+SET data_source_id = "dataSourceId";
+
+-- First, try to update conversations where users have organizations with Development environments
+WITH user_orgs AS (
+  SELECT u.id as user_id, u."organizationId" as organization_id
+  FROM "public"."user" u
+  WHERE u."organizationId" IS NOT NULL
+),
+dev_envs AS (
+  SELECT e.id as env_id, e.organization_id
+  FROM "public"."environment" e
+  WHERE e.name = 'Development'
+)
+UPDATE "public"."conversation" c
+SET environment_id = dev_envs.env_id
+FROM user_orgs, dev_envs
+WHERE c."userId" = user_orgs.user_id
+AND user_orgs.organization_id = dev_envs.organization_id;
+
+-- Then, for any remaining conversations without environment_id,
+-- find any available environment (prioritizing Development if available)
+UPDATE "public"."conversation" c
+SET environment_id = (
+  SELECT e.id
+  FROM "public"."environment" e
+  WHERE e.organization_id = (
+    SELECT u."organizationId"
+    FROM "public"."user" u
+    WHERE u.id = c."userId"
+  )
+  ORDER BY CASE WHEN e.name = 'Development' THEN 0 ELSE 1 END, e.name
+  LIMIT 1
+)
+WHERE c.environment_id IS NULL;
+
+-- If still no environment_id, use the first available environment
+UPDATE "public"."conversation" c
+SET environment_id = (
+  SELECT e.id
+  FROM "public"."environment" e
+  LIMIT 1
+)
+WHERE c.environment_id IS NULL;
+
+
+ALTER TABLE "public"."conversation" ALTER COLUMN "data_source_id" SET NOT NULL;
+ALTER TABLE "public"."conversation" ALTER COLUMN "environment_id" SET NOT NULL;
+
+ALTER TABLE "public"."conversation" DROP COLUMN "dataSourceId";
 
 -- AlterTable
 ALTER TABLE "public"."data_source" DROP COLUMN "connection_string";
 
 -- AlterTable
 ALTER TABLE "public"."environment_data_source" ADD COLUMN     "updated_at" TIMESTAMP(3) NOT NULL;
+
+-- Insert missing environment_data_source rows for existing conversations
+INSERT INTO "public"."environment_data_source" ("environment_id", "data_source_id", "created_at", "updated_at")
+SELECT DISTINCT c.environment_id, c.data_source_id, NOW(), NOW()
+FROM "public"."conversation" c
+WHERE c.environment_id IS NOT NULL
+  AND c.data_source_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM "public"."environment_data_source" eds
+    WHERE eds.environment_id = c.environment_id
+      AND eds.data_source_id = c.data_source_id
+  );
 
 -- CreateTable
 CREATE TABLE "public"."data_source_property" (

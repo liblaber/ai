@@ -2,7 +2,6 @@ import { prisma } from '~/lib/prisma';
 import { type Conversation, type EnvironmentDataSource, type Prisma } from '@prisma/client';
 import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
 
-// TODO: @skos Update the whole service based on the new schema design
 export const conversationService = {
   async getConversation(conversationId: string): Promise<Conversation | null> {
     return await prisma.conversation.findUnique({

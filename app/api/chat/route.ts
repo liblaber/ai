@@ -10,7 +10,6 @@ import { messageService } from '~/lib/services/messageService';
 import { MESSAGE_ROLE } from '~/types/database';
 import { createId } from '@paralleldrive/cuid2';
 import { conversationService } from '~/lib/services/conversationService';
-import type { StarterPluginId } from '~/lib/plugins/types';
 import type { FileMap } from '~/lib/stores/files';
 import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
@@ -331,7 +330,7 @@ async function chatAction(request: NextRequest) {
             options,
             files,
             promptId,
-            starterId: conversation?.starterId as StarterPluginId,
+            conversation: conversation!,
             contextOptimization,
             contextFiles: filteredFiles,
             summary,

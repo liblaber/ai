@@ -516,7 +516,6 @@ export const ChatImpl = ({
       content: formatMessageWithModelInfo({
         messageContent,
         firstUserMessage: true,
-        // TODO: @skos check where is the selection validated. Can we omit ! ?
         environmentDataSource: {
           dataSourceId: selectedEnvironmentDataSource.dataSourceId!,
           environmentId: selectedEnvironmentDataSource.environmentId!,

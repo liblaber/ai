@@ -40,6 +40,7 @@ enum DataSourcePropertyType {
 
 model DataSourceProperty {
   id        String   @id @default(cuid())
+  // TODO: update to enum after and migrate all existing datasource connection strings
   type      String
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

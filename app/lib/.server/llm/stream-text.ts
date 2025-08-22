@@ -12,9 +12,10 @@ import { generateSqlQueries, shouldGenerateSqlQueries } from '~/lib/.server/llm/
 import { getDatabaseSchema } from '~/lib/schema';
 import { mapSqlQueriesToPrompt } from '~/lib/common/prompts/sql';
 import { getLlm } from '~/lib/.server/llm/get-llm';
-import { prisma } from '~/lib/prisma';
 import { requireUserId } from '~/auth/session';
 import type { StarterPluginId } from '~/lib/plugins/types';
+import { type Conversation } from '@prisma/client';
+import { getDatabaseUrl } from '~/lib/services/dataSourceService';
 
 export type Messages = Message[];
 
@@ -27,7 +28,7 @@ export async function streamText(props: {
   options?: StreamingOptions;
   files?: FileMap;
   promptId?: string;
-  starterId?: StarterPluginId;
+  conversation: Conversation;
   contextOptimization?: boolean;
   contextFiles?: FileMap;
   summary?: string;
@@ -40,21 +41,18 @@ export async function streamText(props: {
     options,
     files,
     promptId,
-    starterId,
+    conversation,
     contextOptimization,
     contextFiles,
     summary,
     implementationPlan,
     request,
   } = props;
-  let currentDataSourceId: string | undefined = '';
+  const currentDataSourceId: string | undefined = conversation.dataSourceId;
 
   let processedMessages = messages.map((message) => {
     if (message.role === MessageRole.User) {
       const { content, isFirstUserMessage } = extractPropertiesFromMessage(message);
-
-      // TODO: @skos The current environmentDataSource from conversation should be passed in to streamText and used here!
-      currentDataSourceId = '';
 
       return { ...message, content, isFirstUserMessage };
     } else if (message.role == MessageRole.Assistant) {
@@ -77,7 +75,7 @@ export async function streamText(props: {
   let systemPrompt =
     (await PromptLibrary.getPromptFromLibrary(promptId || 'default', {
       cwd: WORK_DIR,
-      starterId,
+      starterId: conversation.starterId as StarterPluginId,
       allowedHtmlElements: allowedHTMLElements,
       modificationTagName: MODIFICATIONS_TAG_NAME,
     })) ?? (await getSystemPrompt());
@@ -134,17 +132,14 @@ ${props.summary}
   if (isFirstUserMessage(processedMessages) || (await shouldGenerateSqlQueries(lastUserMessage, existingQueries))) {
     const userId = await requireUserId(request);
 
-    // TODO: @skos the schema should be fetched here + the connection string from the top
-    const schema = await getDatabaseSchema(currentDataSourceId, 'pass in environment id', userId);
-    const dataSource = await prisma.dataSource.findUniqueOrThrow({
-      where: { id: currentDataSourceId, createdById: userId },
-    });
+    const schema = await getDatabaseSchema(currentDataSourceId, conversation.environmentId, userId);
+
+    const databaseUrl = await getDatabaseUrl(userId, currentDataSourceId, conversation.environmentId);
 
     const sqlQueries = await generateSqlQueries({
       schema,
       userPrompt: lastUserMessage,
-      // TODO: @skos pass the actual connection url here, not name!!
-      connectionString: dataSource.name,
+      connectionString: databaseUrl!,
       implementationPlan,
       existingQueries,
     });
