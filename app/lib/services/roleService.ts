@@ -1,6 +1,6 @@
 import { prisma } from '~/lib/prisma';
 import { RoleScope } from '@prisma/client';
-import { type Role, PermissionResource } from '@prisma/client';
+import { type Role, PermissionAction, PermissionResource } from '@prisma/client';
 import { permissionLevels, type PermissionLevel } from '~/lib/services/permissionService';
 
 export type ResourceRoleScope = Exclude<RoleScope, 'GENERAL'>;
@@ -79,7 +79,7 @@ export async function findOrCreateResourceRole(
   }
 
   const permissionData: {
-    action: any;
+    action: PermissionAction;
     resource: PermissionResource;
     dataSourceId?: string;
     environmentId?: string;

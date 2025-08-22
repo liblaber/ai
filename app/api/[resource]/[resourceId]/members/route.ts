@@ -75,10 +75,14 @@ export async function POST(
     resourceLabel,
   );
 }
+interface ResourceForPermissionCheck {
+  id: string;
+  createdById?: string;
+}
 
 interface ResourceConfig {
-  fetchFunction: (id: string) => Promise<any>;
-  permissionResource: PermissionResource;
+  fetchFunction: (id: string) => Promise<ResourceForPermissionCheck | null>;
+  permissionResource: 'DataSource' | 'Environment' | 'Website';
   roleScope: ResourceRoleScope;
   resourceLabel: string;
 }
