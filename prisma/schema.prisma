@@ -18,6 +18,7 @@ datasource db {
 model DataSource {
   id               String         @id @default(cuid())
   name             String
+  type             DataSourceType
   connectionString String         @map("connection_string")
   createdAt        DateTime       @default(now()) @map("created_at")
   updatedAt        DateTime       @updatedAt @map("updated_at")
@@ -216,6 +217,14 @@ enum PermissionResource {
   Website
   BuilderApp
   AdminApp
+}
+
+enum DataSourceType {
+  MYSQL
+  POSTGRES
+  SQLITE
+  MONGODB
+  HUBSPOT
 }
 
 model Permission {

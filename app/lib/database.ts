@@ -1,8 +1,17 @@
 import { logger } from '~/utils/logger';
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
+import { getDataSourceByConnectionString } from '~/lib/services/datasourceService';
+import type { BaseDatabaseAccessor } from '@liblab/data-access/baseDatabaseAccessor';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 export async function executeQuery(connectionUrl: string, query: string, params?: string[]): Promise<any[]> {
-  const dataAccessor = DataSourcePluginManager.getAccessor(connectionUrl);
+  const dataSource = await getDataSourceByConnectionString(connectionUrl);
+
+  if (!dataSource) {
+    throw new Error('Data source not found for the provided connection URL');
+  }
+
+  const dataAccessor = DataSourcePluginManager.getAccessor(dataSource.type as DataSourceType) as BaseDatabaseAccessor;
 
   try {
     await dataAccessor.initialize(connectionUrl);

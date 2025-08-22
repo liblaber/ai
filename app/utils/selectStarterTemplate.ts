@@ -4,6 +4,7 @@ import type { FileMap } from '~/lib/stores/files';
 import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import { logger } from '~/utils/logger';
 import { workbenchStore } from '~/lib/stores/workbench';
+import type { DataSourcePropertyResponse } from '~/components/chat/Chat.client';
 
 export type RepoFile = { name: string; path: string; content: string };
 
@@ -12,9 +13,11 @@ interface StarterTemplateResponse {
   error?: string;
 }
 
-async function writeSensitiveDataToEnvFile(files: FileMap, databaseUrl: string): Promise<FileMap> {
+async function writeSensitiveDataToEnvFile(
+  files: FileMap,
+  dataSourceProperties: DataSourcePropertyResponse[],
+): Promise<FileMap> {
   const envPath = Object.keys(files).find((key) => key.includes('.env')) || '.env';
-  const encodedDatabaseUrl = encodeURIComponent(databaseUrl);
   const encryptionKeyResponse = await fetch('/api/encryption-key');
 
   if (!encryptionKeyResponse.ok) {
@@ -29,18 +32,24 @@ async function writeSensitiveDataToEnvFile(files: FileMap, databaseUrl: string):
 
   let content = '';
 
-  if (files[envPath] && files[envPath]?.type === 'file') {
-    // Append database URL to existing env file content
-    const existingContent = files[envPath]?.content.trim() || '';
-    content = existingContent
-      ? `${existingContent}\nDATABASE_URL='${encodedDatabaseUrl}'`
-      : `DATABASE_URL='${encodedDatabaseUrl}'`;
-    content += '\n'; // Ensure it ends with a newline
-    content += `ENCRYPTION_KEY='${encryptionKey}'\n`;
-  } else {
-    content = `DATABASE_URL='${encodedDatabaseUrl}'\n`;
-    content += `ENCRYPTION_KEY='${encryptionKey}'\n`;
+  for (const property of dataSourceProperties) {
+    const encodedPropertyValue = encodeURIComponent(property.value);
+
+    if (files[envPath] && files[envPath]?.type === 'file') {
+      // Append database URL to existing env file content
+      const existingContent = files[envPath]?.content.trim() || '';
+      content = existingContent
+        ? `${existingContent}\n${property.type}='${encodedPropertyValue}'`
+        : `${property.type}='${encodedPropertyValue}'`;
+      content += '\n'; // Ensure it ends with a newline
+    } else {
+      content = `${property.type}='${encodedPropertyValue}'\n`;
+    }
   }
+
+  // Until we support multiple data sources, just use the first one
+  content += `DATA_SOURCE_TYPE='${dataSourceProperties[0]?.dataSourceType}'\n`;
+  content += `ENCRYPTION_KEY='${encryptionKey}'\n`;
 
   return {
     ...files,
@@ -52,10 +61,10 @@ async function writeSensitiveDataToEnvFile(files: FileMap, databaseUrl: string):
   };
 }
 
-export const getStarterTemplateFiles = async (databaseUrl?: string): Promise<FileMap> => {
+export const getStarterTemplateFiles = async (
+  dataSourceProperties?: DataSourcePropertyResponse[],
+): Promise<FileMap> => {
   try {
-    logger.info('fetching starter template files from API with databaseUrl:', databaseUrl);
-
     workbenchStore.previewsStore.loadingText.set('Fetching project assets...');
 
     const response = await fetch('/api/starter-template');
@@ -78,11 +87,11 @@ export const getStarterTemplateFiles = async (databaseUrl?: string): Promise<Fil
       throw new Error('No files returned from starter template API');
     }
 
-    if (!databaseUrl) {
+    if (!dataSourceProperties?.length) {
       return data.files;
     }
 
-    return writeSensitiveDataToEnvFile(data.files, databaseUrl);
+    return writeSensitiveDataToEnvFile(data.files, dataSourceProperties);
   } catch (error) {
     logger.error('Error fetching starter template:', error);
 
@@ -91,9 +100,12 @@ export const getStarterTemplateFiles = async (databaseUrl?: string): Promise<Fil
   }
 };
 
-export async function getStarterTemplateMessages(title: string, databaseUrl: string): Promise<Message[]> {
+export async function getStarterTemplateMessages(
+  title: string,
+  dataSourceProperties: DataSourcePropertyResponse[],
+): Promise<Message[]> {
   try {
-    const starterFiles = await getStarterTemplateFiles(databaseUrl);
+    const starterFiles = await getStarterTemplateFiles(dataSourceProperties);
 
     // If no files returned, don't create starter template messages
     if (!starterFiles || Object.keys(starterFiles).length === 0) {

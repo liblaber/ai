@@ -1,6 +1,7 @@
 import { prisma } from '~/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId } from '~/auth/session';
+import { DataSourceType } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   const userId = await requireUserId(request);
@@ -22,6 +23,7 @@ export async function POST(request: NextRequest) {
         createdById: userId,
         name: 'Sample Database',
         connectionString: 'sqlite://sample.db',
+        type: DataSourceType.SQLITE,
       },
     });
 

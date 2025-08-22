@@ -1,7 +1,7 @@
 import { decryptData, encryptData } from '@/lib/encryption/encryption';
 
 export async function executeQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
-  const databaseUrl = decodeURIComponent(process.env.DATABASE_URL || '');
+  const databaseUrl = decodeURIComponent(process.env.CONNECTION_URL || '');
 
   const requestBody = {
     query,

@@ -39,9 +39,17 @@ import { useTrackStreamProgress } from '~/components/chat/useTrackStreamProgress
 import type { ProgressAnnotation } from '~/types/context';
 import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
+import type { DataSourcePropertyType } from '~/lib/datasource';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
 
-type DatabaseUrlResponse = {
-  url: string;
+export type DataSourcePropertyResponse = {
+  type: DataSourcePropertyType;
+  value: string;
+  dataSourceType: DataSourceType;
+};
+
+type DataSourcePropertiesResponse = {
+  properties: DataSourcePropertyResponse[];
 };
 
 interface ChatProps {
@@ -123,7 +131,7 @@ export const ChatImpl = ({
   const [fakeLoading, setFakeLoading] = useState(false);
   const files = useStore(workbenchStore.files);
   const { contextOptimizationEnabled } = useSettings();
-  const [dataSourceUrl, setDataSourceUrl] = useState<string>('');
+  const [dataSourceProperties, setDataSourceProperties] = useState<DataSourcePropertyResponse[]>();
   const [shouldUpdateUrl, setShouldUpdateUrl] = useState(false);
 
   useEffect(() => {
@@ -200,7 +208,7 @@ export const ChatImpl = ({
           } else {
             // For new conversations, try to get starter template but don't fail if it doesn't work
             try {
-              fileMapToRevertTo = await getStarterTemplateFiles(dataSourceUrl);
+              fileMapToRevertTo = await getStarterTemplateFiles(dataSourceProperties);
             } catch (starterError) {
               logger.warn('Could not load starter template during error recovery, using empty file map:', starterError);
               fileMapToRevertTo = {};
@@ -468,7 +476,7 @@ export const ChatImpl = ({
       // Store the conversation ID for potential future navigation
     }
 
-    const dataSourceUrlResponse = await fetch(`/api/data-sources/${datasourceId}/url`);
+    const dataSourceUrlResponse = await fetch(`/api/data-sources/${datasourceId}/properties`);
 
     if (!dataSourceUrlResponse.ok) {
       console.error('Failed to fetch database URL:', dataSourceUrlResponse.status);
@@ -477,21 +485,23 @@ export const ChatImpl = ({
       return;
     }
 
-    const dataSourceUrlJson = await dataSourceUrlResponse.json<DatabaseUrlResponse>();
+    const dataSourceUrlJson = await dataSourceUrlResponse.json<DataSourcePropertiesResponse>();
 
-    const databaseUrl = dataSourceUrlJson.url;
-    setDataSourceUrl(databaseUrl);
+    const dataSourceProperties = dataSourceUrlJson.properties;
+    setDataSourceProperties(dataSourceProperties);
 
-    const starterTemplateMessages = await getStarterTemplateMessages(messageContent, databaseUrl).catch((e) => {
-      if (e.message.includes('rate limit')) {
-        toast.warning('Rate limit exceeded. Skipping starter template\n Continuing with blank template');
-      } else {
-        console.error('Failed to import starter template:', e);
-        toast.warning('Failed to import starter template\n Continuing with blank template');
-      }
+    const starterTemplateMessages = await getStarterTemplateMessages(messageContent, dataSourceProperties).catch(
+      (e) => {
+        if (e.message.includes('rate limit')) {
+          toast.warning('Rate limit exceeded. Skipping starter template\n Continuing with blank template');
+        } else {
+          console.error('Failed to import starter template:', e);
+          toast.warning('Failed to import starter template\n Continuing with blank template');
+        }
 
-      return [];
-    });
+        return [];
+      },
+    );
 
     const userMessage = {
       id: createId(),

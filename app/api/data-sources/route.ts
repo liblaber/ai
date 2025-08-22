@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createDataSource, getDataSources } from '~/lib/services/datasourceService';
 import { requireUserAbility } from '~/auth/session';
-import { PermissionAction, PermissionResource } from '@prisma/client';
+import { DataSourceType, PermissionAction, PermissionResource } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   const { userAbility } = await requireUserAbility(request);
@@ -23,15 +23,21 @@ export async function POST(request: NextRequest) {
   }
 
   const formData = await request.formData();
-  const connectionString = formData.get('connectionString') as string;
   const name = formData.get('name') as string;
+  const type = formData.get('type') as DataSourceType;
+
+  const propertiesJson = formData.get('properties') as string;
+  const properties = JSON.parse(propertiesJson);
 
   try {
     const dataSource = await createDataSource({
       name,
-      connectionString,
+      type,
+      properties,
       createdById: userId,
     });
+
+    console.log('Created Data Source:', dataSource);
 
     return NextResponse.json({ success: true, dataSource });
   } catch (error) {

@@ -9,11 +9,13 @@ import { toast } from 'sonner';
 import { useDataSourcesStore } from '~/lib/stores/dataSources';
 import { settingsPanelStore, useSettingsStore } from '~/lib/stores/settings';
 import { useStore } from '@nanostores/react';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 export interface DataSource {
   id: string;
   name: string;
   connectionString: string;
+  type: DataSourceType;
   createdAt: string;
   updatedAt: string;
 }

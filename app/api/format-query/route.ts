@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { DataAccessor } from '@liblab/data-access/dataAccessor';
-import { getConnectionProtocol } from '@liblab/data-access/utils/connection';
 import { requireUserId } from '~/auth/session';
 import { prisma } from '~/lib/prisma';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 const requestSchema = z.object({
   query: z.string(),
@@ -22,8 +22,7 @@ export async function POST(request: NextRequest) {
       where: { id: dataSourceId, createdById: userId },
     });
 
-    const type = getConnectionProtocol(dataSource.connectionString);
-    const accessor = DataAccessor.getByDatabaseType(type);
+    const accessor = DataAccessor.getDatabaseAccessor(dataSource.type as DataSourceType);
 
     if (!accessor) {
       return NextResponse.json({ error: 'Unsupported database type' }, { status: 400 });

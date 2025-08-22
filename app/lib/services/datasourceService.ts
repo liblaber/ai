@@ -1,8 +1,9 @@
 import { prisma } from '~/lib/prisma';
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import { buildResourceWhereClause } from '@/lib/casl/prisma-helpers';
-import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
+import { DataSourceType, PermissionAction, PermissionResource, Prisma } from '@prisma/client';
 import type { AppAbility } from '~/lib/casl/user-ability';
+import type { DataSourceProperty, DataSourceType as SharedDataSourceType } from '@liblab/data-access/utils/types';
 
 export interface DataSource {
   id: string;
@@ -10,6 +11,7 @@ export interface DataSource {
   connectionString: string;
   createdAt: Date;
   updatedAt: Date;
+  type: DataSourceType;
 }
 
 export async function getDataSource(id: string, userId: string): Promise<DataSource | null> {
@@ -21,6 +23,7 @@ export async function getDataSource(id: string, userId: string): Promise<DataSou
       connectionString: true,
       createdAt: true,
       updatedAt: true,
+      type: true,
     },
   });
 }
@@ -40,32 +43,49 @@ export async function getDataSources(userAbility: AppAbility): Promise<DataSourc
       connectionString: true,
       createdAt: true,
       updatedAt: true,
+      type: true,
     },
   });
 }
 
 export async function createDataSource(data: {
   name: string;
-  connectionString: string;
+  type: DataSourceType;
+  properties: DataSourceProperty[];
   createdById: string;
 }): Promise<DataSource> {
-  validateDataSource(data.connectionString);
+  const accessor = DataSourcePluginManager.getAccessor(data.type as SharedDataSourceType);
+
+  accessor.validateProperties(data.properties);
+
+  const connectionString = extractDataSourceProperty(data.properties);
 
   return prisma.dataSource.create({
     data: {
       name: data.name,
-      connectionString: data.connectionString,
+      connectionString,
       createdById: data.createdById,
+      type: data.type,
     },
   });
 }
 
-export async function updateDataSource(data: { id: string; name: string; connectionString: string; userId: string }) {
-  validateDataSource(data.connectionString);
+export async function updateDataSource(data: {
+  id: string;
+  name: string;
+  type: DataSourceType;
+  properties: any[];
+  userId: string;
+}) {
+  const accessor = DataSourcePluginManager.getAccessor(data.type as SharedDataSourceType);
+
+  accessor.validateProperties(data.properties);
+
+  const connectionString = extractDataSourceProperty(data.properties);
 
   return prisma.dataSource.update({
     where: { id: data.id, createdById: data.userId },
-    data: { name: data.name, connectionString: data.connectionString },
+    data: { name: data.name, connectionString },
   });
 }
 
@@ -88,6 +108,20 @@ export async function getDatabaseUrl(userId: string, datasourceId: string) {
   return dataSource.connectionString;
 }
 
+export async function getDataSourceByConnectionString(connectionString: string) {
+  return prisma.dataSource.findFirst({
+    where: { connectionString },
+    select: {
+      id: true,
+      name: true,
+      connectionString: true,
+      createdAt: true,
+      updatedAt: true,
+      type: true,
+    },
+  });
+}
+
 export async function getConversationCount(dataSourceId: string, userId: string): Promise<number> {
   return prisma.conversation.count({
     where: {
@@ -97,7 +131,12 @@ export async function getConversationCount(dataSourceId: string, userId: string)
   });
 }
 
-function validateDataSource(connectionString: string) {
-  const accessor = DataSourcePluginManager.getAccessor(connectionString);
-  accessor.validate(connectionString);
+function extractDataSourceProperty(properties: DataSourceProperty[]): string {
+  const firstProperty = properties?.[0];
+
+  if (!firstProperty?.value) {
+    throw new Error('Missing required fields');
+  }
+
+  return firstProperty.value;
 }

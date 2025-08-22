@@ -4,20 +4,21 @@ import { usePluginStore } from '~/lib/plugins/plugin-store';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useMemo } from 'react';
 import { type DataAccessPluginId, PluginType } from '~/lib/plugins/types';
+import type { DataSourcePropertyDescriptor, DataSourceType } from '@liblab/data-access/utils/types';
 
 export type DataSourceOption = {
   value: string;
   label: string;
-  connectionStringFormat: string;
+  type?: DataSourceType;
+  properties: DataSourcePropertyDescriptor[];
   status: 'available' | 'locked' | 'coming-soon';
 };
 export const SAMPLE_DATABASE = 'sample';
 export const DEFAULT_DATA_SOURCES: DataSourceOption[] = [
-  { value: SAMPLE_DATABASE, label: 'Sample Database', connectionStringFormat: '', status: 'available' },
-  { value: 'hubspot', label: 'Hubspot', connectionStringFormat: '', status: 'coming-soon' },
-  { value: 'salesforce', label: 'Salesforce', connectionStringFormat: '', status: 'coming-soon' },
-  { value: 'jira', label: 'Jira', connectionStringFormat: '', status: 'coming-soon' },
-  { value: 'github', label: 'Github', connectionStringFormat: '', status: 'coming-soon' },
+  { value: SAMPLE_DATABASE, label: 'Sample Database', properties: [], status: 'available' },
+  { value: 'salesforce', label: 'Salesforce', properties: [], status: 'coming-soon' },
+  { value: 'jira', label: 'Jira', properties: [], status: 'coming-soon' },
+  { value: 'github', label: 'Github', properties: [], status: 'coming-soon' },
 ];
 
 type DataSourceTypesHook = () => {
@@ -33,10 +34,11 @@ export const useDataSourceTypesPlugin: DataSourceTypesHook = () => {
 
   const allDataSourceTypes = useMemo(
     () => [
-      ...dataSourceTypes.map(({ value, label, connectionStringFormat }) => ({
+      ...dataSourceTypes.map(({ value, label, properties, type }) => ({
         value,
         label,
-        connectionStringFormat,
+        type,
+        properties,
         status:
           value === SAMPLE_DATABASE
             ? 'available'
