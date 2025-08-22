@@ -29,60 +29,46 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: 'Resource ID missing for scoped role' }, { status: 400 });
   }
 
-  let resourceType: PermissionResource;
-  const resourceSubjectData: { id: string; createdById?: string } = { id: role.resourceId };
+  const resourceMap = {
+    [RoleScope.ENVIRONMENT]: {
+      resourceType: PermissionResource.Environment,
+      model: prisma.environment,
+      select: { id: true },
+    },
+    [RoleScope.DATA_SOURCE]: {
+      resourceType: PermissionResource.DataSource,
+      model: prisma.dataSource,
+      select: { id: true, createdById: true },
+    },
+    [RoleScope.WEBSITE]: {
+      resourceType: PermissionResource.Website,
+      model: prisma.website,
+      select: { id: true, createdById: true },
+    },
+  };
 
-  switch (role.scope) {
-    case RoleScope.ENVIRONMENT: {
-      resourceType = PermissionResource.Environment;
+  const mapping = resourceMap[role.scope as keyof typeof resourceMap];
 
-      const environment = await prisma.environment.findUnique({
-        where: { id: role.resourceId },
-        select: { id: true },
-      });
-
-      if (!environment) {
-        return NextResponse.json({ success: false, error: 'Resource not found' }, { status: 404 });
-      }
-
-      break;
-    }
-    case RoleScope.DATA_SOURCE: {
-      resourceType = PermissionResource.DataSource;
-
-      const datasource = await prisma.dataSource.findUnique({
-        where: { id: role.resourceId },
-        select: { id: true, createdById: true },
-      });
-
-      if (!datasource) {
-        return NextResponse.json({ success: false, error: 'Resource not found' }, { status: 404 });
-      }
-
-      resourceSubjectData.createdById = datasource.createdById;
-      break;
-    }
-    case RoleScope.WEBSITE: {
-      resourceType = PermissionResource.Website;
-
-      const website = await prisma.website.findUnique({
-        where: { id: role.resourceId },
-        select: { id: true, createdById: true },
-      });
-
-      if (!website) {
-        return NextResponse.json({ success: false, error: 'Resource not found' }, { status: 404 });
-      }
-
-      resourceSubjectData.createdById = website.createdById;
-      break;
-    }
-
-    default:
-      return NextResponse.json({ success: false, error: 'Invalid role scope' }, { status: 400 });
+  if (!mapping) {
+    return NextResponse.json({ success: false, error: 'Invalid role scope' }, { status: 400 });
   }
 
-  if (!userAbility.can(PermissionAction.manage, subject(resourceType, resourceSubjectData))) {
+  const resourceType = mapping.resourceType;
+
+  const resourceData = await (mapping.model as any).findUnique({
+    where: { id: role.resourceId },
+    select: mapping.select,
+  });
+
+  if (!resourceData) {
+    return NextResponse.json({ success: false, error: 'Resource not found' }, { status: 404 });
+  }
+
+  if (resourceData.createdById) {
+    resourceData.createdById = resourceData.createdById;
+  }
+
+  if (!userAbility.can(PermissionAction.manage, subject(resourceType, resourceData))) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
