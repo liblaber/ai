@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { userService, type UserProfile } from '~/lib/services/userService';
 import { getDataSource } from '~/lib/services/datasourceService';
 import { getEnvironment } from '~/lib/services/environmentService';
@@ -8,6 +9,11 @@ import { findOrCreateResourceRole, type ResourceRoleScope } from '~/lib/services
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma, RoleScope } from '@prisma/client';
 import { subject } from '@casl/ability';
+
+const requestSchema = z.object({
+  email: z.string(),
+  permissionLevel: z.string(),
+});
 
 export async function POST(
   request: NextRequest,
@@ -21,6 +27,21 @@ export async function POST(
     return NextResponse.json({ success: false, error: 'Invalid route' }, { status: 400 });
   }
 
+  const body = await request.json();
+  const parsedBody = requestSchema.safeParse(body);
+
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: parsedBody.error.flatten().fieldErrors,
+      },
+      { status: 400 },
+    );
+  }
+
+  const { email, permissionLevel } = parsedBody.data;
+
   const { fetchFunction, permissionResource, roleScope, resourceLabel } = resourceConfig;
 
   const resource = await fetchFunction(resourceId);
@@ -33,18 +54,13 @@ export async function POST(
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const body = (await request.json()) as {
-    email: string;
-    permissionLevel: string;
-  };
-
-  const permissionLevelDetails = getPermissionLevelDetails(body.permissionLevel);
+  const permissionLevelDetails = getPermissionLevelDetails(permissionLevel);
 
   if (!permissionLevelDetails) {
     return NextResponse.json({ success: false, error: 'Invalid permission level' }, { status: 400 });
   }
 
-  const user = await userService.getUserByEmail(body.email);
+  const user = await userService.getUserByEmail(email);
 
   if (!user) {
     return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
