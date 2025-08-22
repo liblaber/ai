@@ -1,7 +1,7 @@
 import { classNames } from '~/utils/classNames';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { XCircle, CheckCircle, Loader2, Plug, Save } from 'lucide-react';
+import { CheckCircle, Loader2, Plug, Save, XCircle } from 'lucide-react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { z } from 'zod';
 import { BaseSelect } from '~/components/ui/Select';
@@ -22,6 +22,24 @@ interface DataSourceResponse {
   };
 }
 
+interface Environment {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+interface EnvironmentOption {
+  label: string;
+  value: string;
+  description?: string;
+}
+
+interface EnvironmentsResponse {
+  success: boolean;
+  environments: Environment[];
+  error?: string;
+}
+
 const testConnectionResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
@@ -38,10 +56,47 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
   const [dbType, setDbType] = useState<DataSourceOption>(DEFAULT_DATA_SOURCES[0]);
   const [dbName, setDbName] = useState('');
   const [connStr, setConnStr] = useState('');
+  const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
+  const [environmentOptions, setEnvironmentOptions] = useState<EnvironmentOption[]>([]);
+  const [isLoadingEnvironments, setIsLoadingEnvironments] = useState(true);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { availableDataSourceOptions } = useDataSourceTypesPlugin();
+
+  // Fetch environments on component mount
+  useEffect(() => {
+    const fetchEnvironments = async () => {
+      try {
+        const response = await fetch('/api/environments');
+        const result: EnvironmentsResponse = await response.json();
+
+        if (result.success) {
+          // Transform environments to options
+          const options: EnvironmentOption[] = result.environments.map((env) => ({
+            label: env.name,
+            value: env.id,
+            description: env.description,
+          }));
+          setEnvironmentOptions(options);
+
+          // Auto-select first environment if available
+          if (options.length > 0) {
+            setSelectedEnvironment(options[0]);
+          }
+        } else {
+          setError(result.error || 'Failed to fetch environments');
+        }
+      } catch (error) {
+        setError('Failed to fetch environments');
+        console.error('Error fetching environments:', error);
+      } finally {
+        setIsLoadingEnvironments(false);
+      }
+    };
+
+    fetchEnvironments();
+  }, []);
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
@@ -52,6 +107,11 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
       if (dbType.value !== SAMPLE_DATABASE) {
         if (!connStr) {
           setError('Please enter a connection string');
+          return;
+        }
+
+        if (!selectedEnvironment) {
+          setError('Please select an environment');
           return;
         }
 
@@ -98,8 +158,19 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     setIsSubmitting(true);
 
     try {
+      if (!selectedEnvironment) {
+        setError('Please select an environment');
+        setTestResult(null);
+
+        return;
+      }
+
       const response = await fetch('/api/data-sources/example', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ environmentId: selectedEnvironment.value }),
       });
 
       const result = (await response.json()) as DataSourceResponse;
@@ -127,6 +198,13 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
       return;
     }
 
+    if (!selectedEnvironment) {
+      setError('Please select an environment');
+      setTestResult(null);
+
+      return;
+    }
+
     if (!dbName) {
       setError('Please enter the data source name');
       setTestResult(null);
@@ -149,6 +227,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
       const formData = new FormData();
       formData.append('name', dbName);
       formData.append('connectionString', connStr);
+      formData.append('environmentId', selectedEnvironment.value);
 
       const response = await fetch('/api/data-sources', {
         method: 'POST',
@@ -201,6 +280,27 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                 }}
               />
             </div>
+          </div>
+
+          <div className="mb-6">
+            <label className="mb-3 block text-sm font-medium text-secondary">Environment</label>
+            <BaseSelect
+              value={selectedEnvironment}
+              onChange={(value: EnvironmentOption | null) => {
+                setSelectedEnvironment(value);
+                setError(null);
+                setTestResult(null);
+              }}
+              options={environmentOptions}
+              placeholder={isLoadingEnvironments ? 'Loading environments...' : 'Select environment'}
+              isDisabled={isLoadingEnvironments}
+              width="100%"
+              minWidth="100%"
+              isSearchable={false}
+            />
+            {selectedEnvironment?.description && (
+              <div className="text-gray-400 text-sm mt-2">{selectedEnvironment.description}</div>
+            )}
           </div>
 
           {dbType.value !== SAMPLE_DATABASE && (
@@ -290,7 +390,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                     e.preventDefault();
                     await handleTestConnection();
                   }}
-                  disabled={isTestingConnection || isSubmitting || !connStr}
+                  disabled={isTestingConnection || isSubmitting || !connStr || !selectedEnvironment}
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                     'bg-depth-1 bg-depth-1/50 ',
@@ -316,7 +416,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isSubmitting || (dbType.value !== SAMPLE_DATABASE && !connStr)}
+                disabled={isSubmitting || !selectedEnvironment || (dbType.value !== SAMPLE_DATABASE && !connStr)}
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',

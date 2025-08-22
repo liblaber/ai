@@ -12,7 +12,7 @@ import {
   SAMPLE_DATABASE,
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
-import type { DataSource } from '~/lib/services/dataSourceService';
+import type { EnvironmentDataSource } from '~/lib/stores/environmentDataSources';
 
 interface DataSourceResponse {
   success: boolean;
@@ -20,9 +20,27 @@ interface DataSourceResponse {
   error?: string;
 }
 
+interface Environment {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+interface EnvironmentOption {
+  label: string;
+  value: string;
+  description?: string;
+}
+
+interface EnvironmentsResponse {
+  success: boolean;
+  environments: Environment[];
+  error?: string;
+}
+
 // TODO: @skos update the form to use EnvironmentDataSource
 interface EditDataSourceFormProps {
-  selectedDataSource: DataSource | null;
+  selectedDataSource: EnvironmentDataSource | null;
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
@@ -41,37 +59,77 @@ export default function EditDataSourceForm({
   const [dbType, setDbType] = useState<DataSourceOption>({} as DataSourceOption);
   const [dbName, setDbName] = useState('');
   const [connStr, setConnStr] = useState('');
+  const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
+  const [environmentOptions, setEnvironmentOptions] = useState<EnvironmentOption[]>([]);
+  const [isLoadingEnvironments, setIsLoadingEnvironments] = useState(true);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [showConnStr, setShowConnStr] = useState(false);
 
+  // Fetch environments on component mount
+  useEffect(() => {
+    const fetchEnvironments = async () => {
+      try {
+        const response = await fetch('/api/environments');
+        const result: EnvironmentsResponse = await response.json();
+
+        if (result.success) {
+          // Transform environments to options
+          const options: EnvironmentOption[] = result.environments.map((env) => ({
+            label: env.name,
+            value: env.id,
+            description: env.description || undefined,
+          }));
+          setEnvironmentOptions(options);
+
+          // Auto-select first environment if available
+          if (options.length > 0) {
+            setSelectedEnvironment(options[0]);
+          }
+        } else {
+          setError(result.error || 'Failed to fetch environments');
+        }
+      } catch (error) {
+        setError('Failed to fetch environments');
+        console.error('Error fetching environments:', error);
+      } finally {
+        setIsLoadingEnvironments(false);
+      }
+    };
+
+    fetchEnvironments();
+  }, []);
+
   useEffect(() => {
     if (!selectedDataSource) {
       return;
     }
 
-    if (selectedDataSource.name === 'Sample Database') {
+    // Set the current environment from the selected data source
+    const currentEnvironment: EnvironmentOption = {
+      label: selectedDataSource.environment.name,
+      value: selectedDataSource.environment.id,
+      description: selectedDataSource.environment.description || undefined,
+    };
+    setSelectedEnvironment(currentEnvironment);
+
+    if (selectedDataSource.dataSource.name === 'Sample Database') {
       setDbType(DEFAULT_DATA_SOURCES[0]);
       setDbName('');
       setConnStr('');
     } else {
-      const connectionDetails = new URL(selectedDataSource.connectionString);
-      const type = connectionDetails.protocol.replace(':', '');
-
-      // Find matching option (handle postgresql -> postgres mapping specifically)
-      const normalizedType = type === 'postgresql' ? 'postgres' : type;
-      const matchingOption = availableDataSourceOptions.find((opt) => opt.value === normalizedType);
-
-      setDbType(matchingOption || DEFAULT_DATA_SOURCES[0]);
-      setDbName(selectedDataSource.name);
-      setConnStr(selectedDataSource.connectionString);
+      // For non-sample databases, we need to get the connection string from the API
+      // since it's not stored in the EnvironmentDataSource object
+      // This will be handled when we need to update the data source
+      setDbName(selectedDataSource.dataSource.name);
+      setConnStr(''); // We'll need to fetch this from the API
     }
 
     setError(null);
     setTestResult(null);
-  }, [selectedDataSource?.id, selectedDataSource?.name]);
+  }, [selectedDataSource?.dataSourceId, selectedDataSource?.dataSource.name, selectedDataSource?.environment]);
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
@@ -82,6 +140,11 @@ export default function EditDataSourceForm({
       if (dbType.value !== SAMPLE_DATABASE) {
         if (!connStr) {
           setError('Please enter a connection string');
+          return;
+        }
+
+        if (!selectedEnvironment) {
+          setError('Please select an environment');
           return;
         }
 
@@ -130,6 +193,13 @@ export default function EditDataSourceForm({
       return;
     }
 
+    if (!selectedEnvironment) {
+      setError('Please select an environment');
+      setTestResult(null);
+
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     setTestResult(null);
@@ -140,10 +210,13 @@ export default function EditDataSourceForm({
       formData.append('name', dbName);
       formData.append('connectionString', connStr);
 
-      const response = await fetch(`/api/data-sources/${selectedDataSource?.id}`, {
-        method: 'PUT',
-        body: formData,
-      });
+      const response = await fetch(
+        `/api/data-sources/${selectedDataSource?.dataSourceId}?environmentId=${selectedEnvironment.value}`,
+        {
+          method: 'PUT',
+          body: formData,
+        },
+      );
 
       const data = await response.json<DataSourceResponse>();
 
@@ -203,6 +276,27 @@ export default function EditDataSourceForm({
                 }}
               />
             </div>
+          </div>
+
+          <div className="mb-6">
+            <label className="mb-3 block text-sm font-medium text-secondary">Environment</label>
+            <BaseSelect
+              value={selectedEnvironment}
+              onChange={(value: EnvironmentOption | null) => {
+                setSelectedEnvironment(value);
+                setError(null);
+                setTestResult(null);
+              }}
+              options={environmentOptions}
+              placeholder={isLoadingEnvironments ? 'Loading environments...' : 'Select environment'}
+              isDisabled={isLoadingEnvironments}
+              width="100%"
+              minWidth="100%"
+              isSearchable={false}
+            />
+            {selectedEnvironment?.description && (
+              <div className="text-gray-400 text-sm mt-2">{selectedEnvironment.description}</div>
+            )}
           </div>
 
           {dbType.value !== SAMPLE_DATABASE && (
@@ -316,7 +410,7 @@ export default function EditDataSourceForm({
                     e.preventDefault();
                     await handleTestConnection();
                   }}
-                  disabled={isTestingConnection || isSubmitting || !connStr}
+                  disabled={isTestingConnection || isSubmitting || !connStr || !selectedEnvironment}
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                     'bg-blue-500 hover:bg-blue-600',
@@ -356,7 +450,9 @@ export default function EditDataSourceForm({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isSubmitting || dbType.value === SAMPLE_DATABASE || !dbName || !connStr}
+                disabled={
+                  isSubmitting || dbType.value === SAMPLE_DATABASE || !dbName || !connStr || !selectedEnvironment
+                }
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',

@@ -485,7 +485,11 @@ export const ChatImpl = ({
       // Store the conversation ID for potential future navigation
     }
 
-    const dataSourceUrlResponse = await fetch(`/api/data-sources/${environmentDataSource}/url`);
+    logger.info('Environment data source for new chat:', JSON.stringify(environmentDataSource));
+
+    const dataSourceUrlResponse = await fetch(
+      `/api/data-sources/${environmentDataSource.dataSourceId}/url?environmentId=${environmentDataSource.environmentId}`,
+    );
 
     if (!dataSourceUrlResponse.ok) {
       console.error('Failed to fetch database URL:', dataSourceUrlResponse.status);

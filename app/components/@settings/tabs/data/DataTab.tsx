@@ -68,9 +68,8 @@ export default function DataTab() {
       return;
     }
 
-    // TODO: @skos we should send environmentId as a path parameter
     const response = await fetch(
-      `/api/data-sources/${selectedEnvironmentDataSource.dataSourceId}?environmentId=${selectedEnvironmentDataSource.dataSourceId}`,
+      `/api/data-sources/${selectedEnvironmentDataSource.dataSourceId}?environmentId=${selectedEnvironmentDataSource.environmentId}`,
       {
         method: 'DELETE',
       },
@@ -109,9 +108,8 @@ export default function DataTab() {
     }
 
     try {
-      // TODO: @skos we should send environmentId as a path parameter
       const response = await fetch(
-        `/api/data-sources/${selectedEnvironmentDataSource.dataSourceId}?environmentId=${selectedEnvironmentDataSource.dataSourceId}`,
+        `/api/data-sources/${selectedEnvironmentDataSource.dataSourceId}?environmentId=${selectedEnvironmentDataSource.environmentId}`,
       );
       const data = await response.json<{ success: boolean; conversationCount?: number }>();
 
@@ -226,7 +224,6 @@ export default function DataTab() {
             </div>
           </div>
           <EditDataSourceForm
-            // @ts-ignore TODO: @skos update the form with the new data structure
             selectedDataSource={selectedEnvironmentDataSource}
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
