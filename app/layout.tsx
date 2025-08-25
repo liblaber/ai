@@ -9,6 +9,7 @@ import PluginManager, { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager'
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import { headers } from 'next/headers';
 import { auth } from '~/auth/auth-config';
+import type { Session } from '~/auth/session';
 
 const inlineThemeCode = `
   setLiblabTheme();
@@ -30,10 +31,8 @@ async function getRootData() {
       headers: headersList,
     });
 
-    // Type the session properly using the same types from auth/session.ts
-    const typedSession = session as {
-      user: { id: string; email: string; name?: string; image?: string } | null;
-    } | null;
+    // Type the session properly using the imported Session type
+    const typedSession = session as Session;
 
     let user = null;
     let dataSources: any[] = [];
