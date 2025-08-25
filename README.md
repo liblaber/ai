@@ -83,7 +83,7 @@ After installation, you can verify it worked:
 
 <strong>❓ Need help?</strong>
 
-- **Windows users:** If you get an error about "node is not recognized", restart your computer after installation or refer to the offical windows (guide)[https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows]
+- **Windows users:** If you get an error about "node is not recognized", restart your computer after installation or refer to the [official Windows guide](https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows)
 - **Mac users:** If you get a security warning, go to System Preferences > Security & Privacy and click "Allow"
 - **Linux users:** If you get a permission error, make sure to type `sudo` before the commands
 
