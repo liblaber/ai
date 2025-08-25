@@ -37,10 +37,7 @@ import { useTrackStreamProgress } from '~/components/chat/useTrackStreamProgress
 import type { ProgressAnnotation } from '~/types/context';
 import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
-
-type DatabaseUrlResponse = {
-  url: string;
-};
+import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 
 interface ChatProps {
   id?: string;
@@ -487,23 +484,13 @@ export const ChatImpl = ({
 
     logger.info('Environment data source for new chat:', JSON.stringify(environmentDataSource));
 
-    const dataSourceUrlResponse = await fetch(
-      `/api/data-sources/${environmentDataSource.dataSourceId}/url?environmentId=${environmentDataSource.environmentId}`,
+    const dataSourceUrl = await getDataSourceUrl(
+      environmentDataSource.dataSourceId,
+      environmentDataSource.environmentId,
     );
+    setDataSourceUrl(dataSourceUrl);
 
-    if (!dataSourceUrlResponse.ok) {
-      console.error('Failed to fetch database URL:', dataSourceUrlResponse.status);
-      toast.error('Failed to fetch database URL');
-
-      return;
-    }
-
-    const dataSourceUrlJson = await dataSourceUrlResponse.json<DatabaseUrlResponse>();
-
-    const databaseUrl = dataSourceUrlJson.url;
-    setDataSourceUrl(databaseUrl);
-
-    const starterTemplateMessages = await getStarterTemplateMessages(messageContent, databaseUrl).catch((e) => {
+    const starterTemplateMessages = await getStarterTemplateMessages(messageContent, dataSourceUrl).catch((e) => {
       if (e.message.includes('rate limit')) {
         toast.warning('Rate limit exceeded. Skipping starter template\n Continuing with blank template');
       } else {

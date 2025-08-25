@@ -13,6 +13,7 @@ import {
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
 import type { EnvironmentDataSource } from '~/lib/stores/environmentDataSources';
+import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 
 interface DataSourceResponse {
   success: boolean;
@@ -55,6 +56,8 @@ export default function EditDataSourceForm({
   onSuccess,
   onDelete,
 }: EditDataSourceFormProps) {
+  console.log({ selectedDataSource });
+
   const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
   const [dbType, setDbType] = useState<DataSourceOption>({} as DataSourceOption);
@@ -103,6 +106,7 @@ export default function EditDataSourceForm({
     fetchEnvironments();
   }, []);
 
+  // TODO: @kapicic refactor
   useEffect(() => {
     if (!selectedDataSource) {
       return;
@@ -124,8 +128,13 @@ export default function EditDataSourceForm({
       // For non-sample databases, we need to get the connection string from the API
       // since it's not stored in the EnvironmentDataSource object
       // This will be handled when we need to update the data source
+
+      // TODO: @kapicic we need to get the db type
       setDbName(selectedDataSource.dataSource.name);
-      setConnStr(''); // We'll need to fetch this from the API
+
+      getDataSourceUrl(selectedDataSource.dataSource.id, currentEnvironment.value).then((databaseUrl) => {
+        setConnStr(databaseUrl);
+      });
     }
 
     setError(null);

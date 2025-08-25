@@ -27,6 +27,7 @@ import type { SendMessageFn } from './Chat.client';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { type BrowserInfo, detectBrowser } from '~/lib/utils/browser-detection';
 import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
+import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 
 export interface PendingPrompt {
   input: string;
@@ -145,22 +146,10 @@ export const BaseChat = ({
 
     try {
       // Get the connection string for the new data source
-      const response = await fetch(
-        `/api/data-sources/${pendingDataSourceChange.dataSourceId}/url?environmentId=${pendingDataSourceChange.environmentId}`,
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to get connection string');
-      }
-
-      const data = (await response.json()) as { success: boolean; url?: string; error?: string };
-
-      if (!data.success || !data.url) {
-        throw new Error(data.error || 'No connection string available');
-      }
+      const url = await getDataSourceUrl(pendingDataSourceChange.dataSourceId, pendingDataSourceChange.environmentId);
 
       // Update the .env file with the new DATABASE_URL
-      const encodedConnectionString = encodeURIComponent(data.url);
+      const encodedConnectionString = encodeURIComponent(url);
       // TODO: @kapicic we need to update the snapshot with the new connection string as well
       await ActionRunner.updateEnvironmentVariable('DATABASE_URL', encodedConnectionString);
 
