@@ -24,13 +24,9 @@ export const permissionLevels: Record<PermissionLevel, PermissionDetails> = {
  * Returns null if invalid.
  */
 export function getPermissionLevelDetails(
-  input: unknown,
+  levelInput: string,
 ): { level: PermissionLevel; details: PermissionDetails } | null {
-  if (typeof input !== 'string') {
-    return null;
-  }
-
-  const normalizedLevel = input.toLowerCase();
+  const normalizedLevel = levelInput.toLowerCase();
 
   if (normalizedLevel in permissionLevels) {
     const level = normalizedLevel as PermissionLevel;
