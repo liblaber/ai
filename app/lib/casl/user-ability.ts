@@ -30,13 +30,7 @@ export function createAbilityForUser(permissions: Permission[]): AppAbility {
     // Handle different permission scenarios
     switch (resource) {
       case PermissionResource.all:
-        can(action, resource);
-        break;
-
       case PermissionResource.BuilderApp:
-        can(action, resource);
-        break;
-
       case PermissionResource.AdminApp:
         can(action, resource);
         break;
