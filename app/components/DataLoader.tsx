@@ -43,12 +43,29 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
   const router = useRouter();
   const isLoggingIn = useRef(false);
 
+  // Set plugin access immediately when component mounts
+  useEffect(() => {
+    if (rootData.pluginAccess) {
+      setPluginAccess(rootData.pluginAccess);
+    }
+
+    if (rootData.dataSourceTypes) {
+      setDataSourceTypes(rootData.dataSourceTypes);
+    }
+  }, [rootData.pluginAccess, rootData.dataSourceTypes, setPluginAccess, setDataSourceTypes]);
+
   useEffect(() => {
     const loadUserData = async () => {
+      // Only attempt anonymous login for free licenses or when Google OAuth is not configured
       if (!rootData.user && !session?.user && anonymousProvider && !isLoggingIn.current) {
-        await loginAnonymous();
-        // this will trigger a re-render, and will re-fetch the data in layout.tsx
-        router.refresh();
+        // Check if we're in a premium license with Google OAuth - if so, don't auto-login
+        const isPremiumWithGoogle = !anonymousProvider; // If anonymous provider is not available, we're premium with Google
+
+        if (!isPremiumWithGoogle) {
+          await loginAnonymous();
+          // this will trigger a re-render, and will re-fetch the data in layout.tsx
+          router.refresh();
+        }
       }
 
       if (!rootData.user && !session?.user && anonymousProvider && isLoggingIn.current) {
@@ -59,15 +76,6 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       if (!rootData.user && !session?.user) {
         console.debug('❌ No session available');
         return;
-      }
-
-      // Set plugin access and data source types (always available from server)
-      if (rootData.pluginAccess) {
-        setPluginAccess(rootData.pluginAccess);
-      }
-
-      if (rootData.dataSourceTypes) {
-        setDataSourceTypes(rootData.dataSourceTypes);
       }
 
       // Handle user data
@@ -89,7 +97,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         currentDataSources = await fetchDataSources();
         setDataSources(currentDataSources);
       } else if (rootData.dataSources) {
-        setDataSources(rootData.dataSources);
+        setDataSources(currentDataSources);
       }
 
       // Handle user onboarding flow with telemetry and data sources

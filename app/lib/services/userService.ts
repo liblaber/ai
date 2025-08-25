@@ -1,119 +1,126 @@
 import { prisma } from '~/lib/prisma';
 import { DeprecatedRole } from '@prisma/client';
-import type { User } from '@prisma/client';
+import { SYSTEM_ADMIN_PERMISSIONS } from '~/lib/constants/permissions';
 
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  role: DeprecatedRole;
-  organizationId: string;
-  telemetryEnabled: boolean | null;
-  roles?: UserRole[];
-}
-
-export interface UserRole {
-  id: string;
-  name: string;
-  description?: string | null;
-}
-
-type UserUpdateData = Partial<Omit<UserProfile, 'id' | 'roles'>>;
-
-const userSelect = {
-  id: true,
-  name: true,
-  email: true,
-  role: true,
-  organizationId: true,
-  telemetryEnabled: true,
-};
-
-const userSelectWithRoles = {
-  ...userSelect,
-  roles: {
-    select: {
-      role: {
-        select: {
-          id: true,
-          name: true,
-          description: true,
-        },
-      },
-    },
-  },
-};
-
-type UserWithRoles = Partial<User> & {
-  roles?: { role: { id: string; name: string; description: string | null } }[];
-};
-
-function mapToUserProfile(user: UserWithRoles): UserProfile {
-  const userProfile = {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    organizationId: user.organizationId!,
-    telemetryEnabled: user.telemetryEnabled,
-  } as UserProfile;
-
-  if (user.roles) {
-    userProfile.roles = user.roles.map((r) => ({
-      id: r.role.id,
-      name: r.role.name,
-      description: r.role.description || undefined,
-    }));
-  }
-
-  return userProfile;
+  image?: string | null;
+  role?: DeprecatedRole;
+  organizationId?: string | null;
+  organization?: {
+    id: string;
+    name: string;
+    domain?: string | null;
+  } | null;
+  telemetryEnabled?: boolean | null;
 }
 
 export const userService = {
   async getUser(userId: string): Promise<UserProfile> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: userSelectWithRoles,
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            domain: true,
+          },
+        },
+      },
     });
 
     if (!user) {
       throw new Error('User not found');
     }
 
-    return mapToUserProfile(user);
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      role: user.role,
+      organizationId: user.organizationId,
+      organization: user.organization,
+      telemetryEnabled: user.telemetryEnabled,
+    };
   },
 
-  async getUserByEmail(email: string): Promise<UserProfile | null> {
+  async getUserByEmail(email: string): Promise<UserProfile> {
     const user = await prisma.user.findUnique({
-      where: { email },
-      select: userSelectWithRoles,
+      where: { email }
     });
 
     if (!user) {
-      return null;
+      throw new Error('User not found');
     }
 
-    return mapToUserProfile(user);
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      role: user.role,
+      organizationId: user.organizationId,
+      organization: user.organization,
+      telemetryEnabled: user.telemetryEnabled,
+    };
   },
 
-  async updateUser(userId: string, data: UserUpdateData): Promise<UserProfile> {
+  async updateUser(
+    userId: string,
+    data: Partial<Pick<UserProfile, 'name' | 'email' | 'image' | 'telemetryEnabled'>>,
+  ): Promise<UserProfile> {
     const user = await prisma.user.update({
       where: { id: userId },
       data,
-      select: userSelect,
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            domain: true,
+          },
+        },
+      },
     });
 
-    return mapToUserProfile(user);
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      role: user.role,
+      organizationId: user.organizationId,
+      organization: user.organization,
+      telemetryEnabled: user.telemetryEnabled,
+    };
   },
 
   async updateTelemetryConsent(userId: string, telemetryEnabled: boolean): Promise<UserProfile> {
     const user = await prisma.user.update({
       where: { id: userId },
       data: { telemetryEnabled },
-      select: userSelect,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        organizationId: true,
+        telemetryEnabled: true,
+      },
     });
 
-    return mapToUserProfile(user);
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      organizationId: user.organizationId,
+      telemetryEnabled: user.telemetryEnabled,
+    };
   },
 
   async getUsersByOrganization(organizationId: string): Promise<UserProfile[]> {
@@ -121,28 +128,49 @@ export const userService = {
       where: {
         organizationId,
       },
-      select: userSelectWithRoles,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        organizationId: true,
+        telemetryEnabled: true,
+      },
       orderBy: {
         email: 'asc',
       },
     });
 
-    return users.map((user) => mapToUserProfile(user));
+    return users.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      organizationId: user.organizationId,
+      telemetryEnabled: user.telemetryEnabled,
+    }));
   },
 
   async getUsersByRole(roleId: string): Promise<UserProfile[]> {
-    const users = await prisma.user.findMany({
+    const userRoles = await prisma.userRole.findMany({
       where: {
-        roles: {
-          some: {
-            roleId,
+        roleId,
+      },
+      select: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            organizationId: true,
+            telemetryEnabled: true,
           },
         },
       },
-      select: userSelect,
     });
 
-    return users.map((user) => mapToUserProfile(user));
+    return userRoles.map((userRole) => userRole.user);
   },
 
   async addUserToRole(userId: string, roleId: string): Promise<UserProfile> {
@@ -153,12 +181,19 @@ export const userService = {
       },
       select: {
         user: {
-          select: userSelectWithRoles,
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            organizationId: true,
+            telemetryEnabled: true,
+          },
         },
       },
     });
 
-    return mapToUserProfile(userRole.user);
+    return userRole.user;
   },
 
   async removeUserFromRole(userId: string, roleId: string): Promise<void> {
@@ -172,10 +207,106 @@ export const userService = {
     });
   },
 
-  async updateUserRole(userId: string, organizationId: string, role: DeprecatedRole) {
+  async updateUserRole(_userId: string, organizationId: string, role: DeprecatedRole) {
     return await prisma.user.update({
-      where: { id: userId, organizationId },
-      data: { role },
+      where: { id: _userId },
+      data: { role, organizationId },
     });
+  },
+
+  async setUserOrganizationAndRole(userId: string, organizationId: string, role: DeprecatedRole) {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { organizationId, role },
+    });
+  },
+
+  async isFirstPremiumUser(): Promise<boolean> {
+    // Check if this is the first non-anonymous user in the system
+    // isAnonymous can be null (for OAuth users) or false (for non-anonymous users)
+    const nonAnonymousUserCount = await prisma.user.count({
+      where: {
+        OR: [{ isAnonymous: false }, { isAnonymous: null }],
+      },
+    });
+
+    // If there's only 1 non-anonymous user, this is the first one
+    return nonAnonymousUserCount === 1;
+  },
+
+  async grantSystemAdminAccess(userId: string, organizationId: string): Promise<void> {
+    try {
+      // First, ensure the user has the organizationId set
+      await prisma.user.update({
+        where: { id: userId },
+        data: { organizationId },
+      });
+
+      // Create a System Admin role if it doesn't exist
+      let systemAdminRole = await prisma.role.findFirst({
+        where: {
+          organizationId,
+          name: 'System Admin',
+        },
+      });
+
+      if (!systemAdminRole) {
+        systemAdminRole = await prisma.role.create({
+          data: {
+            name: 'System Admin',
+            description: 'Full system administrator with all privileges across all organizations',
+            organizationId,
+          },
+        });
+      }
+
+      // Assign the role to the user
+      await prisma.userRole.upsert({
+        where: {
+          userId_roleId: {
+            userId,
+            roleId: systemAdminRole.id,
+          },
+        },
+        update: {},
+        create: {
+          userId,
+          roleId: systemAdminRole.id,
+        },
+      });
+
+      // Grant full permissions to the role using centralized permission definitions
+      const fullPermissions = SYSTEM_ADMIN_PERMISSIONS;
+
+      // Fetch existing permissions for the role once to avoid N+1 query problem
+      const existingPermissions = await prisma.permission.findMany({
+        where: { roleId: systemAdminRole.id },
+        select: { resource: true, action: true },
+      });
+
+      const existingPermissionSet = new Set(existingPermissions.map((p) => `${p.resource}:${p.action}`));
+
+      for (const permission of fullPermissions) {
+        // Check if permission already exists in memory
+        const permissionKey = `${permission.resource}:${permission.action}`;
+
+        if (!existingPermissionSet.has(permissionKey)) {
+          await prisma.permission.create({
+            data: {
+              roleId: systemAdminRole.id,
+              resource: permission.resource,
+              action: permission.action,
+            },
+          });
+        }
+      }
+
+      console.log(`✅ Granted system admin access to user ${userId} in organization ${organizationId}`);
+    } catch (error) {
+      console.error(`❌ Failed to grant system admin access to user ${userId}:`, error);
+      throw new Error(
+        `Failed to grant system admin access: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   },
 };
