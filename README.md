@@ -254,7 +254,7 @@ After installation, you can verify it worked:
 
 1. Open Terminal (Mac/Linux) or Command Prompt (Windows)
 2. Type: `node --version` and press Enter
-3. You should see something like "v18.17.0" or higher
+3. You should see something like "v22.0.0" or higher
 4. Type: `npm --version` and press Enter
 5. You should see a version number like "9.6.7"
 
