@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRole, getRoles } from '~/lib/services/roleService';
 import { organizationService } from '~/lib/services/organizationService';
 import { requireUserAbility } from '~/auth/session';
-import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
+import { PermissionAction, PermissionResource, Prisma, RoleScope } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   const { userAbility } = await requireUserAbility(request);
@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
     name: string;
     description?: string;
+    scope?: RoleScope;
+    resourceId?: string;
   };
 
   const organization = await organizationService.getOrganizationByUser(userId);
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const role = await createRole(body.name, body.description, organization.id);
+    const role = await createRole(body.name, body.description, organization.id, body.scope, body.resourceId);
 
     return NextResponse.json({ success: true, role });
   } catch (error) {
