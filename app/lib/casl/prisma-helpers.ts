@@ -31,5 +31,9 @@ export function buildResourceWhereClause<T extends PrismaResources>(
   // Get the CASL accessibility rules for the user and action.
   const rules = accessibleBy(ability, action);
 
+  if (!rules[resource]) {
+    throw new Error(`No permission rules found for resource: ${resource}`);
+  }
+
   return rules[resource] as WhereInputForResource<T>;
 }

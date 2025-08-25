@@ -1,6 +1,8 @@
 import { capitalizeFirstLetter, isFreeEmailDomain } from '~/lib/.server/llm/utils';
 import type { UserManagementPlugin } from './user-management-plugin-manager';
 import { DeprecatedRole, type Organization } from '@prisma/client';
+import { userService } from '~/lib/services/userService';
+import { prisma } from '~/lib/prisma';
 
 export class MultiUserManagement implements UserManagementPlugin {
   static pluginId = 'multi-user';
@@ -48,14 +50,24 @@ export class MultiUserManagement implements UserManagementPlugin {
       where: { organizationId: organization.id },
     });
 
-    const role: DeprecatedRole = existingMembers === 0 ? DeprecatedRole.ADMIN : DeprecatedRole.MEMBER;
+    // Check if this is the first premium user in the system (excluding anonymous users)
+    const isFirstPremiumUser = await userService.isFirstPremiumUser();
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        organizationId: organization.id,
-        role,
-      },
-    });
+    if (isFirstPremiumUser) {
+      // Grant system admin access to the first premium user
+      await userService.grantSystemAdminAccess(userId, organization.id);
+      console.log(`🎉 First premium user ${email} granted system admin access`);
+    } else {
+      // Use regular role assignment for subsequent users
+      const role: DeprecatedRole = existingMembers === 0 ? DeprecatedRole.ADMIN : DeprecatedRole.MEMBER;
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          organizationId: organization.id,
+          role,
+        },
+      });
+    }
   }
 }

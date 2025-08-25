@@ -78,9 +78,9 @@ export async function getUserAbility(userId: string): Promise<AppAbility> {
   }
 
   const permissions = await getUserPermissions(userId);
+
   const userAbility = createAbilityForUser(permissions);
 
-  logger.debug(`Caching user ability for user ID: ${userId}`);
   ABILITY_CACHE[userId] = userAbility;
 
   return userAbility;
