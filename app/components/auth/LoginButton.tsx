@@ -22,8 +22,13 @@ export function LoginButton() {
 
     try {
       switch (provider) {
-        case 'anonymous': {
-          await signIn.anonymous();
+        case 'credential': {
+          // Use the existing anonymous@anonymous.com account
+          await signIn.email({
+            email: 'anonymous@anonymous.com',
+            password: 'password1234',
+            rememberMe: true,
+          });
           break;
         }
         default:

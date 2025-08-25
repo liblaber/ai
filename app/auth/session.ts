@@ -1,10 +1,21 @@
 import { auth } from './auth-config';
 import { getUserAbility } from '~/lib/casl/user-ability';
 
-type Session = Awaited<ReturnType<typeof auth.api.getSession>>;
+// Define proper session types that match better-auth's actual structure
+type SessionUser = {
+  id: string;
+  email: string;
+  name?: string;
+  image?: string;
+};
 
-export async function getSession(request: Request): Promise<Session> {
-  return await auth.api.getSession({ headers: request.headers });
+type Session = {
+  user: SessionUser | null;
+};
+
+export async function getSession(request: Request): Promise<Session | null> {
+  const session = await auth.api.getSession({ headers: request.headers });
+  return session as Session | null;
 }
 
 export async function requireUserId(request: Request) {
@@ -12,6 +23,10 @@ export async function requireUserId(request: Request) {
 
   if (!session) {
     throw new Error('Session not found');
+  }
+
+  if (!session.user) {
+    throw new Error('User not found');
   }
 
   return session.user.id;

@@ -30,16 +30,21 @@ async function getRootData() {
       headers: headersList,
     });
 
+    // Type the session properly using the same types from auth/session.ts
+    const typedSession = session as {
+      user: { id: string; email: string; name?: string; image?: string } | null;
+    } | null;
+
     let user = null;
     let dataSources: any[] = [];
     let dataSourceTypes: any[] = [];
 
-    if (session?.user) {
+    if (typedSession?.user) {
       // Get user profile
-      user = await userService.getUser(session.user.id);
+      user = await userService.getUser(typedSession.user.id);
 
       // Get data sources for the user
-      const userAbility = await getUserAbility(session.user.id);
+      const userAbility = await getUserAbility(typedSession.user.id);
       dataSources = await getDataSources(userAbility);
     }
 

@@ -18,7 +18,7 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
   },
   [PluginType.AUTH]: {
     anonymous: true,
-    google: env.client.NEXT_PUBLIC_USE_GOOGLE_AUTH,
+    google: false,
     twitch: false,
     twitter: false,
   },
@@ -102,10 +102,32 @@ class PluginManager {
   // Mock API call until we implement the backend
   private async _fetchPluginAccess(): Promise<PluginAccessMap> {
     const license = env.server.LICENSE_KEY;
+    const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = env.server;
 
+    console.log('🔍 Plugin access debug:', {
+      license,
+      hasGoogleClientId: !!GOOGLE_CLIENT_ID,
+      hasGoogleClientSecret: !!GOOGLE_CLIENT_SECRET,
+      isPremiumLicense: license === 'premium',
+      hasGoogleOAuth: !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET),
+    });
+
+    // If license is free, only allow anonymous auth
     if (!license || license !== 'premium') {
+      console.log('📋 Using FREE_PLUGIN_ACCESS');
       return FREE_PLUGIN_ACCESS;
     }
+
+    // If license is premium but Google OAuth is not configured, fall back to free access
+    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+      console.warn('Premium license detected but Google OAuth not configured. Falling back to free access.');
+      console.log('📋 Falling back to FREE_PLUGIN_ACCESS');
+
+      return FREE_PLUGIN_ACCESS;
+    }
+
+    // Premium license with Google OAuth configured - only allow Google auth
+    console.log('📋 Using PREMIUM_PLUGIN_ACCESS');
 
     return PREMIUM_PLUGIN_ACCESS;
   }
