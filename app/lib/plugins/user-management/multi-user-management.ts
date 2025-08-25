@@ -8,12 +8,10 @@ export class MultiUserManagement implements UserManagementPlugin {
   static pluginId = 'multi-user';
 
   async createOrganizationFromEmail(email: string, userId: string): Promise<void> {
-    const existingMembership = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { organization: true },
-    });
+    // If user already has a Member record, treat them as already part of an org
+    const existingMembership = await prisma.member.findFirst({ where: { userId } });
 
-    if (existingMembership?.organization) {
+    if (existingMembership) {
       return;
     }
 
@@ -46,7 +44,7 @@ export class MultiUserManagement implements UserManagementPlugin {
       });
     }
 
-    const existingMembers = await prisma.user.count({
+    const existingMembers = await prisma.member.count({
       where: { organizationId: organization.id },
     });
 
@@ -61,12 +59,24 @@ export class MultiUserManagement implements UserManagementPlugin {
       // Use regular role assignment for subsequent users
       const role: DeprecatedRole = existingMembers === 0 ? DeprecatedRole.ADMIN : DeprecatedRole.MEMBER;
 
+      // Create member link and set the deprecated role on the user
+      const member = await prisma.member.findFirst({
+        where: { userId, organizationId: organization.id },
+      });
+
+      if (!member) {
+        await prisma.member.create({
+          data: {
+            userId,
+            organizationId: organization.id,
+            role: role === DeprecatedRole.ADMIN ? 'Admin' : 'Member',
+          },
+        });
+      }
+
       await prisma.user.update({
         where: { id: userId },
-        data: {
-          organizationId: organization.id,
-          role,
-        },
+        data: { role },
       });
     }
   }

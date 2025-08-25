@@ -183,18 +183,16 @@ model User {
   sessions         Session[]
   accounts         Account[]
   conversations    Conversation[]
+  members          Member[]
+  invitationsSent  Invitation[]
   roles            UserRole[]
   role             DeprecatedRole @default(MEMBER)
   dataSources      DataSource[]
   websites         Website[]
-  organizationId   String?
-  organization     Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // organizationId/organization removed: membership is represented by `Member`
   telemetryEnabled Boolean?
 
   isAnonymous Boolean?
-
-  members     Member[]
-  invitations Invitation[]
 
   @@unique([email])
   @@map("user")
@@ -262,9 +260,12 @@ model Session {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  activeOrganizationId String?
+  // Active organization/team for improved auth context
+  activeOrganizationId String? @map("active_organization_id")
+  activeTeamId         String? @map("active_team_id")
 
   @@unique([token])
+  @@index([activeOrganizationId], name: "idx_session_active_organization_id")
   @@map("session")
 }
 
@@ -302,45 +303,48 @@ model Organization {
   id        String   @id @default(uuid())
   name      String
   domain    String?  @unique
+  slug      String?  @unique
+  logo      String?
+  metadata  String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  users        User[]
+  members      Member[]
+  invitations  Invitation[]
   roles        Role[]
   environments Environment[]
 
-  slug        String?
-  logo        String?
-  metadata    String?
-  members     Member[]
-  invitations Invitation[]
-
   @@map("organization")
-  @@unique([slug])
 }
 
 model Member {
-  id             String       @id
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  userId         String
+  id             String       @id @default(cuid())
+  userId         String       @map("user_id")
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   role           String
-  createdAt      DateTime
+  createdAt      DateTime     @default(now())
 
+  @@index([userId], name: "idx_member_user_id")
+  @@index([organizationId], name: "idx_member_organization_id")
   @@map("member")
 }
 
 model Invitation {
-  id             String       @id
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
   email          String
-  role           String?
+  inviterId      String       @map("inviter_id")
+  inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String
   status         String
-  expiresAt      DateTime
-  inviterId      String
-  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  expiresAt      DateTime?
+  teamId         String?      @map("team_id")
+  createdAt      DateTime     @default(now())
 
+  @@index([inviterId], name: "idx_invitation_inviter_id")
+  @@index([organizationId], name: "idx_invitation_organization_id")
   @@map("invitation")
 }

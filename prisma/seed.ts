@@ -55,7 +55,6 @@ async function seedInitialUser(organizationId: string): Promise<User> {
         email: 'anonymous@anonymous.com',
         name: 'Anonymous',
         emailVerified: false,
-        organizationId,
         role: DeprecatedRole.ADMIN,
         isAnonymous: true,
         createdAt: new Date(),
@@ -68,6 +67,24 @@ async function seedInitialUser(organizationId: string): Promise<User> {
       console.log('✅ Created anonymous user');
     } else {
       console.log('✅ Anonymous user already exists');
+    }
+
+    // Ensure a Member record exists for this user and organization
+    const existingMember = await prisma.member.findFirst({
+      where: { userId: initialUser.id, organizationId },
+    });
+
+    if (!existingMember) {
+      await prisma.member.create({
+        data: {
+          userId: initialUser.id,
+          organizationId,
+          role: 'Admin',
+        },
+      });
+      console.log('✅ Created member linking user to organization');
+    } else {
+      console.log('✅ Member link already exists for user');
     }
 
     return initialUser;

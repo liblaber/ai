@@ -19,22 +19,13 @@ export interface UserProfile {
 
 export const userService = {
   async getUser(userId: string): Promise<UserProfile> {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            domain: true,
-          },
-        },
-      },
-    });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
       throw new Error('User not found');
     }
+
+    const member = await prisma.member.findFirst({ where: { userId }, include: { organization: true } });
 
     return {
       id: user.id,
@@ -42,20 +33,23 @@ export const userService = {
       email: user.email,
       image: user.image,
       role: user.role,
-      organizationId: user.organizationId,
-      organization: user.organization,
+      organizationId: member?.organization?.id ?? null,
+      organization: member?.organization ?? null,
       telemetryEnabled: user.telemetryEnabled,
     };
   },
 
   async getUserByEmail(email: string): Promise<UserProfile> {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       throw new Error('User not found');
     }
+
+    const member = await prisma.member.findFirst({
+      where: { userId: user.id },
+      include: { organization: true },
+    });
 
     return {
       id: user.id,
@@ -63,7 +57,7 @@ export const userService = {
       email: user.email,
       image: user.image,
       role: user.role,
-      organizationId: user.organizationId,
+      organizationId: member?.organization?.id ?? null,
       telemetryEnabled: user.telemetryEnabled,
     };
   },
@@ -72,19 +66,9 @@ export const userService = {
     userId: string,
     data: Partial<Pick<UserProfile, 'name' | 'email' | 'image' | 'telemetryEnabled'>>,
   ): Promise<UserProfile> {
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data,
-      include: {
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            domain: true,
-          },
-        },
-      },
-    });
+    const user = await prisma.user.update({ where: { id: userId }, data });
+
+    const member = await prisma.member.findFirst({ where: { userId }, include: { organization: true } });
 
     return {
       id: user.id,
@@ -92,8 +76,8 @@ export const userService = {
       email: user.email,
       image: user.image,
       role: user.role,
-      organizationId: user.organizationId,
-      organization: user.organization,
+      organizationId: member?.organization?.id ?? null,
+      organization: member?.organization ?? null,
       telemetryEnabled: user.telemetryEnabled,
     };
   },
@@ -102,14 +86,12 @@ export const userService = {
     const user = await prisma.user.update({
       where: { id: userId },
       data: { telemetryEnabled },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        organizationId: true,
-        telemetryEnabled: true,
-      },
+      select: { id: true, name: true, email: true, role: true, telemetryEnabled: true },
+    });
+
+    const member = await prisma.member.findFirst({
+      where: { userId },
+      include: { organization: true },
     });
 
     return {
@@ -117,82 +99,44 @@ export const userService = {
       name: user.name,
       email: user.email,
       role: user.role,
-      organizationId: user.organizationId,
+      organizationId: member?.organization?.id ?? null,
       telemetryEnabled: user.telemetryEnabled,
     };
   },
 
   async getUsersByOrganization(organizationId: string): Promise<UserProfile[]> {
-    const users = await prisma.user.findMany({
-      where: {
-        organizationId,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        organizationId: true,
-        telemetryEnabled: true,
-      },
-      orderBy: {
-        email: 'asc',
-      },
+    const members = await prisma.member.findMany({
+      where: { organizationId },
+      include: { user: { select: { id: true, name: true, email: true, role: true, telemetryEnabled: true } } },
+      orderBy: { createdAt: 'asc' },
     });
 
-    return users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      organizationId: user.organizationId,
-      telemetryEnabled: user.telemetryEnabled,
+    return members.map((m: any) => ({
+      id: m.user.id,
+      name: m.user.name,
+      email: m.user.email,
+      role: m.user.role,
+      organizationId,
+      telemetryEnabled: m.user.telemetryEnabled,
     }));
   },
 
   async getUsersByRole(roleId: string): Promise<UserProfile[]> {
     const userRoles = await prisma.userRole.findMany({
-      where: {
-        roleId,
-      },
-      select: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            organizationId: true,
-            telemetryEnabled: true,
-          },
-        },
-      },
+      where: { roleId },
+      include: { user: { select: { id: true, name: true, email: true, role: true, telemetryEnabled: true } } },
     });
 
-    return userRoles.map((userRole) => userRole.user);
+    return userRoles.map((userRole) => userRole.user as any);
   },
 
   async addUserToRole(userId: string, roleId: string): Promise<UserProfile> {
     const userRole = await prisma.userRole.create({
-      data: {
-        userId,
-        roleId,
-      },
-      select: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            organizationId: true,
-            telemetryEnabled: true,
-          },
-        },
-      },
+      data: { userId, roleId },
+      include: { user: { select: { id: true, name: true, email: true, role: true, telemetryEnabled: true } } },
     });
 
-    return userRole.user;
+    return (userRole as any).user;
   },
 
   async removeUserFromRole(userId: string, roleId: string): Promise<void> {
@@ -207,17 +151,32 @@ export const userService = {
   },
 
   async updateUserRole(_userId: string, organizationId: string, role: DeprecatedRole) {
-    return await prisma.user.update({
-      where: { id: _userId },
-      data: { role, organizationId },
-    });
+    // Update deprecated role and create member link if provided
+
+    if (organizationId) {
+      const member = await prisma.member.findFirst({ where: { userId: _userId, organizationId } });
+
+      if (!member) {
+        await prisma.member.create({
+          data: { userId: _userId, organizationId, role: role === DeprecatedRole.ADMIN ? 'Admin' : 'Member' },
+        });
+      }
+    }
+
+    return await prisma.user.update({ where: { id: _userId }, data: { role } });
   },
 
   async setUserOrganizationAndRole(userId: string, organizationId: string, role: DeprecatedRole) {
-    return await prisma.user.update({
-      where: { id: userId },
-      data: { organizationId, role },
-    });
+    // Create member link and update role
+    const member = await prisma.member.findFirst({ where: { userId, organizationId } });
+
+    if (!member) {
+      await prisma.member.create({
+        data: { userId, organizationId, role: role === DeprecatedRole.ADMIN ? 'Admin' : 'Member' },
+      });
+    }
+
+    return await prisma.user.update({ where: { id: userId }, data: { role } });
   },
 
   async isFirstPremiumUser(): Promise<boolean> {
@@ -235,14 +194,14 @@ export const userService = {
 
   async grantSystemAdminAccess(userId: string, organizationId: string): Promise<void> {
     try {
-      // First, ensure the user has the organizationId set and role set to ADMIN
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          organizationId,
-          role: DeprecatedRole.ADMIN, // Set legacy role field to ADMIN for first user
-        },
-      });
+      // First, ensure a member link exists and role set to ADMIN
+      const member = await prisma.member.findFirst({ where: { userId, organizationId } });
+
+      if (!member) {
+        await prisma.member.create({ data: { userId, organizationId, role: 'Admin' } });
+      }
+
+      await prisma.user.update({ where: { id: userId }, data: { role: DeprecatedRole.ADMIN } });
 
       // Create a System Admin role if it doesn't exist
       let systemAdminRole = await prisma.role.findFirst({
