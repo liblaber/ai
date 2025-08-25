@@ -1,5 +1,6 @@
 import { prisma } from '~/lib/prisma';
-import { DeprecatedRole, PermissionAction, PermissionResource } from '@prisma/client';
+import { DeprecatedRole } from '@prisma/client';
+import { SYSTEM_ADMIN_PERMISSIONS } from '~/lib/constants/permissions';
 
 export interface UserProfile {
   id: string;
@@ -253,37 +254,8 @@ export const userService = {
         },
       });
 
-      // Grant full permissions to the role
-      const fullPermissions = [
-        // Manage all resources (for CASL compatibility)
-        { action: PermissionAction.manage, resource: PermissionResource.all },
-
-        // Specific permissions for each resource
-        { action: PermissionAction.read, resource: PermissionResource.DataSource },
-        { action: PermissionAction.create, resource: PermissionResource.DataSource },
-        { action: PermissionAction.update, resource: PermissionResource.DataSource },
-        { action: PermissionAction.delete, resource: PermissionResource.DataSource },
-
-        { action: PermissionAction.read, resource: PermissionResource.Environment },
-        { action: PermissionAction.create, resource: PermissionResource.Environment },
-        { action: PermissionAction.update, resource: PermissionResource.Environment },
-        { action: PermissionAction.delete, resource: PermissionResource.Environment },
-
-        { action: PermissionAction.read, resource: PermissionResource.Website },
-        { action: PermissionAction.create, resource: PermissionResource.Website },
-        { action: PermissionAction.update, resource: PermissionResource.Website },
-        { action: PermissionAction.delete, resource: PermissionResource.Website },
-
-        { action: PermissionAction.read, resource: PermissionResource.BuilderApp },
-        { action: PermissionAction.create, resource: PermissionResource.BuilderApp },
-        { action: PermissionAction.update, resource: PermissionResource.BuilderApp },
-        { action: PermissionAction.delete, resource: PermissionResource.BuilderApp },
-
-        { action: PermissionAction.read, resource: PermissionResource.AdminApp },
-        { action: PermissionAction.create, resource: PermissionResource.AdminApp },
-        { action: PermissionAction.update, resource: PermissionResource.AdminApp },
-        { action: PermissionAction.delete, resource: PermissionResource.AdminApp },
-      ];
+      // Grant full permissions to the role using centralized permission definitions
+      const fullPermissions = SYSTEM_ADMIN_PERMISSIONS;
 
       // Fetch existing permissions for the role once to avoid N+1 query problem
       const existingPermissions = await prisma.permission.findMany({
