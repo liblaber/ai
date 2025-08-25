@@ -39,7 +39,7 @@ Node.js is a program that helps your computer run certain types of applications.
 5. Follow the installation wizard - just click "Continue" and "Install" when prompted
 6. Enter your computer password when asked
 
-**Option 2: Using Homebrew **
+**Option 2: Using Homebrew**
 
 1. Open Terminal
 2. Copy and paste this command: `brew install node`
