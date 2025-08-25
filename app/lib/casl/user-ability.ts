@@ -24,13 +24,47 @@ export type AppAbility = PureAbility<[PermissionAction, AppSubjects], PrismaQuer
 export function createAbilityForUser(permissions: Permission[]): AppAbility {
   const { can, build } = new AbilityBuilder<AppAbility>(createPrismaAbility);
 
+  // Check if user has manage permission on all resources
+  const hasManageAll = permissions.some((p) => p.action === 'manage' && p.resource === 'all');
+
+  if (hasManageAll) {
+    // Grant all actions on all resources
+    can('manage', 'all');
+    can('read', 'DataSource');
+    can('read', 'Environment');
+    can('read', 'Website');
+    can('read', 'BuilderApp');
+    can('read', 'AdminApp');
+    can('create', 'DataSource');
+    can('create', 'Environment');
+    can('create', 'Website');
+    can('create', 'BuilderApp');
+    can('create', 'AdminApp');
+    can('update', 'DataSource');
+    can('update', 'Environment');
+    can('update', 'Website');
+    can('update', 'BuilderApp');
+    can('update', 'AdminApp');
+    can('delete', 'DataSource');
+    can('delete', 'Environment');
+    can('delete', 'Website');
+    can('delete', 'BuilderApp');
+    can('delete', 'AdminApp');
+  }
+
   permissions.forEach((permission) => {
     const { action, resource, environmentId, dataSourceId, websiteId } = permission as Permission;
 
     // Handle different permission scenarios
     switch (resource) {
       case PermissionResource.all:
+        can(action, resource);
+        break;
+
       case PermissionResource.BuilderApp:
+        can(action, resource);
+        break;
+
       case PermissionResource.AdminApp:
         can(action, resource);
         break;
@@ -78,9 +112,9 @@ export async function getUserAbility(userId: string): Promise<AppAbility> {
   }
 
   const permissions = await getUserPermissions(userId);
+
   const userAbility = createAbilityForUser(permissions);
 
-  logger.debug(`Caching user ability for user ID: ${userId}`);
   ABILITY_CACHE[userId] = userAbility;
 
   return userAbility;
