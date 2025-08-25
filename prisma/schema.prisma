@@ -328,6 +328,7 @@ model Member {
 
   @@index([userId], name: "idx_member_user_id")
   @@index([organizationId], name: "idx_member_organization_id")
+  @@unique([userId, organizationId], name: "uniq_member_user_org")
   @@map("member")
 }
 

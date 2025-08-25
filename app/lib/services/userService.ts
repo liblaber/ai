@@ -58,6 +58,7 @@ export const userService = {
       image: user.image,
       role: user.role,
       organizationId: member?.organization?.id ?? null,
+      organization: member?.organization ?? null,
       telemetryEnabled: user.telemetryEnabled,
     };
   },
@@ -167,14 +168,17 @@ export const userService = {
   },
 
   async setUserOrganizationAndRole(userId: string, organizationId: string, role: DeprecatedRole) {
-    // Create member link and update role
-    const member = await prisma.member.findFirst({ where: { userId, organizationId } });
+    // Atomically create or update the member link to avoid races
+    const memberRole = role === DeprecatedRole.ADMIN ? 'Admin' : 'Member';
 
-    if (!member) {
-      await prisma.member.create({
-        data: { userId, organizationId, role: role === DeprecatedRole.ADMIN ? 'Admin' : 'Member' },
-      });
-    }
+    // Construct the composite unique where object and cast only the where to `any` to satisfy the generated types.
+    const whereObj = { userId_organizationId: { userId, organizationId } } as any;
+
+    await prisma.member.upsert({
+      where: whereObj,
+      update: { role: memberRole },
+      create: { userId, organizationId, role: memberRole },
+    });
 
     return await prisma.user.update({ where: { id: userId }, data: { role } });
   },
