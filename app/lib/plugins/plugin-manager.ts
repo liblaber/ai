@@ -104,14 +104,6 @@ class PluginManager {
     const license = env.server.LICENSE_KEY;
     const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = env.server;
 
-    console.log('🔍 Plugin access debug:', {
-      license,
-      hasGoogleClientId: !!GOOGLE_CLIENT_ID,
-      hasGoogleClientSecret: !!GOOGLE_CLIENT_SECRET,
-      isPremiumLicense: license === 'premium',
-      hasGoogleOAuth: !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET),
-    });
-
     // If license is free, only allow anonymous auth
     if (!license || license !== 'premium') {
       console.log('📋 Using FREE_PLUGIN_ACCESS');

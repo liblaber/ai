@@ -199,7 +199,7 @@ export const userService = {
     });
   },
 
-  async isFirstPremiumUser(_userId: string): Promise<boolean> {
+  async isFirstPremiumUser(): Promise<boolean> {
     // Check if this is the first non-anonymous user in the system
     // isAnonymous can be null (for OAuth users) or false (for non-anonymous users)
     const nonAnonymousUserCount = await prisma.user.count({
@@ -285,17 +285,19 @@ export const userService = {
         { action: PermissionAction.delete, resource: PermissionResource.AdminApp },
       ];
 
-      for (const permission of fullPermissions) {
-        // Check if permission already exists
-        const existingPermission = await prisma.permission.findFirst({
-          where: {
-            roleId: systemAdminRole.id,
-            resource: permission.resource,
-            action: permission.action,
-          },
-        });
+      // Fetch existing permissions for the role once to avoid N+1 query problem
+      const existingPermissions = await prisma.permission.findMany({
+        where: { roleId: systemAdminRole.id },
+        select: { resource: true, action: true },
+      });
 
-        if (!existingPermission) {
+      const existingPermissionSet = new Set(existingPermissions.map((p) => `${p.resource}:${p.action}`));
+
+      for (const permission of fullPermissions) {
+        // Check if permission already exists in memory
+        const permissionKey = `${permission.resource}:${permission.action}`;
+
+        if (!existingPermissionSet.has(permissionKey)) {
           await prisma.permission.create({
             data: {
               roleId: systemAdminRole.id,

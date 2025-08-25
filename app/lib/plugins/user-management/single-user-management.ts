@@ -34,7 +34,7 @@ export class SingleUserManagement implements UserManagementPlugin {
     });
 
     // Check if this is the first premium user in the system (excluding anonymous users)
-    const isFirstPremiumUser = await userService.isFirstPremiumUser(userId);
+    const isFirstPremiumUser = await userService.isFirstPremiumUser();
 
     if (isFirstPremiumUser) {
       // Grant system admin access to the first premium user

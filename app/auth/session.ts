@@ -2,14 +2,14 @@ import { auth } from './auth-config';
 import { getUserAbility } from '~/lib/casl/user-ability';
 
 // Define proper session types that match better-auth's actual structure
-type SessionUser = {
+export type SessionUser = {
   id: string;
   email: string;
   name?: string;
   image?: string;
 };
 
-type Session = {
+export type Session = {
   user: SessionUser | null;
 };
 
