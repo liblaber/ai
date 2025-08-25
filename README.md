@@ -194,7 +194,7 @@ pnpm run docker:start
 Before starting, ensure you have all the following installed and configured:
 
 <details>
-  <summary><b>Node.js</b> (18 or higher) <em>(Required for running the application)</em></summary>
+  <summary><b>Node.js</b> (22 or higher) <em>(Required for running the application)</em></summary>
 
 Node.js is a program that helps your computer run certain types of applications. You'll need it to run this project on your computer.
 
