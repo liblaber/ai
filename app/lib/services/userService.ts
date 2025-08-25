@@ -50,7 +50,7 @@ export const userService = {
 
   async getUserByEmail(email: string): Promise<UserProfile> {
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (!user) {
@@ -64,7 +64,6 @@ export const userService = {
       image: user.image,
       role: user.role,
       organizationId: user.organizationId,
-      organization: user.organization,
       telemetryEnabled: user.telemetryEnabled,
     };
   },

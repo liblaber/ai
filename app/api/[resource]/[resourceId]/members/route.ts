@@ -19,61 +19,66 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ resource: string; resourceId: string }> },
 ) {
-  const { userAbility } = await requireUserAbility(request);
-  const { resource: resourceParam, resourceId } = await params;
-  const resourceConfig = getResourceConfig(resourceParam);
+  try {
+    const { userAbility } = await requireUserAbility(request);
+    const { resource: resourceParam, resourceId } = await params;
+    const resourceConfig = getResourceConfig(resourceParam);
+    const body = await request.json();
+    const parsedBody = requestSchema.safeParse(body);
 
-  if (!resourceConfig) {
-    return NextResponse.json({ success: false, error: 'Invalid route' }, { status: 400 });
-  }
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: parsedBody.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
 
-  const body = await request.json();
-  const parsedBody = requestSchema.safeParse(body);
+    const { email, permissionLevel } = parsedBody.data;
 
-  if (!parsedBody.success) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: parsedBody.error.flatten().fieldErrors,
-      },
-      { status: 400 },
+    const { fetchFunction, permissionResource, roleScope, resourceLabel } = resourceConfig;
+
+    const resource = await fetchFunction(resourceId);
+
+    if (!resource) {
+      return NextResponse.json({ success: false, error: `${resourceLabel} not found` }, { status: 404 });
+    }
+
+    if (userAbility.cannot(PermissionAction.manage, subject(permissionResource, resource))) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
+    const permissionLevelDetails = getPermissionLevelDetails(permissionLevel);
+
+    if (!permissionLevelDetails) {
+      return NextResponse.json({ success: false, error: 'Invalid permission level' }, { status: 400 });
+    }
+
+    const user = await userService.getUserByEmail(email);
+
+    return await assignUserToRole(
+      user,
+      resource,
+      roleScope,
+      permissionLevelDetails.level,
+      user.organizationId!,
+      resourceLabel,
     );
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.startsWith('Invalid resource type')) {
+        return NextResponse.json({ success: false, error: 'Invalid route' }, { status: 400 });
+      }
+
+      if (error.message.includes('not found')) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 404 });
+      }
+    }
+
+    return NextResponse.json({ success: false, error: 'Failed to assign user to role' }, { status: 500 });
   }
-
-  const { email, permissionLevel } = parsedBody.data;
-
-  const { fetchFunction, permissionResource, roleScope, resourceLabel } = resourceConfig;
-
-  const resource = await fetchFunction(resourceId);
-
-  if (!resource) {
-    return NextResponse.json({ success: false, error: `${resourceLabel} not found` }, { status: 404 });
-  }
-
-  if (userAbility.cannot(PermissionAction.manage, subject(permissionResource, resource))) {
-    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-  }
-
-  const permissionLevelDetails = getPermissionLevelDetails(permissionLevel);
-
-  if (!permissionLevelDetails) {
-    return NextResponse.json({ success: false, error: 'Invalid permission level' }, { status: 400 });
-  }
-
-  const user = await userService.getUserByEmail(email);
-
-  if (!user) {
-    return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
-  }
-
-  return await assignUserToRole(
-    user,
-    resource,
-    roleScope,
-    permissionLevelDetails.level,
-    user.organizationId,
-    resourceLabel,
-  );
 }
 interface ResourceForPermissionCheck {
   id: string;
@@ -87,7 +92,7 @@ interface ResourceConfig {
   resourceLabel: string;
 }
 
-function getResourceConfig(resourceType: string): ResourceConfig | null {
+function getResourceConfig(resourceType: string): ResourceConfig {
   switch (resourceType.toLowerCase()) {
     case 'data-sources':
       return {
@@ -111,7 +116,7 @@ function getResourceConfig(resourceType: string): ResourceConfig | null {
         resourceLabel: 'Website',
       };
     default:
-      return null;
+      throw new Error(`Invalid resource type provided: "${resourceType}"`);
   }
 }
 
