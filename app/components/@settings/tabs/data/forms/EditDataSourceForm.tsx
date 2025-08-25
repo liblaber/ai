@@ -14,6 +14,7 @@ import {
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
 import type { EnvironmentDataSource } from '~/lib/stores/environmentDataSources';
 import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
+import { getConnectionProtocol } from '@liblab/data-access/utils/connection';
 
 interface DataSourceResponse {
   success: boolean;
@@ -46,6 +47,11 @@ interface EditDataSourceFormProps {
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
   onDelete: () => void;
+}
+
+function getDataSourceType(databaseUrl: string) {
+  const protocol = getConnectionProtocol(databaseUrl);
+  return protocol === 'postgresql' ? 'postgres' : protocol;
 }
 
 // TODO: @kapicic when opening the form for editing we do not get correct fields
@@ -106,7 +112,6 @@ export default function EditDataSourceForm({
     fetchEnvironments();
   }, []);
 
-  // TODO: @kapicic refactor
   useEffect(() => {
     if (!selectedDataSource) {
       return;
@@ -129,11 +134,15 @@ export default function EditDataSourceForm({
       // since it's not stored in the EnvironmentDataSource object
       // This will be handled when we need to update the data source
 
-      // TODO: @kapicic we need to get the db type
       setDbName(selectedDataSource.dataSource.name);
 
       getDataSourceUrl(selectedDataSource.dataSource.id, currentEnvironment.value).then((databaseUrl) => {
         setConnStr(databaseUrl);
+
+        const type = getDataSourceType(databaseUrl);
+        const matchingOption = availableDataSourceOptions.find((opt) => opt.value === type);
+
+        setDbType(matchingOption || DEFAULT_DATA_SOURCES[0]);
       });
     }
 
