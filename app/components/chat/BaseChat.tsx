@@ -28,6 +28,8 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { type BrowserInfo, detectBrowser } from '~/lib/utils/browser-detection';
 import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
 import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
+import { saveSnapshot, updateSnapshotByMessageId } from '~/lib/persistence/snapshots';
+import { snapshotService } from '~/lib/services/snapshotService';
 
 export interface PendingPrompt {
   input: string;
@@ -96,7 +98,6 @@ export const BaseChat = ({
   const [progressAnnotations, setProgressAnnotations] = useState<ProgressAnnotation[]>([]);
   const { environmentDataSources } = useEnvironmentDataSourcesStore();
   const { data: session } = useSession();
-  // const { actionRunner: workbenchActionRunner } = useActionRunner();
 
   // Data source change modal state
   const [showDataSourceChangeModal, setShowDataSourceChangeModal] = useState(false);
@@ -150,7 +151,6 @@ export const BaseChat = ({
 
       // Update the .env file with the new DATABASE_URL
       const encodedConnectionString = encodeURIComponent(url);
-      // TODO: @kapicic we need to update the snapshot with the new connection string as well
       await ActionRunner.updateEnvironmentVariable('DATABASE_URL', encodedConnectionString);
 
       // Update the selected data source in the store
@@ -166,6 +166,24 @@ export const BaseChat = ({
             environmentId: pendingDataSourceChange.environmentId,
             dataSourceId: pendingDataSourceChange.dataSourceId,
           });
+
+          const lastUserMessage = messages
+            ?.slice()
+            .reverse()
+            .find((msg) => msg.role === 'user');
+
+          if (lastUserMessage?.id) {
+            // Check if a snapshot already exists for this message ID
+            const existingSnapshot = await snapshotService.getSnapshotByMessageId(lastUserMessage.id);
+
+            if (existingSnapshot) {
+              // Update existing snapshot
+              await updateSnapshotByMessageId(currentChatId, lastUserMessage.id);
+            } else {
+              // Create new snapshot
+              await saveSnapshot(currentChatId, lastUserMessage.id);
+            }
+          }
         } catch (error) {
           console.warn('Failed to update conversation data source:', error);
           // Don't fail the entire operation if conversation update fails

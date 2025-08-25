@@ -91,7 +91,7 @@ export async function getEnvironmentDataSource(dataSourceId: string, userId: str
       ...dsp,
       environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
     })),
-  }
+  };
 }
 
 export async function createDataSource(data: {

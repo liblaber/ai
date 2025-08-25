@@ -128,3 +128,33 @@ export const updateLatestSnapshot = async (
     logger.error('Failed to update file in snapshot:', error);
   }
 };
+
+/**
+ * Updates a snapshot by message ID.
+ */
+export const updateSnapshotByMessageId = async (conversationId: string, messageId: string): Promise<void> => {
+  const fileMap = workbenchStore.getFileMap();
+
+  try {
+    const response = await fetch(`/api/conversations/${conversationId}/snapshots/message/${messageId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fileMap,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = (await response.json()) as ErrorResponse;
+      throw new Error(error.error || 'Failed to update snapshot');
+    }
+
+    logger.info(`Updated snapshot for message ${messageId} in conversation ${conversationId}`);
+  } catch (error) {
+    console.error('Error updating snapshot by message ID', error);
+    toast.error('Failed to update snapshot');
+    throw error;
+  }
+};

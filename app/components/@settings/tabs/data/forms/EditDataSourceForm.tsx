@@ -54,7 +54,6 @@ function getDataSourceType(databaseUrl: string) {
   return protocol === 'postgresql' ? 'postgres' : protocol;
 }
 
-// TODO: @kapicic when opening the form for editing we do not get correct fields
 export default function EditDataSourceForm({
   selectedDataSource,
   isSubmitting,
@@ -62,8 +61,6 @@ export default function EditDataSourceForm({
   onSuccess,
   onDelete,
 }: EditDataSourceFormProps) {
-  console.log({ selectedDataSource });
-
   const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
   const [dbType, setDbType] = useState<DataSourceOption>({} as DataSourceOption);

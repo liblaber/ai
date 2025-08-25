@@ -58,7 +58,6 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({
     const dataSource = environmentDataSources.find(
       (eds) => eds.dataSourceId === dataSourceId && eds.environmentId === environmentId,
     );
-    console.log({ dataSource, dataSourceId, environmentId, option });
 
     if (!dataSource) {
       return;
