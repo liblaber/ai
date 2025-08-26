@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEnvironmentDataSource } from '~/lib/services/dataSourceService';
 import { generateSchemaBasedSuggestions } from '~/lib/services/suggestionService';
-import { requireUserId } from '~/auth/session';
 import { SAMPLE_DATABASE_NAME } from '@liblab/data-access/accessors/sqlite';
 import { logger } from '~/utils/logger';
 import { DataSourcePropertyType } from '@prisma/client';
+import { requireUserId } from '~/auth/session';
 
 export async function POST(request: NextRequest) {
   try {

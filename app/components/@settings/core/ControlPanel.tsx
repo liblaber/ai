@@ -5,13 +5,14 @@ import * as RadixDialog from '@radix-ui/react-dialog';
 import { classNames } from '~/utils/classNames';
 import {
   closeSettingsPanel,
+  resetControlPanelHeader,
   resetTabConfiguration,
   settingsPanelStore,
   tabConfigurationStore,
 } from '~/lib/stores/settings';
 import type { TabType, TabVisibilityConfig } from './types';
 import { DEFAULT_TAB_CONFIG, TAB_ICONS, TAB_LABELS } from './constants';
-import { CloseCircle } from 'iconsax-reactjs';
+import { ControlPanelHeader } from './ControlPanelHeader';
 import { Settings } from 'lucide-react';
 
 // Import all tab components
@@ -22,6 +23,7 @@ import { useUserStore } from '~/lib/stores/user';
 import { DeprecatedRole } from '@prisma/client';
 import OrganizationTab from '~/components/@settings/tabs/organization/OrganizationTab';
 import MembersTab from '~/components/@settings/tabs/members/MembersTab';
+import RolesTab from '~/components/@settings/tabs/roles/RolesTab';
 import EnvironmentsTab from '~/components/@settings/tabs/environments';
 
 const LAST_ACCESSED_TAB_KEY = 'control-panel-last-tab';
@@ -149,7 +151,14 @@ export const ControlPanel = () => {
   };
 
   const handleTabClick = (tabId: TabType) => {
+    if (activeTab === tabId) {
+      return;
+    }
+
     setActiveTab(tabId);
+
+    // Reset the header when switching tabs
+    resetControlPanelHeader();
 
     // Store the selected tab
     localStorage.setItem(LAST_ACCESSED_TAB_KEY, tabId);
@@ -169,6 +178,8 @@ export const ControlPanel = () => {
         return <OrganizationTab />;
       case 'members':
         return <MembersTab />;
+      case 'roles':
+        return <RolesTab />;
       default:
         return null;
     }
@@ -224,21 +235,16 @@ export const ControlPanel = () => {
 
               {/* Main Content */}
               <div className="flex-1 flex flex-col min-w-[650px]">
+                <ControlPanelHeader />
+
                 <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 relative">
-                  <div className="absolute top-4 right-4 z-10">
-                    <CloseCircle
-                      variant="Bold"
-                      className="w-6 h-6 text-gray-500 dark:text-white hover:text-gray-700 dark:hover:text-gray-400 transition-colors cursor-pointer"
-                      onClick={handleClose}
-                    />
-                  </div>
                   <motion.div
                     key={activeTab || 'home'}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="p-6 pt-16"
+                    className="m-6"
                   >
                     {activeTab ? (
                       getTabComponent(activeTab)

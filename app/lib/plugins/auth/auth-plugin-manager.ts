@@ -13,7 +13,7 @@ export class AuthPluginManager {
       pluginId: 'anonymous',
       icon: AnonymousIcon(),
       label: 'Continue as Guest',
-      provider: 'anonymous',
+      provider: 'credential', // Use credential provider for the anonymous user
     },
   ];
 }

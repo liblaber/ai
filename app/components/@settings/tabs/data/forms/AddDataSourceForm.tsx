@@ -261,6 +261,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
             <div className="min-w-[160px] flex-1">
               <label className="mb-3 block text-sm font-medium text-secondary">Data source</label>
               <BaseSelect
+                dataTestId={'add-data-source-select'}
                 value={dbType}
                 onChange={(value) => {
                   setDbType(value as DataSourceOption);

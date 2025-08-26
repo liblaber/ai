@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import useViewport from '~/lib/hooks';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import {
   addDeploymentLog,
   addErrorLogs,
@@ -23,7 +24,8 @@ import { chatId, description } from '~/lib/persistence/useConversationHistory';
 import { PublishProgressModal } from '~/components/publish/PublishProgressModal.client';
 import JSZip from 'jszip';
 import type { NetlifySiteInfo } from '~/types/netlify';
-import { AlertTriangle, Rocket, Settings, CodeXml, MessageCircle } from 'lucide-react';
+import { AlertTriangle, CodeXml, Lock, MessageCircle, Rocket, Settings } from 'lucide-react';
+import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 
 interface ProgressData {
   step: number;
@@ -58,6 +60,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   const devMode = useStore(workbenchStore.devMode);
   const { showChat } = useStore(chatStore);
   const { website } = useStore(websiteStore);
+  const { environmentDataSources, selectedEnvironmentDataSource } = useEnvironmentDataSourcesStore();
   const isSmallViewport = useViewport(1024);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,6 +70,14 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   const chatDescription = useStore(description);
   const [modalMode, setModalMode] = useState<'publish' | 'settings' | 'initializing'>('publish');
   const [hasNetlifyToken, setHasNetlifyToken] = useState(false);
+  const [isPublishingDisabled, setIsPublishingDisabled] = useState(false);
+
+  // we want to disable sqlite deployments since we do not support remote sqlite nor do we copy the source file yet
+  const currentDataSource = environmentDataSources.find(
+    ({ environmentId, dataSourceId }) =>
+      environmentId === selectedEnvironmentDataSource.environmentId &&
+      dataSourceId === selectedEnvironmentDataSource.dataSourceId,
+  );
 
   useEffect(() => {
     async function checkNetlifyConfig() {
@@ -83,6 +94,16 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
     }
 
     checkNetlifyConfig();
+
+    async function checkPublishingCapability() {
+      if (!currentDataSource || !currentDataSource.dataSourceId || !currentDataSource.environmentId) {
+        setIsPublishingDisabled(true);
+      } else {
+        const url = await getDataSourceUrl(currentDataSource.dataSourceId, currentDataSource.environmentId);
+        setIsPublishingDisabled(url.startsWith('sqlite'));
+      }
+    }
+    checkPublishingCapability();
   }, []);
 
   useEffect(() => {
@@ -372,7 +393,17 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       <>
         <button
           onClick={handlePublishClick}
-          className="w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+          disabled={isPublishingDisabled}
+          className={classNames(
+            'w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2',
+            {
+              'opacity-50 cursor-not-allowed': isPublishingDisabled,
+              'hover:bg-gray-100 dark:hover:bg-gray-800': !isPublishingDisabled,
+            },
+          )}
+          title={
+            isPublishingDisabled ? 'SQLite database publishing is not supported' : 'Publish new version of your site'
+          }
         >
           <Rocket className="w-4 h-4" />
           Publish New Version
@@ -394,12 +425,17 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
         <div className="relative" ref={dropdownRef}>
           <div className="flex border border-depth-3 rounded-md overflow-hidden mr-2 text-sm">
             <Button
-              active
-              title="Publish your site to the web"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="px-4 flex items-center gap-2"
+              active={!isPublishingDisabled}
+              disabled={isPublishingDisabled}
+              title={
+                isPublishingDisabled ? 'SQLite database publishing is not supported' : 'Publish your site to the web'
+              }
+              onClick={() => !isPublishingDisabled && setIsDropdownOpen(!isDropdownOpen)}
+              className={classNames('px-4 flex items-center gap-2', {
+                'opacity-50 grayscale': isPublishingDisabled,
+              })}
             >
-              <Rocket className="w-4 h-4" />
+              {isPublishingDisabled ? <Lock className="w-4 h-4" /> : <Rocket className="w-4 h-4" />}
               Publish
             </Button>
           </div>
@@ -469,14 +505,15 @@ function Button({ active = false, disabled = false, children, onClick, className
       className={classNames(
         'flex items-center p-1.5',
         {
-          'bg-depth-1 text-tertiary hover:text-primary': !active,
+          'bg-depth-1 text-tertiary hover:text-primary': !active && !disabled,
           'bg-accent/10 text-accent hover:bg-depth-3/10 cursor-pointer': active && !disabled,
           'bg-depth-1 text-alpha-gray-20 dark:text-alpha-white-20 cursor-not-allowed': disabled,
         },
         className,
       )}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       title={title}
+      disabled={disabled}
     >
       {children}
     </button>

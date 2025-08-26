@@ -1,5 +1,5 @@
 import type { TabType, TabVisibilityConfig } from './types';
-import { Building, Database, GitBranch, type LucideIcon, Rocket, Server, Users } from 'lucide-react';
+import { Building, Database, GitBranch, type LucideIcon, Rocket, Users, Server, ShieldUser } from 'lucide-react';
 
 export const TAB_ICONS: Record<TabType, string | LucideIcon> = {
   data: Database,
@@ -7,6 +7,7 @@ export const TAB_ICONS: Record<TabType, string | LucideIcon> = {
   'deployed-apps': Rocket,
   organization: Building,
   members: Users,
+  roles: ShieldUser,
   environments: Server,
 };
 
@@ -16,6 +17,7 @@ export const TAB_LABELS: Record<TabType, string> = {
   'deployed-apps': 'Deployed Apps',
   organization: 'Organization',
   members: 'Members',
+  roles: 'Roles',
   environments: 'Environments',
 };
 
@@ -25,6 +27,7 @@ export const TAB_DESCRIPTIONS: Record<TabType, string> = {
   'deployed-apps': 'View and manage your deployed applications',
   organization: 'Manage your organization',
   members: 'Manage your organization members',
+  roles: 'Manage roles and permissions for organization members',
   environments: 'Manage your environments',
 };
 
@@ -36,4 +39,5 @@ export const DEFAULT_TAB_CONFIG: TabVisibilityConfig[] = [
 
   { id: 'organization', visible: true, window: 'admin', order: 0 },
   { id: 'members', visible: true, window: 'admin', order: 1 },
+  { id: 'roles', visible: true, window: 'admin', order: 2 },
 ];

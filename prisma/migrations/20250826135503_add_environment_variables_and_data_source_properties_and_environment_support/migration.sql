@@ -22,7 +22,7 @@ ALTER TABLE "public"."conversation" DROP CONSTRAINT "conversation_dataSourceId_f
 
 -- AlterTable
 ALTER TABLE "public"."conversation"
-ADD COLUMN     "data_source_id" TEXT,
+  ADD COLUMN     "data_source_id" TEXT,
 ADD COLUMN     "environment_id" TEXT;
 
 
@@ -36,16 +36,16 @@ WITH user_orgs AS (
   FROM "public"."user" u
   WHERE u."organizationId" IS NOT NULL
 ),
-dev_envs AS (
-  SELECT e.id as env_id, e.organization_id
-  FROM "public"."environment" e
-  WHERE e.name = 'Development'
-)
+     dev_envs AS (
+       SELECT e.id as env_id, e.organization_id
+       FROM "public"."environment" e
+       WHERE e.name = 'Development'
+     )
 UPDATE "public"."conversation" c
 SET environment_id = dev_envs.env_id
-FROM user_orgs, dev_envs
+  FROM user_orgs, dev_envs
 WHERE c."userId" = user_orgs.user_id
-AND user_orgs.organization_id = dev_envs.organization_id;
+  AND user_orgs.organization_id = dev_envs.organization_id;
 
 -- Then, for any remaining conversations without environment_id,
 -- find any available environment (prioritizing Development if available)
@@ -60,7 +60,7 @@ SET environment_id = (
   )
   ORDER BY CASE WHEN e.name = 'Development' THEN 0 ELSE 1 END, e.name
   LIMIT 1
-)
+  )
 WHERE c.environment_id IS NULL;
 
 -- If still no environment_id, use the first available environment
@@ -69,7 +69,7 @@ SET environment_id = (
   SELECT e.id
   FROM "public"."environment" e
   LIMIT 1
-)
+  )
 WHERE c.environment_id IS NULL;
 
 
@@ -91,37 +91,37 @@ FROM "public"."conversation" c
 WHERE c.environment_id IS NOT NULL
   AND c.data_source_id IS NOT NULL
   AND NOT EXISTS (
-    SELECT 1 FROM "public"."environment_data_source" eds
-    WHERE eds.environment_id = c.environment_id
-      AND eds.data_source_id = c.data_source_id
-  );
+  SELECT 1 FROM "public"."environment_data_source" eds
+  WHERE eds.environment_id = c.environment_id
+    AND eds.data_source_id = c.data_source_id
+);
 
 -- CreateTable
 CREATE TABLE "public"."data_source_property" (
-    "id" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-    "environment_variable_id" TEXT NOT NULL,
-    "environment_id" TEXT NOT NULL,
-    "data_source_id" TEXT NOT NULL,
+                                               "id" TEXT NOT NULL,
+                                               "type" TEXT NOT NULL,
+                                               "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                               "updated_at" TIMESTAMP(3) NOT NULL,
+                                               "environment_variable_id" TEXT NOT NULL,
+                                               "environment_id" TEXT NOT NULL,
+                                               "data_source_id" TEXT NOT NULL,
 
-    CONSTRAINT "data_source_property_pkey" PRIMARY KEY ("id")
+                                               CONSTRAINT "data_source_property_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "public"."environment_variable" (
-    "id" TEXT NOT NULL,
-    "key" TEXT NOT NULL,
-    "value" TEXT NOT NULL,
-    "description" TEXT,
-    "type" "public"."EnvironmentVariableType" NOT NULL,
-    "environment_id" TEXT NOT NULL,
-    "created_by_id" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+                                               "id" TEXT NOT NULL,
+                                               "key" TEXT NOT NULL,
+                                               "value" TEXT NOT NULL,
+                                               "description" TEXT,
+                                               "type" "public"."EnvironmentVariableType" NOT NULL,
+                                               "environment_id" TEXT NOT NULL,
+                                               "created_by_id" TEXT NOT NULL,
+                                               "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                               "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "environment_variable_pkey" PRIMARY KEY ("id")
+                                               CONSTRAINT "environment_variable_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex

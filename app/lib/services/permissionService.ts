@@ -2,6 +2,40 @@ import { prisma } from '@/lib/prisma';
 import { PermissionAction, PermissionResource } from '@prisma/client';
 import type { Permission } from '@prisma/client';
 
+export type PermissionLevel = 'viewer' | 'manage';
+export interface PermissionDetails {
+  label: string;
+  action: PermissionAction;
+}
+
+export const permissionLevels: Record<PermissionLevel, PermissionDetails> = {
+  viewer: {
+    label: 'VIEWER',
+    action: PermissionAction.read,
+  },
+  manage: {
+    label: 'MANAGE',
+    action: PermissionAction.manage,
+  },
+} as const;
+
+/**
+ * Validates and retrieves permission level case-insensitively.
+ * Returns null if invalid.
+ */
+export function getPermissionLevelDetails(
+  levelInput: string,
+): { level: PermissionLevel; details: PermissionDetails } | null {
+  const normalizedLevel = levelInput.toLowerCase();
+
+  if (normalizedLevel in permissionLevels) {
+    const level = normalizedLevel as PermissionLevel;
+    return { level, details: permissionLevels[level] };
+  }
+
+  return null;
+}
+
 export async function getUserPermissions(userId: string): Promise<Permission[]> {
   const userWithRoles = await prisma.user.findUnique({
     where: { id: userId },
