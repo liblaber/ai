@@ -99,10 +99,7 @@ export async function POST(
       }
     }
 
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Failed to assign user to role' },
-      { status: 500 },
-    );
+    return NextResponse.json({ success: false, error: 'Failed to assign user to role' }, { status: 500 });
   }
 }
 

@@ -41,10 +41,7 @@ export async function DELETE(
       );
     }
 
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Failed to remove user from role' },
-      { status: 500 },
-    );
+    return NextResponse.json({ success: false, error: 'Failed to remove user from role' }, { status: 500 });
   }
 }
 
@@ -104,9 +101,6 @@ export async function PATCH(
       );
     }
 
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Failed to update user role' },
-      { status: 500 },
-    );
+    return NextResponse.json({ success: false, error: 'Failed to update user role' }, { status: 500 });
   }
 }
