@@ -102,12 +102,14 @@ export async function GET(request: NextRequest) {
       },
     );
 
-    // Set secure cookies for the tokens (optional - for session management)
+    // Set secure cookies for the tokens with extended lifetime
+    // Google refresh tokens are long-lived, so we can set a longer cookie expiration
+    const cookieMaxAge = 30 * 24 * 60 * 60; // 30 days in seconds
     response.cookies.set('google_workspace_auth', authManager.encryptCredentials(credentials), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 3600, // 1 hour
+      maxAge: cookieMaxAge,
       path: '/',
     });
 

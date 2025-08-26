@@ -156,10 +156,10 @@ export class GoogleWorkspaceAuthManager {
       return false;
     }
 
-    // Check if token expires within the next 5 minutes
+    // Check if token expires within the next 10 minutes (longer buffer for better UX)
     const now = Date.now();
     const expiry = credentials.expiry_date;
-    const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const bufferTime = 10 * 60 * 1000; // 10 minutes in milliseconds
 
     return expiry > now + bufferTime;
   }
@@ -169,8 +169,40 @@ export class GoogleWorkspaceAuthManager {
    */
   async ensureValidAuth(): Promise<void> {
     if (this._config?.type === 'oauth2' && !this.isTokenValid()) {
-      await this.refreshTokens();
+      const refreshedCredentials = await this.refreshTokens();
+
+      // Update the oauth client with refreshed credentials
+      if (this._oauth2Client) {
+        this._oauth2Client.setCredentials({
+          access_token: refreshedCredentials.access_token,
+          refresh_token: refreshedCredentials.refresh_token,
+          expiry_date: refreshedCredentials.expiry_date,
+          token_type: refreshedCredentials.token_type,
+          scope: refreshedCredentials.scope,
+        });
+      }
     }
+  }
+
+  /**
+   * Check if token needs proactive refresh (within 20 minutes of expiry)
+   */
+  needsProactiveRefresh(): boolean {
+    if (!this._oauth2Client) {
+      return false;
+    }
+
+    const credentials = this._oauth2Client.credentials;
+
+    if (!credentials.access_token || !credentials.expiry_date) {
+      return false;
+    }
+
+    const now = Date.now();
+    const expiry = credentials.expiry_date;
+    const proactiveRefreshTime = 20 * 60 * 1000; // 20 minutes
+
+    return expiry <= now + proactiveRefreshTime && Boolean(credentials.refresh_token);
   }
 
   /**

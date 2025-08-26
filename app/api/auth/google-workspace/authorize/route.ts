@@ -20,10 +20,11 @@ export async function POST(request: NextRequest) {
     const requestedScopes =
       scopes || (type === 'docs' ? [GOOGLE_WORKSPACE_SCOPES.DOCS.READONLY] : [GOOGLE_WORKSPACE_SCOPES.SHEETS.READONLY]);
 
-    // Add Drive scope for file listing
+    // Add Drive scope for file listing and ensure we get offline access
     const allScopes = [
       ...requestedScopes,
       'https://www.googleapis.com/auth/drive.readonly', // For listing files
+      'https://www.googleapis.com/auth/userinfo.email', // For user identification
     ];
 
     await authManager.initialize({

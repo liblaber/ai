@@ -130,8 +130,12 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
 
       const connectionString =
         connection.type === 'docs'
-          ? `docs://${connection.documentId}/?auth=oauth2&access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}`
-          : `sheets://${connection.documentId}/?auth=oauth2&access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}`;
+          ? connection.accessToken && connection.refreshToken
+            ? `docs://${connection.documentId}/?auth=oauth2&access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}`
+            : `docs://${connection.documentId}/`
+          : connection.accessToken && connection.refreshToken
+            ? `sheets://${connection.documentId}/?auth=oauth2&access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}${connection.appsScriptUrl ? `&appsScript=${encodeURIComponent(connection.appsScriptUrl)}` : ''}`
+            : `sheets://${connection.documentId}/${connection.appsScriptUrl ? `?appsScript=${encodeURIComponent(connection.appsScriptUrl)}` : ''}`;
 
       const formData = new FormData();
       formData.append('name', connection.title);

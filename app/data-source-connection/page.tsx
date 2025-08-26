@@ -10,7 +10,10 @@ import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/
 import { useDataSourceActions, useDataSourcesStore } from '~/lib/stores/dataSources';
 import { useRouter } from 'next/navigation';
 import { Header } from '~/components/header/Header';
-import { GoogleWorkspaceConnector } from '~/components/google-workspace/GoogleWorkspaceConnector';
+import {
+  GoogleWorkspaceConnector,
+  type GoogleWorkspaceConnection,
+} from '~/components/google-workspace/GoogleWorkspaceConnector';
 import {
   type DataSourceOption,
   DEFAULT_DATA_SOURCES,
@@ -110,22 +113,19 @@ export default function DataSourceConnectionPage() {
     }
   };
 
-  const handleGoogleWorkspaceConnection = async (connection: {
-    type: 'docs' | 'sheets';
-    documentId: string;
-    title: string;
-    url: string;
-    accessToken: string;
-    refreshToken: string;
-  }) => {
+  const handleGoogleWorkspaceConnection = async (connection: GoogleWorkspaceConnection) => {
     try {
       setError(null);
       setIsConnecting(true);
 
       const connectionString =
         connection.type === 'docs'
-          ? `docs://${connection.documentId}@googleapis.com/`
-          : `sheets://${connection.documentId}@googleapis.com/`;
+          ? connection.accessToken && connection.refreshToken
+            ? `docs://${connection.documentId}/?auth=oauth2&access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}`
+            : `docs://${connection.documentId}/`
+          : connection.accessToken && connection.refreshToken
+            ? `sheets://${connection.documentId}/?auth=oauth2&access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}${connection.appsScriptUrl ? `&appsScript=${encodeURIComponent(connection.appsScriptUrl)}` : ''}`
+            : `sheets://${connection.documentId}/${connection.appsScriptUrl ? `?appsScript=${encodeURIComponent(connection.appsScriptUrl)}` : ''}`;
 
       const formData = new FormData();
       formData.append('name', connection.title);

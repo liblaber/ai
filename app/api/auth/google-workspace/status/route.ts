@@ -47,11 +47,13 @@ export async function GET(request: NextRequest) {
             },
           });
 
+          // Set longer-lived cookie for refreshed tokens
+          const cookieMaxAge = 30 * 24 * 60 * 60; // 30 days
           response.cookies.set('google_workspace_auth', authManager.encryptCredentials(refreshedCredentials), {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 3600,
+            maxAge: cookieMaxAge,
             path: '/',
           });
 
