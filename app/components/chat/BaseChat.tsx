@@ -29,6 +29,8 @@ import { type BrowserInfo, detectBrowser } from '~/lib/utils/browser-detection';
 import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
 import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 import { updateLatestSnapshot } from '~/lib/persistence/snapshots';
+import { MessageRole } from '~/utils/constants';
+import { logger } from '~/utils/logger';
 
 export interface PendingPrompt {
   input: string;
@@ -98,7 +100,6 @@ export const BaseChat = ({
   const { environmentDataSources } = useEnvironmentDataSourcesStore();
   const { data: session } = useSession();
 
-  // Data source change modal state
   const [showDataSourceChangeModal, setShowDataSourceChangeModal] = useState(false);
   const [pendingDataSourceChange, setPendingDataSourceChange] = useState<{
     dataSourceId: string;
@@ -145,18 +146,14 @@ export const BaseChat = ({
     setIsUpdatingDataSource(true);
 
     try {
-      // Get the connection string for the new data source
       const url = await getDataSourceUrl(pendingDataSourceChange.dataSourceId, pendingDataSourceChange.environmentId);
 
-      // Update the .env file with the new DATABASE_URL
       const encodedConnectionString = encodeURIComponent(url);
       const updatedEnvContent = await ActionRunner.updateEnvironmentVariable('DATABASE_URL', encodedConnectionString);
 
-      // Update the selected data source in the store
       const { setSelectedEnvironmentDataSource } = useEnvironmentDataSourcesStore.getState();
       setSelectedEnvironmentDataSource(pendingDataSourceChange.dataSourceId, pendingDataSourceChange.environmentId);
 
-      // Update the current conversation in the database
       const currentChatId = chatId.get();
 
       if (currentChatId) {
@@ -169,16 +166,14 @@ export const BaseChat = ({
           const lastUserMessage = messages
             ?.slice()
             .reverse()
-            .find((msg) => msg.role === 'user');
+            .find((msg) => msg.role === MessageRole.User);
 
           if (lastUserMessage?.id) {
-            // Check if a snapshot already exists for this message ID
-
             await updateLatestSnapshot(currentChatId, '.env', updatedEnvContent);
           }
         } catch (error) {
-          console.warn('Failed to update conversation data source:', error);
-          // Don't fail the entire operation if conversation update fails
+          logger.error(error);
+          toast.error("Failed to update the conversation's data source.");
         }
       }
 
