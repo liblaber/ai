@@ -314,7 +314,7 @@ export function GoogleWorkspaceConnector({
 
       await onConnection(connection);
     } else {
-      // Public URL flow
+      // Sharable URL flow
       if (!validateAndParseUrl() || !parsedDocument) {
         return;
       }
@@ -380,8 +380,8 @@ export function GoogleWorkspaceConnector({
               }`}
             >
               <div className="text-center">
-                <div className="text-lg font-medium mb-1">🌐 Public URL</div>
-                <div className="text-sm opacity-80">Use publicly accessible document</div>
+                <div className="text-lg font-medium mb-1">🌐 Sharable URL</div>
+                <div className="text-sm opacity-80">Use sharable accessible document</div>
               </div>
             </button>
           </div>
@@ -467,7 +467,7 @@ export function GoogleWorkspaceConnector({
         </div>
       )}
 
-      {/* Public URL Flow - Always available, but only when OAuth is not configured OR when public method is selected */}
+      {/* Sharable URL Flow - Always available, but only when OAuth is not configured OR when public method is selected */}
       {(!hasOAuthConfig || connectionMethod === 'public') && (
         <div>
           <Label className="mb-3 block text-gray-300">
