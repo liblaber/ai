@@ -74,10 +74,6 @@ export async function PATCH(
 
     const resourceData = await fetchResource(resourceId);
 
-    if (!resource) {
-      return NextResponse.json({ success: false, error: 'Resource not found' }, { status: 404 });
-    }
-
     if (userAbility.cannot(PermissionAction.manage, subject(permissionResource, resourceData))) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }

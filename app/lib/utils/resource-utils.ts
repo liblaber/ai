@@ -78,7 +78,7 @@ export async function getMembersForResource(
   roleScope: RoleScope,
   permissionResource: PermissionResource,
 ): Promise<ResourceMember[]> {
-  const resourceIdField = `${permissionResource.toLowerCase()}Id`;
+  const resourceIdField = `${permissionResource.charAt(0).toLowerCase() + permissionResource.slice(1)}Id`;
 
   // Find all UserRole entries that link to a role with the required permissions.
   const userRoles = await prisma.userRole.findMany({
