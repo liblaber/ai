@@ -8,17 +8,19 @@ export interface DataSource {
   id: string;
   name: string;
   connectionString: string;
+  createdById: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export async function getDataSource(id: string, userId: string): Promise<DataSource | null> {
-  return prisma.dataSource.findFirst({
-    where: { id, createdById: userId },
+export async function getDataSource(id: string): Promise<DataSource | null> {
+  return prisma.dataSource.findUnique({
+    where: { id },
     select: {
       id: true,
       name: true,
       connectionString: true,
+      createdById: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -38,6 +40,7 @@ export async function getDataSources(userAbility: AppAbility): Promise<DataSourc
       id: true,
       name: true,
       connectionString: true,
+      createdById: true,
       createdAt: true,
       updatedAt: true,
     },

@@ -26,20 +26,66 @@ Securely connect your database, build an app, and deploy in seconds.
 <details>
   <summary><b>Node.js</b> <em>(Only required for configuration, not for running the app)</em></summary>
 
-Node.js (version 18 or higher) is needed to run setup/configuration scripts before starting the Docker containers. The application itself will run inside Docker and does not use your local Node.js.
+Node.js is a program that helps your computer run certain types of applications. You'll need it to set up this project, but don't worry - it's free and easy to install!
 
-```bash
-# Install Node.js using Homebrew
-brew install node
+<strong>📱 macOS (Mac computers)</strong>
 
-# Or use Node Version Manager (nvm)
-brew install nvm
-nvm install --lts
+**Option 1: Simple download (Recommended for beginners)**
 
-# Verify installation
-node --version  # Should show v18.x.x or higher
-npm --version
-```
+1. Open your web browser and go to [nodejs.org](https://nodejs.org/)
+2. You'll see two download buttons - click the one that says "LTS" (it's the safer, more stable version)
+3. The file will download automatically
+4. Double-click the downloaded file (it will end in .pkg)
+5. Follow the installation wizard - just click "Continue" and "Install" when prompted
+6. Enter your computer password when asked
+
+**Option 2: Using Homebrew**
+
+1. Open Terminal
+2. Copy and paste this command: `brew install node`
+3. Press Enter and wait for it to finish
+
+<strong>🪟 Windows</strong>
+
+**Option 1: Simple download (Recommended for beginners)**
+
+1. Open your web browser and go to [nodejs.org](https://nodejs.org/)
+2. You'll see two download buttons - click the one that says "LTS" (it's the safer, more stable version)
+3. The file will download automatically
+4. Find the downloaded file (usually in your Downloads folder) and double-click it
+5. Follow the installation wizard - just click "Next" and "Install" when prompted
+6. Click "Finish" when done
+
+<strong>🐧 Linux</strong>
+
+**Ubuntu/Debian (most common Linux versions)**
+
+1. Open Terminal (press Ctrl + Alt + T)
+2. Copy and paste this command: `sudo apt update && sudo apt install nodejs npm`
+3. Press Enter and type your password when asked
+4. Type "Y" and press Enter to confirm
+
+**Other Linux versions**
+
+1. Open Terminal
+2. Copy and paste this command: `sudo snap install node --classic`
+3. Press Enter and type your password when asked
+
+<strong>✅ How to check if it worked</strong>
+
+After installation, you can verify it worked:
+
+1. Open Terminal (Mac/Linux) or Command Prompt (Windows)
+2. Type: `node --version` and press Enter
+3. You should see something like "v22.0.0" or higher
+4. Type: `npm --version` and press Enter
+5. You should see a version number like "9.6.7"
+
+<strong>❓ Need help?</strong>
+
+- **Windows users:** If you get an error about "node is not recognized", restart your computer after installation or refer to the [official Windows guide](https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows)
+- **Mac users:** If you get a security warning, go to System Preferences > Security & Privacy and click "Allow"
+- **Linux users:** If you get a permission error, make sure to type `sudo` before the commands
 
 </details>
 
@@ -148,41 +194,75 @@ pnpm run docker:start
 Before starting, ensure you have all the following installed and configured:
 
 <details>
-  <summary><b>Node.js</b> (18 or higher) <em>(Required for running the application)</em></summary>
+  <summary><b>Node.js</b> (22 or higher) <em>(Required for running the application)</em></summary>
 
-<strong>Option A: Single version of Node, using Homebrew (Recommended for most users)</strong>
+Node.js is a program that helps your computer run certain types of applications. You'll need it to run this project on your computer.
 
-```bash
-# Install Homebrew if you don't have it
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+<strong>📱 macOS (Mac computers)</strong>
 
-# Install Node.js
-brew install node
-```
+**Option 1: Simple download (Recommended for beginners)**
 
-<strong>Option B: Using Node Version Manager (Recommended for developers)</strong>
+1. Open your web browser and go to [nodejs.org](https://nodejs.org/)
+2. You'll see two download buttons - click the one that says "LTS" (it's the safer, more stable version)
+3. The file will download automatically
+4. Double-click the downloaded file (it will end in .pkg)
+5. Follow the installation wizard - just click "Continue" and "Install" when prompted
+6. Enter your computer password when asked
 
-```bash
-# Install Homebrew if you don't have it
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+**Option 2: Using Homebrew (if you're comfortable with Terminal)**
 
-# Install NVM
-brew install nvm
+1. Open Terminal (press Cmd + Space, type "Terminal", press Enter)
+2. Copy and paste this command: `brew install node`
+3. Press Enter and wait for it to finish
 
-# To make the nvm command available, restart your terminal or run:
-source ~/.zshrc  # or source ~/.bashrc
+<strong>🪟 Windows</strong>
 
-  # Install latest stable Node.js
-  nvm install --lts
-```
+**Option 1: Simple download (Recommended for beginners)**
 
-Verify Installation
-Verify Installation
+1. Open your web browser and go to [nodejs.org](https://nodejs.org/)
+2. You'll see two download buttons - click the one that says "LTS" (it's the safer, more stable version)
+3. The file will download automatically
+4. Find the downloaded file (usually in your Downloads folder) and double-click it
+5. Follow the installation wizard - just click "Next" and "Install" when prompted
+6. Click "Finish" when done
 
-```bash
-node --version  # Should show v18.x.x or higher
-npm --version   # Should show version number
-```
+**Option 2: Using Windows Store (Windows 10/11)**
+
+1. Open the Microsoft Store app
+2. Search for "Node.js"
+3. Click "Install" on the official Node.js app
+4. Wait for it to finish installing
+
+<strong>🐧 Linux</strong>
+
+**Ubuntu/Debian (most common Linux versions)**
+
+1. Open Terminal (press Ctrl + Alt + T)
+2. Copy and paste this command: `sudo apt update && sudo apt install nodejs npm`
+3. Press Enter and type your password when asked
+4. Type "Y" and press Enter to confirm
+
+**Other Linux versions**
+
+1. Open Terminal
+2. Copy and paste this command: `sudo snap install node --classic`
+3. Press Enter and type your password when asked
+
+<strong>✅ How to check if it worked</strong>
+
+After installation, you can verify it worked:
+
+1. Open Terminal (Mac/Linux) or Command Prompt (Windows)
+2. Type: `node --version` and press Enter
+3. You should see something like "v22.0.0" or higher
+4. Type: `npm --version` and press Enter
+5. You should see a version number like "9.6.7"
+
+<strong>❓ Need help?</strong>
+
+- **Windows users:** If you get an error about "node is not recognized", restart your computer after installation or refer to the [official Windows guide](https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows).
+- **Mac users:** If you get a security warning, go to System Preferences > Security & Privacy and click "Allow"
+- **Linux users:** If you get a permission error, make sure to type `sudo` before the commands
 
 </details>
 

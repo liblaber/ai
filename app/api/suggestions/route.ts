@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDataSource } from '~/lib/services/datasourceService';
 import { generateSchemaBasedSuggestions } from '~/lib/services/suggestionService';
-import { requireUserId } from '~/auth/session';
 import { SAMPLE_DATABASE_NAME } from '@liblab/data-access/accessors/sqlite';
 import { logger } from '~/utils/logger';
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireUserId(request);
     const { dataSourceId } = await request.json<{ dataSourceId: string }>();
 
     if (!dataSourceId) {
@@ -15,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the data source using the service
-    const dataSource = await getDataSource(dataSourceId, userId);
+    const dataSource = await getDataSource(dataSourceId);
 
     if (!dataSource) {
       return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
