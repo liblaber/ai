@@ -25,10 +25,10 @@ export const DataSourceChangeWarningModal: React.FC<DataSourceChangeWarningModal
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="bg-depth-1 rounded-lg p-6 max-w-md w-full mx-4 border border-depth-3">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-            <AlertTriangle className="w-6 h-6 text-amber-500" />
+          <div className="p-2 rounded-lg bg-accent/10 border border-accent/20">
+            <AlertTriangle className="w-6 h-6 text-accent" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-primary">Change Data Source?</h3>
@@ -37,14 +37,12 @@ export const DataSourceChangeWarningModal: React.FC<DataSourceChangeWarningModal
         </div>
 
         <div className="space-y-4 mb-6">
-          <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+          <div className="p-3 rounded-lg bg-accent/5 border border-accent/20">
             <div className="flex items-center gap-2 mb-2">
-              <Database className="w-4 h-4 text-amber-500" />
-              <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                Switching to: {newDataSourceName}
-              </span>
+              <Database className="w-4 h-4 text-accent" />
+              <span className="text-sm font-medium text-accent">Switching to: {newDataSourceName}</span>
             </div>
-            <p className="text-xs text-amber-600 dark:text-amber-400">Environment: {newEnvironmentName}</p>
+            <p className="text-xs text-accent/80">Environment: {newEnvironmentName}</p>
           </div>
 
           <div className="text-sm text-secondary space-y-2">
@@ -68,8 +66,8 @@ export const DataSourceChangeWarningModal: React.FC<DataSourceChangeWarningModal
             disabled={isLoading}
             className={classNames(
               'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-              'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500',
-              'text-gray-700 dark:text-gray-200',
+              'bg-depth-2 hover:bg-depth-3',
+              'text-tertiary hover:text-primary',
               'disabled:opacity-50 disabled:cursor-not-allowed',
             )}
           >
@@ -81,7 +79,7 @@ export const DataSourceChangeWarningModal: React.FC<DataSourceChangeWarningModal
             disabled={isLoading}
             className={classNames(
               'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-              'bg-amber-500 hover:bg-amber-600',
+              'bg-accent hover:bg-accent/80',
               'text-white',
               'disabled:opacity-50 disabled:cursor-not-allowed',
             )}
