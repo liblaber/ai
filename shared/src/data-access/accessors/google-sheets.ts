@@ -113,6 +113,8 @@ export class GoogleSheetsAccessor implements BaseAccessor {
         case 'appendRow':
         case 'appendSheet':
         case 'appendValues':
+        case 'clearValues':
+        case 'clearRange':
         case 'insertRow':
         case 'deleteRow':
           return await this._executeWriteOperation(parsedQuery, spreadsheetId);
@@ -162,12 +164,13 @@ export class GoogleSheetsAccessor implements BaseAccessor {
           'appendRow',
           'appendSheet',
           'clearValues',
+          'clearRange',
           'insertRow',
           'deleteRow',
         ].includes(parsedQuery.operation)
       ) {
         throw new GoogleWorkspaceError(
-          'Google Sheets query must specify a valid operation (readRange, readSheet, getAllSheets, getValues, updateRange, updateValues, updateCell, appendValues, appendRow, appendSheet, insertRow, deleteRow)',
+          'Google Sheets query must specify a valid operation (readRange, readSheet, getAllSheets, getValues, updateRange, updateValues, updateCell, appendValues, appendRow, appendSheet, clearValues, clearRange, insertRow, deleteRow)',
         );
       }
 
@@ -558,6 +561,11 @@ ${userPrompt}
           console.log(`[GoogleSheets] 📝 Calling _deleteRowNoAuth...`);
           result = await this._deleteRowNoAuth(spreadsheetId, parsedQuery.parameters);
           break;
+        case 'clearValues':
+        case 'clearRange':
+          console.log(`[GoogleSheets] 📝 Calling _clearValuesNoAuth...`);
+          result = await this._clearValuesNoAuth(spreadsheetId, parsedQuery.parameters);
+          break;
         default:
           throw new GoogleWorkspaceError(`Unsupported write operation: ${parsedQuery.operation}`);
       }
@@ -596,6 +604,9 @@ ${userPrompt}
           return await this._insertRowWithOAuth(spreadsheetId, parsedQuery.parameters, headers);
         case 'deleteRow':
           return await this._deleteRowWithOAuth(spreadsheetId, parsedQuery.parameters, headers);
+        case 'clearValues':
+        case 'clearRange':
+          return await this._clearValuesWithOAuth(spreadsheetId, parsedQuery.parameters, headers);
         default:
           throw new GoogleWorkspaceError(`Unsupported OAuth write operation: ${parsedQuery.operation}`);
       }
@@ -741,6 +752,30 @@ ${userPrompt}
     }
 
     return [{ success: true, deletedRow: deleteIndex }];
+  }
+
+  private async _clearValuesWithOAuth(spreadsheetId: string, parameters: any, headers: any): Promise<any[]> {
+    const { range } = parameters;
+
+    if (!range) {
+      throw new GoogleWorkspaceError('range is required for clearValues operation');
+    }
+
+    const response = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:clear`,
+      {
+        method: 'POST',
+        headers,
+      },
+    );
+
+    if (!response.ok) {
+      throw new GoogleWorkspaceError(`Failed to clear values: ${response.statusText}`);
+    }
+
+    const result = (await response.json()) as { clearedRange?: string };
+
+    return [{ success: true, clearedRange: result.clearedRange }];
   }
 
   private async _executeReadOperation(parsedQuery: any, spreadsheetId: string): Promise<any[]> {
@@ -1352,6 +1387,41 @@ ${userPrompt}
       2. Use the Web App URL instead of the Google Sheets URL
       3. See GOOGLE_SHEETS_NO_API_KEY_SETUP.md for instructions
     `);
+  }
+
+  private async _clearValuesNoAuth(spreadsheetId: string, parameters: any): Promise<any[]> {
+    try {
+      // Check if we have an Apps Script URL to use for clearing
+      if (this._appsScriptUrl) {
+        // Extract the script ID from the Apps Script URL
+        const scriptIdMatch = this._appsScriptUrl.match(/\/macros\/s\/([a-zA-Z0-9-_]+)/);
+
+        if (scriptIdMatch) {
+          const scriptId = scriptIdMatch[1];
+          return await this._callAppsScript(scriptId, 'clearValues', parameters);
+        } else {
+          throw new GoogleWorkspaceError(`Failed to extract script ID from Apps Script URL: ${this._appsScriptUrl}`);
+        }
+      }
+
+      // If no Apps Script URL, check if the spreadsheetId itself is an Apps Script Web App
+      if (this._isAppsScriptUrl(spreadsheetId)) {
+        // Use Apps Script Web App for reliable clearing
+        return await this._callAppsScript(spreadsheetId, 'clearValues', parameters);
+      }
+
+      throw new GoogleWorkspaceError(`
+        Clear operations require Google Apps Script Web App setup.
+        
+        To enable value clearing:
+        1. Create a Google Apps Script Web App for your sheet  
+        2. Use the Web App URL instead of the Google Sheets URL
+        3. See GOOGLE_SHEETS_NO_API_KEY_SETUP.md for instructions
+      `);
+    } catch (error) {
+      console.error(`[GoogleSheets] ❌ _clearValuesNoAuth failed:`, error);
+      throw error;
+    }
   }
 
   private async _callAppsScript(appId: string, action: string, parameters: any): Promise<any[]> {

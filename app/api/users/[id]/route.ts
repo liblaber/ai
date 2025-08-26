@@ -1,6 +1,148 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId, requireUserAbility } from '~/auth/session';
 
+// Fallback function to find a row in the sheet and register its mapping
+async function findAndRegisterRowInSheet(
+  request: NextRequest,
+  recordData: any,
+): Promise<{ success: boolean; mapping?: any; error?: string }> {
+  try {
+    // Get available data sources to find the Google Sheet
+    const dataSources = await getAvailableDataSources(request);
+    const googleSheetsSource = dataSources.find(
+      (ds) => ds.connectionString?.includes('sheets') || ds.connectionString?.includes('script.google.com'),
+    );
+
+    if (!googleSheetsSource) {
+      return { success: false, error: 'No Google Sheets data source found' };
+    }
+
+    // Extract spreadsheet ID from connection string
+    let spreadsheetId = '';
+
+    if (googleSheetsSource.connectionString?.includes('/spreadsheets/d/')) {
+      const match = googleSheetsSource.connectionString.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+      spreadsheetId = match ? match[1] : '';
+    } else if (googleSheetsSource.connectionString?.includes('script.google.com')) {
+      // For Apps Script URLs, extract from parameters or metadata
+      const urlParams = new URLSearchParams(googleSheetsSource.connectionString.split('?')[1]);
+      spreadsheetId = urlParams.get('spreadsheetId') || '';
+    }
+
+    if (!spreadsheetId) {
+      return { success: false, error: 'Could not extract spreadsheet ID from connection string' };
+    }
+
+    // Read all data from the sheet to find the matching row
+    const readQuery = {
+      operation: 'readSheet',
+      parameters: {
+        sheetName: 'Sheet1', // Default sheet name
+      },
+    };
+
+    const queryResponse = await fetch(new URL('/api/execute-query', request.url), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: request.headers.get('Authorization') || '',
+        Cookie: request.headers.get('Cookie') || '',
+      },
+      body: JSON.stringify({
+        databaseUrl: googleSheetsSource.connectionString,
+        query: JSON.stringify(readQuery),
+      }),
+    });
+
+    if (!queryResponse.ok) {
+      return { success: false, error: `Failed to read sheet data: ${queryResponse.status}` };
+    }
+
+    const sheetData = await queryResponse.json();
+
+    // Find the row that matches our record data
+    const matchingRowIndex = findMatchingRow(sheetData, recordData);
+
+    if (matchingRowIndex === -1) {
+      return { success: false, error: 'No matching row found in sheet' };
+    }
+
+    // Register the found row mapping
+    const registerResponse = await fetch(new URL('/api/sheets-rows', request.url), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: request.headers.get('Authorization') || '',
+        Cookie: request.headers.get('Cookie') || '',
+      },
+      body: JSON.stringify({
+        action: 'register',
+        data: recordData,
+        rowIndex: matchingRowIndex,
+        spreadsheetId,
+      }),
+    });
+
+    if (!registerResponse.ok) {
+      return { success: false, error: 'Failed to register row mapping' };
+    }
+
+    const registerResult = (await registerResponse.json()) as { success: boolean; rowKey?: string; error?: string };
+
+    if (!registerResult.success) {
+      return { success: false, error: registerResult.error };
+    }
+
+    return {
+      success: true,
+      mapping: {
+        rowIndex: matchingRowIndex,
+        spreadsheetId,
+        rowKey: registerResult.rowKey,
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error during row search',
+    };
+  }
+}
+
+// Helper function to find a matching row in sheet data
+function findMatchingRow(sheetData: any, recordData: any): number {
+  if (!Array.isArray(sheetData) || sheetData.length === 0) {
+    return -1;
+  }
+
+  // Get the keys we want to match (excluding metadata)
+  const matchKeys = Object.keys(recordData).filter((key) => !['id', '_id', 'createdAt', 'updatedAt'].includes(key));
+
+  // Look through the sheet data to find a matching row
+  for (let i = 0; i < sheetData.length; i++) {
+    const row = sheetData[i];
+    let matches = 0;
+    let totalFields = 0;
+
+    for (const key of matchKeys) {
+      if (Object.prototype.hasOwnProperty.call(row, key)) {
+        totalFields++;
+
+        if (String(row[key]).trim() === String(recordData[key]).trim()) {
+          matches++;
+        }
+      }
+    }
+
+    // If most fields match (allow for some flexibility), consider it a match
+    if (totalFields > 0 && matches >= Math.ceil(totalFields * 0.7)) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
 // Generic Google Sheets Update Handler - Works with any sheet structure using row mapping
 async function handleGoogleSheetsUpdate(request: NextRequest, recordData: any): Promise<NextResponse> {
   try {
@@ -26,7 +168,18 @@ async function handleGoogleSheetsUpdate(request: NextRequest, recordData: any): 
     const mappingResult = (await rowMappingResponse.json()) as any;
 
     if (!mappingResult.success) {
-      throw new Error(`Row mapping not found: ${mappingResult.error}`);
+      // Fallback: Try to find and register the row by searching the sheet
+      console.log('Row mapping not found, attempting to find row in sheet...');
+
+      const fallbackResult = await findAndRegisterRowInSheet(request, recordData);
+
+      if (!fallbackResult.success) {
+        throw new Error(`Row mapping not found and fallback failed: ${fallbackResult.error}`);
+      }
+
+      // Use the newly found mapping
+      mappingResult.success = true;
+      mappingResult.mapping = fallbackResult.mapping;
     }
 
     const { rowIndex, spreadsheetId } = mappingResult.mapping;
@@ -121,7 +274,18 @@ async function handleGoogleSheetsDelete(request: NextRequest, recordData: any, _
     const mappingResult = (await rowMappingResponse.json()) as any;
 
     if (!mappingResult.success) {
-      throw new Error(`Row mapping not found: ${mappingResult.error}`);
+      // Fallback: Try to find and register the row by searching the sheet
+      console.log('Row mapping not found for delete, attempting to find row in sheet...');
+
+      const fallbackResult = await findAndRegisterRowInSheet(request, recordData);
+
+      if (!fallbackResult.success) {
+        throw new Error(`Row mapping not found and fallback failed: ${fallbackResult.error}`);
+      }
+
+      // Use the newly found mapping
+      mappingResult.success = true;
+      mappingResult.mapping = fallbackResult.mapping;
     }
 
     const { rowIndex, spreadsheetId, rowKey } = mappingResult.mapping;
@@ -192,10 +356,7 @@ async function handleGoogleSheetsDelete(request: NextRequest, recordData: any, _
 
 // Targeted update operation builder - updates specific row based on mapping
 function buildTargetedUpdateOperation(recordData: any, rowIndex: number): any {
-  // PRODUCTION WARNING: This implementation assumes field order matches sheet columns
-  // For production use, implement proper column mapping using sheet schema
-  // TODO: Use schema information to map recordData fields to correct sheet columns
-
+  // This implementation assumes field order matches sheet columns
   // Extract all the fields from the record data (excluding metadata)
   const fields = Object.keys(recordData).filter(
     (key) => !['id', '_id', 'createdAt', 'updatedAt'].includes(key), // Skip metadata fields

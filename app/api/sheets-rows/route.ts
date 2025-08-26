@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
-
-// Row mapping interface for database storage (unused in current implementation)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface RowMapping {
-  id: string;
-  userId: string;
-  spreadsheetId: string;
-  rowKey: string;
-  rowIndex: number;
-  data: Record<string, any>;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { promises as fs } from 'fs';
+import path from 'path';
 
 // Helper to generate a unique key for a row based on its data
 function generateRowKey(data: any): string {
@@ -25,63 +14,51 @@ function generateRowKey(data: any): string {
   return Buffer.from(values).toString('base64').substring(0, 16);
 }
 
-// Database operations for row mappings
-// PRODUCTION TODO: Add proper database table for row mappings
-// CREATE TABLE row_mappings (
-//   id VARCHAR PRIMARY KEY,
-//   user_id VARCHAR NOT NULL,
-//   spreadsheet_id VARCHAR NOT NULL,
-//   row_key VARCHAR NOT NULL,
-//   row_index INTEGER NOT NULL,
-//   data JSONB NOT NULL,
-//   created_at TIMESTAMP DEFAULT NOW(),
-//   updated_at TIMESTAMP DEFAULT NOW()
-// );
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function createRowMapping(userId: string, spreadsheetId: string, rowKey: string, rowIndex: number, data: any) {
-  // TEMPORARY SOLUTION: This needs proper database implementation
-  // Current implementation will not persist across server restarts
+// Temporary file-based persistence for row mappings
+const MAPPINGS_DIR = path.join(process.cwd(), '.tmp', 'row-mappings');
 
-  const mapping = {
-    userId,
-    spreadsheetId,
-    rowKey,
-    rowIndex,
-    data: JSON.stringify(data),
-    timestamp: Date.now(),
-  };
-
-  // Store in user metadata as temporary solution until proper table is added
-  // This is not ideal but avoids the in-memory issue
-  return mapping;
+// Ensure the mappings directory exists
+async function ensureMappingsDir() {
+  try {
+    await fs.mkdir(MAPPINGS_DIR, { recursive: true });
+  } catch {
+    // Directory might already exist, ignore error
+  }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function findRowMapping(_userId: string, _data: any) {
-  // This is a temporary implementation
-  // In production, implement proper database query
-  return null;
+// Load mappings from file
+async function loadMappings(userId: string): Promise<Map<string, any>> {
+  try {
+    await ensureMappingsDir();
+
+    const filePath = path.join(MAPPINGS_DIR, `${userId}.json`);
+    const data = await fs.readFile(filePath, 'utf-8');
+    const parsedData = JSON.parse(data);
+
+    return new Map(Object.entries(parsedData));
+  } catch {
+    // File doesn't exist or error reading, return empty map
+    return new Map();
+  }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function updateRowMapping(_rowKey: string, _data: any) {
-  // This is a temporary implementation
-  // In production, implement proper database update
-  return true;
-}
+// Save mappings to file
+async function saveMappings(userId: string, mappings: Map<string, any>): Promise<void> {
+  try {
+    await ensureMappingsDir();
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function deleteRowMapping(_rowKey: string) {
-  // This is a temporary implementation
-  // In production, implement proper database deletion
-  return true;
+    const filePath = path.join(MAPPINGS_DIR, `${userId}.json`);
+    const data = Object.fromEntries(mappings);
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error('Failed to save mappings:', error);
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Authentication required but userId not used in current temporary implementation
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { userId: _userId } = await requireUserAbility(request);
+    // Authentication required and userId is used for persistent storage
+    const { userId } = await requireUserAbility(request);
     const body = (await request.json()) as {
       action: 'register' | 'lookup' | 'update' | 'delete' | 'list';
       data?: any;
@@ -90,9 +67,8 @@ export async function POST(request: NextRequest) {
       rowKey?: string;
     };
 
-    // TEMPORARY: Use in-memory storage for this API (needs proper database implementation)
-    // This is a stub that maintains the existing API interface
-    const tempUserMapping = new Map();
+    // Load persistent mappings for this user
+    const userMapping = await loadMappings(userId);
 
     switch (body.action) {
       case 'register': {
@@ -101,11 +77,14 @@ export async function POST(request: NextRequest) {
         }
 
         const rowKey = generateRowKey(body.data);
-        tempUserMapping.set(rowKey, {
+        userMapping.set(rowKey, {
           rowIndex: body.rowIndex,
           data: body.data,
           spreadsheetId: body.spreadsheetId,
         });
+
+        // Save the updated mappings
+        await saveMappings(userId, userMapping);
 
         return NextResponse.json({
           success: true,
@@ -119,7 +98,7 @@ export async function POST(request: NextRequest) {
         }
 
         const rowKey = generateRowKey(body.data);
-        const mapping = tempUserMapping.get(rowKey);
+        const mapping = userMapping.get(rowKey);
 
         if (!mapping) {
           return NextResponse.json(
@@ -147,7 +126,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: false, error: 'Missing data or rowKey for update' }, { status: 400 });
         }
 
-        const mapping = tempUserMapping.get(body.rowKey);
+        const mapping = userMapping.get(body.rowKey);
 
         if (!mapping) {
           return NextResponse.json({ success: false, error: 'Row mapping not found for update' }, { status: 404 });
@@ -155,6 +134,9 @@ export async function POST(request: NextRequest) {
 
         // Update the stored data
         mapping.data = { ...mapping.data, ...body.data };
+
+        // Save the updated mappings
+        await saveMappings(userId, userMapping);
 
         return NextResponse.json({
           success: true,
@@ -172,14 +154,17 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: false, error: 'Missing rowKey for delete' }, { status: 400 });
         }
 
-        const mapping = tempUserMapping.get(body.rowKey);
+        const mapping = userMapping.get(body.rowKey);
 
         if (!mapping) {
           return NextResponse.json({ success: false, error: 'Row mapping not found for delete' }, { status: 404 });
         }
 
         const deletedMapping = { ...mapping };
-        tempUserMapping.delete(body.rowKey);
+        userMapping.delete(body.rowKey);
+
+        // Save the updated mappings
+        await saveMappings(userId, userMapping);
 
         return NextResponse.json({
           success: true,
@@ -192,7 +177,7 @@ export async function POST(request: NextRequest) {
       }
 
       case 'list': {
-        const mappings = Array.from(tempUserMapping.entries()).map(([key, value]) => ({
+        const mappings = Array.from(userMapping.entries()).map(([key, value]) => ({
           rowKey: key,
           rowIndex: value.rowIndex,
           spreadsheetId: value.spreadsheetId,

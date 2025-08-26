@@ -61,6 +61,8 @@ export class GoogleSheetsService {
         return this.appendValues(parsedQuery.parameters);
       case 'clearValues':
         return this.clearValues(parsedQuery.parameters);
+      case 'clearRange':
+        return this.clearValues(parsedQuery.parameters);
       case 'insertRow':
         return this.insertRow(parsedQuery.parameters);
       case 'deleteRow':
