@@ -25,7 +25,11 @@ export const userService = {
       throw new Error('User not found');
     }
 
-    const member = await prisma.member.findFirst({ where: { userId }, include: { organization: true } });
+    const member = await prisma.member.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: { organization: true },
+    });
 
     return {
       id: user.id,
@@ -48,6 +52,7 @@ export const userService = {
 
     const member = await prisma.member.findFirst({
       where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
       include: { organization: true },
     });
 
@@ -69,7 +74,11 @@ export const userService = {
   ): Promise<UserProfile> {
     const user = await prisma.user.update({ where: { id: userId }, data });
 
-    const member = await prisma.member.findFirst({ where: { userId }, include: { organization: true } });
+    const member = await prisma.member.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: { organization: true },
+    });
 
     return {
       id: user.id,
@@ -92,6 +101,7 @@ export const userService = {
 
     const member = await prisma.member.findFirst({
       where: { userId },
+      orderBy: { createdAt: 'desc' },
       include: { organization: true },
     });
 
@@ -112,7 +122,7 @@ export const userService = {
       orderBy: { createdAt: 'asc' },
     });
 
-    return members.map((m: any) => ({
+    return members.map((m) => ({
       id: m.user.id,
       name: m.user.name,
       email: m.user.email,
@@ -128,16 +138,16 @@ export const userService = {
       include: { user: { select: { id: true, name: true, email: true, role: true, telemetryEnabled: true } } },
     });
 
-    return userRoles.map((userRole) => userRole.user as any);
+    return userRoles.map((userRole) => userRole.user);
   },
 
   async addUserToRole(userId: string, roleId: string): Promise<UserProfile> {
-    const userRole = await prisma.userRole.create({
+    const { user } = await prisma.userRole.create({
       data: { userId, roleId },
       include: { user: { select: { id: true, name: true, email: true, role: true, telemetryEnabled: true } } },
     });
 
-    return (userRole as any).user;
+    return user;
   },
 
   async removeUserFromRole(userId: string, roleId: string): Promise<void> {
