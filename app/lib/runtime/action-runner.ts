@@ -108,7 +108,7 @@ export class ActionRunner {
     return pid;
   }
 
-  static async updateEnvironmentVariable(envName: string, envValue: string): Promise<void> {
+  static async updateEnvironmentVariable(envName: string, envValue: string): Promise<string> {
     try {
       const webcontainer = await webcontainerPromise();
       const envFilePath = '.env';
@@ -154,6 +154,8 @@ export class ActionRunner {
       // Write the updated .env file
       await webcontainer.fs.writeFile(envFilePath, newContent);
       logger.debug(`Updated environment variable ${envName} in .env file`);
+
+      return newContent;
     } catch (error) {
       logger.error('Failed to update environment variable:', error);
       throw new Error(

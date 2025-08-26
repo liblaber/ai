@@ -28,8 +28,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { type BrowserInfo, detectBrowser } from '~/lib/utils/browser-detection';
 import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
 import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
-import { saveSnapshot, updateSnapshotByMessageId } from '~/lib/persistence/snapshots';
-import { snapshotService } from '~/lib/services/snapshotService';
+import { updateLatestSnapshot } from '~/lib/persistence/snapshots';
 
 export interface PendingPrompt {
   input: string;
@@ -151,7 +150,7 @@ export const BaseChat = ({
 
       // Update the .env file with the new DATABASE_URL
       const encodedConnectionString = encodeURIComponent(url);
-      await ActionRunner.updateEnvironmentVariable('DATABASE_URL', encodedConnectionString);
+      const updatedEnvContent = await ActionRunner.updateEnvironmentVariable('DATABASE_URL', encodedConnectionString);
 
       // Update the selected data source in the store
       const { setSelectedEnvironmentDataSource } = useEnvironmentDataSourcesStore.getState();
@@ -174,15 +173,8 @@ export const BaseChat = ({
 
           if (lastUserMessage?.id) {
             // Check if a snapshot already exists for this message ID
-            const existingSnapshot = await snapshotService.getSnapshotByMessageId(lastUserMessage.id);
 
-            if (existingSnapshot) {
-              // Update existing snapshot
-              await updateSnapshotByMessageId(currentChatId, lastUserMessage.id);
-            } else {
-              // Create new snapshot
-              await saveSnapshot(currentChatId, lastUserMessage.id);
-            }
+            await updateLatestSnapshot(currentChatId, '.env', updatedEnvContent);
           }
         } catch (error) {
           console.warn('Failed to update conversation data source:', error);
