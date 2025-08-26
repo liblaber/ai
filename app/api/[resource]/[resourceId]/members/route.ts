@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { userService, type UserProfile } from '~/lib/services/userService';
-import { type PermissionLevel, PERMISSION_LEVELS } from '~/lib/services/permissionService';
-import { findOrCreateResourceRole, type ResourceRoleScope } from '~/lib/services/roleService';
+import { userService } from '~/lib/services/userService';
+import { PERMISSION_LEVELS } from '~/lib/services/permissionService';
+import { addUserToResourceRole } from '~/lib/services/roleService';
 import { getResourceConfig } from '~/lib/utils/resource-utils';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma, RoleScope } from '@prisma/client';
@@ -66,7 +66,7 @@ export async function POST(
 
     const { email, permissionLevel } = parsedBody.data;
     const resourceConfig = getResourceConfig(resource);
-    const { fetchResource, permissionResource, roleScope, resourceLabel } = resourceConfig;
+    const { fetchResource, permissionResource, roleScope } = resourceConfig;
 
     const resourceData = await fetchResource(resourceId);
 
@@ -76,49 +76,33 @@ export async function POST(
 
     const user = await userService.getUserByEmail(email);
 
-    return await assignUserToRole(user, resourceData, roleScope, permissionLevel, user.organizationId!, resourceLabel);
+    // TODO: use invite system if user does not exist
+
+    await addUserToResourceRole(user.id, resourceId, roleScope, permissionLevel, user.organizationId!);
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof Error && error.message.startsWith('Invalid resource type')) {
       return NextResponse.json({ success: false, error: 'Invalid route' }, { status: 400 });
     }
 
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      return NextResponse.json(
-        { success: false, error: `${error.meta?.modelName || 'Resource'} not found` },
-        { status: 404 },
-      );
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json({ success: false, error: 'User is already associated to the role' }, { status: 400 });
+      }
+
+      if (error.code === 'P2025') {
+        return NextResponse.json(
+          { success: false, error: `${error.meta?.modelName || 'Resource'} not found` },
+          { status: 404 },
+        );
+      }
     }
 
-    return NextResponse.json({ success: false, error: 'Failed to assign user to role' }, { status: 500 });
-  }
-}
-
-async function assignUserToRole(
-  user: UserProfile,
-  resource: any,
-  roleScope: ResourceRoleScope,
-  permissionLevel: PermissionLevel,
-  organizationId: string,
-  resourceLabel: string,
-): Promise<NextResponse> {
-  try {
-    const role = await findOrCreateResourceRole(roleScope, resource.id, permissionLevel, organizationId);
-
-    if (!role) {
-      return NextResponse.json({ success: false, error: 'Role not found or could not be created' }, { status: 404 });
-    }
-
-    const userProfile = await userService.addUserToRole(user.id, role.id);
-
-    return NextResponse.json({ success: true, user: userProfile });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return NextResponse.json({ success: false, error: 'User already exists in this role' }, { status: 400 });
-    }
-
-    const errorMessage = error instanceof Error ? error.message : `Failed to add user to role for ${resourceLabel}`;
-
-    return NextResponse.json({ success: false, error: errorMessage }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to assign user to role' },
+      { status: 500 },
+    );
   }
 }
 
