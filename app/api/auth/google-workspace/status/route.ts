@@ -58,7 +58,9 @@ export async function GET(request: NextRequest) {
           });
 
           return response;
-        } catch {
+        } catch (refreshError) {
+          console.error('Google Workspace token refresh failed during status check:', refreshError);
+
           // Refresh failed, clear the cookie
           const response = NextResponse.json({
             authenticated: false,
@@ -80,7 +82,9 @@ export async function GET(request: NextRequest) {
             }
           : null,
       });
-    } catch {
+    } catch (decryptError) {
+      console.error('Failed to decrypt Google Workspace credentials:', decryptError);
+
       // Invalid/corrupted cookie, clear it
       const response = NextResponse.json({
         authenticated: false,

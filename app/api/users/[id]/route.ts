@@ -192,12 +192,17 @@ async function handleGoogleSheetsDelete(request: NextRequest, recordData: any, _
 
 // Targeted update operation builder - updates specific row based on mapping
 function buildTargetedUpdateOperation(recordData: any, rowIndex: number): any {
-  // Extract all the fields from the record data
+  // PRODUCTION WARNING: This implementation assumes field order matches sheet columns
+  // For production use, implement proper column mapping using sheet schema
+  // TODO: Use schema information to map recordData fields to correct sheet columns
+
+  // Extract all the fields from the record data (excluding metadata)
   const fields = Object.keys(recordData).filter(
     (key) => !['id', '_id', 'createdAt', 'updatedAt'].includes(key), // Skip metadata fields
   );
 
   // Build values array from the record data
+  // WARNING: This assumes fields are in the same order as sheet columns
   const values = fields.map((field) => recordData[field] || '');
 
   // Determine the range based on available data and specific row

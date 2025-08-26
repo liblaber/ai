@@ -5,6 +5,18 @@ import { GOOGLE_WORKSPACE_SCOPES } from '@liblab/data-access/accessors/google-wo
 
 export async function POST(request: NextRequest) {
   try {
+    // Validate required environment variables
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_AUTH_ENCRYPTION_KEY) {
+      console.error('Google Workspace auth is not configured. Missing required environment variables.');
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Google Workspace authentication is not configured.',
+        },
+        { status: 500 },
+      );
+    }
+
     const { userId } = await requireUserAbility(request);
     const body = (await request.json()) as { type?: string; scopes?: string[] };
     const { type, scopes } = body;

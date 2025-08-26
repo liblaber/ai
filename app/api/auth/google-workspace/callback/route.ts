@@ -2,6 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleWorkspaceAuthManager } from '@liblab/data-access/accessors/google-workspace/auth-manager';
 
 export async function GET(request: NextRequest) {
+  // Validate required environment variables
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_AUTH_ENCRYPTION_KEY) {
+    console.error('Google Workspace auth is not configured. Missing required environment variables.');
+    return new NextResponse(
+      `
+      <html>
+        <body>
+          <h1>Configuration Error</h1>
+          <p>Google Workspace authentication is not configured.</p>
+          <script>
+            window.opener?.postMessage({
+              type: 'GOOGLE_AUTH_ERROR',
+              error: 'Google Workspace authentication is not configured'
+            }, window.location.origin);
+            window.close();
+          </script>
+        </body>
+      </html>
+    `,
+      { status: 500, headers: { 'Content-Type': 'text/html' } },
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const state = searchParams.get('state');
@@ -81,16 +104,16 @@ export async function GET(request: NextRequest) {
         <head><title>Authentication Success</title></head>
         <body>
           <script>
-            window.opener?.postMessage({
+            window.opener?.postMessage(${JSON.stringify({
               type: 'GOOGLE_AUTH_SUCCESS',
               tokens: {
-                access_token: '${credentials.access_token}',
-                refresh_token: '${credentials.refresh_token}',
-                expiry_date: ${credentials.expiry_date}
+                access_token: credentials.access_token,
+                refresh_token: credentials.refresh_token,
+                expiry_date: credentials.expiry_date,
               },
-              userId: '${userId}',
-              workspaceType: '${type}'
-            }, window.location.origin);
+              userId,
+              workspaceType: type,
+            })}, window.location.origin);
             window.close();
           </script>
         </body>

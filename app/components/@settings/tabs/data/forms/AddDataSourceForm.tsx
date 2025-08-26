@@ -250,10 +250,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
 
           {dbType.value !== SAMPLE_DATABASE && (
             <>
-              {dbType.value === 'google-docs' ||
-              dbType.value === 'google-sheets' ||
-              dbType.label === 'Google Docs' ||
-              dbType.label === 'Google Sheets' ? (
+              {['google-docs', 'google-sheets'].includes(dbType.value) ? (
                 <GoogleWorkspaceConnector
                   type={dbType.value === 'google-docs' || dbType.label === 'Google Docs' ? 'docs' : 'sheets'}
                   onConnection={handleGoogleWorkspaceConnection}

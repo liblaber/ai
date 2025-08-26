@@ -10,8 +10,23 @@ export class GoogleWorkspaceAuthManager {
   private _encryptionKey: string;
 
   constructor(encryptionKey?: string) {
-    // Use provided key or generate one (in production, this should come from env)
-    this._encryptionKey = encryptionKey || process.env.GOOGLE_AUTH_ENCRYPTION_KEY || this._generateEncryptionKey();
+    // Use provided key or fail if not available in production
+    if (encryptionKey) {
+      this._encryptionKey = encryptionKey;
+    } else if (process.env.GOOGLE_AUTH_ENCRYPTION_KEY) {
+      this._encryptionKey = process.env.GOOGLE_AUTH_ENCRYPTION_KEY;
+    } else {
+      // In production, this should fail - never generate a key
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('GOOGLE_AUTH_ENCRYPTION_KEY is required in production environment');
+      }
+
+      // Only allow key generation in development
+      console.warn(
+        'WARNING: Generating encryption key for development only. Set GOOGLE_AUTH_ENCRYPTION_KEY in production.',
+      );
+      this._encryptionKey = this._generateEncryptionKey();
+    }
   }
 
   /**
