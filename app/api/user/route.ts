@@ -32,8 +32,8 @@ export async function PATCH(request: NextRequest) {
 
     const currentUser = await userService.getUser(userId);
 
-    if (!currentUser || currentUser.role !== 'ADMIN') {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+    if (currentUser.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     const targetUser = await userService.updateUserRole(body.userId, body.role);
