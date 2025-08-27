@@ -10,16 +10,7 @@ type UpdateRoleBody = {
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireUserId(request);
-
-    if (!userId) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
-    }
-
     const currentUser = await userService.getUser(userId);
-
-    if (!currentUser) {
-      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
-    }
 
     if (currentUser.role !== 'ADMIN') {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
