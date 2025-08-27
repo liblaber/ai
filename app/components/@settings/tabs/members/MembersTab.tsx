@@ -5,7 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { toast } from 'sonner';
 import { useUserStore } from '~/lib/stores/user';
 
-interface Member {
+interface User {
   id: string;
   email: string;
   name: string;
@@ -13,7 +13,7 @@ interface Member {
 }
 
 type LoaderData = {
-  members: Member[];
+  users: User[];
 };
 
 interface RoleDropdownProps {
@@ -94,11 +94,11 @@ function RoleDropdown({ value, onChange, triggerClassName }: RoleDropdownProps) 
   );
 }
 
-export default function MembersTab() {
+export default function UsersTab() {
   const { user } = useUserStore();
   const currentUserId = user?.id;
   const [searchQuery, setSearchQuery] = useState('');
-  const [members, setMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [updatingMemberId, setUpdatingMemberId] = useState<string | null>(null);
 
@@ -107,11 +107,12 @@ export default function MembersTab() {
       try {
         setIsLoading(true);
 
-        const response = await fetch('/api/organization/member');
+        const response = await fetch('/api/user');
         const data: LoaderData = await response.json();
+        console.log(data);
 
-        if (data.members) {
-          setMembers(data.members);
+        if (data.users) {
+          setMembers(data.users);
         }
       } catch (error) {
         console.error('Error fetching members:', error);
@@ -128,7 +129,7 @@ export default function MembersTab() {
     try {
       setUpdatingMemberId(memberId);
 
-      const response = await fetch('/api/organization/member', {
+      const response = await fetch('/api/user', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

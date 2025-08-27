@@ -27,7 +27,7 @@ export default function AssignRoleMembers({ role, onRoleUpdate, closeAssignMembe
       try {
         setIsLoading(true);
 
-        const response = await fetch('/api/organization/member');
+        const response = await fetch('/api/user');
         const data: { members: User[] } = await response.json();
 
         if (data.members) {
@@ -39,8 +39,8 @@ export default function AssignRoleMembers({ role, onRoleUpdate, closeAssignMembe
           setMembersNotInRole(membersNotInRoleList);
         }
       } catch (error) {
-        console.error('Error fetching organization members:', error);
-        toast.error('Failed to fetch organization members');
+        console.error('Error fetching users:', error);
+        toast.error('Failed to fetch users');
       } finally {
         setIsLoading(false);
       }

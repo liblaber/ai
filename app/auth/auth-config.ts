@@ -3,7 +3,6 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '~/lib/prisma';
 import { env } from '~/env';
 import { createAuthMiddleware } from 'better-auth/plugins';
-import { UserManagementPluginManager } from '~/lib/plugins/user-management/user-management-plugin-manager';
 
 const { BASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, LICENSE_KEY } = env.server;
 
@@ -62,15 +61,6 @@ export const auth = betterAuth({
         if (!newSession?.user?.email) {
           throw new Error('Unable to complete Google OAuth signup: Missing user email');
         }
-
-        const managementPlugin = await UserManagementPluginManager.getPlugin();
-
-        try {
-          await managementPlugin.createOrganizationFromEmail(newSession.user.email, newSession.user.id);
-        } catch (error) {
-          console.error('Organization setup failed:', error);
-          throw new Error('Unable to complete signup: Failed to setup organization');
-        }
       }
 
       // Handle email/password signups (only for free licenses or fallback)
@@ -79,15 +69,6 @@ export const auth = betterAuth({
 
         if (!newSession?.user?.email) {
           throw new Error('Unable to complete email signup: Missing user email');
-        }
-
-        const managementPlugin = await UserManagementPluginManager.getPlugin();
-
-        try {
-          await managementPlugin.createOrganizationFromEmail(newSession.user.email, newSession.user.id);
-        } catch (error) {
-          console.error('Organization setup failed:', error);
-          throw new Error('Unable to complete signup: Failed to setup organization');
         }
       }
     }),
