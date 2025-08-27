@@ -98,22 +98,34 @@ export async function GET(request: NextRequest) {
 
     // Store tokens in session/database (you may want to implement proper storage)
     // For now, we'll pass them back to the client
+    const successData = {
+      type: 'GOOGLE_AUTH_SUCCESS',
+      tokens: {
+        access_token: credentials.access_token,
+        refresh_token: credentials.refresh_token,
+        expiry_date: credentials.expiry_date,
+      },
+      userId,
+      workspaceType: type,
+    };
+
     const response = new NextResponse(
       `
       <html>
-        <head><title>Authentication Success</title></head>
+        <head><title>Auth</title></head>
         <body>
           <script>
-            window.opener?.postMessage(${JSON.stringify({
-              type: 'GOOGLE_AUTH_SUCCESS',
-              tokens: {
-                access_token: credentials.access_token,
-                refresh_token: credentials.refresh_token,
-                expiry_date: credentials.expiry_date,
-              },
-              userId,
-              workspaceType: type,
-            })}, window.location.origin);
+            // Send message to parent immediately and close
+            try {
+              const messageData = ${JSON.stringify(successData)};
+              if (window.opener) {
+                window.opener.postMessage(messageData, window.location.origin);
+              }
+            } catch (error) {
+              console.error('Message send failed:', error);
+            }
+            
+            // Close immediately
             window.close();
           </script>
         </body>
@@ -128,7 +140,10 @@ export async function GET(request: NextRequest) {
     // Set secure cookies for the tokens with extended lifetime
     // Google refresh tokens are long-lived, so we can set a longer cookie expiration
     const cookieMaxAge = 30 * 24 * 60 * 60; // 30 days in seconds
-    response.cookies.set('google_workspace_auth', authManager.encryptCredentials(credentials), {
+    const encryptedCredentials = authManager.encryptCredentials(credentials);
+
+    // Try multiple approaches to ensure the cookie is set
+    response.cookies.set('google_workspace_auth', encryptedCredentials, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

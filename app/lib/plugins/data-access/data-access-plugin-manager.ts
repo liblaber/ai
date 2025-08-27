@@ -114,7 +114,7 @@ export class DataAccessPluginManager {
       MySQLAccessor,
       SQLiteAccessor,
       MongoDBAccessor,
-      GoogleDocsAccessor,
+      // GoogleDocsAccessor, // Hidden for now - needs more work
       GoogleSheetsAccessor,
     ];
     return Promise.all(

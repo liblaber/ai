@@ -60,12 +60,31 @@ export function GoogleWorkspaceConnector({
     url: string;
   } | null>(null);
   const [hasOAuthConfig, setHasOAuthConfig] = useState(false);
+  const [pendingAuthCheck, setPendingAuthCheck] = useState(false);
 
   // Check if OAuth is configured
   useEffect(() => {
     checkOAuthConfig();
     checkAuthStatus();
   }, []);
+
+  // Add focus listener for post-OAuth auth checking
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      if (pendingAuthCheck) {
+        setPendingAuthCheck(false);
+        setTimeout(() => {
+          checkAuthStatus();
+        }, 500);
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [pendingAuthCheck]);
 
   const checkOAuthConfig = async () => {
     try {
@@ -86,8 +105,7 @@ export function GoogleWorkspaceConnector({
         setHasOAuthConfig(false);
         setConnectionMethod('public');
       }
-    } catch (error) {
-      console.error('Failed to check OAuth config:', error);
+    } catch {
       setHasOAuthConfig(false);
       setConnectionMethod('public');
     }
@@ -95,7 +113,12 @@ export function GoogleWorkspaceConnector({
 
   const checkAuthStatus = async () => {
     try {
-      const response = await fetch('/api/auth/google-workspace/status');
+      const response = await fetch('/api/auth/google-workspace/status', {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
       const data = (await response.json()) as {
         authenticated?: boolean;
         tokens?: { access_token: string; refresh_token: string };
@@ -105,9 +128,13 @@ export function GoogleWorkspaceConnector({
         setIsAuthenticated(true);
         setAuthTokens(data.tokens);
         setConnectionMethod('oauth');
+      } else {
+        setIsAuthenticated(false);
+        setAuthTokens(null);
       }
-    } catch (error) {
-      console.error('Failed to check auth status:', error);
+    } catch {
+      setIsAuthenticated(false);
+      setAuthTokens(null);
     }
   };
 
@@ -125,21 +152,17 @@ export function GoogleWorkspaceConnector({
         }),
       });
 
-      const data = (await response.json()) as { authUrl?: string };
+      const data = (await response.json()) as { authUrl?: string; success?: boolean; error?: string };
 
       if (data.authUrl) {
-        const popup = window.open(data.authUrl, 'google-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
-
-        const pollTimer = setInterval(() => {
-          try {
-            if (popup?.closed) {
-              clearInterval(pollTimer);
-              checkAuthStatus();
-            }
-          } catch {
-            // Cross-origin error when popup is on different domain
+        // Set up message handler and cleanup BEFORE opening popup
+        const cleanup = () => {
+          if (pollTimer) {
+            clearInterval(pollTimer);
           }
-        }, 1000);
+
+          window.removeEventListener('message', messageHandler);
+        };
 
         const messageHandler = (event: MessageEvent) => {
           if (event.origin !== window.location.origin) {
@@ -149,18 +172,50 @@ export function GoogleWorkspaceConnector({
           if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
             setIsAuthenticated(true);
             setAuthTokens(event.data.tokens);
+            setPendingAuthCheck(false);
             popup?.close();
-            clearInterval(pollTimer);
-            window.removeEventListener('message', messageHandler);
+            cleanup();
           } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
             onError(event.data.error);
             popup?.close();
-            clearInterval(pollTimer);
-            window.removeEventListener('message', messageHandler);
+            cleanup();
           }
         };
 
+        // Add message listener BEFORE opening popup
         window.addEventListener('message', messageHandler);
+
+        const popup = window.open(data.authUrl, 'google-auth', 'width=500,height=600,scrollbars=yes,resizable=yes');
+
+        if (!popup) {
+          onError('Popup was blocked. Please allow popups for this site.');
+          cleanup();
+
+          return;
+        }
+
+        const pollTimer = setInterval(() => {
+          try {
+            if (popup?.closed) {
+              clearInterval(pollTimer);
+              setPendingAuthCheck(true);
+            }
+          } catch {
+            // Cross-origin error when popup is on different domain
+          }
+        }, 1000);
+
+        // Cleanup on timeout (in case something goes wrong)
+        setTimeout(
+          () => {
+            if (!popup?.closed) {
+              popup?.close();
+            }
+
+            cleanup();
+          },
+          5 * 60 * 1000,
+        ); // 5 minutes timeout
       }
     } catch {
       onError('Failed to start Google authentication');

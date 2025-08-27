@@ -131,13 +131,32 @@ export class GoogleSheetsAccessor implements BaseAccessor {
       throw new GoogleWorkspaceError('No Google Sheets query provided. Please provide a valid query to execute.');
     }
 
+    // Check if this looks like a SQL query instead of JSON
+    const trimmedQuery = query.trim();
+    const sqlKeywords = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER', 'FROM', 'WHERE'];
+    const startsWithSQL = sqlKeywords.some(
+      (keyword) =>
+        trimmedQuery.toUpperCase().startsWith(keyword + ' ') || trimmedQuery.toUpperCase().startsWith(keyword + '\t'),
+    );
+
+    if (startsWithSQL) {
+      throw new GoogleWorkspaceError(
+        `Google Sheets queries must be in JSON format, not SQL. ` +
+          `Received what appears to be a SQL query: "${trimmedQuery.substring(0, 50)}..." ` +
+          `\n\nFor Google Sheets, use JSON format like: ` +
+          `{"operation": "readSheet", "parameters": {"sheetName": "Sheet1"}} ` +
+          `\n\nSupported operations: readRange, readSheet, getAllSheets, getValues, updateRange, updateValues, updateCell, appendValues, appendRow, appendSheet, clearValues, clearRange, insertRow, deleteRow`,
+      );
+    }
+
     let parsedQuery: any;
 
     try {
       parsedQuery = JSON.parse(query);
     } catch (parseError) {
       throw new GoogleWorkspaceError(
-        `Invalid JSON format for Google Sheets query: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+        `Invalid JSON format for Google Sheets query: ${parseError instanceof Error ? parseError.message : String(parseError)}. ` +
+          `Make sure your query is valid JSON. Example: {"operation": "readSheet", "parameters": {"sheetName": "Sheet1"}}`,
       );
     }
 
@@ -191,15 +210,9 @@ export class GoogleSheetsAccessor implements BaseAccessor {
         }
       }
 
-      // Validate range format if present
-      if (parsedQuery.parameters?.range) {
-        // Allow more flexible sheet names (including periods, hyphens, etc.) and single cell references
-        const rangePattern =
-          /^([A-Za-z0-9\s._-]+!)?[A-Z]+\d*$|^([A-Za-z0-9\s._-]+!)?[A-Z]+\d*:[A-Z]+\d*$|^([A-Za-z0-9\s._-]+!)?[A-Z]:[A-Z]$|^([A-Za-z0-9\s._-]+!)?[A-Z]+:[A-Z]+$/;
-
-        if (!rangePattern.test(parsedQuery.parameters.range)) {
-          throw new GoogleWorkspaceError('Invalid range format. Use A1 notation (e.g., A1, A1:B10, Sheet1!A:Z)');
-        }
+      // Clean and validate parameters
+      if (parsedQuery.parameters) {
+        this._cleanAndValidateParameters(parsedQuery.parameters, parsedQuery.operation);
       }
     } catch (error) {
       if (error instanceof GoogleWorkspaceError && error.message.startsWith('Google Sheets query')) {
@@ -454,6 +467,124 @@ ${userPrompt}
   }
 
   // Helper methods
+
+  private _cleanAndValidateParameters(parameters: any, operation: string): void {
+    // Clean and validate range format if present
+    if (parameters.range) {
+      const originalRange = parameters.range;
+
+      // Check for common issues and provide helpful error messages
+      if (originalRange.includes('undefined')) {
+        throw new GoogleWorkspaceError(
+          `Invalid range contains "undefined": "${originalRange}". ` +
+            'This usually means row or column variables are not properly set. ' +
+            'Example of valid ranges: "A1", "A1:B10", "Sheet1!A:Z"',
+        );
+      }
+
+      if (originalRange.includes('null')) {
+        throw new GoogleWorkspaceError(
+          `Invalid range contains "null": "${originalRange}". ` +
+            'This usually means row or column variables are not properly set. ' +
+            'Example of valid ranges: "A1", "A1:B10", "Sheet1!A:Z"',
+        );
+      }
+
+      if (originalRange.includes('NaN')) {
+        throw new GoogleWorkspaceError(
+          `Invalid range contains "NaN": "${originalRange}". ` +
+            'This usually means numeric row/column calculations failed. ' +
+            'Example of valid ranges: "A1", "A1:B10", "Sheet1!A:Z"',
+        );
+      }
+
+      // Clean the range by removing extra spaces
+      const cleanedRange = originalRange.trim();
+
+      // Update the cleaned range back to the parameters
+      parameters.range = cleanedRange;
+
+      // Allow more flexible sheet names (including periods, hyphens, etc.) and single cell references
+      const rangePattern =
+        /^([A-Za-z0-9\s._-]+!)?[A-Z]+\d*$|^([A-Za-z0-9\s._-]+!)?[A-Z]+\d*:[A-Z]+\d*$|^([A-Za-z0-9\s._-]+!)?[A-Z]:[A-Z]$|^([A-Za-z0-9\s._-]+!)?[A-Z]+:[A-Z]+$/;
+
+      if (!rangePattern.test(cleanedRange)) {
+        throw new GoogleWorkspaceError(
+          `Invalid range format: "${cleanedRange}". ` +
+            'Use A1 notation (e.g., A1, A1:B10, Sheet1!A:Z). ' +
+            'Make sure row and column references are valid numbers and letters.',
+        );
+      }
+    }
+
+    // Clean sheet name if present
+    if (parameters.sheetName && typeof parameters.sheetName === 'string') {
+      parameters.sheetName = parameters.sheetName.trim();
+    }
+
+    // Validate numeric parameters
+    if (parameters.deleteIndex !== undefined) {
+      if (typeof parameters.deleteIndex !== 'number' || parameters.deleteIndex < 0) {
+        throw new GoogleWorkspaceError(
+          `Invalid deleteIndex: "${parameters.deleteIndex}". Must be a non-negative number (0-based index).`,
+        );
+      }
+    }
+
+    if (parameters.insertIndex !== undefined) {
+      if (typeof parameters.insertIndex !== 'number' || parameters.insertIndex < 0) {
+        throw new GoogleWorkspaceError(
+          `Invalid insertIndex: "${parameters.insertIndex}". Must be a non-negative number (0-based index).`,
+        );
+      }
+    }
+
+    if (parameters.sheetId !== undefined) {
+      if (typeof parameters.sheetId !== 'number' || parameters.sheetId < 0) {
+        throw new GoogleWorkspaceError(`Invalid sheetId: "${parameters.sheetId}". Must be a non-negative number.`);
+      }
+    }
+
+    // Validate values array for write operations
+    if (['updateRange', 'updateValues', 'appendValues', 'appendRow'].includes(operation) && parameters.values) {
+      if (!Array.isArray(parameters.values)) {
+        throw new GoogleWorkspaceError(`Invalid values parameter for ${operation}. Must be an array.`);
+      }
+
+      // Check for undefined/null values in the array and provide helpful error
+      const hasInvalidValues = parameters.values.some((row: any) => {
+        if (Array.isArray(row)) {
+          return row.some((cell: any) => cell === undefined);
+        }
+
+        return row === undefined;
+      });
+
+      if (hasInvalidValues) {
+        throw new GoogleWorkspaceError(
+          `Invalid values contain undefined elements. Make sure all cell values are properly set. ` +
+            `Received: ${JSON.stringify(parameters.values).substring(0, 200)}...`,
+        );
+      }
+    }
+
+    // Validate cell update parameters
+    if (operation === 'updateCell') {
+      if (parameters.row === undefined || parameters.column === undefined) {
+        throw new GoogleWorkspaceError('updateCell operation requires both "row" and "column" parameters.');
+      }
+
+      if (typeof parameters.row !== 'number' || typeof parameters.column !== 'number') {
+        throw new GoogleWorkspaceError('updateCell operation requires "row" and "column" to be numbers.');
+      }
+
+      if (parameters.row < 0 || parameters.column < 0) {
+        throw new GoogleWorkspaceError(
+          'updateCell operation requires non-negative "row" and "column" values (0-based indexing).',
+        );
+      }
+    }
+  }
 
   private _extractSpreadsheetId(connectionString: string): string {
     try {
