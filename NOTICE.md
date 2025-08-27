@@ -90,14 +90,6 @@ Licensed under MIT License
 Copyright (c) 2018 Framer B.V.  
 Licensed under MIT License
 
-**Prisma**  
-Copyright (c) Prisma Data, Inc.  
-Licensed under Apache 2.0 License
-
-**TypeScript**  
-Copyright (c) Microsoft Corporation  
-Licensed under Apache 2.0 License
-
 **Zod**  
 Copyright (c) 2020 Colin McDonnell  
 Licensed under MIT License
@@ -146,31 +138,11 @@ Licensed under MIT License
 Copyright (c) 2010-2024 Brian Carlson  
 Licensed under MIT License
 
-**Better SQLite3**  
-Copyright (c) 2017 Joshua Wise  
-Licensed under MIT License
-
-**ESLint**  
-Copyright (c) OpenJS Foundation and other contributors  
-Licensed under MIT License
-
-**Jest**  
-Copyright (c) Meta Platforms, Inc. and affiliates  
-Licensed under MIT License
-
-**Prettier**  
-Copyright (c) James Long and contributors  
-Licensed under MIT License
-
 ### Apache 2.0 Licensed Dependencies
 
 **Anthropic AI SDK**  
 Copyright (c) Anthropic, PBC  
 Licensed under Apache 2.0 License
-
-**Vite**  
-Copyright (c) 2019-present, Yuxi (Evan) You and Vite contributors  
-Licensed under MIT License
 
 ### ISC Licensed Dependencies
 
@@ -188,10 +160,6 @@ Licensed under BSD-3-Clause License
 
 **PostHog**  
 Copyright (c) PostHog, Inc.  
-Licensed under MIT License
-
-**Netlify CLI**  
-Copyright (c) Netlify  
 Licensed under MIT License
 
 **Wrangler (Cloudflare)**  
