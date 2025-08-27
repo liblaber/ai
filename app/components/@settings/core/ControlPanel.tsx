@@ -21,7 +21,7 @@ import DeployedAppsTab from '~/components/@settings/tabs/deployed-apps/DeployedA
 import GitHubTab from '~/components/@settings/tabs/connections/GitHubTab';
 import { useUserStore } from '~/lib/stores/user';
 import { DeprecatedRole } from '@prisma/client';
-import MembersTab from '~/components/@settings/tabs/members/MembersTab';
+import MembersTab from '~/components/@settings/tabs/users/UsersTab';
 import RolesTab from '~/components/@settings/tabs/roles/RolesTab';
 
 const LAST_ACCESSED_TAB_KEY = 'control-panel-last-tab';
