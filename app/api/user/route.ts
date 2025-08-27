@@ -27,10 +27,6 @@ export async function GET(request: NextRequest) {
 
     const users = await userService.getAllUsers();
 
-    if (!users) {
-      return NextResponse.json({ success: false, error: 'Users not found' }, { status: 404 });
-    }
-
     return NextResponse.json({ success: true, users }, { status: 200 });
   } catch (error) {
     console.error('Failed to fetch users:', error);
