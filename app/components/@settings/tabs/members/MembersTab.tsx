@@ -109,7 +109,6 @@ export default function UsersTab() {
 
         const response = await fetch('/api/user');
         const data: LoaderData = await response.json();
-        console.log(data);
 
         if (data.users) {
           setMembers(data.users);
