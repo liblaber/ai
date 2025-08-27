@@ -4,7 +4,7 @@ import { DeprecatedRole, PermissionAction, PermissionResource, PrismaClient } fr
 const prisma = new PrismaClient();
 
 async function seed() {
-  if (process.env.LICENSE_KEY === 'free') {
+  if (process.env.LICENSE_KEY !== 'premium') {
     const initialUser = await seedInitialUser();
     await seedInitialAccount(initialUser);
     await seedDefaultAdmin(initialUser.id);
