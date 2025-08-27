@@ -83,9 +83,12 @@ export const auth = betterAuth({
         const createdUser = await prisma.user.findUnique({ where: { email } });
 
         if (createdUser) {
-          const isFirst = await userService.isFirstPremiumUser();
+          const firstUser = await prisma.user.findFirst({
+            where: { isAnonymous: { not: true } },
+            orderBy: { createdAt: 'asc' },
+          });
 
-          if (isFirst) {
+          if (firstUser && firstUser.id === createdUser.id) {
             await userService.grantSystemAdminAccess(createdUser.id);
             console.log(`🎉 First premium user ${email} granted system admin access`);
           }
