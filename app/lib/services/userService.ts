@@ -32,7 +32,7 @@ export const userService = {
   },
 
   async getAllUsers(): Promise<UserProfile[]> {
-    const users = await prisma.user.findMany();
+    const users = await prisma.user.findMany({ where: { isAnonymous: { not: true } } });
     return users.map((user) => ({
       id: user.id,
       name: user.name,
