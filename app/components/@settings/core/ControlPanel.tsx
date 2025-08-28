@@ -23,6 +23,7 @@ import { useUserStore } from '~/lib/stores/user';
 import { DeprecatedRole } from '@prisma/client';
 import MembersTab from '~/components/@settings/tabs/users/UsersTab';
 import RolesTab from '~/components/@settings/tabs/roles/RolesTab';
+import EnvironmentsTab from '~/components/@settings/tabs/environments';
 
 const LAST_ACCESSED_TAB_KEY = 'control-panel-last-tab';
 
@@ -166,6 +167,8 @@ export const ControlPanel = () => {
     switch (tabId) {
       case 'data':
         return <DataTab />;
+      case 'environments':
+        return <EnvironmentsTab />;
       case 'deployed-apps':
         return <DeployedAppsTab />;
       case 'github':

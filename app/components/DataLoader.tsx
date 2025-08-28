@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { signIn, useSession } from '~/auth/auth-client';
-import { useDataSourcesStore } from '~/lib/stores/dataSources';
+import { type EnvironmentDataSource, useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { usePluginStore } from '~/lib/plugins/plugin-store';
 import type { DataSourceType } from '~/lib/stores/dataSourceTypes';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
@@ -13,17 +13,10 @@ import { DATA_SOURCE_CONNECTION_ROUTE, TELEMETRY_CONSENT_ROUTE } from '~/lib/con
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
 import type { UserProfile } from '~/lib/services/userService';
 import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
-import type { DataSource } from '~/components/@settings/tabs/data/DataTab';
 
 export interface RootData {
   user: UserProfile | null;
-  dataSources: Array<{
-    id: string;
-    name: string;
-    connectionString: string;
-    createdAt: string;
-    updatedAt: string;
-  }>;
+  environmentDataSources: EnvironmentDataSource[];
   pluginAccess: PluginAccessMap;
   dataSourceTypes: DataSourceType[];
 }
@@ -35,7 +28,8 @@ interface DataLoaderProps {
 
 export function DataLoader({ children, rootData }: DataLoaderProps) {
   const { data: session } = useSession();
-  const { setDataSources } = useDataSourcesStore();
+  // TODO: @skos this is the main idea, keep it this way but fetch envId, envName and connectionUrl
+  const { setEnvironmentDataSources } = useEnvironmentDataSourcesStore();
   const { setPluginAccess } = usePluginStore();
   const { setDataSourceTypes } = useDataSourceTypesStore();
   const { setUser } = useUserStore();
@@ -89,15 +83,15 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         setUser(currentUser);
       }
 
-      // Handle data sources
-      let currentDataSources = rootData.dataSources || [];
+      // Handle environment data sources
+      let currentEnvironmentDataSources = rootData.environmentDataSources || [];
 
-      if ((!rootData.dataSources || rootData.dataSources.length === 0) && session?.user) {
+      if ((!rootData.environmentDataSources || rootData.environmentDataSources.length === 0) && session?.user) {
         console.debug('🔄 Fetching data sources...');
-        currentDataSources = await fetchDataSources();
-        setDataSources(currentDataSources);
-      } else if (rootData.dataSources) {
-        setDataSources(currentDataSources);
+        currentEnvironmentDataSources = await fetchEnvironmentDataSources();
+        setEnvironmentDataSources(currentEnvironmentDataSources);
+      } else if (rootData.environmentDataSources) {
+        setEnvironmentDataSources(rootData.environmentDataSources);
       }
 
       // Handle user onboarding flow with telemetry and data sources
@@ -118,7 +112,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         }
 
         // Redirect to data source connection if no data sources exist
-        if (currentDataSources.length === 0) {
+        if (currentEnvironmentDataSources.length === 0) {
           const currentPath = window.location.pathname;
 
           if (currentPath !== DATA_SOURCE_CONNECTION_ROUTE) {
@@ -156,22 +150,22 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     }
   };
 
-  const fetchDataSources = async (): Promise<DataSource[]> => {
+  const fetchEnvironmentDataSources = async (): Promise<EnvironmentDataSource[]> => {
     try {
-      const dataSourcesResponse = await fetch('/api/data-sources');
+      const environmentDataSourcesResponse = await fetch('/api/data-sources');
 
-      if (!dataSourcesResponse.ok) {
+      if (!environmentDataSourcesResponse.ok) {
         throw new Error('Failed to fetch data sources');
       }
 
-      const dataSourcesData = (await dataSourcesResponse.json()) as {
+      const environmentDataSourcesData = (await environmentDataSourcesResponse.json()) as {
         success: boolean;
-        dataSources: DataSource[];
+        environmentDataSources: EnvironmentDataSource[];
       };
 
       console.log('✅ Data sources fetched successfully');
 
-      return dataSourcesData.dataSources;
+      return environmentDataSourcesData.environmentDataSources;
     } catch (error) {
       console.error('❌ Failed to fetch data sources:', error);
       throw new Error('Failed to fetch data sources');

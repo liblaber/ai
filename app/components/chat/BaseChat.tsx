@@ -10,12 +10,16 @@ import { Workbench, WorkbenchProvider } from '~/components/workbench/Workbench.c
 import { classNames } from '~/utils/classNames';
 import { Messages } from './Messages.client';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { useDataSourcesStore } from '~/lib/stores/dataSources';
+import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
+import { DataSourceChangeWarningModal } from './DataSourceChangeWarningModal';
+import { toast } from 'sonner';
+import { chatId } from '~/lib/persistence/useConversationHistory';
+import { updateConversation } from '~/lib/persistence/conversations';
 
 import type { CodeError } from '~/types/actions';
 import ProgressCompilation from './ProgressCompilation';
 import type { ProgressAnnotation } from '~/types/context';
-import type { ActionRunner } from '~/lib/runtime/action-runner';
+import { ActionRunner } from '~/lib/runtime/action-runner';
 import { ChatTextarea } from './ChatTextarea';
 import { AUTOFIX_ATTEMPT_EVENT } from '~/lib/error-handler';
 import { useSession } from '~/auth/auth-client';
@@ -23,12 +27,16 @@ import type { SendMessageFn } from './Chat.client';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { type BrowserInfo, detectBrowser } from '~/lib/utils/browser-detection';
 import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
+import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
+import { updateLatestSnapshot } from '~/lib/persistence/snapshots';
+import { MessageRole } from '~/utils/constants';
+import { logger } from '~/utils/logger';
 
 export interface PendingPrompt {
   input: string;
   files: string[];
   images: string[];
-  dataSourceId: string | null;
+  environmentDataSource: { dataSourceId: string | null; environmentId: string | null };
 }
 
 const TEXTAREA_MIN_HEIGHT = 100;
@@ -89,8 +97,18 @@ export const BaseChat = ({
   const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
 
   const [progressAnnotations, setProgressAnnotations] = useState<ProgressAnnotation[]>([]);
-  const { dataSources } = useDataSourcesStore();
+  const { environmentDataSources } = useEnvironmentDataSourcesStore();
   const { data: session } = useSession();
+
+  const [showDataSourceChangeModal, setShowDataSourceChangeModal] = useState(false);
+  const [pendingDataSourceChange, setPendingDataSourceChange] = useState<{
+    dataSourceId: string;
+    environmentId: string;
+    dataSourceName: string;
+    environmentName: string;
+  } | null>(null);
+  const [isUpdatingDataSource, setIsUpdatingDataSource] = useState(false);
+
   const [browserInfo, setBrowserInfo] = useState<BrowserInfo>(() => ({
     name: 'Other',
     version: 'unknown',
@@ -100,6 +118,80 @@ export const BaseChat = ({
   useEffect(() => {
     setBrowserInfo(detectBrowser());
   }, []);
+
+  // Data source change handlers
+  const handleDataSourceChangeRequest = (
+    dataSourceId: string,
+    environmentId: string,
+    dataSourceName: string,
+    environmentName: string,
+  ) => {
+    setPendingDataSourceChange({
+      dataSourceId,
+      environmentId,
+      dataSourceName,
+      environmentName,
+    });
+    setShowDataSourceChangeModal(true);
+  };
+
+  const handleDataSourceChangeConfirm = async () => {
+    if (!pendingDataSourceChange) {
+      setShowDataSourceChangeModal(false);
+      setPendingDataSourceChange(null);
+
+      return;
+    }
+
+    setIsUpdatingDataSource(true);
+
+    try {
+      const url = await getDataSourceUrl(pendingDataSourceChange.dataSourceId, pendingDataSourceChange.environmentId);
+
+      const encodedConnectionString = encodeURIComponent(url);
+      const updatedEnvContent = await ActionRunner.updateEnvironmentVariable('DATABASE_URL', encodedConnectionString);
+
+      const { setSelectedEnvironmentDataSource } = useEnvironmentDataSourcesStore.getState();
+      setSelectedEnvironmentDataSource(pendingDataSourceChange.dataSourceId, pendingDataSourceChange.environmentId);
+
+      const currentChatId = chatId.get();
+
+      if (currentChatId) {
+        try {
+          await updateConversation(currentChatId, {
+            environmentId: pendingDataSourceChange.environmentId,
+            dataSourceId: pendingDataSourceChange.dataSourceId,
+          });
+
+          const lastUserMessage = messages
+            ?.slice()
+            .reverse()
+            .find((msg) => msg.role === MessageRole.User);
+
+          if (lastUserMessage?.id) {
+            await updateLatestSnapshot(currentChatId, '.env', updatedEnvContent);
+          }
+        } catch (error) {
+          logger.error(error);
+          toast.error("Failed to update the conversation's data source.");
+        }
+      }
+
+      toast.success('Data source changed successfully. Please restart your application.');
+    } catch (error) {
+      console.error('Failed to change data source:', error);
+      toast.error('Failed to change data source. Please try again.');
+    } finally {
+      setIsUpdatingDataSource(false);
+      setShowDataSourceChangeModal(false);
+      setPendingDataSourceChange(null);
+    }
+  };
+
+  const handleDataSourceChangeCancel = () => {
+    setShowDataSourceChangeModal(false);
+    setPendingDataSourceChange(null);
+  };
 
   useEffect(() => {
     if (data) {
@@ -173,7 +265,7 @@ export const BaseChat = ({
       return;
     }
 
-    if (!dataSources.length) {
+    if (!environmentDataSources.length) {
       return;
     }
 
@@ -227,7 +319,7 @@ export const BaseChat = ({
     } finally {
       sessionStorage.removeItem('pendingPrompt');
     }
-  }, [dataSources]);
+  }, [environmentDataSources]);
 
   useEffect(() => {
     const handleAutofixAttempt = ({ detail: { errors } }: CustomEvent<{ errors: CodeError[] }>) => {
@@ -354,6 +446,7 @@ export const BaseChat = ({
                   onSend={handleSendMessage}
                   isStreaming={isStreaming}
                   handleStop={handleStop}
+                  onDataSourceChange={handleDataSourceChangeRequest}
                 />
               )}
             </div>
@@ -376,6 +469,16 @@ export const BaseChat = ({
 
       {/* Browser Compatibility Modal */}
       <BrowserCompatibilityModal isOpen={!browserInfo.supportsWebContainers} />
+
+      {/* Data Source Change Warning Modal */}
+      <DataSourceChangeWarningModal
+        isOpen={showDataSourceChangeModal}
+        onClose={handleDataSourceChangeCancel}
+        onConfirm={handleDataSourceChangeConfirm}
+        newDataSourceName={pendingDataSourceChange?.dataSourceName || ''}
+        newEnvironmentName={pendingDataSourceChange?.environmentName || ''}
+        isLoading={isUpdatingDataSource}
+      />
     </div>
   );
 
