@@ -36,7 +36,7 @@ const options: InitOpts = {
 checker.init(options, (err: Error, packages: ModuleInfos) => {
   if (err) {
     console.error('Error checking licenses:', err);
-    return;
+    process.exit(1);
   }
 
   console.log('# NOTICE\n');
