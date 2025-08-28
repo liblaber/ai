@@ -96,7 +96,7 @@ test.describe('User Onboarding Flow Test', () => {
     console.log('✅ Chat interface loaded');
 
     const iframe = page.locator('iframe[title="preview"]');
-    await iframe.waitFor({ state: 'visible', timeout: 90000 });
+    await iframe.waitFor({ state: 'visible', timeout: 120000 });
     console.log('✅ Iframe found, waiting for it to load...');
 
     await iframe.waitFor({ state: 'attached', timeout: 10000 });

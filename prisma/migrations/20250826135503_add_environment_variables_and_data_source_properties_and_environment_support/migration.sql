@@ -99,7 +99,7 @@ WHERE c.environment_id IS NOT NULL
 -- CreateTable
 CREATE TABLE "public"."data_source_property" (
                                                "id" TEXT NOT NULL,
-                                               "type" TEXT NOT NULL,
+                                               "type" "DataSourcePropertyType" NOT NULL,
                                                "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                                "updated_at" TIMESTAMP(3) NOT NULL,
                                                "environment_variable_id" TEXT NOT NULL,

@@ -39,11 +39,10 @@ enum DataSourcePropertyType {
 }
 
 model DataSourceProperty {
-  id        String   @id @default(cuid())
-  // TODO: update to enum after and migrate all existing datasource connection strings
-  type      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id        String                 @id @default(cuid())
+  type      DataSourcePropertyType
+  createdAt DateTime               @default(now()) @map("created_at")
+  updatedAt DateTime               @updatedAt @map("updated_at")
 
   environmentVariableId String              @map("environment_variable_id")
   environmentVariable   EnvironmentVariable @relation(fields: [environmentVariableId], references: [id], onDelete: Cascade)

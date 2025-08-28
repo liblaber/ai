@@ -31,10 +31,6 @@ export async function PUT(
 ) {
   const { conversationId, messageId } = await params;
 
-  if (!conversationId || !messageId) {
-    return NextResponse.json({ error: 'Conversation ID and Message ID are required' }, { status: 400 });
-  }
-
   const userId = await requireUserId(request);
 
   const conversation = await conversationService.getConversation(conversationId);
