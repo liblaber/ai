@@ -584,7 +584,7 @@ export function GoogleWorkspaceConnector({
           {/* Apps Script URL (only for sheets and only if document is parsed) */}
           {type === 'sheets' && parsedDocument && (
             <div>
-              <Label className="mb-3 block text-gray-300">
+              <Label className="mb-3 block text-gray-300 mt-3">
                 Step 2: Apps Script Web App URL (for reliable data writing) - Optional
               </Label>
 

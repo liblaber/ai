@@ -6,16 +6,33 @@ export async function executeQuery(connectionUrl: string, query: string, params?
 
   try {
     await dataAccessor.initialize(connectionUrl);
+
+    // Enhanced logging for Google Sheets JSON parsing issues
+    const isSheetsError =
+      connectionUrl.startsWith('sheets://') || connectionUrl.startsWith('https://docs.google.com/spreadsheets/');
+
+    if (isSheetsError) {
+      console.log('[Database] Google Sheets query execution:', {
+        queryType: typeof query,
+        queryLength: query.length,
+        firstChars: query.substring(0, 100),
+        queryPreview: query.length > 200 ? query.substring(0, 200) + '...' : query,
+        connectionUrl: connectionUrl.substring(0, 50) + '...',
+      });
+    }
+
     dataAccessor.guardAgainstMaliciousQuery(query);
 
     return await dataAccessor.executeQuery(query, params);
   } catch (e) {
-    // Enhanced error logging for MongoDB JSON parsing issues
+    // Enhanced error logging for MongoDB and Google Sheets JSON parsing issues
     const isMongoError = connectionUrl.startsWith('mongodb');
+    const isSheetsError =
+      connectionUrl.startsWith('sheets://') || connectionUrl.startsWith('https://docs.google.com/spreadsheets/');
     const isJsonError = e instanceof Error && e.message.includes('Invalid JSON format');
 
-    if (isMongoError && isJsonError) {
-      logger.error('MongoDB JSON parsing error:', {
+    if ((isMongoError || isSheetsError) && isJsonError) {
+      logger.error('JSON parsing error:', {
         error: e instanceof Error ? e.message : String(e),
         query,
         queryLength: query.length,

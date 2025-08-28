@@ -7,7 +7,8 @@ export class GoogleSheetsAccessor implements BaseAccessor {
   static pluginId = 'google-sheets';
   readonly label = 'Google Sheets';
   readonly preparedStatementPlaceholderExample = '{ range: $1, sheetName: $2, valueRenderOption: $3 }';
-  readonly connectionStringFormat = 'sheets://SPREADSHEET_ID/';
+  readonly connectionStringFormat =
+    'sheets://SPREADSHEET_ID/ or https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit';
 
   private _spreadsheetId: string | null = null;
   private _appsScriptUrl: string | null = null;
@@ -16,7 +17,7 @@ export class GoogleSheetsAccessor implements BaseAccessor {
   private _authManager: GoogleWorkspaceAuthManager | null = null;
 
   static isAccessor(databaseUrl: string): boolean {
-    return databaseUrl.startsWith('sheets://');
+    return databaseUrl.startsWith('sheets://') || databaseUrl.startsWith('https://docs.google.com/spreadsheets/');
   }
 
   async testConnection(connectionString: string): Promise<boolean> {
@@ -86,9 +87,41 @@ export class GoogleSheetsAccessor implements BaseAccessor {
     try {
       parsedQuery = JSON.parse(processedQuery);
     } catch (parseError) {
-      throw new GoogleWorkspaceError(
-        `Invalid JSON format for Google Sheets query: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`,
-      );
+      // Enhanced error logging for debugging JSON parsing issues
+      console.error('GoogleSheets JSON parsing failed:', {
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+        queryType: typeof processedQuery,
+        queryLength: processedQuery.length,
+        query: processedQuery,
+        queryBytes: [...processedQuery].map((char) => char.charCodeAt(0)),
+        firstChar: processedQuery.charAt(0),
+        firstCharCode: processedQuery.charCodeAt(0),
+      });
+
+      // Try to fix common JSON issues - double-encoded JSON strings
+      let fixedQuery = processedQuery;
+
+      if (processedQuery.startsWith('"{') && processedQuery.endsWith('}"')) {
+        console.log('GoogleSheets: Attempting to fix double-encoded JSON');
+
+        try {
+          // Remove outer quotes and unescape
+          fixedQuery = processedQuery.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+          parsedQuery = JSON.parse(fixedQuery);
+          console.log('GoogleSheets: Successfully fixed double-encoded JSON:', parsedQuery);
+        } catch (secondParseError) {
+          console.error('GoogleSheets: Failed to fix double-encoded JSON:', secondParseError);
+          throw new GoogleWorkspaceError(
+            `Invalid JSON format for Google Sheets query (double-encode fix failed): ${parseError instanceof Error ? parseError.message : String(parseError)}. ` +
+              `Original query: ${processedQuery}. Fixed attempt: ${fixedQuery}`,
+          );
+        }
+      } else {
+        throw new GoogleWorkspaceError(
+          `Invalid JSON format for Google Sheets query: ${parseError instanceof Error ? parseError.message : String(parseError)}. ` +
+            `Make sure your query is valid JSON. Example: {"operation": "readSheet", "parameters": {"valueRenderOption": "FORMATTED_VALUE"}}`,
+        );
+      }
     }
 
     try {
@@ -144,8 +177,8 @@ export class GoogleSheetsAccessor implements BaseAccessor {
         `Google Sheets queries must be in JSON format, not SQL. ` +
           `Received what appears to be a SQL query: "${trimmedQuery.substring(0, 50)}..." ` +
           `\n\nFor Google Sheets, use JSON format like: ` +
-          `{"operation": "readSheet", "parameters": {"sheetName": "Sheet1"}} ` +
-          `\n\nSupported operations: readRange, readSheet, getAllSheets, getValues, updateRange, updateValues, updateCell, appendValues, appendRow, appendSheet, clearValues, clearRange, insertRow, deleteRow`,
+          `{"operation": "readSheet", "parameters": {"valueRenderOption": "FORMATTED_VALUE"}} ` +
+          `\n\nSupported operations: readRange, readSheet, getAllSheets, getValues, updateRange, updateValues, updateCell, appendValues, appendRow, appendSheet, clearValues, clearRange, insertRow, deleteRow. Note: Sheet names are dynamic - use getAllSheets to discover available sheets first.`,
       );
     }
 
@@ -156,7 +189,7 @@ export class GoogleSheetsAccessor implements BaseAccessor {
     } catch (parseError) {
       throw new GoogleWorkspaceError(
         `Invalid JSON format for Google Sheets query: ${parseError instanceof Error ? parseError.message : String(parseError)}. ` +
-          `Make sure your query is valid JSON. Example: {"operation": "readSheet", "parameters": {"sheetName": "Sheet1"}}`,
+          `Make sure your query is valid JSON. Example: {"operation": "readSheet", "parameters": {"valueRenderOption": "FORMATTED_VALUE"}}`,
       );
     }
 
@@ -402,7 +435,6 @@ To generate the Google Sheets queries, follow these steps:
      "spreadsheetId": "spreadsheet-id-if-needed",
      "parameters": {
        "range": "A1:Z100",
-       "sheetName": "Sheet1",
        "valueRenderOption": "FORMATTED_VALUE",
        "ranges": ["A1:B10", "D1:E10"]
      }
@@ -420,7 +452,7 @@ To generate the Google Sheets queries, follow these steps:
    - "FORMULA": Show formulas instead of calculated values
 8. Optimize queries for the specific sheet structure shown in the schema.
 9. If needed, parametrize the query using positional placeholders like $1, $2, etc.
-10. IMPORTANT: Use the "Actual Sheet Name" from the schema, NOT the table name. If a table shows "Table: expense_report" and "Actual Sheet Name: Expense report", use "Expense report" in your queries.
+10. IMPORTANT: Use the "Actual Sheet Name" from the schema metadata, NOT the table name. If schema metadata shows "actualSheetName": "Expense Data", use "Expense Data" in your queries. If no specific sheet name is provided in metadata, use "readSheet" WITHOUT specifying sheetName parameter to read the first/default sheet.
 11. CRITICAL: For Google Sheets, ALWAYS prefer "readSheet" operations over "readRange" operations. The readSheet operation returns semantically processed data with fields like amount_numeric, category, description, etc.
 12. CRITICAL: When you need data aggregation (SUM, COUNT, AVG), use "readSheet" to get the full dataset with semantic fields, then let the frontend handle the aggregation using amount_numeric field.
 13. CRITICAL: DO NOT use readRange operations for individual columns unless absolutely necessary. The readRange operation may return raw data without semantic processing.
@@ -441,8 +473,8 @@ Format your response as a JSON array containing objects with the following struc
 Here's an example of a valid response:
 [
   {
-    "query": "{\\"operation\\": \\"readSheet\\", \\"parameters\\": {\\"sheetName\\": \\"sales_data\\", \\"valueRenderOption\\": \\"FORMATTED_VALUE\\"}}",
-    "explanation": "Reads all data from the sales_data sheet with formatted values",
+    "query": "{\\"operation\\": \\"readSheet\\", \\"parameters\\": {\\"valueRenderOption\\": \\"FORMATTED_VALUE\\"}}",
+    "explanation": "Reads all data from the first sheet (auto-detected) with formatted values",
     "responseSchema": "row_number (number), date (string), product (string), quantity (number), price (number), total (number)"
   },
   {
@@ -588,47 +620,80 @@ ${userPrompt}
 
   private _extractSpreadsheetId(connectionString: string): string {
     try {
-      const url = new URL(connectionString);
-
-      if (url.protocol !== 'sheets:') {
-        throw new GoogleWorkspaceError('Connection string must start with sheets://');
-      }
-
-      // Extract spreadsheet ID from hostname
-      const spreadsheetId = url.hostname;
-
-      if (!spreadsheetId) {
-        throw new GoogleWorkspaceError('Spreadsheet ID is required in connection string');
-      }
-
-      // Extract Apps Script URL if present
-      const appsScriptParam = url.searchParams.get('appsScript');
-
-      if (appsScriptParam) {
-        this._appsScriptUrl = decodeURIComponent(appsScriptParam);
-        console.log(`[GoogleSheets] 🔗 Found Apps Script URL in connection string: ${this._appsScriptUrl}`);
+      // Handle both formats: sheets:// and https://docs.google.com/spreadsheets/
+      if (connectionString.startsWith('https://docs.google.com/spreadsheets/')) {
+        return this._parseGoogleSheetsHttpsUrl(connectionString);
+      } else if (connectionString.startsWith('sheets://')) {
+        return this._parseSheetsProtocolUrl(connectionString);
       } else {
-        console.log(`[GoogleSheets] ⚠️  No Apps Script URL found in connection string: ${connectionString}`);
+        throw new GoogleWorkspaceError(
+          'Connection string must be either sheets://SHEET_ID/ or https://docs.google.com/spreadsheets/d/SHEET_ID/',
+        );
       }
-
-      // Extract OAuth tokens if present
-      const accessToken = url.searchParams.get('access_token');
-      const refreshToken = url.searchParams.get('refresh_token');
-
-      if (accessToken && refreshToken) {
-        this._accessToken = decodeURIComponent(accessToken);
-        this._refreshToken = decodeURIComponent(refreshToken);
-        console.log(`[GoogleSheets] 🔐 Found OAuth tokens in connection string`);
-      } else {
-        console.log(`[GoogleSheets] ⚠️  No OAuth tokens found in connection string`);
-      }
-
-      return spreadsheetId;
     } catch (error) {
       throw new GoogleWorkspaceError(
         `Invalid connection string format: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
+  }
+
+  private _parseGoogleSheetsHttpsUrl(connectionString: string): string {
+    // Extract spreadsheet ID from https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit...
+    const urlPattern = /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/;
+    const match = connectionString.match(urlPattern);
+
+    if (!match) {
+      throw new GoogleWorkspaceError(
+        'Invalid Google Sheets URL format. Expected: https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit',
+      );
+    }
+
+    const spreadsheetId = match[1];
+    console.log(`[GoogleSheets] 📋 Extracted spreadsheet ID from HTTPS URL: ${spreadsheetId}`);
+
+    // For HTTPS URLs, we assume public access (no Apps Script or OAuth tokens in URL)
+    console.log(`[GoogleSheets] 📖 HTTPS URL format detected - assuming public read-only access`);
+
+    return spreadsheetId;
+  }
+
+  private _parseSheetsProtocolUrl(connectionString: string): string {
+    const url = new URL(connectionString);
+
+    if (url.protocol !== 'sheets:') {
+      throw new GoogleWorkspaceError('Connection string must start with sheets://');
+    }
+
+    // Extract spreadsheet ID from hostname
+    const spreadsheetId = url.hostname;
+
+    if (!spreadsheetId) {
+      throw new GoogleWorkspaceError('Spreadsheet ID is required in connection string');
+    }
+
+    // Extract Apps Script URL if present
+    const appsScriptParam = url.searchParams.get('appsScript');
+
+    if (appsScriptParam) {
+      this._appsScriptUrl = decodeURIComponent(appsScriptParam);
+      console.log(`[GoogleSheets] 🔗 Found Apps Script URL in connection string: ${this._appsScriptUrl}`);
+    } else {
+      console.log(`[GoogleSheets] 📖 No Apps Script URL - assuming public read-only access: ${connectionString}`);
+    }
+
+    // Extract OAuth tokens if present
+    const accessToken = url.searchParams.get('access_token');
+    const refreshToken = url.searchParams.get('refresh_token');
+
+    if (accessToken && refreshToken) {
+      this._accessToken = decodeURIComponent(accessToken);
+      this._refreshToken = decodeURIComponent(refreshToken);
+      console.log(`[GoogleSheets] 🔐 Found OAuth tokens in connection string`);
+    } else {
+      console.log(`[GoogleSheets] 📖 No OAuth tokens - using public access for reading`);
+    }
+
+    return spreadsheetId;
   }
 
   private _isAppsScriptUrl(spreadsheetId: string): boolean {
@@ -662,54 +727,82 @@ ${userPrompt}
       }
     }
 
-    // Fall back to Apps Script Web App or form submissions for public sheets
-    console.log(`[GoogleSheets] 📝 Attempting Apps Script/public method for write operation: ${parsedQuery.operation}`);
+    // Fall back to Apps Script Web App for public sheets
+    if (this._appsScriptUrl) {
+      console.log(`[GoogleSheets] 📝 Attempting Apps Script method for write operation: ${parsedQuery.operation}`);
 
-    try {
-      let result;
+      try {
+        let result;
 
-      switch (parsedQuery.operation) {
-        case 'updateRange':
-        case 'updateValues': // Alias for updateRange
-          console.log(`[GoogleSheets] 📝 Calling _updateRangeNoAuth...`);
-          result = await this._updateRangeNoAuth(spreadsheetId, parsedQuery.parameters);
-          break;
-        case 'updateCell':
-          console.log(`[GoogleSheets] 📝 Calling _updateCellNoAuth...`);
-          result = await this._updateCellNoAuth(spreadsheetId, parsedQuery.parameters);
-          break;
-        case 'appendRow':
-        case 'appendSheet':
-        case 'appendValues':
-          console.log(`[GoogleSheets] 📝 Calling _appendRowNoAuth...`);
-          result = await this._appendRowNoAuth(spreadsheetId, parsedQuery.parameters);
-          break;
-        case 'insertRow':
-          console.log(`[GoogleSheets] 📝 Calling _insertRowNoAuth...`);
-          result = await this._insertRowNoAuth(spreadsheetId, parsedQuery.parameters);
-          break;
-        case 'deleteRow':
-          console.log(`[GoogleSheets] 📝 Calling _deleteRowNoAuth...`);
-          result = await this._deleteRowNoAuth(spreadsheetId, parsedQuery.parameters);
-          break;
-        case 'clearValues':
-        case 'clearRange':
-          console.log(`[GoogleSheets] 📝 Calling _clearValuesNoAuth...`);
-          result = await this._clearValuesNoAuth(spreadsheetId, parsedQuery.parameters);
-          break;
-        default:
-          throw new GoogleWorkspaceError(`Unsupported write operation: ${parsedQuery.operation}`);
+        switch (parsedQuery.operation) {
+          case 'updateRange':
+          case 'updateValues': // Alias for updateRange
+            console.log(`[GoogleSheets] 📝 Calling _updateRangeNoAuth...`);
+            result = await this._updateRangeNoAuth(spreadsheetId, parsedQuery.parameters);
+            break;
+          case 'updateCell':
+            console.log(`[GoogleSheets] 📝 Calling _updateCellNoAuth...`);
+            result = await this._updateCellNoAuth(spreadsheetId, parsedQuery.parameters);
+            break;
+          case 'appendRow':
+          case 'appendSheet':
+          case 'appendValues':
+            console.log(`[GoogleSheets] 📝 Calling _appendRowNoAuth...`);
+            result = await this._appendRowNoAuth(spreadsheetId, parsedQuery.parameters);
+            break;
+          case 'insertRow':
+            console.log(`[GoogleSheets] 📝 Calling _insertRowNoAuth...`);
+            result = await this._insertRowNoAuth(spreadsheetId, parsedQuery.parameters);
+            break;
+          case 'deleteRow':
+            console.log(`[GoogleSheets] 📝 Calling _deleteRowNoAuth...`);
+            result = await this._deleteRowNoAuth(spreadsheetId, parsedQuery.parameters);
+            break;
+          case 'clearValues':
+          case 'clearRange':
+            console.log(`[GoogleSheets] 📝 Calling _clearValuesNoAuth...`);
+            result = await this._clearValuesNoAuth(spreadsheetId, parsedQuery.parameters);
+            break;
+          default:
+            throw new GoogleWorkspaceError(`Unsupported write operation: ${parsedQuery.operation}`);
+        }
+
+        console.log(`[GoogleSheets] ✅ Apps Script method SUCCESS:`, JSON.stringify(result, null, 2));
+
+        return result;
+      } catch (error) {
+        console.error(`[GoogleSheets] ❌ Apps Script method FAILED:`, error);
+        console.error(`[GoogleSheets] - Error type: ${error?.constructor?.name}`);
+        console.error(`[GoogleSheets] - Error message: ${error instanceof Error ? error.message : error}`);
+        throw error;
       }
-
-      console.log(`[GoogleSheets] ✅ Apps Script/public method SUCCESS:`, JSON.stringify(result, null, 2));
-
-      return result;
-    } catch (error) {
-      console.error(`[GoogleSheets] ❌ Apps Script/public method FAILED:`, error);
-      console.error(`[GoogleSheets] - Error type: ${error?.constructor?.name}`);
-      console.error(`[GoogleSheets] - Error message: ${error instanceof Error ? error.message : error}`);
-      throw error;
     }
+
+    // No authentication or Apps Script available - provide helpful error
+    throw new GoogleWorkspaceError(`
+Write operation '${parsedQuery.operation}' requires authentication or Apps Script setup.
+
+For public sheets, you have these options:
+
+1. **Apps Script Web App (Recommended)**: 
+   - Set up a 5-minute Google Apps Script Web App
+   - Add the Apps Script URL to your connection string
+
+2. **OAuth Authentication**:
+   - Configure Google OAuth in your app settings
+   - Connect with your Google account
+
+3. **Make sheet publicly editable**:
+   - Set permissions to "Anyone with the link can edit"
+   - Note: This allows anyone to modify your sheet
+
+Current setup:
+- OAuth tokens: ${this._accessToken ? 'Available' : 'Not available'}
+- Apps Script URL: ${this._appsScriptUrl ? 'Configured' : 'Not configured'}
+- Sheet ID: ${spreadsheetId}
+
+See documentation for setup instructions.
+    `);
   }
 
   private async _executeOAuthWriteOperation(parsedQuery: any, spreadsheetId: string): Promise<any[]> {
@@ -912,7 +1005,7 @@ ${userPrompt}
   private async _executeReadOperation(parsedQuery: any, spreadsheetId: string): Promise<any[]> {
     switch (parsedQuery.operation) {
       case 'readSheet':
-        return await this._readSheetData(spreadsheetId, parsedQuery.parameters?.sheetName || 'Sheet1');
+        return await this._readSheetData(spreadsheetId, parsedQuery.parameters?.sheetName);
       case 'getAllSheets':
         return await this._getAllSheets(spreadsheetId);
       case 'readRange':
@@ -923,24 +1016,146 @@ ${userPrompt}
     }
   }
 
-  private async _readSheetData(spreadsheetId: string, sheetName: string): Promise<any[]> {
+  private async _readSheetDataByGid(spreadsheetId: string, gid: number = 0): Promise<any[]> {
+    // Read sheet data using GID (most reliable for public sheets)
+    const endpoint = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`;
+
     try {
-      // Use CSV export for simple data access
-      const response = await fetch(
+      console.log(`[GoogleSheets] 🔄 Reading sheet data from GID ${gid}: ${endpoint}`);
+
+      const response = await fetch(endpoint, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
+
+      if (response.ok) {
+        const csvData = await response.text();
+
+        // Validate that we got actual CSV data, not an error page
+        if (csvData && !csvData.includes('<html') && !csvData.includes('<!DOCTYPE')) {
+          console.log(`[GoogleSheets] ✅ Successfully fetched data from GID ${gid}`);
+          return this._parseCSVData(csvData, `Sheet_${gid}`);
+        } else {
+          console.log(`[GoogleSheets] ⚠️ Invalid CSV data from GID ${gid}`);
+        }
+      } else {
+        console.log(`[GoogleSheets] ❌ HTTP ${response.status} from GID ${gid}`);
+      }
+    } catch (error) {
+      console.log(`[GoogleSheets] ❌ Error reading GID ${gid}: ${error}`);
+    }
+
+    throw new GoogleWorkspaceError(`Failed to read sheet data from GID ${gid}`);
+  }
+
+  private async _readSheetData(spreadsheetId: string, sheetName: string = ''): Promise<any[]> {
+    // Multiple endpoint strategies prioritizing GID-based and name-agnostic approaches
+    const endpoints: string[] = [];
+
+    if (sheetName && sheetName.trim() !== '') {
+      // If we have a specific sheet name, try it first
+      endpoints.push(
         `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`,
       );
+    }
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch sheet data: ${response.statusText}`);
+    // Always add name-agnostic endpoints (these work regardless of sheet name)
+    endpoints.push(
+      // Default endpoint without sheet specification (uses first sheet) - most reliable
+      `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv`,
+      // GID=0 fallback (may not work for all public sheets)
+      `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=0`,
+    );
+
+    let lastError: Error | null = null;
+
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`[GoogleSheets] 🔄 Trying endpoint: ${endpoint}`);
+
+        const response = await fetch(endpoint, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+        });
+
+        if (response.ok) {
+          const csvData = await response.text();
+
+          // Validate that we got actual CSV data, not an error page
+          if (csvData && !csvData.includes('<html') && !csvData.includes('<!DOCTYPE')) {
+            console.log(`[GoogleSheets] ✅ Successfully fetched data from: ${endpoint}`);
+            return this._parseCSVData(csvData, sheetName);
+          } else {
+            console.log(`[GoogleSheets] ⚠️  Invalid CSV data from: ${endpoint}`);
+          }
+        } else {
+          console.log(`[GoogleSheets] ❌ HTTP ${response.status} from: ${endpoint}`);
+        }
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+        console.log(`[GoogleSheets] ❌ Error with ${endpoint}: ${lastError.message}`);
+      }
+    }
+
+    // If all endpoints failed, provide helpful error message
+    const errorMessage = `Failed to read sheet data from public Google Sheet. Please ensure:
+1. Sheet is set to "Anyone with the link can view"
+2. Sheet ID is correct: ${spreadsheetId}
+3. Sheet name exists: ${sheetName}
+Last error: ${lastError?.message || 'Unknown error'}`;
+
+    throw new GoogleWorkspaceError(errorMessage);
+  }
+
+  private async _getFirstSheetName(spreadsheetId: string): Promise<string> {
+    try {
+      // First, test if we can access data without specifying a sheet name
+      // This will use the first/default sheet - this is the most reliable approach
+      try {
+        const response = await fetch(`https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv`, {
+          method: 'HEAD',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+        });
+
+        if (response.ok) {
+          console.log(`[GoogleSheets] ✅ Default sheet is accessible, using first sheet`);
+          return ''; // Empty string means use default sheet
+        }
+      } catch (error) {
+        console.log(`[GoogleSheets] ⚠️ Default sheet test failed: ${error}`);
       }
 
-      const csvData = await response.text();
+      // Try GID-based approach - GID 0 is always the first sheet
+      try {
+        const response = await fetch(
+          `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=0`,
+          {
+            method: 'HEAD',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
+          },
+        );
 
-      return this._parseCSVData(csvData, sheetName);
+        if (response.ok) {
+          console.log(`[GoogleSheets] ✅ First sheet accessible via GID=0`);
+          return ''; // We'll use GID-based endpoints
+        }
+      } catch (error) {
+        console.log(`[GoogleSheets] ⚠️ GID-based access failed: ${error}`);
+      }
+
+      // Ultimate fallback - use empty string which means use default first sheet
+      console.log(`[GoogleSheets] 📋 Using default first sheet (no specific name needed)`);
+
+      return '';
     } catch (error) {
-      throw new GoogleWorkspaceError(
-        `Failed to read sheet data: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+      console.log(`[GoogleSheets] ⚠️ Could not detect sheet access, using default: ${error}`);
+      return '';
     }
   }
 
@@ -950,7 +1165,7 @@ ${userPrompt}
       const sheetName = this._extractSheetFromRange(range);
 
       // For range queries, we'll read the whole sheet and filter
-      const sheetData = await this._readSheetData(spreadsheetId, sheetName || 'Sheet1');
+      const sheetData = await this._readSheetData(spreadsheetId, sheetName ?? '');
 
       // Apply range filtering if needed
       return this._filterDataByRange(sheetData, range);
@@ -962,44 +1177,68 @@ ${userPrompt}
   }
 
   private async _getAllSheets(spreadsheetId: string): Promise<any[]> {
-    // For public sheets, we can only infer sheet names from successful requests
-    // Start with common sheet names
-    const commonSheetNames = ['Sheet1', 'Sheet2', 'Sheet3'];
+    // For public sheets, we use GID-based discovery
+    // GIDs are sequential integers starting from 0 for the first sheet
     const sheets: any[] = [];
+    const maxSheetsToCheck = 10; // Reasonable limit to avoid infinite checking
 
-    for (const sheetName of commonSheetNames) {
+    console.log(`[GoogleSheets] 🔍 Discovering sheets dynamically using GID-based approach`);
+
+    for (let gid = 0; gid < maxSheetsToCheck; gid++) {
       try {
         const response = await fetch(
-          `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`,
-          { method: 'HEAD' },
+          `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`,
+          {
+            method: 'HEAD',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
+          },
         );
 
         if (response.ok) {
+          // We found a sheet at this GID
           sheets.push({
-            name: sheetName,
-            id: sheets.length,
-            index: sheets.length,
+            name: `Sheet_${gid}`, // Generic name since we can't determine the actual name
+            id: gid,
+            index: gid,
             sheetType: 'GRID',
+            gid, // Store the actual GID for reference
           });
+          console.log(`[GoogleSheets] ✅ Found sheet at GID ${gid}`);
+        } else if (response.status === 400) {
+          // GID doesn't exist, we've likely found all sheets
+          console.log(`[GoogleSheets] 📋 No sheet at GID ${gid}, stopping discovery`);
+          break;
         }
-      } catch {
-        // Ignore errors for missing sheets
+      } catch (error) {
+        // Network error or other issue, continue checking
+        console.log(`[GoogleSheets] ⚠️ Error checking GID ${gid}: ${error}`);
+        continue;
       }
     }
 
-    return sheets.length > 0
-      ? sheets
-      : [
-          {
-            name: 'Sheet1',
-            id: 0,
-            index: 0,
-            sheetType: 'GRID',
-          },
-        ];
+    // If we found sheets, return them
+    if (sheets.length > 0) {
+      console.log(`[GoogleSheets] ✅ Discovered ${sheets.length} sheet(s) dynamically`);
+      return sheets;
+    }
+
+    // Ultimate fallback - assume there's at least one sheet
+    console.log(`[GoogleSheets] 📋 No sheets discovered, assuming first sheet exists`);
+
+    return [
+      {
+        name: 'First_Sheet',
+        id: 0,
+        index: 0,
+        sheetType: 'GRID',
+        gid: 0,
+      },
+    ];
   }
 
-  private _parseCSVData(csvData: string, sheetName: string): any[] {
+  private _parseCSVData(csvData: string, sheetName: string = ''): any[] {
     const lines = csvData.split('\n').filter((line) => line.trim());
 
     if (lines.length === 0) {
@@ -1129,15 +1368,27 @@ ${userPrompt}
     }
 
     try {
-      // Get sample data to infer schema
-      const sampleData = await this._readSheetData(this._spreadsheetId, 'Sheet1');
+      console.log(`[GoogleSheets] 🔍 Generating schema from public sheet: ${this._spreadsheetId}`);
+
+      // Get sample data to infer schema from the first available sheet
+      const sampleData = await this._readSheetData(this._spreadsheetId);
 
       if (sampleData.length === 0) {
+        console.log(`[GoogleSheets] ⚠️  No data found, returning sample schema`);
         return this.generateSampleSchema();
       }
 
+      console.log(`[GoogleSheets] ✅ Found ${sampleData.length} rows of data`);
+
       const firstRow = sampleData[0];
       const headers = firstRow.headers || [];
+
+      if (headers.length === 0) {
+        console.log(`[GoogleSheets] ⚠️  No headers found, returning sample schema`);
+        return this.generateSampleSchema();
+      }
+
+      console.log(`[GoogleSheets] 📋 Headers: ${headers.join(', ')}`);
 
       const columns: any[] = [
         {
@@ -1156,14 +1407,18 @@ ${userPrompt}
             .replace(/_+/g, '_')
             .replace(/^_|_$/g, '') || `column_${index}`;
 
+        const dataType = this._inferDataType(sampleData.slice(0, 10).map((row) => row.values?.[index]));
+
         columns.push({
           name: fieldName,
-          type: this._inferDataType(sampleData.slice(0, 10).map((row) => row.values?.[index])),
+          type: dataType,
           isPrimary: false,
         });
+
+        console.log(`[GoogleSheets] 📊 Column: ${fieldName} (${dataType})`);
       });
 
-      // Add semantic fields
+      // Add semantic fields for common patterns
       columns.push(
         { name: 'amount_numeric', type: 'number', isPrimary: false },
         { name: 'date', type: 'string', isPrimary: false },
@@ -1179,7 +1434,7 @@ ${userPrompt}
             documentType: 'sheets',
             documentId: this._spreadsheetId,
             url: `https://docs.google.com/spreadsheets/d/${this._spreadsheetId}/edit`,
-            actualSheetName: 'Sheet1',
+            actualSheetName: firstRow.sheet || 'First Sheet',
           },
         },
       ];
