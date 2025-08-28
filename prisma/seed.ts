@@ -8,6 +8,8 @@ async function seed() {
     const initialUser = await seedInitialUser();
     await seedInitialAccount(initialUser);
     await seedDefaultAdmin(initialUser.id);
+  } else {
+    await seedDefaultAdmin();
   }
 
   await seedDefaultEnvironment();
@@ -106,10 +108,13 @@ async function seedDefaultEnvironment(): Promise<Environment> {
   }
 }
 
-async function seedDefaultAdmin(userId: string): Promise<void> {
+async function seedDefaultAdmin(userId?: string): Promise<void> {
   try {
     const adminRole = await seedRole('Admin', 'Full system administrator with all privileges');
-    await seedUserRole(userId, adminRole.id);
+
+    if (userId) {
+      await seedUserRole(userId, adminRole.id);
+    }
 
     const permissions = [{ resource: PermissionResource.all, action: PermissionAction.manage }];
     await seedPermissions(adminRole.id, permissions);

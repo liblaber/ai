@@ -1,6 +1,5 @@
 import { prisma } from '~/lib/prisma';
 import { DeprecatedRole } from '@prisma/client';
-import { SYSTEM_ADMIN_PERMISSIONS } from '~/lib/constants/permissions';
 
 export interface UserProfile {
   id: string;
@@ -179,70 +178,69 @@ export const userService = {
 
   async grantSystemAdminAccess(userId: string): Promise<void> {
     try {
-      // First, ensure the user has the organizationId set and role set to ADMIN
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          role: DeprecatedRole.ADMIN, // Set legacy role field to ADMIN for first user
-        },
-      });
+      // // First, ensure the user has the organizationId set and role set to ADMIN
+      // await prisma.user.update({
+      //   where: { id: userId },
+      //   data: {
+      //     role: DeprecatedRole.ADMIN, // Set legacy role field to ADMIN for first user
+      //   },
+      // });
 
-      // Create a System Admin role if it doesn't exist
-      let systemAdminRole = await prisma.role.findFirst({
+      // // Create a System Admin role if it doesn't exist
+      // let systemAdminRole = await prisma.role.findFirst({
+      //   where: {
+      //     name: 'System Admin',
+      //   },
+      // });
+
+      // if (!systemAdminRole) {
+      //   systemAdminRole = await prisma.role.create({
+      //     data: {
+      //       name: 'System Admin',
+      //       description: 'Full system administrator with all privileges across all organizations',
+      //     },
+      //   });
+      // }
+
+      // // Assign the role to the user
+      // await prisma.userRole.upsert({
+      //   where: {
+      //     userId_roleId: {
+      //       userId,
+      //       roleId: systemAdminRole.id,
+      //     },
+      //   },
+      //   update: {},
+      //   create: {
+      //     userId,
+      //     roleId: systemAdminRole.id,
+      //   },
+      // });
+
+      // Create the UserRole Join
+
+      const systemAdminRole = await prisma.role.findFirst({
         where: {
-          name: 'System Admin',
+          name: 'Admin',
         },
       });
 
       if (!systemAdminRole) {
-        systemAdminRole = await prisma.role.create({
-          data: {
-            name: 'System Admin',
-            description: 'Full system administrator with all privileges across all organizations',
-          },
-        });
+        throw new Error('System Admin role not found');
       }
 
-      // Assign the role to the user
-      await prisma.userRole.upsert({
-        where: {
-          userId_roleId: {
-            userId,
-            roleId: systemAdminRole.id,
-          },
-        },
-        update: {},
-        create: {
+      await prisma.userRole.create({
+        data: {
           userId,
           roleId: systemAdminRole.id,
         },
       });
 
-      // Grant full permissions to the role using centralized permission definitions
-      const fullPermissions = SYSTEM_ADMIN_PERMISSIONS;
-
-      // Fetch existing permissions for the role once to avoid N+1 query problem
-      const existingPermissions = await prisma.permission.findMany({
-        where: { roleId: systemAdminRole.id },
-        select: { resource: true, action: true },
+      // Set the deprecated role
+      await prisma.user.update({
+        where: { id: userId },
+        data: { role: DeprecatedRole.ADMIN },
       });
-
-      const existingPermissionSet = new Set(existingPermissions.map((p) => `${p.resource}:${p.action}`));
-
-      for (const permission of fullPermissions) {
-        // Check if permission already exists in memory
-        const permissionKey = `${permission.resource}:${permission.action}`;
-
-        if (!existingPermissionSet.has(permissionKey)) {
-          await prisma.permission.create({
-            data: {
-              roleId: systemAdminRole.id,
-              resource: permission.resource,
-              action: permission.action,
-            },
-          });
-        }
-      }
 
       console.log(`✅ Granted system admin access to user ${userId}`);
     } catch (error) {

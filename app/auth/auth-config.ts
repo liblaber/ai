@@ -73,27 +73,54 @@ export const auth = betterAuth({
         }
       }
 
-      // After any signup that produced a new session with an email, check if this is the first premium user
-      // and grant system admin access if so. We resolve the concrete user id from the database using email
-      // to avoid assumptions about shape of newSession.user.
       const newSession = ctx.context.newSession;
       const email = newSession?.user?.email as string | undefined;
 
-      if (email) {
-        const createdUser = await prisma.user.findUnique({ where: { email } });
-
-        if (createdUser) {
-          const firstUser = await prisma.user.findFirst({
-            where: { isAnonymous: { not: true } },
-            orderBy: { createdAt: 'asc' },
-          });
-
-          if (firstUser && firstUser.id === createdUser.id) {
-            await userService.grantSystemAdminAccess(createdUser.id);
-            console.log(`🎉 First premium user ${email} granted system admin access`);
-          }
-        }
+      if (!email) {
+        return;
       }
+
+      const createdUser = await prisma.user.findUnique({ where: { email } });
+
+      if (!createdUser) {
+        return;
+      }
+
+      // Skip anonymous users — we only want to grant system admin to the first
+      // non-anonymous user.
+      if (createdUser.isAnonymous) {
+        return;
+      }
+
+      // Check and potentially grant first-user system admin access
+
+      // Use a transaction to serialize the check; attempt an advisory lock but
+      // don't fail the whole flow if the DB doesn't support it or permissions
+      // prevent it. We also treat `isAnonymous = null` as a non-anonymous user
+      // (OAuth users), matching `userService.isFirstPremiumUser` behavior.
+      await prisma.$transaction(async (tx) => {
+        try {
+          // Arbitrary 64-bit integer key. Keep constant across deployments.
+          // Using pg_advisory_xact_lock ensures the lock is held for the duration
+          // of the current transaction only.
+          await tx.$executeRaw`select pg_advisory_xact_lock(${BigInt(424242424242)})`;
+        } catch {
+          // Advisory locks aren't supported or allowed in some DB setups;
+          // continue without the lock so the signup flow doesn't break.
+        }
+
+        const nonAnonymousCount = await tx.user.count({
+          where: {
+            OR: [{ isAnonymous: false }, { isAnonymous: null }],
+          },
+        });
+
+        // If there's exactly one non-anonymous user after this signup, it's the
+        // newly created user — grant system admin access.
+        if (nonAnonymousCount === 1) {
+          await userService.grantSystemAdminAccess(createdUser.id);
+        }
+      });
     }),
   },
 });
