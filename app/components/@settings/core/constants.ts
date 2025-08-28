@@ -1,5 +1,5 @@
 import type { TabType, TabVisibilityConfig } from './types';
-import { Building, Database, GitBranch, type LucideIcon, Rocket, Users, Server, ShieldUser } from 'lucide-react';
+import { Database, GitBranch, type LucideIcon, Rocket, Users, Server, ShieldUser } from 'lucide-react';
 
 export const TAB_ICONS: Record<TabType, string | LucideIcon> = {
   data: Database,
