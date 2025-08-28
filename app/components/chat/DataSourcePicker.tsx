@@ -206,6 +206,7 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({
         components={{ DropdownIndicator, Option, SingleValue }}
         styles={customStyles}
         menuPlacement={placement}
+        dataTestId={'data-source-picker-select'}
       />
     </div>
   );

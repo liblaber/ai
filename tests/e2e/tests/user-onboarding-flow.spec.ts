@@ -62,6 +62,18 @@ test.describe('User Onboarding Flow Test', () => {
     await textarea.waitFor({ state: 'visible', timeout: 10000 });
     console.log('✅ Found homepage textarea');
 
+    const dataSourceSelect = page.locator('div[data-testid="data-source-picker-select"]');
+    await dataSourceSelect.waitFor({ state: 'visible', timeout: 10000 });
+    console.log('✅ Found data source select dropdown, selecting first option...');
+
+    await dataSourceSelect.click();
+
+    const sampleDataSourceSelector = page.getByText('Sample Database').first();
+    await sampleDataSourceSelector.waitFor({ state: 'visible', timeout: 1000 });
+    console.log('✅ Found sample data source select option.');
+
+    await sampleDataSourceSelector.click();
+
     // Step 5: Input the message and submit
     console.log('✍️ Filling textarea with message...');
     await textarea.fill('Build hello world application with Hello World! h1 title');
