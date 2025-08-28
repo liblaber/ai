@@ -57,7 +57,8 @@ checker.init(options, (err: Error, packages: ModuleInfos) => {
       if (licensesStr.startsWith('BSD')) {
         console.log(`**${trimmedPkg}:**`);
         console.log(`${info.licenseText}\n`);
-      } else if (licensesStr.startsWith('Apache')) { // Add other licenses like || licensesStr.startsWith('MIT') if needed
+      } else if (licensesStr.startsWith('Apache')) {
+        // Add other licenses like || licensesStr.startsWith('MIT') if needed
         console.log(`**${trimmedPkg}**\n${copyrightLine || 'No copyright found'}\n`);
       }
     }
