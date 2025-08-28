@@ -81,38 +81,27 @@ async function seedInitialAccount(initialUser: User): Promise<Account> {
   }
 }
 
-async function seedDefaultEnvironment(): Promise<Environment> 
+async function seedDefaultEnvironment(): Promise<Environment> {
   try {
-    const environments = [
-      {
-        name: 'Development',
-        description: 'Default development environment',
-      },
-      {
-        name: 'Production',
-        description: 'Default production environment',
-      },
-    ];
+    let environment = await prisma.environment.findFirst({
+      where: { name: 'Default' },
+    });
 
-    for (const envData of environments) {
-      let environment = await prisma.environment.findFirst({
-        where: { name: envData.name },
+    if (!environment) {
+      environment = await prisma.environment.create({
+        data: {
+          name: 'Default',
+          description: 'Default environment',
+        },
       });
-
-      if (!environment) {
-        environment = await prisma.environment.create({
-          data: {
-            name: envData.name,
-            description: envData.description,
-          },
-        });
-        console.log(`✅ Created default ${envData.name} environment`);
-      } else {
-        console.log(`✅ ${envData.name} environment already exists`);
-      }
+      console.log('✅ Created default environment');
+    } else {
+      console.log('✅ Default environment already exists');
     }
+
+    return environment;
   } catch (error) {
-    console.error('❌ Error creating default environments:', error);
+    console.error('❌ Error creating default environment:', error);
     throw error;
   }
 }

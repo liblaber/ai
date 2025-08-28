@@ -1,5 +1,6 @@
+import { PermissionAction, PermissionResource } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
-import { requireUserId } from '~/auth/session';
+import { requireUserAbility } from '~/auth/session';
 import { userService } from '~/lib/services/userService';
 
 type UpdateRoleBody = {
@@ -9,10 +10,9 @@ type UpdateRoleBody = {
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await requireUserId(request);
-    const currentUser = await userService.getUser(userId);
+    const { userAbility } = await requireUserAbility(request);
 
-    if (currentUser.role !== 'ADMIN') {
+    if (!userAbility.can(PermissionAction.manage, PermissionResource.AdminApp)) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
@@ -27,12 +27,10 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const userId = await requireUserId(request);
+    const { userAbility } = await requireUserAbility(request);
     const body = (await request.json()) as UpdateRoleBody;
 
-    const currentUser = await userService.getUser(userId);
-
-    if (currentUser.role !== 'ADMIN') {
+    if (!userAbility.can(PermissionAction.manage, PermissionResource.AdminApp)) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
