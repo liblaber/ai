@@ -3,7 +3,7 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '~/lib/prisma';
 import { env } from '~/env';
 import { createAuthMiddleware } from 'better-auth/plugins';
-import { userService } from '~/lib/services/userService';
+import { UserManagementPluginManager } from '~/lib/plugins/user-management/user-management-plugin-manager';
 
 const { BASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, LICENSE_KEY } = env.server;
 
@@ -62,6 +62,15 @@ export const auth = betterAuth({
         if (!newSession?.user?.email) {
           throw new Error('Unable to complete Google OAuth signup: Missing user email');
         }
+
+        const managementPlugin = await UserManagementPluginManager.getPlugin();
+
+        try {
+          await managementPlugin.createOrganizationFromEmail(newSession.user.email, newSession.user.id);
+        } catch (error) {
+          console.error('Organization setup failed:', error);
+          throw new Error('Unable to complete signup: Failed to setup organization');
+        }
       }
 
       // Handle email/password signups (only for free licenses or fallback)
@@ -71,27 +80,14 @@ export const auth = betterAuth({
         if (!newSession?.user?.email) {
           throw new Error('Unable to complete email signup: Missing user email');
         }
-      }
 
-      // After any signup that produced a new session with an email, check if this is the first premium user
-      // and grant system admin access if so. We resolve the concrete user id from the database using email
-      // to avoid assumptions about shape of newSession.user.
-      const newSession = ctx.context.newSession;
-      const email = newSession?.user?.email as string | undefined;
+        const managementPlugin = await UserManagementPluginManager.getPlugin();
 
-      if (email) {
-        const createdUser = await prisma.user.findUnique({ where: { email } });
-
-        if (createdUser) {
-          const firstUser = await prisma.user.findFirst({
-            where: { isAnonymous: { not: true } },
-            orderBy: { createdAt: 'asc' },
-          });
-
-          if (firstUser && firstUser.id === createdUser.id) {
-            await userService.grantSystemAdminAccess(createdUser.id);
-            console.log(`🎉 First premium user ${email} granted system admin access`);
-          }
+        try {
+          await managementPlugin.createOrganizationFromEmail(newSession.user.email, newSession.user.id);
+        } catch (error) {
+          console.error('Organization setup failed:', error);
+          throw new Error('Unable to complete signup: Failed to setup organization');
         }
       }
     }),

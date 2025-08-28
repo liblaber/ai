@@ -2,7 +2,7 @@ export interface Role {
   id: string;
   name: string;
   description: string;
-
+  organizationId: string;
   permissions: Permission[];
   users: User[];
 }

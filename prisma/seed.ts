@@ -1,23 +1,48 @@
-import type { Account, Environment, Role, User } from '@prisma/client';
+import type { Account, Environment, Organization, Role, User } from '@prisma/client';
 import { DeprecatedRole, PermissionAction, PermissionResource, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function seed() {
-  if (process.env.LICENSE_KEY !== 'premium') {
-    const initialUser = await seedInitialUser();
-    await seedInitialAccount(initialUser);
-    await seedDefaultAdmin(initialUser.id);
-  }
-
-  await seedDefaultEnvironment();
-  await seedBuilderRole();
-  await seedOperatorRole();
+  const organization = await seedOrganization();
+  const initialUser = await seedInitialUser(organization.id);
+  await seedInitialAccount(initialUser);
+  await seedDefaultAdmin(initialUser.id, organization.id);
+  await seedDefaultEnvironment(organization.id);
+  await seedBuilderRole(organization.id);
+  await seedOperatorRole(organization.id);
 
   console.log('🎉 Database seed completed successfully');
 }
 
-async function seedInitialUser(): Promise<User> {
+async function seedOrganization(): Promise<Organization> {
+  try {
+    const anonymousOrganization = {
+      name: 'Anonymous',
+      domain: 'anonymous.com',
+    };
+
+    let organization = await prisma.organization.findUnique({
+      where: { domain: anonymousOrganization.domain },
+    });
+
+    if (!organization) {
+      organization = await prisma.organization.create({
+        data: anonymousOrganization,
+      });
+      console.log('✅ Created anonymous organization');
+    } else {
+      console.log('✅ Anonymous organization already exists');
+    }
+
+    return organization;
+  } catch (error) {
+    console.error('❌ Error creating organization:', error);
+    throw error;
+  }
+}
+
+async function seedInitialUser(organizationId: string): Promise<User> {
   try {
     let initialUser = await prisma.user.findUnique({
       where: {
@@ -30,6 +55,7 @@ async function seedInitialUser(): Promise<User> {
         email: 'anonymous@anonymous.com',
         name: 'Anonymous',
         emailVerified: false,
+        organizationId,
         role: DeprecatedRole.ADMIN,
         isAnonymous: true,
         createdAt: new Date(),
@@ -81,7 +107,7 @@ async function seedInitialAccount(initialUser: User): Promise<Account> {
   }
 }
 
-async function seedDefaultEnvironment(): Promise<Environment> {
+async function seedDefaultEnvironment(organizationId: string): Promise<Environment> {
   try {
     let environment = await prisma.environment.findFirst({
       where: { name: 'Default' },
@@ -92,6 +118,7 @@ async function seedDefaultEnvironment(): Promise<Environment> {
         data: {
           name: 'Default',
           description: 'Default environment',
+          organizationId,
         },
       });
       console.log('✅ Created default environment');
@@ -106,9 +133,9 @@ async function seedDefaultEnvironment(): Promise<Environment> {
   }
 }
 
-async function seedDefaultAdmin(userId: string): Promise<void> {
+async function seedDefaultAdmin(userId: string, organizationId: string): Promise<void> {
   try {
-    const adminRole = await seedRole('Admin', 'Full system administrator with all privileges');
+    const adminRole = await seedRole(organizationId, 'Admin', 'Full system administrator with all privileges');
     await seedUserRole(userId, adminRole.id);
 
     const permissions = [{ resource: PermissionResource.all, action: PermissionAction.manage }];
@@ -119,9 +146,9 @@ async function seedDefaultAdmin(userId: string): Promise<void> {
   }
 }
 
-async function seedBuilderRole(): Promise<void> {
+async function seedBuilderRole(organizationId: string): Promise<void> {
   try {
-    const builderRole = await seedRole('Builder', 'Application developer and app user');
+    const builderRole = await seedRole(organizationId, 'Builder', 'Application developer and app user');
 
     // All permissions except admin app
     const permissions = [
@@ -137,9 +164,9 @@ async function seedBuilderRole(): Promise<void> {
   }
 }
 
-async function seedOperatorRole(): Promise<void> {
+async function seedOperatorRole(organizationId: string): Promise<void> {
   try {
-    const operatorRole = await seedRole('App User', 'End user with app-only access');
+    const operatorRole = await seedRole(organizationId, 'App User', 'End user with app-only access');
 
     // Access only to websites
     const permissions = [{ resource: PermissionResource.Website, action: PermissionAction.manage }];
@@ -150,10 +177,10 @@ async function seedOperatorRole(): Promise<void> {
   }
 }
 
-async function seedRole(name: string, description: string | null = null): Promise<Role> {
+async function seedRole(organizationId: string, name: string, description: string | null = null): Promise<Role> {
   try {
     let role = await prisma.role.findFirst({
-      where: { name },
+      where: { organizationId, name },
     });
 
     if (!role) {
@@ -161,6 +188,7 @@ async function seedRole(name: string, description: string | null = null): Promis
         data: {
           name,
           description,
+          organizationId,
         },
       });
       console.log(`✅ Created ${name} role`);
