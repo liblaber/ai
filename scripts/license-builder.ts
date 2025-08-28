@@ -40,10 +40,6 @@ checker.init(options, (err: Error, packages: ModuleInfos) => {
   }
 
   console.log('# NOTICE\n');
-  console.log(
-    'This project incorporates third-party software components that are distributed under various open source licenses.\n',
-  );
-  console.log('## Third-Party Dependencies:');
   console.log('This software contains components from the following third-party libraries:\n');
 
   Object.entries(packages).forEach(([pkg, info]) => {
@@ -59,10 +55,10 @@ checker.init(options, (err: Error, packages: ModuleInfos) => {
       const licensesStr = Array.isArray(info.licenses) ? info.licenses.join(', ') : info.licenses || 'Unknown';
 
       if (licensesStr.substring(0, 3) === 'BSD') {
-        console.log(`### ${trimmedPkg}:`);
+        console.log(`**${trimmedPkg}:**`);
         console.log(`${licensesStr} LICENSE:\n${info.licenseText}\n`);
       } else {
-        console.log(`### ${trimmedPkg}\nLicense: ${licensesStr} - ${copyrightLine || 'No copyright found'}\n`);
+        console.log(`**${trimmedPkg}**\nLicense: ${licensesStr} - ${copyrightLine || 'No copyright found'}\n`);
       }
     }
   });

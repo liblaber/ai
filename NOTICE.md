@@ -1,289 +1,215 @@
 # NOTICE
 
-This project incorporates third-party software components that are distributed under various open source licenses.
-
-## Third-Party Dependencies:
-
 This software contains components from the following third-party libraries:
 
-### @ai-sdk/amazon-bedrock
-
+**@ai-sdk/amazon-bedrock**
 License: Apache-2.0 - Copyright 2023 Vercel, Inc.
 
-### @ai-sdk/anthropic
-
+**@ai-sdk/anthropic**
 License: Apache-2.0 - Copyright 2023 Vercel, Inc.
 
-### @ai-sdk/cohere
-
+**@ai-sdk/cohere**
 License: Apache-2.0 - Copyright 2023 Vercel, Inc.
 
-### @ai-sdk/deepseek
-
+**@ai-sdk/deepseek**
 License: Apache-2.0 - Copyright 2023 Vercel, Inc.
 
-### @ai-sdk/google
-
+**@ai-sdk/google**
 License: Apache-2.0 - Copyright 2023 Vercel, Inc.
 
-### @ai-sdk/mistral
-
+**@ai-sdk/mistral**
 License: Apache-2.0 - Copyright 2023 Vercel, Inc.
 
-### @ai-sdk/openai
-
+**@ai-sdk/openai**
 License: Apache-2.0 - Copyright 2023 Vercel, Inc.
 
-### @ai-sdk/react
-
+**@ai-sdk/react**
 License: Apache-2.0 - Copyright 2023 Vercel, Inc.
 
-### @anthropic-ai/sdk
-
+**@anthropic-ai/sdk**
 License: MIT - Copyright 2023 Anthropic, PBC.
 
-### @casl/ability
-
+**@casl/ability**
 License: MIT - Copyright (c) 2017-2018 Sergii Stotskyi
 
-### @casl/prisma
-
+**@casl/prisma**
 License: MIT - Copyright (c) 2017-2021 Sergii Stotskyi
 
-### @clack/prompts
-
+**@clack/prompts**
 License: MIT - Copyright (c) Nate Moore
 
-### @codemirror/autocomplete
-
+**@codemirror/autocomplete**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/commands
-
+**@codemirror/commands**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/lang-cpp
-
+**@codemirror/lang-cpp**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/lang-css
-
+**@codemirror/lang-css**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/lang-html
-
+**@codemirror/lang-html**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/lang-javascript
-
+**@codemirror/lang-javascript**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/lang-json
-
+**@codemirror/lang-json**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/lang-markdown
-
+**@codemirror/lang-markdown**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/lang-python
-
+**@codemirror/lang-python**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/lang-sass
-
+**@codemirror/lang-sass**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/lang-sql
-
+**@codemirror/lang-sql**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/lang-vue
-
+**@codemirror/lang-vue**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/lang-wast
-
+**@codemirror/lang-wast**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/language
-
+**@codemirror/language**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/search
-
+**@codemirror/search**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/state
-
+**@codemirror/state**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @codemirror/view
-
+**@codemirror/view**
 License: MIT - Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @headlessui/react
-
+**@headlessui/react**
 License: MIT - Copyright (c) 2020 Tailwind Labs
 
-### @iconify-json/svg-spinners
-
+**@iconify-json/svg-spinners**
 License: MIT - No copyright found
 
-### @lezer/highlight
-
+**@lezer/highlight**
 License: MIT - Copyright (C) 2018 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
 
-### @nanostores/react
-
+**@nanostores/react**
 License: MIT - Copyright 2020 Andrey Sitnik <andrey@sitnik.ru>
 
-### @next/env
-
+**@next/env**
 License: MIT - No copyright found
 
-### @octokit/rest
-
+**@octokit/rest**
 License: MIT - Copyright (c) 2012 Cloud9 IDE, Inc. (Mike de Boer)
 
-### @openrouter/ai-sdk-provider
-
+**@openrouter/ai-sdk-provider**
 License: Apache-2.0 - No copyright found
 
-### @paralleldrive/cuid2
-
+**@paralleldrive/cuid2**
 License: MIT - Copyright (c) 2022 Eric Elliott
 
-### @phosphor-icons/react
-
+**@phosphor-icons/react**
 License: MIT - Copyright (c) 2020 Phosphor Icons
 
-### @radix-ui/react-collapsible
-
+**@radix-ui/react-collapsible**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-context-menu
-
+**@radix-ui/react-context-menu**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-dialog
-
+**@radix-ui/react-dialog**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-dropdown-menu
-
+**@radix-ui/react-dropdown-menu**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-label
-
+**@radix-ui/react-label**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-popover
-
+**@radix-ui/react-popover**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-progress
-
+**@radix-ui/react-progress**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-scroll-area
-
+**@radix-ui/react-scroll-area**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-select
-
+**@radix-ui/react-select**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-separator
-
+**@radix-ui/react-separator**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-switch
-
+**@radix-ui/react-switch**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-tabs
-
+**@radix-ui/react-tabs**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-toggle-group
-
+**@radix-ui/react-toggle-group**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @radix-ui/react-tooltip
-
+**@radix-ui/react-tooltip**
 License: MIT - Copyright (c) 2022 WorkOS
 
-### @t3-oss/env-nextjs
-
+**@t3-oss/env-nextjs**
 License: MIT - No copyright found
 
-### @tailwindcss/postcss
-
+**@tailwindcss/postcss**
 License: MIT - Copyright (c) Tailwind Labs, Inc.
 
-### @tanstack/react-virtual
-
+**@tanstack/react-virtual**
 License: MIT - Copyright (c) 2021-present Tanner Linsley
 
-### @uiw/codemirror-theme-tokyo-night
-
+**@uiw/codemirror-theme-tokyo-night**
 License: MIT - No copyright found
 
-### @unocss/webpack
-
+**@unocss/webpack**
 License: MIT - Copyright (c) 2021-PRESENT Anthony Fu <https://github.com/antfu>
 
-### @webcontainer/api
-
+**@webcontainer/api**
 License: MIT - Copyright (c) 2022-25 StackBlitz Inc.
 
-### @xterm/addon-fit
-
+**@xterm/addon-fit**
 License: MIT - Copyright (c) 2019, The xterm.js authors (https://github.com/xtermjs/xterm.js)
 
-### @xterm/addon-web-links
-
+**@xterm/addon-web-links**
 License: MIT - Copyright (c) 2017, The xterm.js authors (https://github.com/xtermjs/xterm.js)
 
-### @xterm/xterm
-
+**@xterm/xterm**
 License: MIT - Copyright (c) 2017-2019, The xterm.js authors (https://github.com/xtermjs/xterm.js)
 
-### adm-zip
-
+**adm-zip**
 License: MIT - Copyright (c) 2012 Another-D-Mention Software and other contributors
 
-### ai
-
+**ai**
 License: Apache-2.0 - Copyright 2023 Vercel, Inc.
 
-### chalk
-
+**chalk**
 License: MIT - Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 
-### chart.js
-
+**chart.js**
 License: MIT - Copyright (c) 2014-2024 Chart.js Contributors
 
-### class-variance-authority
-
+**class-variance-authority**
 License: Apache-2.0 - "Licensor" shall mean the copyright owner or entity authorized by
 
-### cloudflared
-
+**cloudflared**
 License: MIT - Copyright (c) 2022 JacobLinCool
 
-### clsx
-
+**clsx**
 License: MIT - Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com)
 
-### date-fns
-
+**date-fns**
 License: MIT - Copyright (c) 2021 Sasha Koss and Lesha Koss https://kossnocorp.mit-license.org
 
-### diff:
-
+**diff:**
 BSD-3-Clause LICENSE:
 BSD 3-Clause License
 
@@ -315,8 +241,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-### dotenv:
-
+**dotenv:**
 BSD-2-Clause LICENSE:
 Copyright (c) 2015, Scott Motte
 All rights reserved.
@@ -342,222 +267,167 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-### file-saver
-
+**file-saver**
 License: MIT - Copyright © 2016 [Eli Grey][1].
 
-### framer-motion
-
+**framer-motion**
 License: MIT - Copyright (c) 2018 Framer B.V.
 
-### free-email-domains-typescript
-
+**free-email-domains-typescript**
 License: MIT - Copyright (c) 2020
 
-### iconsax-reactjs
-
+**iconsax-reactjs**
 License: MIT - No copyright found
 
-### ignore
-
+**ignore**
 License: MIT - Copyright (c) 2013 Kael Zhang <i@kael.me>, contributors
 
-### isbot
-
+**isbot**
 License: Unlicense - In jurisdictions that recognize copyright laws, the author or authors
 
-### isomorphic-git
-
+**isomorphic-git**
 License: MIT - Copyright 2017-2023 the 'isomorphic-git' authors
 
-### istextorbinary
-
+**istextorbinary**
 License: Artistic-2.0 - - Copyright &copy; [Benjamin Lupton](https://balupton.com)
 
-### jose
-
+**jose**
 License: MIT - Copyright (c) 2018 Filip Skokan
 
-### js-cookie
-
+**js-cookie**
 License: MIT - Copyright (c) 2018 Copyright 2018 Klaus Hartl, Fagner Brack, GitHub Contributors
 
-### jspdf
-
+**jspdf**
 License: MIT - Copyright
 
-### jszip
-
+**jszip**
 License: (MIT OR GPL-3.0-or-later) - Copyright (c) 2009-2016 Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso
 
-### liblab.ai
-
+**liblab.ai**
 License: UNLICENSED - Copyright (c) 2024 Liblab, Inc. and liblab.ai contributors
 
-### lucide-react
-
+**lucide-react**
 License: ISC - Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022.
 
-### mime
-
+**mime**
 License: MIT - Copyright (c) 2023 Robert Kieffer
 
-### mongodb
-
+**mongodb**
 License: Apache-2.0 - "Licensor" shall mean the copyright owner or entity authorized by
 
-### mysql2
-
+**mysql2**
 License: MIT - Copyright (c) 2016 Andrey Sidorov (sidorares@yandex.ru) and contributors
 
-### nanostores
-
+**nanostores**
 License: MIT - Copyright 2020 Andrey Sitnik <andrey@sitnik.ru>
 
-### netlify
-
+**netlify**
 License: MIT - Copyright (c) 2020 Netlify <team@netlify.com>
 
-### next
-
+**next**
 License: MIT - Copyright (c) 2025 Vercel, Inc.
 
-### nextjs-cors
-
+**nextjs-cors**
 License: MIT - Copyright (c) 2020-present Yony Calsin
 
-### ollama-ai-provider
-
+**ollama-ai-provider**
 License: Apache-2.0 - No copyright found
 
-### path-browserify
-
+**path-browserify**
 License: MIT - Copyright (c) 2013 James Halliday
 
-### pg
-
+**pg**
 License: MIT - Copyright (c) 2010 - 2021 Brian Carlson
 
-### postcss
-
+**postcss**
 License: MIT - Copyright 2013 Andrey Sitnik <andrey@sitnik.ru>
 
-### posthog-js
-
+**posthog-js**
 License: MIT\* - Copyright 2020 Posthog / Hiberly, Inc.
 
-### posthog-node
-
+**posthog-node**
 License: MIT - No copyright found
 
-### react-beautiful-dnd
-
+**react-beautiful-dnd**
 License: Apache-2.0 - Copyright 2019 Atlassian Pty Ltd
 
-### react-chartjs-2
-
+**react-chartjs-2**
 License: MIT - Copyright 2020 Jeremy Ayerst
 
-### react-dnd-html5-backend
-
+**react-dnd-html5-backend**
 License: MIT - Copyright (c) 2015 Dan Abramov
 
-### react-dnd
-
+**react-dnd**
 License: MIT - Copyright (c) 2016 Dan Abramov
 
-### react-dom
-
+**react-dom**
 License: MIT - Copyright (c) Facebook, Inc. and its affiliates.
 
-### react-hotkeys-hook
-
+**react-hotkeys-hook**
 License: MIT - Copyright (c) 2018 Johannes Klauss
 
-### react-icons
-
+**react-icons**
 License: MIT - Copyright 2018 kamijin_fanta <kamijin@live.jp>
 
-### react-markdown
-
+**react-markdown**
 License: MIT - Copyright (c) Espen Hovlandsdal
 
-### react-resizable-panels
-
+**react-resizable-panels**
 License: MIT - Copyright (c) 2023 Brian Vaughn
 
-### react-select
-
+**react-select**
 License: MIT - Copyright (c) 2022 Jed Watson
 
-### react
-
+**react**
 License: MIT - Copyright (c) Facebook, Inc. and its affiliates.
 
-### rehype-raw
-
+**rehype-raw**
 License: MIT - Copyright (c) 2016 Titus Wormer <tituswormer@gmail.com>
 
-### rehype-sanitize
-
+**rehype-sanitize**
 License: MIT - Copyright (c) 2016 Titus Wormer <tituswormer@gmail.com>
 
-### remark-gfm
-
+**remark-gfm**
 License: MIT - Copyright (c) Titus Wormer <tituswormer@gmail.com>
 
-### rimraf
-
+**rimraf**
 License: ISC - Copyright (c) 2011-2023 Isaac Z. Schlueter and Contributors
 
-### rollup-plugin-node-polyfills
-
+**rollup-plugin-node-polyfills**
 License: MIT - Copyright (c) 2019 these people
 
-### sass
-
+**sass**
 License: MIT - Copyright (c) 2016, Google Inc.
 
-### shiki
-
+**shiki**
 License: MIT - Copyright (c) 2021 Pine Wu
 
-### sonner
-
+**sonner**
 License: MIT - Copyright (c) 2023 Emil Kowalski
 
-### sql-formatter
-
+**sql-formatter**
 License: MIT - Copyright (c) 2016-2020 ZeroTurnaround LLC
 
-### sqlite
-
+**sqlite**
 License: MIT - Copyright (c) 2020-present Kriasoft, Theo Gravity
 
-### tailwind-merge
-
+**tailwind-merge**
 License: MIT - Copyright (c) 2021 Dany Castillo
 
-### tailwindcss
-
+**tailwindcss**
 License: MIT - Copyright (c) Tailwind Labs, Inc.
 
-### unist-util-visit
-
+**unist-util-visit**
 License: MIT - Copyright (c) 2015 Titus Wormer <tituswormer@gmail.com>
 
-### vite-plugin-node-polyfills
-
+**vite-plugin-node-polyfills**
 License: MIT - Copyright (c) 2022 David R. Myers
 
-### wrangler
-
+**wrangler**
 License: MIT OR Apache-2.0 - No copyright found
 
-### zod
-
+**zod**
 License: MIT - Copyright (c) 2025 Colin McDonnell
 
-### zustand
-
+**zustand**
 License: MIT - Copyright (c) 2019 Paul Henschel
