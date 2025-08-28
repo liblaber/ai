@@ -235,10 +235,13 @@ export const userService = {
 
   async grantSystemAdminAccess(userId: string, organizationId: string): Promise<void> {
     try {
-      // First, ensure the user has the organizationId set
+      // First, ensure the user has the organizationId set and role set to ADMIN
       await prisma.user.update({
         where: { id: userId },
-        data: { organizationId },
+        data: {
+          organizationId,
+          role: DeprecatedRole.ADMIN, // Set legacy role field to ADMIN for first user
+        },
       });
 
       // Create a System Admin role if it doesn't exist

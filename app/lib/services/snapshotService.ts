@@ -59,4 +59,15 @@ export const snapshotService = {
       },
     });
   },
+
+  async getSnapshotByMessageId(messageId: string) {
+    return prisma.snapshot.findUnique({
+      where: {
+        messageId,
+      },
+      include: {
+        message: true,
+      },
+    });
+  },
 };

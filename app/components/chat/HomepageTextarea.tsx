@@ -3,7 +3,7 @@ import { classNames } from '~/utils/classNames';
 import { DataSourcePicker } from './DataSourcePicker';
 import FilePreview from './FilePreview';
 import { ScreenshotStateManager } from './ScreenshotStateManager';
-import { useDataSourcesStore } from '~/lib/stores/dataSources';
+import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { openSettingsPanel } from '~/lib/stores/settings';
 import { ClientOnly } from '~/components/ui/ClientOnly';
 import { processImageFile } from '~/utils/fileUtils';
@@ -45,7 +45,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
     },
     ref,
   ) => {
-    const { dataSources, selectedDataSourceId } = useDataSourcesStore();
+    const { environmentDataSources, selectedEnvironmentDataSource } = useEnvironmentDataSourcesStore();
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
@@ -55,7 +55,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
     };
 
     const fetchSuggestions = async () => {
-      if (!selectedDataSourceId) {
+      if (!selectedEnvironmentDataSource) {
         console.warn('No data source selected');
         return;
       }
@@ -68,7 +68,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ dataSourceId: selectedDataSourceId }),
+          body: JSON.stringify({ dataSourceId: selectedEnvironmentDataSource }),
         });
 
         const data = await response.json<
@@ -163,7 +163,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
             <div className="absolute bottom-6 left-6">
               <div className="flex items-center text-sm mt-2">
                 <div className="flex items-center gap-4">
-                  {selectedDataSourceId && (
+                  {selectedEnvironmentDataSource && (
                     <button
                       className="flex justify-center cursor-pointer items-center text-white opacity-80 hover:opacity-100 bg-transparent p-1 transition-all"
                       onClick={fetchSuggestions}
@@ -179,7 +179,9 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
             </div>
             <div className="absolute bottom-6 right-6 flex">
               <div className="flex gap-1 items-center mr-4">
-                {dataSources.length > 0 && <DataSourcePicker onAddNew={handleConnectDataSource} disabled={false} />}
+                {environmentDataSources.length > 0 && (
+                  <DataSourcePicker onAddNew={handleConnectDataSource} disabled={false} />
+                )}
               </div>
               <button
                 data-testid="send-message-button"

@@ -8,7 +8,7 @@ async function seed() {
   const initialUser = await seedInitialUser(organization.id);
   await seedInitialAccount(initialUser);
   await seedDefaultAdmin(initialUser.id, organization.id);
-  await seedDefaultEnvironment(organization.id);
+  await seedDefaultEnvironments(organization.id);
   await seedBuilderRole(organization.id);
   await seedOperatorRole(organization.id);
 
@@ -107,28 +107,39 @@ async function seedInitialAccount(initialUser: User): Promise<Account> {
   }
 }
 
-async function seedDefaultEnvironment(organizationId: string): Promise<Environment> {
+async function seedDefaultEnvironments(organizationId: string): Promise<void> {
   try {
-    let environment = await prisma.environment.findFirst({
-      where: { name: 'Default' },
-    });
+    const environments = [
+      {
+        name: 'Development',
+        description: 'Default development environment',
+      },
+      {
+        name: 'Production',
+        description: 'Default production environment',
+      },
+    ];
 
-    if (!environment) {
-      environment = await prisma.environment.create({
-        data: {
-          name: 'Default',
-          description: 'Default environment',
-          organizationId,
-        },
+    for (const envData of environments) {
+      let environment = await prisma.environment.findFirst({
+        where: { name: envData.name, organizationId },
       });
-      console.log('✅ Created default environment');
-    } else {
-      console.log('✅ Default environment already exists');
-    }
 
-    return environment;
+      if (!environment) {
+        environment = await prisma.environment.create({
+          data: {
+            name: envData.name,
+            description: envData.description,
+            organizationId,
+          },
+        });
+        console.log(`✅ Created default ${envData.name} environment`);
+      } else {
+        console.log(`✅ ${envData.name} environment already exists`);
+      }
+    }
   } catch (error) {
-    console.error('❌ Error creating default environment:', error);
+    console.error('❌ Error creating default environments:', error);
     throw error;
   }
 }
