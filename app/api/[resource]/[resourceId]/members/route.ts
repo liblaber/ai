@@ -58,14 +58,7 @@ export async function POST(
 
     const user = await userService.getUserByEmail(email);
 
-    return await assignUserToRole(
-      user,
-      resource,
-      roleScope,
-      permissionLevelDetails.level,
-      user.organizationId!,
-      resourceLabel,
-    );
+    return await assignUserToRole(user, resource, roleScope, permissionLevelDetails.level, resourceLabel);
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.startsWith('Invalid resource type')) {
@@ -125,11 +118,10 @@ async function assignUserToRole(
   resource: any,
   roleScope: ResourceRoleScope,
   permissionLevel: PermissionLevel,
-  organizationId: string,
   resourceLabel: string,
 ): Promise<NextResponse> {
   try {
-    const role = await findOrCreateResourceRole(roleScope, resource.id, permissionLevel, organizationId);
+    const role = await findOrCreateResourceRole(roleScope, resource.id, permissionLevel);
 
     if (!role) {
       return NextResponse.json({ success: false, error: 'Role not found or could not be created' }, { status: 404 });
