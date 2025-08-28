@@ -56,10 +56,8 @@ checker.init(options, (err: Error, packages: ModuleInfos) => {
 
       if (licensesStr.substring(0, 3) === 'BSD') {
         console.log(`**${trimmedPkg}:**`);
-        //        console.log(`${licensesStr} LICENSE:\n${info.licenseText}\n`);
         console.log(`${info.licenseText}\n`);
       } else if (licensesStr.substring(0, 6) === 'Apache') {
-        //        console.log(`**${trimmedPkg}**\nLicense: ${licensesStr} - ${copyrightLine || 'No copyright found'}\n`);
         console.log(`**${trimmedPkg}**\n${copyrightLine || 'No copyright found'}\n`);
       }
     }
