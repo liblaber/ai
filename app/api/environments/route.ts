@@ -4,6 +4,23 @@ import { organizationService } from '~/lib/services/organizationService';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
 
+export type CreateEnvironmentResponse =
+  | {
+      success: true;
+      environment?: {
+        id: string;
+        name: string;
+        description?: string;
+        organizationId: string;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
 export async function GET(request: NextRequest) {
   const { userAbility } = await requireUserAbility(request);
 

@@ -1,36 +1,30 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, ArrowLeft, ChevronRight, Database, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Edit, Globe, Plus, Trash2 } from 'lucide-react';
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
-import AddDataSourceForm from './forms/AddDataSourceForm';
-import EditDataSourceForm from './forms/EditDataSourceForm';
+import AddEnvironmentForm from './forms/AddEnvironmentForm';
+import EditEnvironmentForm from './forms/EditEnvironmentForm';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
-import { type EnvironmentDataSource, useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
+import { useEnvironmentsStore } from '~/lib/stores/environments';
 import { settingsPanelStore, useSettingsStore } from '~/lib/stores/settings';
 import { useStore } from '@nanostores/react';
+import type { EnvironmentWithRelations } from '~/lib/services/environmentService';
+import { logger } from '~/utils/logger';
 
-interface EnvironmentDataSourcesResponse {
+interface EnvironmentsResponse {
   success: boolean;
-  environmentDataSources: EnvironmentDataSource[];
+  environments: EnvironmentWithRelations[];
 }
 
-export interface TestConnectionResponse {
-  success: boolean;
-  message: string;
-}
-
-export default function DataTab() {
+export default function EnvironmentsTab() {
   const { showAddForm } = useStore(settingsPanelStore);
   const [showAddFormLocal, setShowAddFormLocal] = useState(showAddForm);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [selectedEnvironmentDataSource, setSelectedEnvironmentDataSource] = useState<EnvironmentDataSource | null>(
-    null,
-  );
+  const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentWithRelations | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [conversationCount, setConversationCount] = useState<number>(0);
-  const { environmentDataSources, setEnvironmentDataSources } = useEnvironmentDataSourcesStore();
+  const { environments, setEnvironments } = useEnvironmentsStore();
   const { selectedTab } = useSettingsStore();
 
   // Update local state when store changes
@@ -40,103 +34,85 @@ export default function DataTab() {
 
   // Show add form when opened from chat
   useEffect(() => {
-    if (selectedTab === 'data') {
+    if (selectedTab === 'environments') {
       setShowAddFormLocal(true);
     }
   }, [selectedTab]);
 
-  // Load data sources on mount
+  // Load environments on mount
   useEffect(() => {
-    const loadDataSources = async () => {
+    const loadEnvironments = async () => {
       try {
-        const response = await fetch('/api/data-sources');
-        const data = (await response.json()) as EnvironmentDataSourcesResponse;
+        const response = await fetch('/api/environments');
+        const data = (await response.json()) as EnvironmentsResponse;
 
         if (data.success) {
-          setEnvironmentDataSources(data.environmentDataSources);
+          setEnvironments(data.environments);
         }
       } catch (error) {
-        console.error('Failed to load data sources:', error);
+        console.error('Failed to load environments:', error);
       }
     };
 
-    loadDataSources();
-  }, [setEnvironmentDataSources]);
+    loadEnvironments();
+  }, [setEnvironments]);
 
   const handleDelete = async () => {
-    if (!selectedEnvironmentDataSource) {
-      return;
-    }
-
-    const response = await fetch(
-      `/api/data-sources/${selectedEnvironmentDataSource.dataSourceId}?environmentId=${selectedEnvironmentDataSource.environmentId}`,
-      {
-        method: 'DELETE',
-      },
-    );
-
-    const data = (await response.json()) as { success: boolean; error?: string };
-
-    if (data.success) {
-      toast.success('Data source deleted successfully');
-
-      // Reload data sources
-      const reloadResponse = await fetch('/api/data-sources');
-      const reloadData = (await reloadResponse.json()) as EnvironmentDataSourcesResponse;
-
-      if (reloadData.success) {
-        setEnvironmentDataSources(reloadData.environmentDataSources);
-      }
-
-      setShowDeleteConfirm(false);
-      setShowEditForm(false);
-      setSelectedEnvironmentDataSource(null);
-    } else {
-      toast.error(data.error || 'Failed to delete data source');
-    }
-  };
-
-  const handleEdit = (environmentDataSource: EnvironmentDataSource) => {
-    setSelectedEnvironmentDataSource(environmentDataSource);
-    setShowEditForm(true);
-    setShowAddFormLocal(false);
-  };
-
-  const handleDeleteClick = async () => {
-    if (!selectedEnvironmentDataSource) {
+    if (!selectedEnvironment) {
       return;
     }
 
     try {
-      const response = await fetch(
-        `/api/data-sources/${selectedEnvironmentDataSource.dataSourceId}?environmentId=${selectedEnvironmentDataSource.environmentId}`,
-      );
-      const data = await response.json<{ success: boolean; conversationCount?: number }>();
+      const response = await fetch(`/api/environments/${selectedEnvironment.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = (await response.json()) as { success: boolean; error?: string };
 
       if (data.success) {
-        setConversationCount(data.conversationCount || 0);
-        setShowDeleteConfirm(true);
+        toast.success('Environment deleted successfully');
+
+        // Reload environments
+        const reloadResponse = await fetch('/api/environments');
+        const reloadData = (await reloadResponse.json()) as EnvironmentsResponse;
+
+        if (reloadData.success) {
+          setEnvironments(reloadData.environments);
+        }
+
+        setShowDeleteConfirm(false);
+        setShowEditForm(false);
+        setSelectedEnvironment(null);
       } else {
-        setConversationCount(0);
-        setShowDeleteConfirm(true);
+        toast.error(data.error || 'Failed to delete environment');
       }
     } catch (error) {
-      console.error('Failed to fetch conversation count:', error);
-      setConversationCount(0);
-      setShowDeleteConfirm(true);
+      logger.error('Failed to load environments:', JSON.stringify(error));
+      toast.error('Failed to delete environment');
     }
+  };
+
+  const handleEdit = (environment: EnvironmentWithRelations) => {
+    setSelectedEnvironment(environment);
+    setShowEditForm(true);
+    setShowAddFormLocal(false);
+  };
+
+  const handleDeleteClick = (environment: EnvironmentWithRelations) => {
+    setSelectedEnvironment(environment);
+    setShowDeleteConfirm(true);
   };
 
   const handleBack = () => {
     setShowEditForm(false);
     setShowAddFormLocal(false);
-    setSelectedEnvironmentDataSource(null);
+    setSelectedEnvironment(null);
   };
 
   const handleAdd = () => {
     setShowAddFormLocal(true);
     setShowEditForm(false);
-    setSelectedEnvironmentDataSource(null);
+    setSelectedEnvironment(null);
   };
 
   return (
@@ -144,8 +120,8 @@ export default function DataTab() {
       {!showEditForm && !showAddFormLocal && (
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-medium text-primary">Data Sources</h2>
-            <p className="text-sm text-secondary">Manage your data sources connections</p>
+            <h2 className="text-lg font-medium text-primary">Environments</h2>
+            <p className="text-sm text-secondary">Manage your environments</p>
           </div>
           <button
             onClick={handleAdd}
@@ -156,7 +132,7 @@ export default function DataTab() {
             )}
           >
             <Plus className="w-4 h-4" />
-            <span>Add Data Source</span>
+            <span>Add Environment</span>
           </button>
         </div>
       )}
@@ -176,34 +152,34 @@ export default function DataTab() {
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div>
-                <h2 className="text-lg font-medium text-primary">Create Data Source</h2>
-                <p className="text-sm text-secondary">Add a new database connection</p>
+                <h2 className="text-lg font-medium text-primary">Create Environment</h2>
+                <p className="text-sm text-secondary">Add a new environment</p>
               </div>
             </div>
           </div>
-          <AddDataSourceForm
+          <AddEnvironmentForm
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
             onSuccess={() => {
-              // Reload data sources
-              const reloadResponse = fetch('/api/data-sources');
+              // Reload environments
+              const reloadResponse = fetch('/api/environments');
               reloadResponse
                 .then((response) => response.json())
                 .then((data: unknown) => {
-                  const typedData = data as EnvironmentDataSourcesResponse;
+                  const typedData = data as EnvironmentsResponse;
 
                   if (typedData.success) {
-                    setEnvironmentDataSources(typedData.environmentDataSources);
+                    setEnvironments(typedData.environments);
                   }
                 })
-                .catch((error) => console.error('Failed to reload data sources after add:', error));
+                .catch((error) => console.error('Failed to reload environments after add:', error));
               handleBack();
             }}
           />
         </div>
       )}
 
-      {showEditForm && selectedEnvironmentDataSource && (
+      {showEditForm && selectedEnvironment && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -218,72 +194,87 @@ export default function DataTab() {
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div>
-                <h2 className="text-lg font-medium text-primary">Edit Data Source</h2>
-                <p className="text-sm text-secondary">Modify your database connection settings</p>
+                <h2 className="text-lg font-medium text-primary">Edit Environment</h2>
+                <p className="text-sm text-secondary">Modify your environment settings</p>
               </div>
             </div>
           </div>
-          <EditDataSourceForm
-            selectedDataSource={selectedEnvironmentDataSource}
+          <EditEnvironmentForm
+            environment={selectedEnvironment}
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
             onSuccess={() => {
-              // Reload data sources
-              const reloadResponse = fetch('/api/data-sources');
+              // Reload environments
+              const reloadResponse = fetch('/api/environments');
               reloadResponse
                 .then((response) => response.json())
                 .then((data: unknown) => {
-                  const typedData = data as EnvironmentDataSourcesResponse;
+                  const typedData = data as EnvironmentsResponse;
 
                   if (typedData.success) {
-                    setEnvironmentDataSources(typedData.environmentDataSources);
+                    setEnvironments(typedData.environments);
                   }
                 })
-                .catch((error) => console.error('Failed to reload data sources after edit:', error));
+                .catch((error) => console.error('Failed to reload environments after edit:', error));
               handleBack();
             }}
-            onDelete={handleDeleteClick}
+            onDelete={() => handleDeleteClick(selectedEnvironment)}
           />
         </div>
       )}
 
       {!showEditForm && !showAddFormLocal && (
         <div className="space-y-4">
-          {environmentDataSources.length === 0 ? (
+          {environments.length === 0 ? (
             <div className="text-center py-12">
-              <Database className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Data Sources</h4>
+              <Globe className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Environments</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Get started by adding your first data source.
+                Get started by adding your first environment.
               </p>
             </div>
           ) : (
-            environmentDataSources.map((environmentDataSource) => (
+            environments.map((environment) => (
               <motion.div
-                key={`${environmentDataSource.environmentId}-${environmentDataSource.dataSourceId}`}
+                key={environment.id}
                 className="border-b border-gray-200 dark:border-gray-700"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handleEdit(environmentDataSource)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      handleEdit(environmentDataSource);
-                    }
-                  }}
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all duration-200 cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <Database className="w-5 h-5 text-accent-500" />
-                    <h4 className="font-medium text-gray-900 dark:text-white">
-                      {environmentDataSource.dataSource.name}
-                    </h4>
+                <div className="w-full flex items-center justify-between p-4">
+                  <div
+                    className="flex items-center gap-3 flex-1 cursor-pointer"
+                    onClick={() => handleEdit(environment)}
+                  >
+                    <Globe className="w-5 h-5 text-accent-500" />
+                    <div>
+                      <h4 className="font-medium text-gray-900 dark:text-white">{environment.name}</h4>
+                      {environment.description && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{environment.description}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className={classNames('flex items-center gap-2 transition-transform duration-200')}>
-                    <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEdit(environment)}
+                      className={classNames(
+                        'inline-flex items-center gap-2 p-2 text-sm font-medium rounded-lg transition-colors',
+                        'text-gray-500 hover:text-accent-500',
+                        'hover:bg-accent-50 dark:hover:bg-accent-950/20',
+                      )}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(environment)}
+                      className={classNames(
+                        'inline-flex items-center gap-2 p-2 text-sm font-medium rounded-lg transition-colors',
+                        'text-gray-500 hover:text-red-500',
+                        'hover:bg-red-50 dark:hover:bg-red-950/20',
+                      )}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -302,7 +293,7 @@ export default function DataTab() {
                     <Trash2 className="w-5 h-5 text-tertiary" />
                   </div>
                   <div>
-                    <DialogTitle title="Delete Data Source" />
+                    <DialogTitle title="Delete Environment" />
                     <p className="text-sm text-secondary">This action cannot be undone</p>
                   </div>
                 </div>
@@ -310,22 +301,21 @@ export default function DataTab() {
 
               <div className="space-y-4">
                 <p className="text-sm text-secondary">
-                  Are you sure you want to delete the data source "{selectedEnvironmentDataSource?.dataSource.name}"?
-                  This will This will remove all associated data and cannot be undone.
+                  Are you sure you want to delete the environment "{selectedEnvironment?.name}"? This will remove all
+                  associated data and cannot be undone.
                 </p>
 
-                {conversationCount > 0 && (
+                {selectedEnvironment?.dataSources && selectedEnvironment.dataSources.length > 0 && (
                   <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="w-5 h-5 text-amber-500" />
                       <div className="text-sm">
                         <p className="text-amber-600 dark:text-amber-400 font-medium">
-                          Warning: This will also delete {conversationCount} conversation
-                          {conversationCount === 1 ? '' : 's'}!
+                          Warning: This environment has {selectedEnvironment.dataSources.length} data source
+                          {selectedEnvironment.dataSources.length === 1 ? '' : 's'}!
                         </p>
-                        <p className="text-amber-600 dark:text-amber-400 mt-1">
-                          All conversations associated with this data source will be permanently deleted and cannot be
-                          recovered.
+                        <p className="text-amber-600 dark:text-amber-500 mt-1">
+                          All data sources and associated conversations will be permanently deleted.
                         </p>
                       </div>
                     </div>

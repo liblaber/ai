@@ -1,5 +1,5 @@
 import { prisma } from '~/lib/prisma';
-import type { Conversation, Prisma } from '@prisma/client';
+import { type Conversation, type EnvironmentDataSource, type Prisma } from '@prisma/client';
 import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
 
 export const conversationService = {
@@ -9,16 +9,17 @@ export const conversationService = {
     });
   },
 
-  async getConversationDataSource(conversationId: string) {
+  async getConversationEnvironmentDataSource(conversationId: string): Promise<EnvironmentDataSource> {
     return await prisma.conversation
       .findUniqueOrThrow({
         where: { id: conversationId },
       })
-      .dataSource();
+      .environmentDataSource();
   },
 
   async createConversation(
     dataSourceId: string,
+    environmentId: string,
     userId: string,
     description?: string,
     tx?: Prisma.TransactionClient,
@@ -30,8 +31,13 @@ export const conversationService = {
         User: {
           connect: { id: userId },
         },
-        dataSource: {
-          connect: { id: dataSourceId },
+        environmentDataSource: {
+          connect: {
+            environmentId_dataSourceId: {
+              environmentId,
+              dataSourceId,
+            },
+          },
         },
         description,
         starterId,
@@ -39,7 +45,7 @@ export const conversationService = {
     });
   },
 
-  async updateConversationDescription(
+  async updateConversation(
     conversationId: string,
     userId: string,
     data: Partial<Conversation>,
@@ -56,11 +62,13 @@ export const conversationService = {
         id: true,
         description: true,
         starterId: true,
-        dataSourceId: true,
+        environmentDataSource: true,
         snapshots: true,
         userId: true,
         createdAt: true,
         updatedAt: true,
+        dataSourceId: true,
+        environmentId: true,
       },
       where: {
         userId,

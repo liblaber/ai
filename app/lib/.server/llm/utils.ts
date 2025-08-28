@@ -1,5 +1,5 @@
 import { type Message } from 'ai';
-import { DATA_SOURCE_ID_REGEX, FILES_REGEX, FIRST_USER_MESSAGE_REGEX, FIX_ANNOTATION } from '~/utils/constants';
+import { FILES_REGEX, FIRST_USER_MESSAGE_REGEX, FIX_ANNOTATION } from '~/utils/constants';
 import { type FileMap, IGNORE_PATTERNS } from './constants';
 import ignore from 'ignore';
 import type { ContextAnnotation } from '~/types/context';
@@ -7,7 +7,6 @@ import { freeEmailDomains } from 'free-email-domains-typescript';
 
 export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
   isFirstUserMessage?: boolean;
-  dataSourceId?: string;
   content: string;
   isFixMessage: boolean;
 } {
@@ -16,32 +15,26 @@ export function extractPropertiesFromMessage(message: Omit<Message, 'id'>): {
     : message.content;
 
   const isFirstUserMessageMatch = textContent.match(FIRST_USER_MESSAGE_REGEX);
-  const dataSourceIdMatch = textContent.match(DATA_SOURCE_ID_REGEX);
 
   const isFixMessage = !!message.annotations?.includes(FIX_ANNOTATION);
 
   const isFirstUserMessage = isFirstUserMessageMatch ? isFirstUserMessageMatch[1] === 'true' : false;
-  const dataSourceId = dataSourceIdMatch ? dataSourceIdMatch[1] : undefined;
   const cleanedContent = Array.isArray(message.content)
     ? message.content.map((item) => {
         if (item.type === 'text') {
           return {
             type: 'text',
-            text: item.text
-              ?.replace(FIRST_USER_MESSAGE_REGEX, '')
-              .replace(DATA_SOURCE_ID_REGEX, '')
-              .replace(FILES_REGEX, ''),
+            text: item.text?.replace(FIRST_USER_MESSAGE_REGEX, '').replace(FILES_REGEX, ''),
           };
         }
 
         return item; // Preserve image_url and other types as is
       })
-    : textContent.replace(FIRST_USER_MESSAGE_REGEX, '').replace(DATA_SOURCE_ID_REGEX, '').replace(FILES_REGEX, '');
+    : textContent.replace(FIRST_USER_MESSAGE_REGEX, '').replace(FILES_REGEX, '');
 
   return {
     content: cleanedContent,
     isFirstUserMessage,
-    dataSourceId,
     isFixMessage,
   };
 }
