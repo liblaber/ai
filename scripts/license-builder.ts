@@ -54,10 +54,10 @@ checker.init(options, (err: Error, packages: ModuleInfos) => {
       // For BSD-x licenses, we need to include the full license text
       const licensesStr = Array.isArray(info.licenses) ? info.licenses.join(', ') : info.licenses || 'Unknown';
 
-      if (licensesStr.substring(0, 3) === 'BSD') {
+      if (licensesStr.startsWith('BSD')) {
         console.log(`**${trimmedPkg}:**`);
         console.log(`${info.licenseText}\n`);
-      } else if (licensesStr.substring(0, 6) === 'Apache') {
+      } else if (licensesStr.startsWith('Apache')) { // Add other licenses like || licensesStr.startsWith('MIT') if needed
         console.log(`**${trimmedPkg}**\n${copyrightLine || 'No copyright found'}\n`);
       }
     }
