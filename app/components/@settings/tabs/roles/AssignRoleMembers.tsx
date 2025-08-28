@@ -4,52 +4,52 @@ import { Circle, CircleCheck, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Role, User } from './types';
 
-type AssignRoleUsersProps = {
+type AssignRoleMembersProps = {
   role: Role;
   onRoleUpdate: (updatedRole: Role) => void;
-  closeAssignUsers: () => void;
+  closeAssignMembers: () => void;
 };
 
-export default function AssignRoleUsers({ role, onRoleUpdate, closeAssignUsers }: AssignRoleUsersProps) {
+export default function AssignRoleMembers({ role, onRoleUpdate, closeAssignMembers }: AssignRoleMembersProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [usersNotInRole, setUsersNotInRole] = useState<User[]>([]);
+  const [membersNotInRole, setMembersNotInRole] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Map<string, User>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setControlPanelHeader({
-      title: `Assign users to "${role.name}" role`,
-      onBack: closeAssignUsers,
+      title: `Assign members to "${role.name}" role`,
+      onBack: closeAssignMembers,
     });
 
-    const fetchUsersNotInRole = async () => {
+    const fetchMembersNotInRole = async () => {
       try {
         setIsLoading(true);
 
-        const response = await fetch('/api/user');
-        const data: { users: User[] } = await response.json();
+        const response = await fetch('/api/organization/member');
+        const data: { members: User[] } = await response.json();
 
-        if (data.users) {
+        if (data.members) {
           const roleUserIds = new Set(role.users?.map((user) => user.id));
-          const usersNotInRoleList: User[] = data.users
-            .filter((user) => !roleUserIds.has(user.id))
-            .map((user) => ({ id: user.id, name: user.name, email: user.email }));
+          const membersNotInRoleList: User[] = data.members
+            .filter((member) => !roleUserIds.has(member.id))
+            .map((member) => ({ id: member.id, name: member.name, email: member.email }));
 
-          setUsersNotInRole(usersNotInRoleList);
+          setMembersNotInRole(membersNotInRoleList);
         }
       } catch (error) {
-        console.error('Error fetching users:', error);
-        toast.error('Failed to fetch users');
+        console.error('Error fetching organization members:', error);
+        toast.error('Failed to fetch organization members');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchUsersNotInRole();
+    fetchMembersNotInRole();
   }, []);
 
-  const handleAssignUsers = async () => {
+  const handleAssignMembers = async () => {
     if (selectedUsers.size === 0) {
       return;
     }
@@ -67,8 +67,8 @@ export default function AssignRoleUsers({ role, onRoleUpdate, closeAssignUsers }
             body: JSON.stringify({ userId: user.id }),
           }).then((res) => {
             if (!res.ok) {
-              const failedUser = usersNotInRole.find((m) => m.id === user.id);
-              toast.error(`Failed to assign user "${failedUser?.email || 'Unknown'}"`);
+              const failedUser = membersNotInRole.find((m) => m.id === user.id);
+              toast.error(`Failed to assign member "${failedUser?.email || 'Unknown'}"`);
               newRoleUsers.delete(user.id);
             }
           }),
@@ -80,7 +80,7 @@ export default function AssignRoleUsers({ role, onRoleUpdate, closeAssignUsers }
         users: [...(role.users || []), ...Array.from(newRoleUsers.values())],
       };
       onRoleUpdate(updatedRole);
-      closeAssignUsers();
+      closeAssignMembers();
     } finally {
       setIsSaving(false);
     }
@@ -104,20 +104,20 @@ export default function AssignRoleUsers({ role, onRoleUpdate, closeAssignUsers }
     });
   };
 
-  const filteredUsers = useMemo(
+  const filteredMembers = useMemo(
     () =>
-      usersNotInRole.filter(
-        (user) =>
-          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchQuery.toLowerCase()),
+      membersNotInRole.filter(
+        (member) =>
+          member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          member.email.toLowerCase().includes(searchQuery.toLowerCase()),
       ),
-    [usersNotInRole, searchQuery],
+    [membersNotInRole, searchQuery],
   );
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-gray-400">Loading users...</div>
+        <div className="text-gray-400">Loading members...</div>
       </div>
     );
   }
@@ -133,44 +133,46 @@ export default function AssignRoleUsers({ role, onRoleUpdate, closeAssignUsers }
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full h-9 pl-7 pr-2.5 py-2 rounded-[50px] bg-gray-600/50 text-sm text-white placeholder-gray-400 focus:outline-none"
-          placeholder="Search users..."
+          placeholder="Search members..."
         />
       </div>
 
-      <div className="text-sm text-gray-400 px-4 py-2 border-b border-gray-700">Assign users</div>
+      <div className="text-sm text-gray-400 px-4 py-2 border-b border-gray-700">Assign members</div>
 
       <div className="min-h-106">
-        {filteredUsers.map((user) => (
+        {filteredMembers.map((member) => (
           <div
-            key={user.id}
+            key={member.id}
             className="flex items-center gap-6 p-4 border-b border-gray-700/50 cursor-pointer"
-            onClick={() => toggleSelectUser(user)}
+            onClick={() => toggleSelectUser(member)}
           >
-            {selectedUsers.has(user.id) ? (
+            {selectedUsers.has(member.id) ? (
               <CircleCheck className="w-5 h-5 text-accent-500" />
             ) : (
               <Circle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             )}
             <div className="space-y-1">
-              <div className="text-sm text-white">{user.name}</div>
-              <div className="text-sm text-gray-400">{user.email}</div>
+              <div className="text-sm text-white">{member.name}</div>
+              <div className="text-sm text-gray-400">{member.email}</div>
             </div>
           </div>
         ))}
 
-        {filteredUsers.length === 0 && !isLoading && <div className="p-4 text-sm text-gray-400">No users found</div>}
+        {filteredMembers.length === 0 && !isLoading && (
+          <div className="p-4 text-sm text-gray-400">No members found</div>
+        )}
       </div>
 
       <div className="sticky bottom-0 left-0 right-0 -m-6 border-t border-gray-800 bg-gray-50 dark:bg-gray-900">
         <div className="flex justify-end p-4">
           <button
-            onClick={handleAssignUsers}
+            onClick={handleAssignMembers}
             disabled={isSaving || selectedUsers.size === 0}
             className="px-4 py-2 bg-accent-500 hover:bg-accent-600 text-gray-950 dark:text-gray-950 rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving
-              ? 'Assigning Users...'
-              : `Assign ${selectedUsers.size ? selectedUsers.size : ''} User${selectedUsers.size !== 1 ? 's' : ''}`}
+              ? 'Assigning Members...'
+              : `Assign ${selectedUsers.size ? selectedUsers.size : ''} Member${selectedUsers.size !== 1 ? 's' : ''}`}
           </button>
         </div>
       </div>

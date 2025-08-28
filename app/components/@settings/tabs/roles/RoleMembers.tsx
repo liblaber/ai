@@ -6,31 +6,31 @@ import { toast } from 'sonner';
 import { useUserStore } from '~/lib/stores/user';
 import type { Role, User } from './types';
 
-type RoleUsersProps = {
+type RoleMembersProps = {
   role: Role;
   onRoleUpdate: (updatedRole: Role) => void;
-  onAssignUsers: () => void;
+  onAssignMembers: () => void;
 };
 
-export default function RoleUsers({ role, onRoleUpdate, onAssignUsers }: RoleUsersProps) {
+export default function RoleMembers({ role, onRoleUpdate, onAssignMembers }: RoleMembersProps) {
   const { user } = useUserStore();
   const currentUserId = user?.id;
   const [searchQuery, setSearchQuery] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedMember, setSelectedMember] = useState<User | null>(null);
 
-  const users = role.users || [];
+  const members = role.users || [];
 
-  const handleDeleteUser = async (roleId: string, userId: string | undefined) => {
-    if (!userId) {
+  const handleDeleteMember = async (roleId: string, memberId: string | undefined) => {
+    if (!memberId) {
       return;
     }
 
     setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/roles/${roleId}/users/${userId}`, {
+      const response = await fetch(`/api/roles/${roleId}/users/${memberId}`, {
         method: 'DELETE',
       });
       const data: { success: boolean; error?: string } = await response.json();
@@ -38,29 +38,29 @@ export default function RoleUsers({ role, onRoleUpdate, onAssignUsers }: RoleUse
       if (data.success) {
         onRoleUpdate({
           ...role,
-          users: users.filter((user) => user.id !== userId),
+          users: members.filter((member) => member.id !== memberId),
         });
       } else {
-        toast.error(data.error || 'Failed to remove user from role');
+        toast.error(data.error || 'Failed to remove member from role');
       }
     } catch (error) {
-      console.error('Error removing user from role:', error);
-      toast.error('Failed to remove user from role');
+      console.error('Error removing member from role:', error);
+      toast.error('Failed to remove member from role');
     } finally {
       setShowDeleteConfirm(false);
-      setSelectedUser(null);
+      setSelectedMember(null);
       setIsDeleting(false);
     }
   };
 
-  const filteredUsers = useMemo(
+  const filteredMembers = useMemo(
     () =>
-      users.filter(
-        (user) =>
-          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchQuery.toLowerCase()),
+      members.filter(
+        (member) =>
+          member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          member.email.toLowerCase().includes(searchQuery.toLowerCase()),
       ),
-    [users, searchQuery],
+    [members, searchQuery],
   );
 
   return (
@@ -75,11 +75,11 @@ export default function RoleUsers({ role, onRoleUpdate, onAssignUsers }: RoleUse
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-9 pl-7 pr-2.5 py-2 rounded-[50px] bg-gray-600/50 text-sm text-white placeholder-gray-400 focus:outline-none"
-            placeholder="Search users..."
+            placeholder="Search members..."
           />
         </div>
         <button
-          onClick={onAssignUsers}
+          onClick={onAssignMembers}
           className={classNames(
             'inline-flex items-center gap-2 px-3 py-1.75 text-sm rounded-lg transition-colors',
             'border border-gray-600',
@@ -90,28 +90,28 @@ export default function RoleUsers({ role, onRoleUpdate, onAssignUsers }: RoleUse
           )}
         >
           <Plus className="w-4 h-4 text-white" />
-          Assign Users
+          Assign Members
         </button>
       </div>
 
       <div>
         <div className="flex justify-between text-sm text-gray-400 px-4 py-2 border-b border-gray-700">
-          <span>Assigned Users</span>
+          <span>Assigned Members</span>
         </div>
 
         <div className="space-y-px pb-4">
-          {filteredUsers.map((user, index) => (
-            <React.Fragment key={user.id}>
+          {filteredMembers.map((member, index) => (
+            <React.Fragment key={member.id}>
               <div className="group flex items-center justify-between p-4">
                 <div className="space-y-1">
-                  <div className="text-sm text-white">{user.name}</div>
-                  <div className="text-sm text-gray-400">{user.email}</div>
+                  <div className="text-sm text-white">{member.name}</div>
+                  <div className="text-sm text-gray-400">{member.email}</div>
                 </div>
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  {user.id !== currentUserId && (
+                  {member.id !== currentUserId && (
                     <button
                       onClick={() => {
-                        setSelectedUser(user);
+                        setSelectedMember(member);
                         setShowDeleteConfirm(true);
                       }}
                     >
@@ -120,7 +120,7 @@ export default function RoleUsers({ role, onRoleUpdate, onAssignUsers }: RoleUse
                   )}
                 </div>
               </div>
-              {index < filteredUsers.length - 1 && <hr className="border-gray-700/50" />}
+              {index < filteredMembers.length - 1 && <hr className="border-gray-700/50" />}
             </React.Fragment>
           ))}
         </div>
@@ -136,7 +136,7 @@ export default function RoleUsers({ role, onRoleUpdate, onAssignUsers }: RoleUse
                     <Trash2 className="w-5 h-5 text-tertiary" />
                   </div>
                   <div>
-                    <DialogTitle title={`Remove "${role.name}" role from ${selectedUser?.name}`} />
+                    <DialogTitle title={`Remove "${role.name}" role from ${selectedMember?.name}`} />
                   </div>
                 </div>
               </div>
@@ -162,7 +162,7 @@ export default function RoleUsers({ role, onRoleUpdate, onAssignUsers }: RoleUse
                   </button>
                 </DialogClose>
                 <button
-                  onClick={() => handleDeleteUser(role.id, selectedUser?.id)}
+                  onClick={() => handleDeleteMember(role.id, selectedMember?.id)}
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                     'bg-red-500 hover:bg-red-600',

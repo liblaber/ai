@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRole, getRoles } from '~/lib/services/roleService';
-
+import { organizationService } from '~/lib/services/organizationService';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma, RoleScope } from '@prisma/client';
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { userAbility } = await requireUserAbility(request);
+  const { userId, userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.create, PermissionResource.AdminApp)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
@@ -30,8 +30,14 @@ export async function POST(request: NextRequest) {
     resourceId?: string;
   };
 
+  const organization = await organizationService.getOrganizationByUser(userId);
+
+  if (!organization) {
+    return NextResponse.json({ success: false, error: 'Organization not found' }, { status: 404 });
+  }
+
   try {
-    const role = await createRole(body.name, body.description, body.scope, body.resourceId);
+    const role = await createRole(body.name, body.description, organization.id, body.scope, body.resourceId);
 
     return NextResponse.json({ success: true, role });
   } catch (error) {

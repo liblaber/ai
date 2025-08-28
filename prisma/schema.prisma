@@ -16,13 +16,13 @@ datasource db {
 }
 
 model DataSource {
-  id               String                  @id @default(cuid())
+  id               String         @id @default(cuid())
   name             String
-  connectionString String                  @map("connection_string")
-  createdAt        DateTime                @default(now()) @map("created_at")
-  updatedAt        DateTime                @updatedAt @map("updated_at")
-  createdBy        User                    @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  createdById      String                  @map("created_by_id")
+  connectionString String         @map("connection_string")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+  createdBy        User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdById      String         @map("created_by_id")
   conversations    Conversation[]
   environments     EnvironmentDataSource[]
 
@@ -32,18 +32,18 @@ model DataSource {
 }
 
 model Website {
-  id            String       @id @default(cuid())
-  siteId        String?      @map("site_id")
-  siteName      String?      @map("site_name")
-  siteUrl       String?      @map("site_url")
-  chatId        String       @map("chat_id")
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
-  isPublic      Boolean      @default(false) @map("is_public")
-  createdBy     User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  createdById   String       @map("created_by_id")
-  environment   Environment? @relation(fields: [environmentId], references: [id], onDelete: Cascade)
-  environmentId String?      @map("environment_id")
+  id            String        @id @default(cuid())
+  siteId        String?       @map("site_id")
+  siteName      String?       @map("site_name")
+  siteUrl       String?       @map("site_url")
+  chatId        String        @map("chat_id")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  isPublic      Boolean       @default(false) @map("is_public")
+  createdBy     User          @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdById   String        @map("created_by_id")
+  environment   Environment?  @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  environmentId String?       @map("environment_id")
 
   directPermissions Permission[]
 
@@ -51,16 +51,20 @@ model Website {
 }
 
 model Environment {
-  id          String                  @id @default(cuid())
-  name        String
-  description String?
-  dataSources EnvironmentDataSource[]
-  websites    Website[]
-  createdAt   DateTime                @default(now()) @map("created_at")
-  updatedAt   DateTime                @updatedAt @map("updated_at")
+  id             String         @id @default(cuid())
+  name           String
+  description    String?
+  organizationId String?        @map("organization_id")
+  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dataSources    EnvironmentDataSource[]
+  websites       Website[]
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
 
-  directPermissions Permission[]
+  directPermissions  Permission[]
 
+  @@unique([name, organizationId])
+  @@index([organizationId], name: "idx_environment_organization_id")
   @@map("environment")
 }
 
@@ -147,16 +151,19 @@ enum RoleScope {
 }
 
 model Role {
-  id          String       @id @default(cuid())
-  name        String
-  description String?
-  scope       RoleScope    @default(GENERAL)
-  resourceId  String?      @map("resource_id")
-  users       UserRole[]
-  permissions Permission[]
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  id             String       @id @default(cuid())
+  name           String
+  description    String?
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  scope          RoleScope    @default(GENERAL)
+  resourceId     String?      @map("resource_id")
+  users          UserRole[]
+  permissions    Permission[]
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
+  @@unique([organizationId, name])
   @@map("role")
 }
 
@@ -166,20 +173,22 @@ enum DeprecatedRole {
 }
 
 model User {
-  id               String         @id @default(uuid())
-  name             String
-  email            String
-  emailVerified    Boolean
-  image            String?
-  createdAt        DateTime
-  updatedAt        DateTime
-  sessions         Session[]
-  accounts         Account[]
-  conversations    Conversation[]
-  roles            UserRole[]
-  role             DeprecatedRole @default(MEMBER)
-  dataSources      DataSource[]
-  websites         Website[]
+  id             String          @id @default(uuid())
+  name           String
+  email          String
+  emailVerified  Boolean
+  image          String?
+  createdAt      DateTime
+  updatedAt      DateTime
+  sessions       Session[]
+  accounts       Account[]
+  conversations  Conversation[]
+  roles          UserRole[]
+  role           DeprecatedRole  @default(MEMBER)
+  dataSources    DataSource[]
+  websites       Website[]
+  organizationId String?
+  organization   Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   telemetryEnabled Boolean?
 
   isAnonymous Boolean?
@@ -282,4 +291,18 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  domain    String?  @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users        User[]
+  roles        Role[]
+  environments Environment[]
+
+  @@map("organization")
 }

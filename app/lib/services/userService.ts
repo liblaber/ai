@@ -8,6 +8,12 @@ export interface UserProfile {
   email: string;
   image?: string | null;
   role?: DeprecatedRole;
+  organizationId?: string | null;
+  organization?: {
+    id: string;
+    name: string;
+    domain?: string | null;
+  } | null;
   telemetryEnabled?: boolean | null;
 }
 
@@ -15,6 +21,15 @@ export const userService = {
   async getUser(userId: string): Promise<UserProfile> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            domain: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -27,20 +42,10 @@ export const userService = {
       email: user.email,
       image: user.image,
       role: user.role,
+      organizationId: user.organizationId,
+      organization: user.organization,
       telemetryEnabled: user.telemetryEnabled,
     };
-  },
-
-  async getAllUsers(): Promise<UserProfile[]> {
-    const users = await prisma.user.findMany({ where: { isAnonymous: { not: true } } });
-    return users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      image: user.image,
-      role: user.role,
-      telemetryEnabled: user.telemetryEnabled,
-    }));
   },
 
   async getUserByEmail(email: string): Promise<UserProfile> {
@@ -58,6 +63,7 @@ export const userService = {
       email: user.email,
       image: user.image,
       role: user.role,
+      organizationId: user.organizationId,
       telemetryEnabled: user.telemetryEnabled,
     };
   },
@@ -69,6 +75,15 @@ export const userService = {
     const user = await prisma.user.update({
       where: { id: userId },
       data,
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            domain: true,
+          },
+        },
+      },
     });
 
     return {
@@ -77,6 +92,8 @@ export const userService = {
       email: user.email,
       image: user.image,
       role: user.role,
+      organizationId: user.organizationId,
+      organization: user.organization,
       telemetryEnabled: user.telemetryEnabled,
     };
   },
@@ -90,6 +107,7 @@ export const userService = {
         name: true,
         email: true,
         role: true,
+        organizationId: true,
         telemetryEnabled: true,
       },
     });
@@ -99,8 +117,37 @@ export const userService = {
       name: user.name,
       email: user.email,
       role: user.role,
+      organizationId: user.organizationId,
       telemetryEnabled: user.telemetryEnabled,
     };
+  },
+
+  async getUsersByOrganization(organizationId: string): Promise<UserProfile[]> {
+    const users = await prisma.user.findMany({
+      where: {
+        organizationId,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        organizationId: true,
+        telemetryEnabled: true,
+      },
+      orderBy: {
+        email: 'asc',
+      },
+    });
+
+    return users.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      organizationId: user.organizationId,
+      telemetryEnabled: user.telemetryEnabled,
+    }));
   },
 
   async getUsersByRole(roleId: string): Promise<UserProfile[]> {
@@ -115,6 +162,7 @@ export const userService = {
             name: true,
             email: true,
             role: true,
+            organizationId: true,
             telemetryEnabled: true,
           },
         },
@@ -137,6 +185,7 @@ export const userService = {
             name: true,
             email: true,
             role: true,
+            organizationId: true,
             telemetryEnabled: true,
           },
         },
@@ -157,10 +206,17 @@ export const userService = {
     });
   },
 
-  async updateUserRole(_userId: string, role: DeprecatedRole) {
+  async updateUserRole(_userId: string, organizationId: string, role: DeprecatedRole) {
     return await prisma.user.update({
       where: { id: _userId },
-      data: { role },
+      data: { role, organizationId },
+    });
+  },
+
+  async setUserOrganizationAndRole(userId: string, organizationId: string, role: DeprecatedRole) {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { organizationId, role },
     });
   },
 
@@ -177,12 +233,13 @@ export const userService = {
     return nonAnonymousUserCount === 1;
   },
 
-  async grantSystemAdminAccess(userId: string): Promise<void> {
+  async grantSystemAdminAccess(userId: string, organizationId: string): Promise<void> {
     try {
       // First, ensure the user has the organizationId set and role set to ADMIN
       await prisma.user.update({
         where: { id: userId },
         data: {
+          organizationId,
           role: DeprecatedRole.ADMIN, // Set legacy role field to ADMIN for first user
         },
       });
@@ -190,6 +247,7 @@ export const userService = {
       // Create a System Admin role if it doesn't exist
       let systemAdminRole = await prisma.role.findFirst({
         where: {
+          organizationId,
           name: 'System Admin',
         },
       });
@@ -199,6 +257,7 @@ export const userService = {
           data: {
             name: 'System Admin',
             description: 'Full system administrator with all privileges across all organizations',
+            organizationId,
           },
         });
       }
@@ -244,7 +303,7 @@ export const userService = {
         }
       }
 
-      console.log(`✅ Granted system admin access to user ${userId}`);
+      console.log(`✅ Granted system admin access to user ${userId} in organization ${organizationId}`);
     } catch (error) {
       console.error(`❌ Failed to grant system admin access to user ${userId}:`, error);
       throw new Error(
