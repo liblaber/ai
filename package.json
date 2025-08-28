@@ -27,7 +27,7 @@
     "db:stop": "docker compose -f docker-compose.db.yml down",
     "db:restart": "docker compose -f docker-compose.db.yml restart",
     "typecheck": "tsc --noEmit --skipLibCheck",
-    "license:notice": "node ./scripts/license-builder.ts > NOTICE.md",
+    "license:notice": "tsx ./scripts/license-builder.ts > NOTICE.md",
     "lint-staged": "lint-staged",
     "preview": "pnpm run build && pnpm run start",
     "prepare": "husky",
