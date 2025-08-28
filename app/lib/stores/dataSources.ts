@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { persist } from 'zustand/middleware';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
 
-interface DataSource {
+export interface DataSource {
   id: string;
   name: string;
   connectionString: string;
