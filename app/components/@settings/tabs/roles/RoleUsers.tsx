@@ -90,7 +90,7 @@ export default function RoleUsers({ role, onRoleUpdate, onAssignUsers }: RoleUse
           )}
         >
           <Plus className="w-4 h-4 text-white" />
-          Assign Users
+          Assign Members
         </button>
       </div>
 
