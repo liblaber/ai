@@ -110,6 +110,8 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         // Redirect to data source connection if no data sources exist
         if (currentDataSources.length === 0) {
           router.push(DATA_SOURCE_CONNECTION_ROUTE);
+
+          return;
         }
       }
 
