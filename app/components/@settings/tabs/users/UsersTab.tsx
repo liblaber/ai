@@ -167,11 +167,11 @@ export default function UsersTab() {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2 p-2">
-          <h2 className="text-lg text-white">Users</h2>
+          <h2 className="text-lg text-white">Members</h2>
           <span className="text-lg text-gray-400">Loading...</span>
         </div>
         <div className="flex items-center justify-center p-8">
-          <div className="text-gray-400">Loading users...</div>
+          <div className="text-gray-400">Loading members...</div>
         </div>
       </div>
     );
@@ -181,7 +181,7 @@ export default function UsersTab() {
     <Tooltip.Provider delayDuration={50}>
       <div className="space-y-4">
         <div className="flex items-center gap-2 p-2">
-          <h2 className="text-lg text-white">Users</h2>
+          <h2 className="text-lg text-white">Members</h2>
           <span className="text-lg text-gray-400">{filteredUsers.length}</span>
         </div>
 
