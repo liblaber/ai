@@ -49,7 +49,7 @@ model DataSourceProperty {
 
   environmentId         String                @map("environment_id")
   dataSourceId          String                @map("data_source_id")
-  environmentDataSource EnvironmentDataSource @relation(fields: [environmentId, dataSourceId], references: [environmentId, dataSourceId])
+  environmentDataSource EnvironmentDataSource @relation(fields: [environmentId, dataSourceId], references: [environmentId, dataSourceId], onDelete: Cascade)
 
   @@map("data_source_property")
 }

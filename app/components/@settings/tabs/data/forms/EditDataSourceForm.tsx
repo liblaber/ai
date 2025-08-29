@@ -40,7 +40,6 @@ interface EnvironmentsResponse {
   error?: string;
 }
 
-// TODO: @skos update the form to use EnvironmentDataSource
 interface EditDataSourceFormProps {
   selectedDataSource: EnvironmentDataSource | null;
   isSubmitting: boolean;

@@ -10,6 +10,7 @@ import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-p
 import { headers } from 'next/headers';
 import { auth } from '~/auth/auth-config';
 import type { Session } from '~/auth/session';
+import { getEnvironmentVariables } from '~/lib/services/environmentVariablesService';
 
 const inlineThemeCode = `
   setLiblabTheme();
@@ -36,6 +37,7 @@ async function getRootData() {
 
     let user = null;
     let environmentDataSources: any[] = [];
+    let environmentVariables: any[] = [];
     let dataSourceTypes: any[] = [];
 
     if (typedSession?.user) {
@@ -45,6 +47,20 @@ async function getRootData() {
       // Get data sources for the user
       const userAbility = await getUserAbility(typedSession.user.id);
       environmentDataSources = await getEnvironmentDataSources(userAbility);
+
+      // Get environment variables for the user's environments
+      if (environmentDataSources.length > 0) {
+        // For now, get environment variables for the first environment
+        // In the future, this could be enhanced to get variables for all environments
+        const firstEnvironmentId = environmentDataSources[0].environmentId;
+
+        try {
+          environmentVariables = await getEnvironmentVariables(firstEnvironmentId);
+        } catch (error) {
+          console.error('Failed to fetch environment variables:', error);
+          environmentVariables = [];
+        }
+      }
     }
 
     // Initialize plugin manager
@@ -58,6 +74,7 @@ async function getRootData() {
     return {
       user,
       environmentDataSources,
+      environmentVariables,
       pluginAccess,
       dataSourceTypes,
     };
@@ -66,6 +83,7 @@ async function getRootData() {
     return {
       user: null,
       environmentDataSources: [],
+      environmentVariables: [],
       pluginAccess: FREE_PLUGIN_ACCESS,
       dataSourceTypes: [],
     };
