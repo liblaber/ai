@@ -14,7 +14,7 @@ export const TAB_LABELS: Record<TabType, string> = {
   data: 'Data Sources',
   github: 'GitHub',
   'deployed-apps': 'Deployed Apps',
-  members: 'Users',
+  members: 'Members',
   roles: 'Roles',
   environments: 'Environments',
 };
@@ -23,7 +23,7 @@ export const TAB_DESCRIPTIONS: Record<TabType, string> = {
   data: 'Manage your data sources',
   github: 'Manage GitHub connection and repository settings',
   'deployed-apps': 'View and manage your deployed applications',
-  members: 'Manage your users',
+  members: 'Manage your members',
   roles: 'Manage roles and permissions for users',
   environments: 'Manage your environments',
 };
