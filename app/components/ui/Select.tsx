@@ -70,7 +70,6 @@ interface SelectProps<T extends SelectOption = SelectOption> {
 const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> => ({
   control: (base) => ({
     ...base,
-    minWidth: '300px',
     backgroundColor: 'var(--color-depth-4)', // gray-700
     border: '1px solid transparent',
     boxShadow: 'none',

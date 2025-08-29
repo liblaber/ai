@@ -112,6 +112,11 @@ export async function getMembersForResource(
         },
       },
     },
+    orderBy: {
+      user: {
+        name: 'asc',
+      },
+    },
   });
 
   // A user might have multiple roles that grant access. We want to return each user only once with their highest level role.
