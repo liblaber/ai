@@ -134,10 +134,6 @@ export default function AccessDeniedPage() {
               <Button onClick={handleSignOut} variant="outline" className="w-full">
                 Sign Out
               </Button>
-
-              <Button onClick={() => (window.location.href = '/')} variant="secondary" className="w-full">
-                Go to Homepage
-              </Button>
             </div>
           </CardContent>
         </Card>
