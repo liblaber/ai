@@ -10,6 +10,7 @@ import { useEnvironmentsStore } from '~/lib/stores/environments';
 import { settingsPanelStore, useSettingsStore } from '~/lib/stores/settings';
 import { useStore } from '@nanostores/react';
 import type { EnvironmentWithRelations } from '~/lib/services/environmentService';
+import { BaseSelect } from '~/components/ui/Select';
 
 interface EnvironmentVariablesResponse {
   success: boolean;
@@ -21,6 +22,12 @@ interface EnvironmentsResponse {
   environments: EnvironmentWithRelations[];
 }
 
+interface EnvironmentOption {
+  label: string;
+  value: string;
+  description?: string;
+}
+
 export default function SecretsManagerTab() {
   const { showAddForm } = useStore(settingsPanelStore);
   const [showAddFormLocal, setShowAddFormLocal] = useState(showAddForm);
@@ -30,6 +37,8 @@ export default function SecretsManagerTab() {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string>('');
+  const [environmentOptions, setEnvironmentOptions] = useState<EnvironmentOption[]>([]);
+  const [isLoadingEnvironments, setIsLoadingEnvironments] = useState(true);
   const { environmentVariables, setEnvironmentVariables, setLoading } = useEnvironmentVariablesStore();
   const { environments, setEnvironments } = useEnvironmentsStore();
   const { selectedTab } = useSettingsStore();
@@ -50,11 +59,24 @@ export default function SecretsManagerTab() {
   useEffect(() => {
     const loadEnvironments = async () => {
       try {
+        setIsLoadingEnvironments(true);
+
         const response = await fetch('/api/environments');
         const data = (await response.json()) as EnvironmentsResponse;
 
         if (data.success) {
           setEnvironments(data.environments);
+
+          // Transform environments to options
+          const options: EnvironmentOption[] = [
+            { label: 'All Environments', value: 'all', description: 'Show variables from all environments' },
+            ...data.environments.map((env) => ({
+              label: env.name,
+              value: env.id,
+              description: env.description || undefined,
+            })),
+          ];
+          setEnvironmentOptions(options);
 
           // Set "All" as default if environments are available
           if (data.environments.length > 0) {
@@ -64,6 +86,8 @@ export default function SecretsManagerTab() {
       } catch (error) {
         console.error('Failed to load environments:', error);
         toast.error('Failed to load environments');
+      } finally {
+        setIsLoadingEnvironments(false);
       }
     };
 
@@ -141,25 +165,29 @@ export default function SecretsManagerTab() {
           </div>
 
           {/* Environment Selector */}
-          {environments.length > 0 && (
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Environment:</label>
-              <select
-                value={selectedEnvironmentId}
-                onChange={(e) => handleEnvironmentChange(e.target.value)}
-                className={classNames(
-                  'px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
-                  'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
-                  'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
-                )}
-              >
-                <option value="all">All</option>
-                {environments.map((env) => (
-                  <option key={env.id} value={env.id}>
-                    {env.name}
-                  </option>
-                ))}
-              </select>
+          {environmentOptions.length > 0 && (
+            <div className="mb-6">
+              <label className="mb-3 block text-sm font-medium text-secondary">Environment</label>
+              <BaseSelect
+                value={environmentOptions.find((opt) => opt.value === selectedEnvironmentId) || null}
+                onChange={(value: EnvironmentOption | null) => {
+                  if (value) {
+                    handleEnvironmentChange(value.value);
+                  }
+                }}
+                options={environmentOptions}
+                placeholder={isLoadingEnvironments ? 'Loading environments...' : 'Select environment'}
+                isDisabled={isLoadingEnvironments}
+                width="100%"
+                minWidth="100%"
+                isSearchable={false}
+                menuPlacement={'bottom'}
+              />
+              {environmentOptions.find((opt) => opt.value === selectedEnvironmentId)?.description && (
+                <div className="text-gray-400 text-sm mt-2">
+                  {environmentOptions.find((opt) => opt.value === selectedEnvironmentId)?.description}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -290,7 +318,6 @@ export default function SecretsManagerTab() {
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-accent-500 rounded-full" />
                     <div>
                       <div className="font-medium text-gray-900 dark:text-white">{environmentVariable.key}</div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
