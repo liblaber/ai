@@ -3,14 +3,13 @@ import { useRouter } from 'next/navigation';
 import { persist } from 'zustand/middleware';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
 
-// TODO: @skos we could reassign the prisma types in lib/ to a variable and import here as a type
 export interface EnvironmentVariable {
   id: string;
   key: string;
   value: string;
   description: string | null;
-  // TODO: @skos the type should be EnvironmentVariableType (but can't import directly from prisma)
-  type: any;
+  // this must be synced with EnvironmentVariableType enum in prisma
+  type: 'CONNECTION_URL' | 'ACCESS_TOKEN' | 'REFRESH_TOKEN' | 'CLIENT_ID' | 'CLIENT_SECRET' | 'API_KEY';
   environmentId: string;
   dataSourceId: string | null;
   createdById: string;
@@ -36,11 +35,11 @@ export interface EnvironmentDataSource {
   };
   dataSourceProperties: [
     {
-      type: any;
+      // this must be synced with DataSourcePropertyType enum in prisma
+      type: 'GLOBAL' | 'DATA_SOURCE';
       environmentVariables: EnvironmentVariable[];
     },
   ];
-  // TODO: @skos this should be DataSourcePropertyType (but can't import from prisma directly)
 }
 
 interface EnvironmentDataSourcesStore {
