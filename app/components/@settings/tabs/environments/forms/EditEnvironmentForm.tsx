@@ -4,6 +4,7 @@ import { ChevronRight, Database, Key, Monitor } from 'lucide-react';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
 import type { EnvironmentWithRelations } from '~/lib/services/environmentService';
+import ResourceAccessMembers from '~/components/@settings/shared/components/ResourceAccessMembers';
 
 interface EditEnvironmentFormProps {
   environment: EnvironmentWithRelations;
@@ -204,6 +205,10 @@ export default function EditEnvironmentForm({
             )}
           </div>
         </div>
+      </div>
+
+      <div>
+        <ResourceAccessMembers resourceScope="ENVIRONMENT" resourceId={environment.id} />
       </div>
 
       <div className="flex items-center justify-between pt-4">
