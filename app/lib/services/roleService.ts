@@ -96,7 +96,6 @@ export async function findOrCreateResourceRole(
   scope: ResourceRoleScope,
   resourceId: string,
   permissionLevel: PermissionLevel,
-  organizationId: string,
   prismaClient: Prisma.TransactionClient | PrismaClient = prisma, // Optional to allow transaction
 ): Promise<Role | null> {
   const permissionDetails = permissionLevels[permissionLevel];
@@ -104,7 +103,7 @@ export async function findOrCreateResourceRole(
   const name = `${scope}_${permissionDetails.label}_${resourceId}`;
 
   const existingRole = await prisma.role.findFirst({
-    where: { scope, resourceId, name, organizationId },
+    where: { scope, resourceId, name },
   });
 
   if (existingRole) {
@@ -138,7 +137,6 @@ export async function findOrCreateResourceRole(
     data: {
       name,
       description: `Grants ${permissionLevel} access to ${scope} ${resourceId}`,
-      organizationId,
       scope,
       resourceId,
       permissions: {
@@ -153,10 +151,9 @@ export async function addUserToResourceRole(
   resourceId: string,
   roleScope: ResourceRoleScope,
   permissionLevel: PermissionLevel,
-  organizationId: string,
   prismaClient: Prisma.TransactionClient | PrismaClient = prisma, // Optional to allow transaction
 ): Promise<void> {
-  const role = await findOrCreateResourceRole(roleScope, resourceId, permissionLevel, organizationId, prismaClient);
+  const role = await findOrCreateResourceRole(roleScope, resourceId, permissionLevel, prismaClient);
 
   if (!role) {
     throw new Error('Role not found and could not be created');

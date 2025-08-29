@@ -5,11 +5,11 @@ import { toast } from 'sonner';
 import { resetControlPanelHeader, setControlPanelHeader } from '~/lib/stores/settings';
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import type { Role } from './types';
-import RoleMembers from './RoleMembers';
-import AssignRoleMembers from './AssignRoleMembers';
+import RoleUsers from './RoleUsers';
+import AssignRoleUsers from './AssignRoleUsers';
 import { classNames } from '~/utils/classNames';
 
-const ROLE_TABS = ['Members', 'Environments', 'Data Sources', 'Apps'];
+const ROLE_TABS = ['Users', 'Environments', 'Data Sources', 'Apps'];
 interface RoleDetailsProps {
   role: Role;
   onBack(): void;
@@ -22,8 +22,8 @@ export default function RoleDetails({ role, onBack, onRoleUpdate, onRoleDelete }
   const [roleDescription, setRoleDescription] = useState(role.description);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [activeTab, setActiveTab] = useState('Members');
-  const [showAssignedMembers, setShowAssignedMembers] = useState(false);
+  const [activeTab, setActiveTab] = useState('Users');
+  const [showAssignedUsers, setShowAssignedUsers] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
@@ -40,10 +40,8 @@ export default function RoleDetails({ role, onBack, onRoleUpdate, onRoleDelete }
 
   const getTabComponent = (tab: string) => {
     switch (tab) {
-      case 'Members':
-        return (
-          <RoleMembers role={role} onRoleUpdate={onRoleUpdate} onAssignMembers={() => setShowAssignedMembers(true)} />
-        );
+      case 'Users':
+        return <RoleUsers role={role} onRoleUpdate={onRoleUpdate} onAssignUsers={() => setShowAssignedUsers(true)} />;
       case 'Environments':
       case 'Data Sources':
       case 'Apps':
@@ -108,13 +106,13 @@ export default function RoleDetails({ role, onBack, onRoleUpdate, onRoleDelete }
   const isSaveDisabled =
     isSaving || roleName.trim() === '' || (role.name === roleName && role.description === roleDescription);
 
-  if (showAssignedMembers) {
+  if (showAssignedUsers) {
     return (
-      <AssignRoleMembers
+      <AssignRoleUsers
         role={role}
         onRoleUpdate={onRoleUpdate}
-        closeAssignMembers={() => {
-          setShowAssignedMembers(false);
+        closeAssignUsers={() => {
+          setShowAssignedUsers(false);
           setControlPanelHeader({
             title: `Edit "${role.name}"`,
             onBack,
@@ -229,11 +227,11 @@ export default function RoleDetails({ role, onBack, onRoleUpdate, onRoleDelete }
               <div className="space-y-4">
                 <p className="text-sm text-secondary">
                   This action cannot be undone. All permissions associated with this role will be removed from the
-                  members.
+                  users.
                 </p>
                 {role.users.length > 0 && (
                   <p className="text-sm text-secondary">
-                    This role is currently assigned to {role.users.length} member(s).
+                    This role is currently assigned to {role.users.length} user(s).
                   </p>
                 )}
                 <p className="text-sm text-secondary">Are you sure you want to delete the role "{role.name}"?</p>
