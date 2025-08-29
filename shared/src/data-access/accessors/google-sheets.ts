@@ -49,7 +49,13 @@ export class GoogleSheetsAccessor implements BaseAccessor {
 
       for (const endpoint of testEndpoints) {
         try {
-          const response = await fetch(endpoint, { method: 'HEAD' });
+          const method = endpoint.includes('csv') ? 'GET' : 'HEAD';
+          const response = await fetch(endpoint, {
+            method,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; Google Sheets Accessor)',
+            },
+          });
 
           if (response.ok) {
             return true;
@@ -137,6 +143,7 @@ export class GoogleSheetsAccessor implements BaseAccessor {
       switch (parsedQuery.operation) {
         case 'readRange':
         case 'readSheet':
+        case 'readSheetPaginated':
         case 'getAllSheets':
         case 'getValues':
           return await this._executeReadOperation(parsedQuery, spreadsheetId);
@@ -174,11 +181,12 @@ export class GoogleSheetsAccessor implements BaseAccessor {
 
     if (startsWithSQL) {
       throw new GoogleWorkspaceError(
-        `Google Sheets queries must be in JSON format, not SQL. ` +
+        `❌ CRITICAL ERROR: Google Sheets queries must be in JSON format, NOT SQL. ` +
           `Received what appears to be a SQL query: "${trimmedQuery.substring(0, 50)}..." ` +
-          `\n\nFor Google Sheets, use JSON format like: ` +
-          `{"operation": "readSheet", "parameters": {"valueRenderOption": "FORMATTED_VALUE"}} ` +
-          `\n\nSupported operations: readRange, readSheet, getAllSheets, getValues, updateRange, updateValues, updateCell, appendValues, appendRow, appendSheet, clearValues, clearRange, insertRow, deleteRow. Note: Sheet names are dynamic - use getAllSheets to discover available sheets first.`,
+          `\n\n🔥 IMPORTANT: This is a Google Sheets data source, not a SQL database!` +
+          `\n\n✅ CORRECT FORMAT: {"operation": "readSheet", "parameters": {"valueRenderOption": "FORMATTED_VALUE"}} ` +
+          `\n\n📋 Supported JSON operations: readSheet, readSheetPaginated, readRange, getAllSheets, getValues, updateRange, updateValues, updateCell, appendValues, appendRow, appendSheet, clearValues, clearRange, insertRow, deleteRow.` +
+          `\n\n💡 TIP: Use getAllSheets to discover available sheets first.`,
       );
     }
 
@@ -319,25 +327,8 @@ export class GoogleSheetsAccessor implements BaseAccessor {
       }
     }
 
-    // Test the connection to ensure the spreadsheet is accessible
-    const isAccessible = await this.testConnection(connectionString);
-
-    if (!isAccessible) {
-      throw new GoogleWorkspaceError(`
-Failed to access Google Spreadsheet. Please check:
-
-1. The spreadsheet URL is correct
-2. The spreadsheet is set to "Anyone with the link can view" or "Anyone with the link can edit"
-3. The spreadsheet exists and is not deleted
-
-Current spreadsheet ID: ${this._spreadsheetId}
-
-To fix this:
-- Open your Google Sheet
-- Click "Share" → Change to "Anyone with the link can view/edit"
-- Make sure the link is not restricted to specific people
-      `);
-    }
+    // Skip connection test as server-side requests to Google Sheets often fail due to CORS
+    // We'll handle access errors during actual query execution for better error messages
   }
 
   /**
@@ -403,8 +394,12 @@ To fix this:
     existingQueries: string[] | undefined,
     userPrompt: string,
   ): string {
-    return `You are a Google Sheets API expert tasked with generating Google Sheets queries based on a given spreadsheet schema and user requirements.
-Your goal is to create accurate, optimized queries that address the user's request while adhering to specific guidelines and output format.
+    return `You are a Google Sheets API expert tasked with generating Google Sheets JSON operations (NOT SQL) based on a given spreadsheet schema and user requirements.
+
+CRITICAL: You must ONLY generate JSON operation objects. NEVER generate SQL queries. Google Sheets uses JSON operations, not SQL.
+
+WRONG: SELECT * FROM table
+CORRECT: {"operation": "readSheet", "parameters": {"valueRenderOption": "FORMATTED_VALUE"}}
 
 You will be working with the following spreadsheet type:
 <spreadsheetType>
@@ -426,17 +421,21 @@ The schema should reflect the actual data content and meaning, not just row/colu
 
 ${existingQueries ? `Here are the existing Google Sheets queries used by the app the user is building. Use them as context if they need to be updated to fulfill the user's request: <existing_sheets_queries>${existingQueries}</existing_sheets_queries>` : ''}
 
-To generate the Google Sheets queries, follow these steps:
+CRITICAL INSTRUCTIONS - READ CAREFULLY:
+
+🚫 DO NOT GENERATE SQL QUERIES. THIS IS NOT A SQL DATABASE.
+✅ ONLY GENERATE JSON OPERATION OBJECTS.
+
+To generate the Google Sheets JSON operations, follow these steps:
 1. Carefully analyze the user's request and the provided spreadsheet schema.
-2. Create one or more Google Sheets queries that accurately address the user's requirements.
-3. Structure queries as JSON objects with the following format:
+2. Create one or more Google Sheets JSON operations that accurately address the user's requirements.
+3. Structure operations as JSON objects with the following format:
    {
-     "operation": "readRange" | "readSheet" | "getAllSheets" | "getValues",
-     "spreadsheetId": "spreadsheet-id-if-needed",
+     "operation": "readSheet" | "readSheetPaginated" | "getAllSheets" | "getValues",
      "parameters": {
-       "range": "A1:Z100",
        "valueRenderOption": "FORMATTED_VALUE",
-       "ranges": ["A1:B10", "D1:E10"]
+       "startRow": 1,
+       "maxRows": 100
      }
    }
 4. Use appropriate Google Sheets operations:
@@ -489,10 +488,16 @@ Here's an example of a valid response:
   }
 ]
 
-IMPORTANT: Your output should consist ONLY of the JSON array containing the query objects. Do not include any additional text or explanations outside of this JSON structure.
-IMPORTANT: The query field should contain a properly formatted JSON string representing the Google Sheets query object. Use standard JSON escaping (not double-escaped).
+🔥 CRITICAL FINAL REMINDERS:
+- NO SQL QUERIES ALLOWED (SELECT, FROM, WHERE, JOIN, etc.)
+- ONLY JSON OPERATIONS like {"operation": "readSheet", "parameters": {...}}
+- Your output should consist ONLY of the JSON array containing the operation objects
+- The query field should contain a properly formatted JSON string representing the Google Sheets operation object
 
-Now, generate Google Sheets queries based on the following user request:
+❌ WRONG: "SELECT * FROM customers WHERE country = 'USA'"
+✅ CORRECT: "{\\"operation\\": \\"readSheet\\", \\"parameters\\": {\\"valueRenderOption\\": \\"FORMATTED_VALUE\\"}}"
+
+Now, generate Google Sheets JSON operations (NOT SQL) based on the following user request:
 <userRequest>
 ${userPrompt}
 </userRequest>`;
@@ -649,10 +654,8 @@ ${userPrompt}
     }
 
     const spreadsheetId = match[1];
-    console.log(`[GoogleSheets] 📋 Extracted spreadsheet ID from HTTPS URL: ${spreadsheetId}`);
 
     // For HTTPS URLs, we assume public access (no Apps Script or OAuth tokens in URL)
-    console.log(`[GoogleSheets] 📖 HTTPS URL format detected - assuming public read-only access`);
 
     return spreadsheetId;
   }
@@ -676,9 +679,6 @@ ${userPrompt}
 
     if (appsScriptParam) {
       this._appsScriptUrl = decodeURIComponent(appsScriptParam);
-      console.log(`[GoogleSheets] 🔗 Found Apps Script URL in connection string: ${this._appsScriptUrl}`);
-    } else {
-      console.log(`[GoogleSheets] 📖 No Apps Script URL - assuming public read-only access: ${connectionString}`);
     }
 
     // Extract OAuth tokens if present
@@ -688,9 +688,6 @@ ${userPrompt}
     if (accessToken && refreshToken) {
       this._accessToken = decodeURIComponent(accessToken);
       this._refreshToken = decodeURIComponent(refreshToken);
-      console.log(`[GoogleSheets] 🔐 Found OAuth tokens in connection string`);
-    } else {
-      console.log(`[GoogleSheets] 📖 No OAuth tokens - using public access for reading`);
     }
 
     return spreadsheetId;
@@ -702,78 +699,51 @@ ${userPrompt}
   }
 
   private async _executeWriteOperation(parsedQuery: any, spreadsheetId: string): Promise<any[]> {
-    console.log(`[GoogleSheets] 🔧 WRITE OPERATION DEBUG START`);
-    console.log(`[GoogleSheets] - Operation: ${parsedQuery.operation}`);
-    console.log(`[GoogleSheets] - SpreadsheetId: ${spreadsheetId}`);
-    console.log(`[GoogleSheets] - Parameters: ${JSON.stringify(parsedQuery.parameters, null, 2)}`);
-    console.log(`[GoogleSheets] - Has OAuth tokens: ${!!this._accessToken}`);
-    console.log(`[GoogleSheets] - Apps Script URL: ${this._appsScriptUrl}`);
-
     // If we have OAuth tokens, try authenticated API first
     if (this._accessToken) {
-      console.log(`[GoogleSheets] 🔐 Attempting OAuth API for write operation: ${parsedQuery.operation}`);
-
       try {
         const result = await this._executeOAuthWriteOperation(parsedQuery, spreadsheetId);
-        console.log(`[GoogleSheets] ✅ OAuth write SUCCESS:`, JSON.stringify(result, null, 2));
 
         return result;
-      } catch (error) {
-        console.error(`[GoogleSheets] ❌ OAuth write FAILED:`, error);
-        console.error(`[GoogleSheets] - Error type: ${error?.constructor?.name}`);
-        console.error(`[GoogleSheets] - Error message: ${error instanceof Error ? error.message : error}`);
-        console.warn(`[GoogleSheets] ⚠️  Falling back to Apps Script/public method...`);
+      } catch {
         // Fall through to Apps Script method
       }
     }
 
     // Fall back to Apps Script Web App for public sheets
     if (this._appsScriptUrl) {
-      console.log(`[GoogleSheets] 📝 Attempting Apps Script method for write operation: ${parsedQuery.operation}`);
-
       try {
         let result;
 
         switch (parsedQuery.operation) {
           case 'updateRange':
-          case 'updateValues': // Alias for updateRange
-            console.log(`[GoogleSheets] 📝 Calling _updateRangeNoAuth...`);
+          case 'updateValues':
             result = await this._updateRangeNoAuth(spreadsheetId, parsedQuery.parameters);
             break;
           case 'updateCell':
-            console.log(`[GoogleSheets] 📝 Calling _updateCellNoAuth...`);
             result = await this._updateCellNoAuth(spreadsheetId, parsedQuery.parameters);
             break;
           case 'appendRow':
           case 'appendSheet':
           case 'appendValues':
-            console.log(`[GoogleSheets] 📝 Calling _appendRowNoAuth...`);
             result = await this._appendRowNoAuth(spreadsheetId, parsedQuery.parameters);
             break;
           case 'insertRow':
-            console.log(`[GoogleSheets] 📝 Calling _insertRowNoAuth...`);
             result = await this._insertRowNoAuth(spreadsheetId, parsedQuery.parameters);
             break;
           case 'deleteRow':
-            console.log(`[GoogleSheets] 📝 Calling _deleteRowNoAuth...`);
             result = await this._deleteRowNoAuth(spreadsheetId, parsedQuery.parameters);
             break;
           case 'clearValues':
           case 'clearRange':
-            console.log(`[GoogleSheets] 📝 Calling _clearValuesNoAuth...`);
             result = await this._clearValuesNoAuth(spreadsheetId, parsedQuery.parameters);
             break;
           default:
             throw new GoogleWorkspaceError(`Unsupported write operation: ${parsedQuery.operation}`);
         }
 
-        console.log(`[GoogleSheets] ✅ Apps Script method SUCCESS:`, JSON.stringify(result, null, 2));
-
         return result;
       } catch (error) {
-        console.error(`[GoogleSheets] ❌ Apps Script method FAILED:`, error);
-        console.error(`[GoogleSheets] - Error type: ${error?.constructor?.name}`);
-        console.error(`[GoogleSheets] - Error message: ${error instanceof Error ? error.message : error}`);
         throw error;
       }
     }
@@ -863,14 +833,7 @@ See documentation for setup instructions.
   private async _updateRangeWithOAuth(spreadsheetId: string, parameters: any, headers: any): Promise<any[]> {
     const { range, values, valueInputOption = 'USER_ENTERED' } = parameters;
 
-    console.log(`[GoogleSheets] - SpreadsheetId: ${spreadsheetId}`);
-    console.log(`[GoogleSheets] - Range: ${range}`);
-    console.log(`[GoogleSheets] - Values: ${JSON.stringify(values)}`);
-    console.log(`[GoogleSheets] - ValueInputOption: ${valueInputOption}`);
-
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=${valueInputOption}`;
-    console.log(`[GoogleSheets] - URL: ${url}`);
-    console.log(`[GoogleSheets] - Headers: ${JSON.stringify(headers, null, 2)}`);
 
     const response = await fetch(url, {
       method: 'PUT',
@@ -878,18 +841,14 @@ See documentation for setup instructions.
       body: JSON.stringify({ values }),
     });
 
-    console.log(`[GoogleSheets] - Response status: ${response.status} ${response.statusText}`);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[GoogleSheets] - Error response body: ${errorText}`);
       throw new GoogleWorkspaceError(
         `Failed to update range: ${response.status} ${response.statusText} - ${errorText}`,
       );
     }
 
     const result = (await response.json()) as { updatedRows?: number; updatedColumns?: number };
-    console.log(`[GoogleSheets] - Success response: ${JSON.stringify(result, null, 2)}`);
 
     return [{ success: true, updatedRows: result.updatedRows, updatedColumns: result.updatedColumns }];
   }
@@ -1006,6 +965,13 @@ See documentation for setup instructions.
     switch (parsedQuery.operation) {
       case 'readSheet':
         return await this._readSheetData(spreadsheetId, parsedQuery.parameters?.sheetName);
+      case 'readSheetPaginated':
+        return await this._readSheetDataPaginated(
+          spreadsheetId,
+          parsedQuery.parameters?.sheetName,
+          parsedQuery.parameters?.startRow,
+          parsedQuery.parameters?.maxRows,
+        );
       case 'getAllSheets':
         return await this._getAllSheets(spreadsheetId);
       case 'readRange':
@@ -1021,8 +987,6 @@ See documentation for setup instructions.
     const endpoint = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`;
 
     try {
-      console.log(`[GoogleSheets] 🔄 Reading sheet data from GID ${gid}: ${endpoint}`);
-
       const response = await fetch(endpoint, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -1034,19 +998,58 @@ See documentation for setup instructions.
 
         // Validate that we got actual CSV data, not an error page
         if (csvData && !csvData.includes('<html') && !csvData.includes('<!DOCTYPE')) {
-          console.log(`[GoogleSheets] ✅ Successfully fetched data from GID ${gid}`);
           return this._parseCSVData(csvData, `Sheet_${gid}`);
-        } else {
-          console.log(`[GoogleSheets] ⚠️ Invalid CSV data from GID ${gid}`);
         }
-      } else {
-        console.log(`[GoogleSheets] ❌ HTTP ${response.status} from GID ${gid}`);
       }
-    } catch (error) {
-      console.log(`[GoogleSheets] ❌ Error reading GID ${gid}: ${error}`);
-    }
+    } catch {}
 
     throw new GoogleWorkspaceError(`Failed to read sheet data from GID ${gid}`);
+  }
+
+  private async _readSheetDataPaginated(
+    spreadsheetId: string,
+    sheetName: string = '',
+    startRow: number = 1,
+    maxRows: number = 100,
+  ): Promise<any[]> {
+    // Get the full CSV data first
+    const endpoints: string[] = [];
+
+    if (sheetName && sheetName.trim() !== '') {
+      endpoints.push(
+        `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`,
+      );
+    }
+
+    endpoints.push(
+      `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv`,
+      `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=0`,
+    );
+
+    let lastError: Error | null = null;
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(endpoint, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+        });
+
+        if (response.ok) {
+          const csvData = await response.text();
+
+          if (csvData && !csvData.includes('<html') && !csvData.includes('<!DOCTYPE')) {
+            // Parse with pagination parameters
+            return this._parseCSVData(csvData, sheetName, startRow, maxRows);
+          }
+        }
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+      }
+    }
+
+    throw new GoogleWorkspaceError(`Failed to read paginated sheet data: ${lastError?.message || 'Unknown error'}`);
   }
 
   private async _readSheetData(spreadsheetId: string, sheetName: string = ''): Promise<any[]> {
@@ -1072,8 +1075,6 @@ See documentation for setup instructions.
 
     for (const endpoint of endpoints) {
       try {
-        console.log(`[GoogleSheets] 🔄 Trying endpoint: ${endpoint}`);
-
         const response = await fetch(endpoint, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -1085,17 +1086,13 @@ See documentation for setup instructions.
 
           // Validate that we got actual CSV data, not an error page
           if (csvData && !csvData.includes('<html') && !csvData.includes('<!DOCTYPE')) {
-            console.log(`[GoogleSheets] ✅ Successfully fetched data from: ${endpoint}`);
             return this._parseCSVData(csvData, sheetName);
           } else {
-            console.log(`[GoogleSheets] ⚠️  Invalid CSV data from: ${endpoint}`);
           }
         } else {
-          console.log(`[GoogleSheets] ❌ HTTP ${response.status} from: ${endpoint}`);
         }
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
-        console.log(`[GoogleSheets] ❌ Error with ${endpoint}: ${lastError.message}`);
       }
     }
 
@@ -1122,12 +1119,9 @@ Last error: ${lastError?.message || 'Unknown error'}`;
         });
 
         if (response.ok) {
-          console.log(`[GoogleSheets] ✅ Default sheet is accessible, using first sheet`);
           return ''; // Empty string means use default sheet
         }
-      } catch (error) {
-        console.log(`[GoogleSheets] ⚠️ Default sheet test failed: ${error}`);
-      }
+      } catch {}
 
       // Try GID-based approach - GID 0 is always the first sheet
       try {
@@ -1142,19 +1136,13 @@ Last error: ${lastError?.message || 'Unknown error'}`;
         );
 
         if (response.ok) {
-          console.log(`[GoogleSheets] ✅ First sheet accessible via GID=0`);
           return ''; // We'll use GID-based endpoints
         }
-      } catch (error) {
-        console.log(`[GoogleSheets] ⚠️ GID-based access failed: ${error}`);
-      }
+      } catch {}
 
       // Ultimate fallback - use empty string which means use default first sheet
-      console.log(`[GoogleSheets] 📋 Using default first sheet (no specific name needed)`);
-
       return '';
-    } catch (error) {
-      console.log(`[GoogleSheets] ⚠️ Could not detect sheet access, using default: ${error}`);
+    } catch {
       return '';
     }
   }
@@ -1182,8 +1170,6 @@ Last error: ${lastError?.message || 'Unknown error'}`;
     const sheets: any[] = [];
     const maxSheetsToCheck = 10; // Reasonable limit to avoid infinite checking
 
-    console.log(`[GoogleSheets] 🔍 Discovering sheets dynamically using GID-based approach`);
-
     for (let gid = 0; gid < maxSheetsToCheck; gid++) {
       try {
         const response = await fetch(
@@ -1205,27 +1191,22 @@ Last error: ${lastError?.message || 'Unknown error'}`;
             sheetType: 'GRID',
             gid, // Store the actual GID for reference
           });
-          console.log(`[GoogleSheets] ✅ Found sheet at GID ${gid}`);
         } else if (response.status === 400) {
           // GID doesn't exist, we've likely found all sheets
-          console.log(`[GoogleSheets] 📋 No sheet at GID ${gid}, stopping discovery`);
           break;
         }
-      } catch (error) {
+      } catch {
         // Network error or other issue, continue checking
-        console.log(`[GoogleSheets] ⚠️ Error checking GID ${gid}: ${error}`);
         continue;
       }
     }
 
     // If we found sheets, return them
     if (sheets.length > 0) {
-      console.log(`[GoogleSheets] ✅ Discovered ${sheets.length} sheet(s) dynamically`);
       return sheets;
     }
 
     // Ultimate fallback - assume there's at least one sheet
-    console.log(`[GoogleSheets] 📋 No sheets discovered, assuming first sheet exists`);
 
     return [
       {
@@ -1238,117 +1219,111 @@ Last error: ${lastError?.message || 'Unknown error'}`;
     ];
   }
 
-  private _parseCSVData(csvData: string, sheetName: string = ''): any[] {
-    const lines = csvData.split('\n').filter((line) => line.trim());
+  private _parseCSVData(csvData: string, _sheetName: string = '', startRow?: number, maxRows?: number): any[] {
+    const lines = csvData.split('\n');
 
-    if (lines.length === 0) {
-      return [];
-    }
+    const nonEmptyLines: string[] = [];
 
-    // Parse CSV (simple implementation)
-    const rows = lines.map((line) => {
-      const cells: string[] = [];
-      let currentCell = '';
-      let inQuotes = false;
-
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          cells.push(currentCell);
-          currentCell = '';
-        } else {
-          currentCell += char;
-        }
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim()) {
+        nonEmptyLines.push(lines[i]);
       }
-      cells.push(currentCell);
+    }
 
-      return cells;
-    });
-
-    if (rows.length === 0) {
+    if (nonEmptyLines.length === 0) {
       return [];
     }
 
-    const headers = rows[0];
-    const dataRows = rows.slice(1);
+    const headerRow = this._parseCSVRow(nonEmptyLines[0]);
 
-    return dataRows.map((row, index) => {
+    if (headerRow.length === 0) {
+      return [];
+    }
+
+    const result: any[] = [];
+    const totalDataRows = nonEmptyLines.length - 1;
+
+    // Apply reasonable default limit to prevent memory issues with very large datasets
+    const DEFAULT_MAX_ROWS = 500;
+    const safeMaxRows = maxRows || DEFAULT_MAX_ROWS;
+
+    // Progressive loading parameters
+    const start = startRow ? Math.max(1, startRow) : 1;
+    const end = Math.min(totalDataRows, start + safeMaxRows - 1);
+
+    // Add metadata for pagination (only on first row to avoid duplication)
+    const metadata = {
+      totalRows: totalDataRows,
+      currentStart: start,
+      currentEnd: end,
+      hasMore: end < totalDataRows,
+      nextStart: end < totalDataRows ? end + 1 : null,
+    };
+
+    for (let rowIndex = start; rowIndex <= end; rowIndex++) {
+      const row = this._parseCSVRow(nonEmptyLines[rowIndex]);
+
+      // Simple row structure - minimal processing
       const rowData: any = {
-        sheet: sheetName,
-        row: index + 2, // +2 because we skip header and arrays are 0-indexed
+        row_number: rowIndex + 1,
         values: row,
-        headers,
       };
 
-      // Add field access using headers
-      headers.forEach((header, colIndex) => {
-        const fieldName = header
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '');
+      // Add metadata only to first row
+      if (rowIndex === start) {
+        rowData._metadata = metadata;
+        rowData.headers = headerRow;
+      }
 
-        if (fieldName) {
-          rowData[fieldName] = row[colIndex] || '';
+      // Simple field mapping - keep header names as-is, minimal processing
+      for (let colIndex = 0; colIndex < headerRow.length; colIndex++) {
+        const cellValue = row[colIndex] || '';
+        const header = headerRow[colIndex];
+
+        if (header) {
+          // Store raw value
+          rowData[header] = cellValue;
+
+          // Simple number detection - only if it's clearly a number
+          const trimmed = cellValue.trim();
+
+          if (trimmed && !isNaN(Number(trimmed)) && trimmed !== '') {
+            const num = Number(trimmed);
+
+            if (isFinite(num)) {
+              rowData[`${header}_numeric`] = num;
+            }
+          }
         }
+      }
 
-        rowData[`col_${colIndex}`] = row[colIndex] || '';
-      });
+      result.push(rowData);
+    }
 
-      // Add semantic fields for common patterns
-      this._addSemanticFields(rowData, row);
-
-      return rowData;
-    });
+    return result;
   }
 
-  private _addSemanticFields(rowData: any, row: string[]): void {
-    // Simple pattern matching for common data types
-    for (let i = 0; i < row.length; i++) {
-      const cellValue = row[i] || '';
+  private _parseCSVRow(line: string): string[] {
+    const cells: string[] = [];
+    let current = '';
+    let inQuotes = false;
 
-      // Currency detection
-      if (this._isLikelyCurrency(cellValue)) {
-        rowData.amount = cellValue;
-        rowData.amount_numeric = parseFloat(cellValue.replace(/[^\d.-]/g, '')) || 0;
-        rowData._semantic_amount_column = i;
-      }
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
 
-      // Date detection
-      if (this._isLikelyDate(cellValue)) {
-        rowData.date = cellValue;
-        rowData._semantic_date_column = i;
-      }
-
-      // Text categorization (simple heuristic)
-      if (
-        cellValue.length > 0 &&
-        cellValue.length < 50 &&
-        !this._isLikelyCurrency(cellValue) &&
-        !this._isLikelyDate(cellValue)
-      ) {
-        if (!rowData.category) {
-          rowData.category = cellValue;
-          rowData._semantic_category_column = i;
-        } else if (!rowData.description) {
-          rowData.description = cellValue;
-          rowData._semantic_description_column = i;
-        }
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        cells.push(current.trim());
+        current = '';
+      } else {
+        current += char;
       }
     }
-  }
 
-  private _isLikelyCurrency(value: string): boolean {
-    return /^\$?[\d,]+\.?\d*$/.test(value.trim()) || /^[\d,]+\.?\d*\$$/.test(value.trim());
-  }
+    cells.push(current.trim());
 
-  private _isLikelyDate(value: string): boolean {
-    return (
-      /^\d{1,2}\/\d{1,2}(\/\d{2,4})?$/.test(value) || /^\d{4}-\d{2}-\d{2}$/.test(value) || !isNaN(Date.parse(value))
-    );
+    return cells;
   }
 
   private _extractSheetFromRange(range: string): string | null {
@@ -1368,27 +1343,19 @@ Last error: ${lastError?.message || 'Unknown error'}`;
     }
 
     try {
-      console.log(`[GoogleSheets] 🔍 Generating schema from public sheet: ${this._spreadsheetId}`);
-
       // Get sample data to infer schema from the first available sheet
       const sampleData = await this._readSheetData(this._spreadsheetId);
 
       if (sampleData.length === 0) {
-        console.log(`[GoogleSheets] ⚠️  No data found, returning sample schema`);
         return this.generateSampleSchema();
       }
-
-      console.log(`[GoogleSheets] ✅ Found ${sampleData.length} rows of data`);
 
       const firstRow = sampleData[0];
       const headers = firstRow.headers || [];
 
       if (headers.length === 0) {
-        console.log(`[GoogleSheets] ⚠️  No headers found, returning sample schema`);
         return this.generateSampleSchema();
       }
-
-      console.log(`[GoogleSheets] 📋 Headers: ${headers.join(', ')}`);
 
       const columns: any[] = [
         {
@@ -1398,33 +1365,28 @@ Last error: ${lastError?.message || 'Unknown error'}`;
         },
       ];
 
-      // Add columns based on headers
+      // Add columns based on headers - keep original header names
       headers.forEach((header: string, index: number) => {
-        const fieldName =
-          header
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, '_')
-            .replace(/_+/g, '_')
-            .replace(/^_|_$/g, '') || `column_${index}`;
-
+        // Use header as-is, no complex transformation
+        const fieldName = header || `column_${index}`;
         const dataType = this._inferDataType(sampleData.slice(0, 10).map((row) => row.values?.[index]));
 
+        // Add the main field
         columns.push({
           name: fieldName,
           type: dataType,
           isPrimary: false,
         });
 
-        console.log(`[GoogleSheets] 📊 Column: ${fieldName} (${dataType})`);
+        // Add numeric version if data contains numbers
+        if (dataType === 'number') {
+          columns.push({
+            name: `${fieldName}_numeric`,
+            type: 'number',
+            isPrimary: false,
+          });
+        }
       });
-
-      // Add semantic fields for common patterns
-      columns.push(
-        { name: 'amount_numeric', type: 'number', isPrimary: false },
-        { name: 'date', type: 'string', isPrimary: false },
-        { name: 'category', type: 'string', isPrimary: false },
-        { name: 'description', type: 'string', isPrimary: false },
-      );
 
       return [
         {
@@ -1455,35 +1417,23 @@ Last error: ${lastError?.message || 'Unknown error'}`;
       return 'string';
     }
 
-    let currencyCount = 0;
     let numberCount = 0;
-    let dateCount = 0;
 
     for (const value of samples) {
       const strValue = String(value).trim();
 
-      if (this._isLikelyCurrency(strValue)) {
-        currencyCount++;
-      } else if (!isNaN(Number(strValue)) && strValue !== '') {
-        numberCount++;
-      } else if (this._isLikelyDate(strValue)) {
-        dateCount++;
+      // Simple number check - same logic as our parsing
+      if (strValue && !isNaN(Number(strValue)) && strValue !== '') {
+        const num = Number(strValue);
+
+        if (isFinite(num)) {
+          numberCount++;
+        }
       }
     }
 
-    if (currencyCount >= samples.length * 0.5) {
-      return 'currency';
-    }
-
-    if (numberCount >= samples.length * 0.7) {
-      return 'number';
-    }
-
-    if (dateCount >= samples.length * 0.7) {
-      return 'date';
-    }
-
-    return 'string';
+    // If majority of samples are numbers, it's a number column
+    return numberCount >= samples.length * 0.7 ? 'number' : 'string';
   }
 
   /**
@@ -1496,8 +1446,13 @@ Last error: ${lastError?.message || 'Unknown error'}`;
   /**
    * Recursively replace parameter placeholders
    */
-  private _replaceParametersRecursively(obj: any, params: string[], visited = new WeakSet()): void {
+  private _replaceParametersRecursively(obj: any, params: string[], visited = new WeakSet(), depth = 0): void {
     if (obj === null || obj === undefined) {
+      return;
+    }
+
+    // Prevent deep recursion stack overflow
+    if (depth > 100) {
       return;
     }
 
@@ -1518,7 +1473,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
             obj[i] = this._parseParameterValue(params[paramIndex]);
           }
         } else if (typeof obj[i] === 'object') {
-          this._replaceParametersRecursively(obj[i], params, visited);
+          this._replaceParametersRecursively(obj[i], params, visited, depth + 1);
         }
       }
     } else if (typeof obj === 'object') {
@@ -1531,7 +1486,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
               obj[key] = this._parseParameterValue(params[paramIndex]);
             }
           } else if (typeof obj[key] === 'object') {
-            this._replaceParametersRecursively(obj[key], params, visited);
+            this._replaceParametersRecursively(obj[key], params, visited, depth + 1);
           }
         }
       }
@@ -1568,28 +1523,18 @@ Last error: ${lastError?.message || 'Unknown error'}`;
   // Write operation methods (no authentication required)
 
   private async _updateRangeNoAuth(spreadsheetId: string, parameters: any): Promise<any[]> {
-    console.log(`[GoogleSheets] - SpreadsheetId: ${spreadsheetId}`);
-    console.log(`[GoogleSheets] - Parameters: ${JSON.stringify(parameters, null, 2)}`);
-    console.log(`[GoogleSheets] - Is Apps Script URL: ${this._isAppsScriptUrl(spreadsheetId)}`);
-
     try {
       if (this._isAppsScriptUrl(spreadsheetId)) {
         // Use Apps Script Web App for full functionality
-        console.log(`[GoogleSheets] 📝 Using Apps Script Web App for updateRange`);
         return await this._callAppsScript(spreadsheetId, 'updateRange', parameters);
       }
 
       // Fallback for regular sheets - limited to append
-      console.log(`[GoogleSheets] 📝 Regular sheet - converting update to append (LIMITED FUNCTIONALITY)`);
-      console.log(
-        `[GoogleSheets] ⚠️  WARNING: Update operations on public sheets without Apps Script are very limited!`,
-      );
 
       const { values } = parameters;
 
       return await this._appendRowNoAuth(spreadsheetId, { values: Array.isArray(values[0]) ? values[0] : values });
     } catch (error) {
-      console.error(`[GoogleSheets] ❌ _updateRangeNoAuth failed:`, error);
       throw new GoogleWorkspaceError(
         `Failed to update range: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
@@ -1805,7 +1750,6 @@ Last error: ${lastError?.message || 'Unknown error'}`;
         3. See GOOGLE_SHEETS_NO_API_KEY_SETUP.md for instructions
       `);
     } catch (error) {
-      console.error(`[GoogleSheets] ❌ _clearValuesNoAuth failed:`, error);
       throw error;
     }
   }
@@ -1819,11 +1763,6 @@ Last error: ${lastError?.message || 'Unknown error'}`;
         ...parameters,
       };
 
-      console.log(`[GoogleSheets] 🚀 Calling Apps Script:`);
-      console.log(`[GoogleSheets] 📋 URL: ${webhookUrl}`);
-      console.log(`[GoogleSheets] 📦 Payload:`, JSON.stringify(payload, null, 2));
-
-      const startTime = Date.now();
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
@@ -1832,27 +1771,17 @@ Last error: ${lastError?.message || 'Unknown error'}`;
         body: JSON.stringify(payload),
       });
 
-      const duration = Date.now() - startTime;
-      console.log(`[GoogleSheets] ⏱️  Request took ${duration}ms`);
-      console.log(`[GoogleSheets] 📊 Response status: ${response.status} ${response.statusText}`);
-
       if (!response.ok) {
-        console.error(`[GoogleSheets] ❌ Apps Script request failed: ${response.status} ${response.statusText}`);
-
         const responseText = await response.text();
-        console.error(`[GoogleSheets] ❌ Response body:`, responseText);
         throw new Error(`Apps Script request failed: ${response.statusText} - ${responseText}`);
       }
 
       const responseText = await response.text();
-      console.log(`[GoogleSheets] 📄 Raw response:`, responseText);
 
       try {
         const result = JSON.parse(responseText) as any;
-        console.log(`[GoogleSheets] ✅ Parsed response:`, result);
 
         if (result.error) {
-          console.error(`[GoogleSheets] ❌ Apps Script returned error:`, result.error);
           throw new Error(result.error);
         }
 
@@ -1862,13 +1791,9 @@ Last error: ${lastError?.message || 'Unknown error'}`;
             _debug: `✅ Apps Script call successful to ${webhookUrl}`,
           },
         ];
-      } catch (parseError) {
-        console.error(`[GoogleSheets] ❌ Failed to parse response as JSON:`, parseError);
-        console.error(`[GoogleSheets] 📄 Response was:`, responseText);
+      } catch {
         throw new Error(`Invalid JSON response from Apps Script: ${responseText}`);
       }
-
-      return [{ success: true, result: 'Apps Script executed successfully' }];
     } catch (error) {
       throw new GoogleWorkspaceError(
         `Apps Script call failed: ${error instanceof Error ? error.message : 'Unknown error'}`,

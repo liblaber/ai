@@ -82,12 +82,17 @@ export async function generateSqlQueries({
     throw new Error(`No accessor found for database type: ${protocol}`);
   }
 
+  // Determine if this is a Google Sheets connection - only for logging purposes
+  const isGoogleSheets =
+    connectionString.startsWith('sheets://') || connectionString.startsWith('https://docs.google.com/spreadsheets/');
+  const queryType = isGoogleSheets ? 'JSON operations' : 'SQL queries';
+
   const systemPrompt = accessor.generateSystemPrompt(accessor.label, dbSchema, existingQueries, userPrompt);
 
   try {
     const llm = await getLlm();
 
-    logger.info(`Generating SQL for prompt: ${userPrompt}, using model: ${llm.instance.modelId}`);
+    logger.info(`Generating ${queryType} for prompt: ${userPrompt}, using model: ${llm.instance.modelId}`);
 
     const result = await generateObject({
       schema: sqlQueriesSchema,
@@ -117,7 +122,7 @@ export async function generateSqlQueries({
           queries.push(validatedQuery);
         } catch (validationError) {
           logger.warn(
-            `Skipping invalid SQL query object: ${JSON.stringify(query)}\nValidation error: ${validationError}`,
+            `Skipping invalid ${queryType} query object: ${JSON.stringify(query)}\nValidation error: ${validationError}`,
           );
         }
       }
@@ -127,7 +132,7 @@ export async function generateSqlQueries({
         return undefined;
       }
 
-      logger.info(`Generated SQL queries: \n\n${JSON.stringify(queries, null, 2)}`);
+      logger.info(`Generated ${queryType}: \n\n${JSON.stringify(queries, null, 2)}`);
 
       return queries;
     } catch (parseError) {
