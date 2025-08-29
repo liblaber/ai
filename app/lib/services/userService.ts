@@ -31,18 +31,19 @@ export const userService = {
   },
 
   async getAllUsers(): Promise<UserProfile[]> {
-    const users = await prisma.user.findMany();
-
-    return users
-      .filter((user) => user.isAnonymous !== true)
-      .map((user) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        image: user.image,
-        role: user.role,
-        telemetryEnabled: user.telemetryEnabled,
-      }));
+    return await prisma.user.findMany({
+      where: {
+        OR: [{ isAnonymous: false }, { isAnonymous: null }],
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        role: true,
+        telemetryEnabled: true,
+      },
+    });
   },
 
   async getUserByEmail(email: string): Promise<UserProfile> {
