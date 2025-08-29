@@ -21,8 +21,7 @@ import DeployedAppsTab from '~/components/@settings/tabs/deployed-apps/DeployedA
 import GitHubTab from '~/components/@settings/tabs/connections/GitHubTab';
 import { useUserStore } from '~/lib/stores/user';
 import { DeprecatedRole } from '@prisma/client';
-import OrganizationTab from '~/components/@settings/tabs/organization/OrganizationTab';
-import MembersTab from '~/components/@settings/tabs/members/MembersTab';
+import MembersTab from '~/components/@settings/tabs/users/UsersTab';
 import RolesTab from '~/components/@settings/tabs/roles/RolesTab';
 import EnvironmentsTab from '~/components/@settings/tabs/environments';
 import SecretsManagerTab from '~/components/@settings/tabs/secrets-manager';
@@ -177,8 +176,6 @@ export const ControlPanel = () => {
         return <DeployedAppsTab />;
       case 'github':
         return <GitHubTab />;
-      case 'organization':
-        return <OrganizationTab />;
       case 'members':
         return <MembersTab />;
       case 'roles':

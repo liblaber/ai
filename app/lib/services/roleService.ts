@@ -64,14 +64,13 @@ export async function findOrCreateResourceRole(
   scope: ResourceRoleScope,
   resourceId: string,
   permissionLevel: PermissionLevel,
-  organizationId: string,
 ): Promise<Role | null> {
   const permissionDetails = permissionLevels[permissionLevel];
 
   const name = `${scope}_${permissionDetails.label}_${resourceId}`;
 
   const existingRole = await prisma.role.findFirst({
-    where: { scope, resourceId, name, organizationId },
+    where: { scope, resourceId, name },
   });
 
   if (existingRole) {
@@ -105,7 +104,6 @@ export async function findOrCreateResourceRole(
     data: {
       name,
       description: `Grants ${permissionLevel} access to ${scope} ${resourceId}`,
-      organizationId,
       scope,
       resourceId,
       permissions: {
@@ -118,7 +116,6 @@ export async function findOrCreateResourceRole(
 export async function createRole(
   name: string,
   description: string | undefined = undefined,
-  organizationId: string,
   scope: RoleScope = RoleScope.GENERAL,
   resourceId?: string,
 ): Promise<Role> {
@@ -126,7 +123,6 @@ export async function createRole(
     data: {
       name,
       description: description || null,
-      organizationId,
       scope,
       resourceId,
     },

@@ -55,13 +55,11 @@ export async function getEnvironments(): Promise<EnvironmentWithRelations[]> {
 export async function createEnvironment(
   name: string,
   description: string | undefined = undefined,
-  organizationId: string,
 ): Promise<Environment> {
   return prisma.environment.create({
     data: {
       name,
       description: description || null,
-      organizationId,
     },
   });
 }
