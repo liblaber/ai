@@ -85,31 +85,22 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
 
       // Check user permissions after user data is loaded
       if (currentUser && session?.user) {
+        let hasPermissions = false;
+
         try {
-          const permissionsResponse = await fetch('/api/me/permissions/check', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
+          const permissionsResponse = await fetch('/api/me/permissions/check');
 
           if (permissionsResponse.ok) {
-            const { hasPermissions } = (await permissionsResponse.json()) as { hasPermissions: boolean };
-
-            if (!hasPermissions) {
-              console.debug('❌ User has no permissions, redirecting to access-denied');
-              router.push('/access-denied');
-
-              return;
-            }
-          } else {
-            console.error('❌ Failed to check permissions, assuming no access');
-            router.push('/access-denied');
-
-            return;
+            const data = (await permissionsResponse.json()) as { hasPermissions: boolean };
+            hasPermissions = data.hasPermissions;
           }
         } catch (error) {
           console.error('❌ Error checking permissions:', error);
+          // hasPermissions remains false, will trigger redirect
+        }
+
+        if (!hasPermissions) {
+          console.debug('❌ User has no permissions or check failed, redirecting to access-denied');
           router.push('/access-denied');
 
           return;
