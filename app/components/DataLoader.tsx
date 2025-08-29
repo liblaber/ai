@@ -9,14 +9,17 @@ import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useRouter } from 'next/navigation';
 import type { PluginAccessMap } from '~/lib/plugins/types';
 import { useUserStore } from '~/lib/stores/user';
+import { useEnvironmentVariablesStore } from '~/lib/stores/environmentVariables';
 import { DATA_SOURCE_CONNECTION_ROUTE, TELEMETRY_CONSENT_ROUTE } from '~/lib/constants/routes';
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
 import type { UserProfile } from '~/lib/services/userService';
 import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
+import type { EnvironmentVariableWithDetails } from '~/lib/stores/environmentVariables';
 
 export interface RootData {
   user: UserProfile | null;
   environmentDataSources: EnvironmentDataSource[];
+  environmentVariables: EnvironmentVariableWithDetails[];
   pluginAccess: PluginAccessMap;
   dataSourceTypes: DataSourceType[];
 }
@@ -32,6 +35,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
   const { setPluginAccess } = usePluginStore();
   const { setDataSourceTypes } = useDataSourceTypesStore();
   const { setUser } = useUserStore();
+  const { setEnvironmentVariables } = useEnvironmentVariablesStore();
   const { anonymousProvider } = useAuthProvidersPlugin();
   const router = useRouter();
   const isLoggingIn = useRef(false);
@@ -45,7 +49,18 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     if (rootData.dataSourceTypes) {
       setDataSourceTypes(rootData.dataSourceTypes);
     }
-  }, [rootData.pluginAccess, rootData.dataSourceTypes, setPluginAccess, setDataSourceTypes]);
+
+    if (rootData.environmentVariables) {
+      setEnvironmentVariables(rootData.environmentVariables);
+    }
+  }, [
+    rootData.pluginAccess,
+    rootData.dataSourceTypes,
+    rootData.environmentVariables,
+    setPluginAccess,
+    setDataSourceTypes,
+    setEnvironmentVariables,
+  ]);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -90,7 +105,18 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         currentEnvironmentDataSources = await fetchEnvironmentDataSources();
         setEnvironmentDataSources(currentEnvironmentDataSources);
       } else if (rootData.environmentDataSources) {
-        setEnvironmentDataSources(rootData.environmentDataSources);
+        setEnvironmentDataSources(currentEnvironmentDataSources);
+      }
+
+      // Handle environment variables
+      let currentEnvironmentVariables = rootData.environmentVariables || [];
+
+      if ((!rootData.environmentVariables || rootData.environmentVariables.length === 0) && session?.user) {
+        console.debug('🔄 Fetching environment variables...');
+        currentEnvironmentVariables = await fetchEnvironmentVariables();
+        setEnvironmentVariables(currentEnvironmentVariables);
+      } else if (rootData.environmentVariables) {
+        setEnvironmentVariables(currentEnvironmentVariables);
       }
 
       // Handle user onboarding flow with telemetry and data sources
@@ -168,6 +194,49 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     } catch (error) {
       console.error('❌ Failed to fetch data sources:', error);
       throw new Error('Failed to fetch data sources');
+    }
+  };
+
+  const fetchEnvironmentVariables = async (): Promise<EnvironmentVariableWithDetails[]> => {
+    try {
+      // For now, we'll fetch environment variables for all environments the user has access to
+      // In the future, this could be optimized to fetch only what's needed
+      const environmentsResponse = await fetch('/api/environments');
+
+      if (!environmentsResponse.ok) {
+        throw new Error('Failed to fetch environments');
+      }
+
+      const environmentsData = (await environmentsResponse.json()) as {
+        success: boolean;
+        environments: Array<{ id: string }>;
+      };
+
+      if (!environmentsData.success || environmentsData.environments.length === 0) {
+        return [];
+      }
+
+      // Fetch environment variables for the first environment (could be enhanced to fetch for all)
+      const firstEnvironmentId = environmentsData.environments[0].id;
+      const environmentVariablesResponse = await fetch(
+        `/api/environment-variables?environmentId=${firstEnvironmentId}`,
+      );
+
+      if (!environmentVariablesResponse.ok) {
+        throw new Error('Failed to fetch environment variables');
+      }
+
+      const environmentVariablesData = (await environmentVariablesResponse.json()) as {
+        success: boolean;
+        environmentVariables: EnvironmentVariableWithDetails[];
+      };
+
+      console.log('✅ Environment variables fetched successfully');
+
+      return environmentVariablesData.environmentVariables || [];
+    } catch (error) {
+      console.error('❌ Failed to fetch environment variables:', error);
+      return [];
     }
   };
 

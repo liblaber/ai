@@ -25,6 +25,7 @@ import OrganizationTab from '~/components/@settings/tabs/organization/Organizati
 import MembersTab from '~/components/@settings/tabs/members/MembersTab';
 import RolesTab from '~/components/@settings/tabs/roles/RolesTab';
 import EnvironmentsTab from '~/components/@settings/tabs/environments';
+import SecretsManagerTab from '~/components/@settings/tabs/secrets-manager';
 
 const LAST_ACCESSED_TAB_KEY = 'control-panel-last-tab';
 
@@ -170,6 +171,8 @@ export const ControlPanel = () => {
         return <DataTab />;
       case 'environments':
         return <EnvironmentsTab />;
+      case 'secrets-manager':
+        return <SecretsManagerTab />;
       case 'deployed-apps':
         return <DeployedAppsTab />;
       case 'github':
