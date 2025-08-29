@@ -60,9 +60,9 @@ export default function SecretsManagerTab() {
         if (data.success) {
           setEnvironments(data.environments);
 
-          // Set the first environment as default if available
+          // Set "All" as default if environments are available
           if (data.environments.length > 0) {
-            setSelectedEnvironmentId(data.environments[0].id);
+            setSelectedEnvironmentId('all');
           }
         }
       } catch (error) {
@@ -86,6 +86,7 @@ export default function SecretsManagerTab() {
       try {
         setLoading(true);
 
+        // Use the single API call with "all" parameter support
         const response = await fetch(`/api/environment-variables?environmentId=${selectedEnvironmentId}`);
         const data = (await response.json()) as EnvironmentVariablesResponse;
 
@@ -93,10 +94,10 @@ export default function SecretsManagerTab() {
 
         if (data.success) {
           setEnvironmentVariables(data.environmentVariables);
-
-          // Reset show values map when environment variables change
-          setShowValuesMap({});
         }
+
+        // Reset show values map when environment variables change
+        setShowValuesMap({});
       } catch (error) {
         console.error('Failed to load environment variables:', error);
         toast.error('Failed to load environment variables');
@@ -215,6 +216,7 @@ export default function SecretsManagerTab() {
                   'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
                 )}
               >
+                <option value="all">All</option>
                 {environments.map((env) => (
                   <option key={env.id} value={env.id}>
                     {env.name}
@@ -250,7 +252,6 @@ export default function SecretsManagerTab() {
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
             onSuccess={() => {
-              // Reload environment variables
               const reloadResponse = fetch(`/api/environment-variables?environmentId=${selectedEnvironmentId}`);
               reloadResponse
                 .then((response) => response.json())
@@ -262,9 +263,11 @@ export default function SecretsManagerTab() {
                   }
                 })
                 .catch((error) => console.error('Failed to reload environment variables after add:', error));
+
               handleBack();
             }}
-            selectedEnvironmentId={selectedEnvironmentId}
+            selectedEnvironmentId={selectedEnvironmentId === 'all' ? environments[0].id : selectedEnvironmentId}
+            availableEnvironments={environments}
           />
         </div>
       )}

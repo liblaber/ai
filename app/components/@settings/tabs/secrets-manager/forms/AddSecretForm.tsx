@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { classNames } from '~/utils/classNames';
@@ -10,6 +10,8 @@ interface AddSecretFormProps {
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
   selectedEnvironmentId: string;
+  showEnvironmentSelector?: boolean;
+  availableEnvironments?: Array<{ id: string; name: string }>;
 }
 
 export default function AddSecretForm({
@@ -17,6 +19,8 @@ export default function AddSecretForm({
   setIsSubmitting,
   onSuccess,
   selectedEnvironmentId,
+  showEnvironmentSelector = false,
+  availableEnvironments = [],
 }: AddSecretFormProps) {
   const [key, setKey] = useState('');
   const [value, setValue] = useState('');
@@ -29,11 +33,17 @@ export default function AddSecretForm({
     type: EnvironmentVariableType;
     description?: string;
   } | null>(null);
+  const [environmentId, setEnvironmentId] = useState(selectedEnvironmentId);
+
+  // Update local environment ID when prop changes
+  useEffect(() => {
+    setEnvironmentId(selectedEnvironmentId);
+  }, [selectedEnvironmentId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!key.trim() || !value.trim() || !selectedEnvironmentId) {
+    if (!key.trim() || !value.trim() || !environmentId) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -56,7 +66,7 @@ export default function AddSecretForm({
           key: key.trim().toUpperCase(),
           value: value.trim(),
           type,
-          environmentId: selectedEnvironmentId,
+          environmentId,
           description: description.trim() || undefined,
         }),
       });
@@ -79,6 +89,7 @@ export default function AddSecretForm({
         setValue('');
         setDescription('');
         setShowValue(false);
+        setEnvironmentId(selectedEnvironmentId);
       } else {
         toast.error(data.error || 'Failed to create secret');
       }
@@ -255,20 +266,46 @@ export default function AddSecretForm({
         </div>
       </div>
 
-      {/* Environment (Read-only) */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Environment</label>
-        <input
-          type="text"
-          value={selectedEnvironmentId}
-          disabled
-          className={classNames(
-            'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
-            'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
-            'cursor-not-allowed',
-          )}
-        />
-      </div>
+      {/* Environment */}
+      {showEnvironmentSelector ? (
+        <div className="space-y-2">
+          <label htmlFor="environment" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Environment <span className="text-red-500">*</span>
+          </label>
+          <select
+            id="environment"
+            value={environmentId}
+            onChange={(e) => setEnvironmentId(e.target.value)}
+            className={classNames(
+              'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
+              'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
+              'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
+            )}
+            required
+          >
+            <option value="">Select an environment</option>
+            {availableEnvironments.map((env) => (
+              <option key={env.id} value={env.id}>
+                {env.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Environment</label>
+          <input
+            type="text"
+            value={selectedEnvironmentId}
+            disabled
+            className={classNames(
+              'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
+              'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
+              'cursor-not-allowed',
+            )}
+          />
+        </div>
+      )}
 
       {/* Value */}
       <div className="space-y-2">
@@ -291,7 +328,7 @@ export default function AddSecretForm({
             required
           />
           <button type="button" onClick={toggleShowValue} className="absolute inset-y-0 right-0 pr-3 flex items-center">
-            {showValue ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+            {showValue ? <EyeOff className="w-4 h-4 text-gray-400" /> : <Eye className="w-4 h-4 text-gray-400" />}
           </button>
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-400">This value will be encrypted before storage</p>
