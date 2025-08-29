@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createEnvironment, getEnvironments } from '~/lib/services/environmentService';
-
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
 
@@ -11,7 +10,6 @@ export type CreateEnvironmentResponse =
         id: string;
         name: string;
         description?: string;
-        organizationId: string;
         createdAt: string;
         updatedAt: string;
       };

@@ -77,7 +77,7 @@ export async function POST(
 
     // TODO: use invite system if user does not exist
 
-    await addUserToResourceRole(user.id, resourceId, roleScope, permissionLevel, user.organizationId!);
+    await addUserToResourceRole(user.id, resourceId, roleScope, permissionLevel);
 
     return NextResponse.json({ success: true });
   } catch (error) {

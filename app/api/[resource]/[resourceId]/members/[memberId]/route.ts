@@ -4,7 +4,6 @@ import { PermissionAction, Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { requireUserAbility } from '~/auth/session';
 import { removeUserFromResourceRole, updateUserRoleForResource } from '~/lib/services/roleService';
-import { userService } from '~/lib/services/userService';
 import { PERMISSION_LEVELS } from '~/lib/services/permissionService';
 import { invalidateUserAbilityCache } from '~/lib/casl/user-ability';
 import { getResourceConfig } from '~/lib/utils/resource-utils';
@@ -78,9 +77,7 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const user = await userService.getUser(memberId);
-
-    await updateUserRoleForResource(memberId, resourceId, roleScope, newPermissionLevel, user.organizationId!);
+    await updateUserRoleForResource(memberId, resourceId, roleScope, newPermissionLevel);
 
     invalidateUserAbilityCache(memberId);
 

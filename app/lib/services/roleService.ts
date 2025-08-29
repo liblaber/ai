@@ -45,7 +45,6 @@ export async function getRoles(): Promise<Role[]> {
 export async function createRole(
   name: string,
   description: string | undefined = undefined,
-  organizationId: string,
   scope: RoleScope = RoleScope.GENERAL,
   resourceId?: string,
 ): Promise<Role> {
@@ -53,7 +52,6 @@ export async function createRole(
     data: {
       name,
       description: description || null,
-      organizationId,
       scope,
       resourceId,
     },
@@ -194,10 +192,9 @@ export async function updateUserRoleForResource(
   resourceId: string,
   roleScope: ResourceRoleScope,
   newPermissionLevel: PermissionLevel,
-  organizationId: string,
 ): Promise<void> {
   return prisma.$transaction(async (tx) => {
     await removeUserFromResourceRole(userId, resourceId, roleScope, tx);
-    await addUserToResourceRole(userId, resourceId, roleScope, newPermissionLevel, organizationId, tx);
+    await addUserToResourceRole(userId, resourceId, roleScope, newPermissionLevel, tx);
   });
 }
