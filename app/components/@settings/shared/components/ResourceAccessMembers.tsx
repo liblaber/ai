@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Users } from 'lucide-react';
+import { Plus, Search, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { RoleScope } from '@prisma/client';
 import { classNames } from '~/utils/classNames';
@@ -9,17 +9,19 @@ import type { ResourceMember } from '~/lib/utils/resource-utils';
 import { BaseSelect, type SelectOption } from '~/components/ui/Select';
 import WithTooltip from '~/components/ui/Tooltip';
 
-const permissionOptions: SelectOption[] = [
+export const permissionOptions: SelectOption[] = [
   { value: 'manage', label: 'Full Access' },
   { value: 'viewer', label: 'Viewer' },
+  { value: 'remove', label: 'Remove Access' },
 ];
 
 type ResourceAccessMembersProps = {
   resourceScope: ResourceRoleScope;
   resourceId: string;
+  onInvite: () => void;
 };
 
-export default function ResourceAccessMembers({ resourceScope, resourceId }: ResourceAccessMembersProps) {
+export default function ResourceAccessMembers({ resourceScope, resourceId, onInvite }: ResourceAccessMembersProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [resourceMembers, setResourceMembers] = useState<ResourceMember[]>([]);
@@ -66,62 +68,104 @@ export default function ResourceAccessMembers({ resourceScope, resourceId }: Res
     [resourceMembers, searchQuery],
   );
 
-  const handlePermissionChange = async (memberId: string, newPermissionLevel: PermissionLevel) => {
-    try {
-      const response = await fetch(`/api/${resourceType}/${resourceId}/members/${memberId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ permissionLevel: newPermissionLevel }),
-      });
+  const handlePermissionChange = async (memberId: string, newPermissionLevel: PermissionLevel | 'remove') => {
+    if (newPermissionLevel === 'remove') {
+      try {
+        const response = await fetch(`/api/${resourceType}/${resourceId}/members/${memberId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to update permission');
+        if (!response.ok) {
+          throw new Error('Failed to remove permission');
+        }
+
+        setResourceMembers((prev) => prev.filter((member) => member.id !== memberId));
+      } catch (error) {
+        console.error(`Error removing permission for member ${memberId}:`, error);
+        toast.error(`Failed to remove permission for member ${memberId}`);
       }
+    } else {
+      try {
+        const response = await fetch(`/api/${resourceType}/${resourceId}/members/${memberId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ permissionLevel: newPermissionLevel }),
+        });
 
-      setResourceMembers((prev) =>
-        prev.map((member) =>
-          member.id === memberId ? { ...member, role: { ...member.role, type: newPermissionLevel } } : member,
-        ),
-      );
-    } catch (error) {
-      console.error(`Error updating permission for member ${memberId}:`, error);
-      toast.error(`Failed to update permission for member ${memberId}`);
+        if (!response.ok) {
+          throw new Error('Failed to update permission');
+        }
+
+        setResourceMembers((prev) =>
+          prev.map((member) =>
+            member.id === memberId ? { ...member, role: { ...member.role, type: newPermissionLevel } } : member,
+          ),
+        );
+      } catch (error) {
+        console.error(`Error updating permission for member ${memberId}:`, error);
+        toast.error(`Failed to update permission for member ${memberId}`);
+      }
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-gray-400">Loading members with access...</div>
+      <div>
+        <div className="flex items-center gap-2 p-2">
+          <Users className="w-4 h-4 text-gray-500" />
+          Members with access
+        </div>
+        <div className="flex items-center justify-center p-8">
+          <div className="text-gray-400">Loading members with access...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="mb-6">
       <div className="flex items-center gap-2 p-2">
         <Users className="w-4 h-4 text-gray-500" />
         Members with access
         <span className="text-sm text-gray-500 dark:text-gray-400">{resourceMembers.length}</span>
       </div>
-      <div className="relative flex-1 mb-3">
-        <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
-          <Search className="w-4 h-4 text-gray-400" />
+      <div className="flex mb-3 items-center gap-3">
+        <div className="relative flex-1">
+          <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+            <Search className="w-4 h-4 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={classNames(
+              'w-full h-9 pl-7 pr-2.5 py-2 rounded-lg',
+              'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
+              'focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent',
+              'placeholder-gray-500 dark:placeholder-gray-400',
+            )}
+            placeholder="Search members..."
+          />
         </div>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+        <button
+          onClick={onInvite}
           className={classNames(
-            'w-full h-9 pl-7 pr-2.5 py-2 rounded-[50px]',
-            'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
-            'focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent',
-            'placeholder-gray-500 dark:placeholder-gray-400',
+            'inline-flex items-center gap-1 pl-2 pr-3 py-1.75 text-sm rounded-lg transition-colors',
+            'border border-gray-600',
+            'bg-gray-100 hover:bg-gray-200',
+            'dark:bg-gray-900 dark:hover:bg-gray-800',
+            'text-gray-800 dark:text-gray-200',
+            'cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
           )}
-          placeholder="Search members..."
-        />
+        >
+          <Plus className="w-3 h-3 text-white" />
+          Invite
+        </button>
       </div>
 
       <table className="w-full text-left text-sm">
@@ -141,9 +185,6 @@ export default function ResourceAccessMembers({ resourceScope, resourceId }: Res
             } else {
               selectedOption = permissionOptions.find((option) => option.value === member.role.type);
             }
-
-            console.log('member.role.type:', member.role.type);
-            console.log('selectedOption:', selectedOption);
 
             return (
               <tr key={member.id} className="border-b border-gray-700/50">
@@ -166,10 +207,7 @@ export default function ResourceAccessMembers({ resourceScope, resourceId }: Res
                           handlePermissionChange(member.id, option.value as PermissionLevel);
                         }
                       }}
-                      options={[
-                        { value: 'manage', label: 'Full Access' },
-                        { value: 'viewer', label: 'Viewer' },
-                      ]}
+                      options={permissionOptions}
                       width="150px"
                       minWidth="150px"
                       isSearchable={false}

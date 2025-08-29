@@ -12,6 +12,7 @@ interface EditEnvironmentFormProps {
   setIsSubmitting: (value: boolean) => void;
   onSuccess: () => void;
   onDelete: () => void;
+  onInvite: () => void;
 }
 
 export default function EditEnvironmentForm({
@@ -20,6 +21,7 @@ export default function EditEnvironmentForm({
   setIsSubmitting,
   onSuccess,
   onDelete,
+  onInvite,
 }: EditEnvironmentFormProps) {
   const [name, setName] = useState(environment.name);
   const [description, setDescription] = useState(environment.description || '');
@@ -208,7 +210,7 @@ export default function EditEnvironmentForm({
       </div>
 
       <div>
-        <ResourceAccessMembers resourceScope="ENVIRONMENT" resourceId={environment.id} />
+        <ResourceAccessMembers resourceScope="ENVIRONMENT" resourceId={environment.id} onInvite={onInvite} />
       </div>
 
       <div className="flex items-center justify-between pt-4">
