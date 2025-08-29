@@ -97,17 +97,6 @@ export async function deletePermission(id: string): Promise<Permission> {
 export async function userHasMeaningfulPermissions(userId: string): Promise<boolean> {
   const permissions = await getUserPermissions(userId);
 
-  // Check if user has any system-level or resource-level permissions
-  const hasSystemPermissions = permissions.some(
-    (permission) =>
-      permission.resource === PermissionResource.all ||
-      permission.resource === PermissionResource.BuilderApp ||
-      permission.resource === PermissionResource.AdminApp ||
-      permission.resource === PermissionResource.Environment ||
-      permission.resource === PermissionResource.DataSource ||
-      permission.resource === PermissionResource.Website ||
-      permission.resource === PermissionResource.EnvironmentVariable,
-  );
-
-  return hasSystemPermissions;
+  // Check if user has any permissions
+  return permissions.length > 0;
 }
