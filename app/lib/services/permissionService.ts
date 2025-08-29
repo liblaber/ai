@@ -88,3 +88,15 @@ export async function deletePermission(id: string): Promise<Permission> {
     where: { id },
   });
 }
+
+/**
+ * Check if a user has any meaningful permissions beyond basic ownership rules
+ * @param userId The user ID to check
+ * @returns true if user has permissions, false if they only have ownership rules
+ */
+export async function userHasMeaningfulPermissions(userId: string): Promise<boolean> {
+  const permissions = await getUserPermissions(userId);
+
+  // Check if user has any permissions
+  return permissions.length > 0;
+}

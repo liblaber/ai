@@ -11,6 +11,9 @@ import { headers } from 'next/headers';
 import { auth } from '~/auth/auth-config';
 import type { Session } from '~/auth/session';
 
+// Force dynamic rendering to prevent static generation issues with headers
+export const dynamic = 'force-dynamic';
+
 const inlineThemeCode = `
   setLiblabTheme();
   function setLiblabTheme() {
