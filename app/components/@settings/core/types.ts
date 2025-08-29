@@ -28,7 +28,7 @@ export const TAB_LABELS: Record<TabType, string> = {
   data: 'Data Sources',
   github: 'GitHub',
   'deployed-apps': 'Deployed Apps',
-  members: 'Members',
+  members: 'Users',
   roles: 'Roles',
   environments: 'Environments',
 };
