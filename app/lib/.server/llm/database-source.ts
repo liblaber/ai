@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import { getLlm } from './get-llm';
 import { getConnectionProtocol } from '@liblab/data-access/utils/connection';
+import { isGoogleSheetsConnection } from '@liblab/data-access/accessors/google-sheets';
 
 const queryDecisionSchema = z.object({
   shouldUpdateSql: z.boolean(),
@@ -83,8 +84,7 @@ export async function generateSqlQueries({
   }
 
   // Determine if this is a Google Sheets connection - only for logging purposes
-  const isGoogleSheets =
-    connectionString.startsWith('sheets://') || connectionString.startsWith('https://docs.google.com/spreadsheets/');
+  const isGoogleSheets = isGoogleSheetsConnection(connectionString);
   const queryType = isGoogleSheets ? 'JSON operations' : 'SQL queries';
 
   const systemPrompt = accessor.generateSystemPrompt(accessor.label, dbSchema, existingQueries, userPrompt);

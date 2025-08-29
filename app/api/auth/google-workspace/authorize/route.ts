@@ -2,12 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
 import { GoogleWorkspaceAuthManager } from '@liblab/data-access/accessors/google-workspace/auth-manager';
 import { GOOGLE_WORKSPACE_SCOPES } from '@liblab/data-access/accessors/google-workspace/types';
+import { env } from '~/env/server';
+import { createScopedLogger } from '~/utils/logger';
+import { z } from 'zod';
+
+const logger = createScopedLogger('google-workspace-auth');
+
+const requestSchema = z.object({
+  type: z.enum(['docs', 'sheets']),
+  scopes: z.array(z.string()).optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
     // Validate required environment variables
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_AUTH_ENCRYPTION_KEY) {
-      console.error('Google Workspace auth is not configured. Missing required environment variables.');
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GOOGLE_AUTH_ENCRYPTION_KEY) {
+      logger.error('Google Workspace auth is not configured. Missing required environment variables.');
       return NextResponse.json(
         {
           success: false,
@@ -18,15 +28,13 @@ export async function POST(request: NextRequest) {
     }
 
     const { userId } = await requireUserAbility(request);
-    const body = (await request.json()) as { type?: string; scopes?: string[] };
-    const { type, scopes } = body;
 
-    if (!type || !['docs', 'sheets'].includes(type)) {
-      return NextResponse.json({ success: false, error: 'Invalid type. Must be "docs" or "sheets"' }, { status: 400 });
-    }
+    // Validate request body with Zod
+    const body = await request.json();
+    const { type, scopes } = requestSchema.parse(body);
 
     // Initialize auth manager
-    const authManager = new GoogleWorkspaceAuthManager(process.env.GOOGLE_AUTH_ENCRYPTION_KEY);
+    const authManager = new GoogleWorkspaceAuthManager(env.GOOGLE_AUTH_ENCRYPTION_KEY!);
 
     // Determine scopes based on type
     const requestedScopes =
@@ -41,8 +49,8 @@ export async function POST(request: NextRequest) {
 
     await authManager.initialize({
       type: 'oauth2',
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: env.GOOGLE_CLIENT_ID!,
+      clientSecret: env.GOOGLE_CLIENT_SECRET!,
       redirectUri: `${request.nextUrl.origin}/api/auth/google-workspace/callback`,
       scopes: allScopes,
     });
@@ -52,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, authUrl });
   } catch (error) {
-    console.error('Google Workspace auth error:', error);
+    logger.error('Google Workspace auth error:', error);
     return NextResponse.json({ success: false, error: 'Failed to initialize Google authentication' }, { status: 500 });
   }
 }

@@ -4,7 +4,6 @@ import { ClientProviders } from './components/ClientProviders';
 import './globals.css';
 import { getEnvironmentDataSources } from '~/lib/services/dataSourceService';
 import { userService } from '~/lib/services/userService';
-import { getUserAbility } from './lib/casl/user-ability';
 import PluginManager, { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import { headers } from 'next/headers';
@@ -43,8 +42,7 @@ async function getRootData() {
       user = await userService.getUser(typedSession.user.id);
 
       // Get data sources for the user
-      const userAbility = await getUserAbility(typedSession.user.id);
-      environmentDataSources = await getEnvironmentDataSources(userAbility);
+      environmentDataSources = await getEnvironmentDataSources();
     }
 
     // Initialize plugin manager

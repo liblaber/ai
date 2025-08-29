@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleWorkspaceAuthManager } from '@liblab/data-access/accessors/google-workspace/auth-manager';
+import { env } from '~/env/server';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('google-workspace-callback');
 
 export async function GET(request: NextRequest) {
   // Validate required environment variables
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_AUTH_ENCRYPTION_KEY) {
-    console.error('Google Workspace auth is not configured. Missing required environment variables.');
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GOOGLE_AUTH_ENCRYPTION_KEY) {
+    logger.error('Google Workspace auth is not configured. Missing required environment variables.');
     return new NextResponse(
       `
       <html>
@@ -83,12 +87,12 @@ export async function GET(request: NextRequest) {
     const { userId, type } = stateData;
 
     // Initialize auth manager
-    const authManager = new GoogleWorkspaceAuthManager(process.env.GOOGLE_AUTH_ENCRYPTION_KEY);
+    const authManager = new GoogleWorkspaceAuthManager(env.GOOGLE_AUTH_ENCRYPTION_KEY!);
 
     await authManager.initialize({
       type: 'oauth2',
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: env.GOOGLE_CLIENT_ID!,
+      clientSecret: env.GOOGLE_CLIENT_SECRET!,
       redirectUri: `${request.nextUrl.origin}/api/auth/google-workspace/callback`,
       scopes: [], // Will be populated from the auth flow
     });
@@ -153,7 +157,7 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Google Workspace callback error:', error);
+    logger.error('Google Workspace callback error:', error);
 
     return new NextResponse(
       `

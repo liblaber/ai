@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const environmentDataSources = await getEnvironmentDataSources(userAbility);
+  const environmentDataSources = await getEnvironmentDataSources();
 
   return NextResponse.json({ success: true, environmentDataSources });
 }
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   try {
     const dataSource = await createDataSource({
       name,
-      createdById: userId,
+      userId,
       environmentId,
       connectionString,
     });

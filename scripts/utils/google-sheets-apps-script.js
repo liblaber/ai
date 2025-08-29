@@ -1,3 +1,23 @@
+/**
+ * @typedef {Object} PostEvent
+ * @property {Object} postData
+ * @property {string} postData.contents
+ */
+
+/**
+ * @typedef {Object} RequestData
+ * @property {string} spreadsheetId
+ * @property {'appendRow'|'updateRange'|'clearRange'|'insertRow'|'deleteRow'} action
+ * @property {string} [range]
+ * @property {any[][]} [values]
+ * @property {number} [rowIndex]
+ * @property {number} [numRows]
+ */
+
+/**
+ * @param {PostEvent} e
+ * @returns {GoogleAppsScript.Content.TextOutput}
+ */
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
@@ -113,13 +133,26 @@ function doPost(e) {
   }
 }
 
+/**
+ * @typedef {Object} GetEvent
+ * @property {Object} parameter
+ * @property {string} [parameter.spreadsheetId]
+ */
+
+/**
+ * @param {GetEvent} e
+ * @returns {GoogleAppsScript.Content.TextOutput}
+ */
 function doGet(e) {
   // Handle GET requests for testing
   const spreadsheetId = e.parameter.spreadsheetId || 'No spreadsheet ID provided';
   return ContentService.createTextOutput(`Google Sheets Proxy is working! Spreadsheet ID: ${spreadsheetId}`);
 }
 
-// Test function to verify the script works
+/**
+ * Test function to verify the script works
+ * @param {string} spreadsheetId
+ */
 function testScript(spreadsheetId) {
   if (!spreadsheetId) {
     throw new Error('Please provide a spreadsheet ID: testScript("your_spreadsheet_id_here")');

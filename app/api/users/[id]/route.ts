@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireUserId, requireUserAbility } from '~/auth/session';
+import { requireUserId } from '~/auth/session';
 
 // Fallback function to find a row in the sheet and register its mapping
 async function findAndRegisterRowInSheet(
@@ -8,7 +8,7 @@ async function findAndRegisterRowInSheet(
 ): Promise<{ success: boolean; mapping?: any; error?: string }> {
   try {
     // Get available data sources to find the Google Sheet
-    const dataSources = await getAvailableDataSources(request);
+    const dataSources = await getAvailableDataSources();
     const googleSheetsSource = dataSources.find(
       (ds) => ds.connectionString?.includes('sheets') || ds.connectionString?.includes('script.google.com'),
     );
@@ -185,7 +185,7 @@ async function handleGoogleSheetsUpdate(request: NextRequest, recordData: any): 
     const { rowIndex, spreadsheetId } = mappingResult.mapping;
 
     // Step 2: Get the data source connection string
-    const dataSources = await getAvailableDataSources(request);
+    const dataSources = await getAvailableDataSources();
     const googleSheetsSource = dataSources.find((ds) => ds.connectionString?.includes(spreadsheetId));
 
     if (!googleSheetsSource) {
@@ -291,7 +291,7 @@ async function handleGoogleSheetsDelete(request: NextRequest, recordData: any, _
     const { rowIndex, spreadsheetId, rowKey } = mappingResult.mapping;
 
     // Step 2: Get the data source connection string
-    const dataSources = await getAvailableDataSources(request);
+    const dataSources = await getAvailableDataSources();
     const googleSheetsSource = dataSources.find((ds) => ds.connectionString?.includes(spreadsheetId));
 
     if (!googleSheetsSource) {
@@ -393,16 +393,13 @@ function buildTargetedDeleteOperation(rowIndex: number): any {
 }
 
 // Helper to get available data sources
-async function getAvailableDataSources(request: NextRequest): Promise<any[]> {
+async function getAvailableDataSources(): Promise<any[]> {
   try {
-    // Get user ability to fetch data sources with proper permissions
-    const { userAbility } = await requireUserAbility(request);
-
     // Import the getDataSources function
-    const { getDataSources } = await import('~/lib/services/datasourceService');
+    const { getDataSources } = await import('~/lib/services/dataSourceService');
 
     // Fetch actual data sources from the database
-    const dataSources = await getDataSources(userAbility);
+    const dataSources = await getDataSources();
 
     return dataSources;
   } catch (error) {

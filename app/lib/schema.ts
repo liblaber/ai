@@ -5,6 +5,7 @@ import crypto from 'crypto';
 
 import { getDatabaseUrl } from '~/lib/services/dataSourceService';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { isGoogleSheetsConnection } from '@liblab/data-access/accessors/google-sheets';
 
 // Cache duration in seconds (31 days)
 const SCHEMA_CACHE_TTL = 60 * 60 * 24 * 31;
@@ -30,7 +31,7 @@ export const getDatabaseSchema = async (
     logger.debug('Trying to get the schema from cache...');
 
     // For Google Sheets, check if we need to force refresh due to improved analysis
-    const isGoogleSheets = connectionUrl.startsWith('sheets://');
+    const isGoogleSheets = isGoogleSheetsConnection(connectionUrl);
     let shouldForceRefresh = forceRefresh;
 
     if (isGoogleSheets && !forceRefresh) {
@@ -191,13 +192,13 @@ async function shouldRefreshGoogleSheetsCache(connectionUrl: string): Promise<bo
   try {
     const schema = JSON.parse(cached.schemaData);
 
-    // Version 2: Enhanced semantic mapping with multi-row analysis
+    // Enhanced semantic mapping with multi-row analysis
     // If cache doesn't have this version marker, force refresh
-    const currentSemanticVersion = 3;
+    const currentSemanticVersion = parseInt(process.env.GOOGLE_SHEETS_SEMANTIC_VERSION || '3');
 
     if (!schema._semantic_mapping_version || schema._semantic_mapping_version < currentSemanticVersion) {
       logger.debug(
-        `Google Sheets cache semantic version outdated (${schema._semantic_mapping_version || 'undefined'} < ${currentSemanticVersion}), forcing refresh...`,
+        `Google Sheets cache semantic version outdated (${schema._semantic_mapping_version ?? 'not set'} < ${currentSemanticVersion}), forcing refresh...`,
       );
       return true;
     }

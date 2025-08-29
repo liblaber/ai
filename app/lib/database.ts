@@ -1,5 +1,6 @@
 import { logger } from '~/utils/logger';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { isGoogleSheetsConnection } from '@liblab/data-access/accessors/google-sheets';
 
 export async function executeQuery(connectionUrl: string, query: string, params?: string[]): Promise<any[]> {
   const dataAccessor = await DataSourcePluginManager.getAccessor(connectionUrl);
@@ -8,8 +9,7 @@ export async function executeQuery(connectionUrl: string, query: string, params?
     await dataAccessor.initialize(connectionUrl);
 
     // Enhanced logging for Google Sheets JSON parsing issues
-    const isSheetsError =
-      connectionUrl.startsWith('sheets://') || connectionUrl.startsWith('https://docs.google.com/spreadsheets/');
+    const isSheetsError = isGoogleSheetsConnection(connectionUrl);
 
     if (isSheetsError) {
       console.log('[Database] Google Sheets query execution:', {
@@ -27,8 +27,7 @@ export async function executeQuery(connectionUrl: string, query: string, params?
   } catch (e) {
     // Enhanced error logging for MongoDB and Google Sheets JSON parsing issues
     const isMongoError = connectionUrl.startsWith('mongodb');
-    const isSheetsError =
-      connectionUrl.startsWith('sheets://') || connectionUrl.startsWith('https://docs.google.com/spreadsheets/');
+    const isSheetsError = isGoogleSheetsConnection(connectionUrl);
     const isJsonError = e instanceof Error && e.message.includes('Invalid JSON format');
 
     if ((isMongoError || isSheetsError) && isJsonError) {

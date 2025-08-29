@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
     }
 
     const resultData = await executeQuery(databaseUrl, query, params);
-
     const dataBuffer = Buffer.from(JSON.stringify(resultData));
 
     const encryptedResponse = encryptData(env.server.ENCRYPTION_KEY, dataBuffer);

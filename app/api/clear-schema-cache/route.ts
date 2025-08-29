@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clearSchemaCache } from '~/lib/schema';
-import { getDatabaseUrl } from '~/lib/services/datasourceService';
+import { getDatabaseUrl } from '~/lib/services/dataSourceService';
 import { requireUserId } from '~/auth/session';
 
 export async function POST(request: NextRequest) {

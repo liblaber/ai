@@ -3,6 +3,20 @@ import type { Table } from '../../types';
 import { GoogleWorkspaceError } from './google-workspace/types';
 import { GoogleWorkspaceAuthManager } from './google-workspace/auth-manager';
 
+// Google Sheets URL constants
+export const GOOGLE_SHEETS_PROTOCOLS = {
+  SHEETS: 'sheets://',
+  DOCS_URL: 'https://docs.google.com/spreadsheets/',
+} as const;
+
+// Helper function to check if a connection string is for Google Sheets
+export const isGoogleSheetsConnection = (connectionString: string): boolean => {
+  return (
+    connectionString.startsWith(GOOGLE_SHEETS_PROTOCOLS.SHEETS) ||
+    connectionString.startsWith(GOOGLE_SHEETS_PROTOCOLS.DOCS_URL)
+  );
+};
+
 export class GoogleSheetsAccessor implements BaseAccessor {
   static pluginId = 'google-sheets';
   readonly label = 'Google Sheets';
@@ -17,7 +31,7 @@ export class GoogleSheetsAccessor implements BaseAccessor {
   private _authManager: GoogleWorkspaceAuthManager | null = null;
 
   static isAccessor(databaseUrl: string): boolean {
-    return databaseUrl.startsWith('sheets://') || databaseUrl.startsWith('https://docs.google.com/spreadsheets/');
+    return isGoogleSheetsConnection(databaseUrl);
   }
 
   async testConnection(connectionString: string): Promise<boolean> {
@@ -215,6 +229,7 @@ export class GoogleSheetsAccessor implements BaseAccessor {
         ![
           'readRange',
           'readSheet',
+          'readSheetPaginated',
           'getAllSheets',
           'getValues',
           'updateRange',
@@ -230,7 +245,7 @@ export class GoogleSheetsAccessor implements BaseAccessor {
         ].includes(parsedQuery.operation)
       ) {
         throw new GoogleWorkspaceError(
-          'Google Sheets query must specify a valid operation (readRange, readSheet, getAllSheets, getValues, updateRange, updateValues, updateCell, appendValues, appendRow, appendSheet, clearValues, clearRange, insertRow, deleteRow)',
+          'Google Sheets query must specify a valid operation (readRange, readSheet, readSheetPaginated, getAllSheets, getValues, updateRange, updateValues, updateCell, appendValues, appendRow, appendSheet, clearValues, clearRange, insertRow, deleteRow)',
         );
       }
 
@@ -431,18 +446,20 @@ To generate the Google Sheets JSON operations, follow these steps:
 2. Create one or more Google Sheets JSON operations that accurately address the user's requirements.
 3. Structure operations as JSON objects with the following format:
    {
-     "operation": "readSheet" | "readSheetPaginated" | "getAllSheets" | "getValues",
+     "operation": "readSheetPaginated" | "getAllSheets" | "getValues",
      "parameters": {
        "valueRenderOption": "FORMATTED_VALUE",
        "startRow": 1,
-       "maxRows": 100
+       "maxRows": 50
      }
    }
-4. Use appropriate Google Sheets operations:
-   - "readRange": Read data from a specific range in A1 notation
-   - "readSheet": Read all data from a specific sheet
+   Note: maxRows can be any number (including the entire dataset). The UI will handle pagination automatically.
+4. Use appropriate Google Sheets operations (PREFER PAGINATED OPERATIONS):
+   - "readSheetPaginated": Read data from a specific sheet with pagination (RECOMMENDED for performance)
    - "getAllSheets": Get information about all sheets in the spreadsheet
    - "getValues": Get values from one or more ranges
+   - "readRange": Read data from a specific range in A1 notation (use sparingly)
+   - "readSheet": Read all data from a specific sheet (DEPRECATED - use readSheetPaginated instead)
 5. Do not use any operations that could modify the spreadsheet.
 6. Use proper A1 notation for ranges (e.g., A1:B10, Sheet1!A:Z, C:C).
 7. Choose appropriate valueRenderOption:
@@ -452,15 +469,16 @@ To generate the Google Sheets JSON operations, follow these steps:
 8. Optimize queries for the specific sheet structure shown in the schema.
 9. If needed, parametrize the query using positional placeholders like $1, $2, etc.
 10. IMPORTANT: Use the "Actual Sheet Name" from the schema metadata, NOT the table name. If schema metadata shows "actualSheetName": "Expense Data", use "Expense Data" in your queries. If no specific sheet name is provided in metadata, use "readSheet" WITHOUT specifying sheetName parameter to read the first/default sheet.
-11. CRITICAL: For Google Sheets, ALWAYS prefer "readSheet" operations over "readRange" operations. The readSheet operation returns semantically processed data with fields like amount_numeric, category, description, etc.
-12. CRITICAL: When you need data aggregation (SUM, COUNT, AVG), use "readSheet" to get the full dataset with semantic fields, then let the frontend handle the aggregation using amount_numeric field.
+11. CRITICAL: For Google Sheets, ALWAYS prefer "readSheetPaginated" operations over "readSheet" or "readRange" operations. The readSheetPaginated operation returns semantically processed data with fields like amount_numeric, category, description, etc. and prevents memory issues with large datasets.
+12. CRITICAL: When you need data aggregation (SUM, COUNT, AVG), use "readSheetPaginated" with appropriate maxRows parameter to get the dataset with semantic fields, then let the frontend handle the aggregation using amount_numeric field.
 13. CRITICAL: DO NOT use readRange operations for individual columns unless absolutely necessary. The readRange operation may return raw data without semantic processing.
-14. IMPORTANT: The data returned by readSheet includes both raw values and semantic fields (amount_numeric, category, description, date, notes). Use these semantic fields for calculations.
-15. IMPORTANT: Use "dataStartRow" from metadata to know where actual data begins (excluding headers and metadata).
-16. NOTE: The "spreadsheet_info" table is virtual and does not represent an actual sheet - do not query it.
-17. For dashboard and analytical queries, always use readSheet to ensure you get semantically processed data with numeric fields for calculations.
-18. Provide a brief explanation for each query.
-19. Specify the response schema for each query, including expected data types.
+14. PERFORMANCE: Use "readSheetPaginated" for data analysis. You can request any number of rows (the entire dataset if needed), and the UI will automatically paginate display to prevent React memory issues.
+15. IMPORTANT: The data returned by readSheetPaginated includes both raw values and semantic fields (amount_numeric, category, description, date, notes). Use these semantic fields for calculations.
+16. IMPORTANT: Use "dataStartRow" from metadata to know where actual data begins (excluding headers and metadata).
+17. NOTE: The "spreadsheet_info" table is virtual and does not represent an actual sheet - do not query it.
+18. For dashboard and analytical queries, always use readSheetPaginated to ensure you get semantically processed data with numeric fields for calculations.
+19. Provide a brief explanation for each query.
+20. Specify the response schema for each query, including expected data types.
 
 Format your response as a JSON array containing objects with the following structure:
 {
@@ -472,8 +490,8 @@ Format your response as a JSON array containing objects with the following struc
 Here's an example of a valid response:
 [
   {
-    "query": "{\\"operation\\": \\"readSheet\\", \\"parameters\\": {\\"valueRenderOption\\": \\"FORMATTED_VALUE\\"}}",
-    "explanation": "Reads all data from the first sheet (auto-detected) with formatted values",
+    "query": "{\\"operation\\": \\"readSheetPaginated\\", \\"parameters\\": {\\"valueRenderOption\\": \\"FORMATTED_VALUE\\", \\"maxRows\\": 50}}",
+    "explanation": "Reads up to 50 rows from the first sheet (auto-detected) with formatted values for optimal performance",
     "responseSchema": "row_number (number), date (string), product (string), quantity (number), price (number), total (number)"
   },
   {
@@ -490,12 +508,12 @@ Here's an example of a valid response:
 
 🔥 CRITICAL FINAL REMINDERS:
 - NO SQL QUERIES ALLOWED (SELECT, FROM, WHERE, JOIN, etc.)
-- ONLY JSON OPERATIONS like {"operation": "readSheet", "parameters": {...}}
+- ONLY JSON OPERATIONS like {"operation": "readSheetPaginated", "parameters": {...}}
 - Your output should consist ONLY of the JSON array containing the operation objects
 - The query field should contain a properly formatted JSON string representing the Google Sheets operation object
 
 ❌ WRONG: "SELECT * FROM customers WHERE country = 'USA'"
-✅ CORRECT: "{\\"operation\\": \\"readSheet\\", \\"parameters\\": {\\"valueRenderOption\\": \\"FORMATTED_VALUE\\"}}"
+✅ CORRECT: "{\\"operation\\": \\"readSheetPaginated\\", \\"parameters\\": {\\"valueRenderOption\\": \\"FORMATTED_VALUE\\", \\"maxRows\\": 1000}}" (or any number needed for analysis)
 
 Now, generate Google Sheets JSON operations (NOT SQL) based on the following user request:
 <userRequest>
@@ -626,9 +644,9 @@ ${userPrompt}
   private _extractSpreadsheetId(connectionString: string): string {
     try {
       // Handle both formats: sheets:// and https://docs.google.com/spreadsheets/
-      if (connectionString.startsWith('https://docs.google.com/spreadsheets/')) {
+      if (connectionString.startsWith(GOOGLE_SHEETS_PROTOCOLS.DOCS_URL)) {
         return this._parseGoogleSheetsHttpsUrl(connectionString);
-      } else if (connectionString.startsWith('sheets://')) {
+      } else if (connectionString.startsWith(GOOGLE_SHEETS_PROTOCOLS.SHEETS)) {
         return this._parseSheetsProtocolUrl(connectionString);
       } else {
         throw new GoogleWorkspaceError(
@@ -964,14 +982,28 @@ See documentation for setup instructions.
   private async _executeReadOperation(parsedQuery: any, spreadsheetId: string): Promise<any[]> {
     switch (parsedQuery.operation) {
       case 'readSheet':
-        return await this._readSheetData(spreadsheetId, parsedQuery.parameters?.sheetName);
-      case 'readSheetPaginated':
+        // Automatically use pagination for readSheet to prevent memory issues
+        console.warn(
+          'GoogleSheets: readSheet operation is deprecated. Consider using readSheetPaginated for better performance.',
+        );
+        return await this._readSheetDataPaginated(
+          spreadsheetId,
+          parsedQuery.parameters?.sheetName,
+          parsedQuery.parameters?.startRow || 1,
+          parsedQuery.parameters?.maxRows || 100, // Default limit for safety
+        );
+      case 'readSheetPaginated': {
+        // Default to 50 for UI display, but allow AI to request any amount for analysis
+        const requestedMaxRows = parsedQuery.parameters?.maxRows;
+        const safeMaxRows = requestedMaxRows || 50; // Default to 50 rows for UI display
+
         return await this._readSheetDataPaginated(
           spreadsheetId,
           parsedQuery.parameters?.sheetName,
           parsedQuery.parameters?.startRow,
-          parsedQuery.parameters?.maxRows,
+          safeMaxRows,
         );
+      }
       case 'getAllSheets':
         return await this._getAllSheets(spreadsheetId);
       case 'readRange':
@@ -1010,7 +1042,7 @@ See documentation for setup instructions.
     spreadsheetId: string,
     sheetName: string = '',
     startRow: number = 1,
-    maxRows: number = 100,
+    maxRows: number = 50,
   ): Promise<any[]> {
     // Get the full CSV data first
     const endpoints: string[] = [];
@@ -1243,9 +1275,9 @@ Last error: ${lastError?.message || 'Unknown error'}`;
     const result: any[] = [];
     const totalDataRows = nonEmptyLines.length - 1;
 
-    // Apply reasonable default limit to prevent memory issues with very large datasets
-    const DEFAULT_MAX_ROWS = 500;
-    const safeMaxRows = maxRows || DEFAULT_MAX_ROWS;
+    // Apply reasonable default for UI display - AI can request full dataset
+    const DEFAULT_MAX_ROWS = 50; // Default display limit with pagination
+    const safeMaxRows = maxRows !== undefined ? maxRows : DEFAULT_MAX_ROWS; // Use requested amount or default
 
     // Progressive loading parameters
     const start = startRow ? Math.max(1, startRow) : 1;
@@ -1451,45 +1483,52 @@ Last error: ${lastError?.message || 'Unknown error'}`;
       return;
     }
 
-    // Prevent deep recursion stack overflow
-    if (depth > 100) {
+    // Prevent deep recursion stack overflow - reduce max depth for safety
+    if (depth > 20) {
+      console.warn('GoogleSheets: Maximum recursion depth reached, stopping parameter replacement');
       return;
     }
 
+    // Check for circular references
     if (typeof obj === 'object' && visited.has(obj)) {
+      console.warn('GoogleSheets: Circular reference detected, skipping object');
       return;
     }
 
-    if (typeof obj === 'object') {
+    if (typeof obj === 'object' && obj !== null) {
       visited.add(obj);
     }
 
-    if (Array.isArray(obj)) {
-      for (let i = 0; i < obj.length; i++) {
-        if (typeof obj[i] === 'string' && /^\$\d+$/.test(obj[i])) {
-          const paramIndex = parseInt(obj[i].substring(1)) - 1;
-
-          if (paramIndex >= 0 && paramIndex < params.length) {
-            obj[i] = this._parseParameterValue(params[paramIndex]);
-          }
-        } else if (typeof obj[i] === 'object') {
-          this._replaceParametersRecursively(obj[i], params, visited, depth + 1);
-        }
-      }
-    } else if (typeof obj === 'object') {
-      for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          if (typeof obj[key] === 'string' && /^\$\d+$/.test(obj[key])) {
-            const paramIndex = parseInt(obj[key].substring(1)) - 1;
+    try {
+      if (Array.isArray(obj)) {
+        for (let i = 0; i < obj.length; i++) {
+          if (typeof obj[i] === 'string' && /^\$\d+$/.test(obj[i])) {
+            const paramIndex = parseInt(obj[i].substring(1)) - 1;
 
             if (paramIndex >= 0 && paramIndex < params.length) {
-              obj[key] = this._parseParameterValue(params[paramIndex]);
+              obj[i] = this._parseParameterValue(params[paramIndex]);
             }
-          } else if (typeof obj[key] === 'object') {
-            this._replaceParametersRecursively(obj[key], params, visited, depth + 1);
+          } else if (typeof obj[i] === 'object' && obj[i] !== null) {
+            this._replaceParametersRecursively(obj[i], params, visited, depth + 1);
+          }
+        }
+      } else if (typeof obj === 'object' && obj !== null) {
+        for (const key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            if (typeof obj[key] === 'string' && /^\$\d+$/.test(obj[key])) {
+              const paramIndex = parseInt(obj[key].substring(1)) - 1;
+
+              if (paramIndex >= 0 && paramIndex < params.length) {
+                obj[key] = this._parseParameterValue(params[paramIndex]);
+              }
+            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+              this._replaceParametersRecursively(obj[key], params, visited, depth + 1);
+            }
           }
         }
       }
+    } catch (error) {
+      console.warn('GoogleSheets: Error in parameter replacement:', error);
     }
   }
 
