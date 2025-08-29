@@ -128,6 +128,7 @@ export default function ResourceAccessInvite({ resourceScope, resource, onBack }
           </Label>
           <Input
             id="invite-email-input"
+            autoComplete="off"
             type="text"
             value={email}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {

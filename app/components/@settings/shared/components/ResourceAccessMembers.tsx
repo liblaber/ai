@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Users } from 'lucide-react';
+import { Plus, Search, Trash2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { RoleScope } from '@prisma/client';
 import { classNames } from '~/utils/classNames';
@@ -8,6 +8,7 @@ import type { PermissionLevel } from '~/lib/services/permissionService';
 import type { ResourceMember } from '~/lib/utils/resource-utils';
 import { BaseSelect, type SelectOption } from '~/components/ui/Select';
 import WithTooltip from '~/components/ui/Tooltip';
+import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 
 export const permissionOptions: SelectOption[] = [
   { value: 'manage', label: 'Full Access' },
@@ -25,6 +26,7 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onInv
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [resourceMembers, setResourceMembers] = useState<ResourceMember[]>([]);
+  const [removeMember, setRemoveMember] = useState<ResourceMember | null>(null);
 
   const resourceType = useMemo(() => {
     switch (resourceScope) {
@@ -68,48 +70,54 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onInv
     [resourceMembers, searchQuery],
   );
 
-  const handlePermissionChange = async (memberId: string, newPermissionLevel: PermissionLevel | 'remove') => {
-    if (newPermissionLevel === 'remove') {
-      try {
-        const response = await fetch(`/api/${resourceType}/${resourceId}/members/${memberId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+  const handlePermissionChange = async (memberId: string, newPermissionLevel: PermissionLevel) => {
+    try {
+      const response = await fetch(`/api/${resourceType}/${resourceId}/members/${memberId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ permissionLevel: newPermissionLevel }),
+      });
 
-        if (!response.ok) {
-          throw new Error('Failed to remove permission');
-        }
-
-        setResourceMembers((prev) => prev.filter((member) => member.id !== memberId));
-      } catch (error) {
-        console.error(`Error removing permission for member ${memberId}:`, error);
-        toast.error(`Failed to remove permission for member ${memberId}`);
+      if (!response.ok) {
+        throw new Error('Failed to update permission');
       }
-    } else {
-      try {
-        const response = await fetch(`/api/${resourceType}/${resourceId}/members/${memberId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ permissionLevel: newPermissionLevel }),
-        });
 
-        if (!response.ok) {
-          throw new Error('Failed to update permission');
-        }
+      setResourceMembers((prev) =>
+        prev.map((member) =>
+          member.id === memberId ? { ...member, role: { ...member.role, type: newPermissionLevel } } : member,
+        ),
+      );
+    } catch (error) {
+      console.error(`Error updating permission for member ${memberId}:`, error);
+      toast.error(`Failed to update permission for member ${memberId}`);
+    }
+  };
 
-        setResourceMembers((prev) =>
-          prev.map((member) =>
-            member.id === memberId ? { ...member, role: { ...member.role, type: newPermissionLevel } } : member,
-          ),
-        );
-      } catch (error) {
-        console.error(`Error updating permission for member ${memberId}:`, error);
-        toast.error(`Failed to update permission for member ${memberId}`);
+  const handleRemoveMember = async () => {
+    if (!removeMember) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/${resourceType}/${resourceId}/members/${removeMember.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove member');
       }
+
+      setResourceMembers((prev) => prev.filter((member) => member.id !== removeMember.id));
+    } catch (error) {
+      console.error(`Error removing member ${removeMember.id}:`, error);
+      toast.error(`Failed to remove member ${removeMember.id}`);
+    } finally {
+      setRemoveMember(null);
     }
   };
 
@@ -204,7 +212,11 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onInv
                       value={selectedOption}
                       onChange={(option) => {
                         if (option?.value && option.value !== member.role.type) {
-                          handlePermissionChange(member.id, option.value as PermissionLevel);
+                          if (option.value === 'remove') {
+                            setRemoveMember(member);
+                          } else {
+                            handlePermissionChange(member.id, option.value as PermissionLevel);
+                          }
                         }
                       }}
                       options={permissionOptions}
@@ -227,6 +239,58 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onInv
           )}
         </tbody>
       </table>
+
+      <DialogRoot open={Boolean(removeMember)} onOpenChange={(open) => !open && setRemoveMember(null)}>
+        <Dialog>
+          <div className="rounded-xl bg-white dark:bg-[#0A0A0A] border border-[#E5E5E5] dark:border-[#1A1A1A] overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-[#F5F5F5] dark:bg-[#1A1A1A] border border-[#E5E5E5] dark:border-[#1A1A1A]">
+                    <Trash2 className="w-5 h-5 text-tertiary" />
+                  </div>
+                  <div>
+                    <DialogTitle title="Remove Access" />
+                    <p className="text-sm text-secondary">This action cannot be undone</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm text-secondary">
+                  Are you sure you want to remove access for {removeMember?.email}?
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
+                <DialogClose asChild>
+                  <button
+                    className={classNames(
+                      'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                      'bg-[#F5F5F5] hover:bg-[#E5E5E5]',
+                      'dark:bg-[#1A1A1A] dark:hover:bg-[#2A2A2A]',
+                      'text-primary',
+                    )}
+                  >
+                    Cancel
+                  </button>
+                </DialogClose>
+                <button
+                  onClick={handleRemoveMember}
+                  className={classNames(
+                    'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                    'bg-red-500 hover:bg-red-600',
+                    'text-white',
+                  )}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Remove</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </Dialog>
+      </DialogRoot>
     </div>
   );
 }
