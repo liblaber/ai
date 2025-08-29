@@ -1,6 +1,5 @@
 import { prisma } from '~/lib/prisma';
 import { DeprecatedRole } from '@prisma/client';
-import { SYSTEM_ADMIN_PERMISSIONS } from '~/lib/constants/permissions';
 
 export interface UserProfile {
   id: string;
@@ -8,12 +7,6 @@ export interface UserProfile {
   email: string;
   image?: string | null;
   role?: DeprecatedRole;
-  organizationId?: string | null;
-  organization?: {
-    id: string;
-    name: string;
-    domain?: string | null;
-  } | null;
   telemetryEnabled?: boolean | null;
 }
 
@@ -21,15 +14,6 @@ export const userService = {
   async getUser(userId: string): Promise<UserProfile> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            domain: true,
-          },
-        },
-      },
     });
 
     if (!user) {
@@ -42,10 +26,24 @@ export const userService = {
       email: user.email,
       image: user.image,
       role: user.role,
-      organizationId: user.organizationId,
-      organization: user.organization,
       telemetryEnabled: user.telemetryEnabled,
     };
+  },
+
+  async getAllUsers(): Promise<UserProfile[]> {
+    return await prisma.user.findMany({
+      where: {
+        OR: [{ isAnonymous: false }, { isAnonymous: null }],
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        role: true,
+        telemetryEnabled: true,
+      },
+    });
   },
 
   async getUserByEmail(email: string): Promise<UserProfile> {
@@ -63,7 +61,6 @@ export const userService = {
       email: user.email,
       image: user.image,
       role: user.role,
-      organizationId: user.organizationId,
       telemetryEnabled: user.telemetryEnabled,
     };
   },
@@ -75,15 +72,6 @@ export const userService = {
     const user = await prisma.user.update({
       where: { id: userId },
       data,
-      include: {
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            domain: true,
-          },
-        },
-      },
     });
 
     return {
@@ -92,8 +80,6 @@ export const userService = {
       email: user.email,
       image: user.image,
       role: user.role,
-      organizationId: user.organizationId,
-      organization: user.organization,
       telemetryEnabled: user.telemetryEnabled,
     };
   },
@@ -107,7 +93,6 @@ export const userService = {
         name: true,
         email: true,
         role: true,
-        organizationId: true,
         telemetryEnabled: true,
       },
     });
@@ -117,37 +102,8 @@ export const userService = {
       name: user.name,
       email: user.email,
       role: user.role,
-      organizationId: user.organizationId,
       telemetryEnabled: user.telemetryEnabled,
     };
-  },
-
-  async getUsersByOrganization(organizationId: string): Promise<UserProfile[]> {
-    const users = await prisma.user.findMany({
-      where: {
-        organizationId,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        organizationId: true,
-        telemetryEnabled: true,
-      },
-      orderBy: {
-        email: 'asc',
-      },
-    });
-
-    return users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      organizationId: user.organizationId,
-      telemetryEnabled: user.telemetryEnabled,
-    }));
   },
 
   async getUsersByRole(roleId: string): Promise<UserProfile[]> {
@@ -162,7 +118,6 @@ export const userService = {
             name: true,
             email: true,
             role: true,
-            organizationId: true,
             telemetryEnabled: true,
           },
         },
@@ -185,7 +140,6 @@ export const userService = {
             name: true,
             email: true,
             role: true,
-            organizationId: true,
             telemetryEnabled: true,
           },
         },
@@ -206,17 +160,10 @@ export const userService = {
     });
   },
 
-  async updateUserRole(_userId: string, organizationId: string, role: DeprecatedRole) {
+  async updateUserRole(_userId: string, role: DeprecatedRole) {
     return await prisma.user.update({
       where: { id: _userId },
-      data: { role, organizationId },
-    });
-  },
-
-  async setUserOrganizationAndRole(userId: string, organizationId: string, role: DeprecatedRole) {
-    return await prisma.user.update({
-      where: { id: userId },
-      data: { organizationId, role },
+      data: { role },
     });
   },
 
@@ -233,77 +180,73 @@ export const userService = {
     return nonAnonymousUserCount === 1;
   },
 
-  async grantSystemAdminAccess(userId: string, organizationId: string): Promise<void> {
+  async grantSystemAdminAccess(userId: string): Promise<void> {
     try {
-      // First, ensure the user has the organizationId set and role set to ADMIN
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          organizationId,
-          role: DeprecatedRole.ADMIN, // Set legacy role field to ADMIN for first user
-        },
-      });
+      // // First, ensure the user has the organizationId set and role set to ADMIN
+      // await prisma.user.update({
+      //   where: { id: userId },
+      //   data: {
+      //     role: DeprecatedRole.ADMIN, // Set legacy role field to ADMIN for first user
+      //   },
+      // });
 
-      // Create a System Admin role if it doesn't exist
-      let systemAdminRole = await prisma.role.findFirst({
+      // // Create a System Admin role if it doesn't exist
+      // let systemAdminRole = await prisma.role.findFirst({
+      //   where: {
+      //     name: 'System Admin',
+      //   },
+      // });
+
+      // if (!systemAdminRole) {
+      //   systemAdminRole = await prisma.role.create({
+      //     data: {
+      //       name: 'System Admin',
+      //       description: 'Full system administrator with all privileges across all organizations',
+      //     },
+      //   });
+      // }
+
+      // // Assign the role to the user
+      // await prisma.userRole.upsert({
+      //   where: {
+      //     userId_roleId: {
+      //       userId,
+      //       roleId: systemAdminRole.id,
+      //     },
+      //   },
+      //   update: {},
+      //   create: {
+      //     userId,
+      //     roleId: systemAdminRole.id,
+      //   },
+      // });
+
+      // Create the UserRole Join
+
+      const systemAdminRole = await prisma.role.findFirst({
         where: {
-          organizationId,
-          name: 'System Admin',
+          name: 'Admin',
         },
       });
 
       if (!systemAdminRole) {
-        systemAdminRole = await prisma.role.create({
-          data: {
-            name: 'System Admin',
-            description: 'Full system administrator with all privileges across all organizations',
-            organizationId,
-          },
-        });
+        throw new Error('System Admin role not found');
       }
 
-      // Assign the role to the user
-      await prisma.userRole.upsert({
-        where: {
-          userId_roleId: {
-            userId,
-            roleId: systemAdminRole.id,
-          },
-        },
-        update: {},
-        create: {
+      await prisma.userRole.create({
+        data: {
           userId,
           roleId: systemAdminRole.id,
         },
       });
 
-      // Grant full permissions to the role using centralized permission definitions
-      const fullPermissions = SYSTEM_ADMIN_PERMISSIONS;
-
-      // Fetch existing permissions for the role once to avoid N+1 query problem
-      const existingPermissions = await prisma.permission.findMany({
-        where: { roleId: systemAdminRole.id },
-        select: { resource: true, action: true },
+      // Set the deprecated role
+      await prisma.user.update({
+        where: { id: userId },
+        data: { role: DeprecatedRole.ADMIN },
       });
 
-      const existingPermissionSet = new Set(existingPermissions.map((p) => `${p.resource}:${p.action}`));
-
-      for (const permission of fullPermissions) {
-        // Check if permission already exists in memory
-        const permissionKey = `${permission.resource}:${permission.action}`;
-
-        if (!existingPermissionSet.has(permissionKey)) {
-          await prisma.permission.create({
-            data: {
-              roleId: systemAdminRole.id,
-              resource: permission.resource,
-              action: permission.action,
-            },
-          });
-        }
-      }
-
-      console.log(`✅ Granted system admin access to user ${userId} in organization ${organizationId}`);
+      console.log(`✅ Granted system admin access to user ${userId}`);
     } catch (error) {
       console.error(`❌ Failed to grant system admin access to user ${userId}:`, error);
       throw new Error(

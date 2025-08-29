@@ -1,22 +1,40 @@
 import React from 'react';
-import { useDataSourcesStore } from '~/lib/stores/dataSources';
-import type { SelectOption } from '~/components/ui/Select';
+import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
+import type { SelectOption as BaseSelectOption } from '~/components/ui/Select';
 import { BaseSelect } from '~/components/ui/Select';
 import { components } from 'react-select';
 import IcDatabase from '~/icons/ic_database.svg';
 
+interface SelectOption extends BaseSelectOption {
+  environmentName?: string;
+}
+
 interface DataSourcePickerProps {
   onAddNew?: () => void;
   disabled?: boolean;
+  placement?: 'top' | 'bottom';
+  onDataSourceChange?: (
+    dataSourceId: string,
+    environmentId: string,
+    dataSourceName: string,
+    environmentName: string,
+  ) => void;
 }
 
-export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, disabled }) => {
-  const { dataSources, selectedDataSourceId, setSelectedDataSourceId } = useDataSourcesStore();
+export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({
+  onAddNew,
+  disabled,
+  onDataSourceChange,
+  placement = 'bottom',
+}) => {
+  const { environmentDataSources, selectedEnvironmentDataSource, setSelectedEnvironmentDataSource } =
+    useEnvironmentDataSourcesStore();
 
   const options: SelectOption[] = [
-    ...dataSources.map((ds) => ({
-      value: ds.id,
-      label: ds.name,
+    ...environmentDataSources.map((eds) => ({
+      value: `${eds.dataSourceId}:${eds.environmentId}`,
+      label: eds.dataSource.name,
+      environmentName: eds.environment.name,
     })),
     {
       value: 'add-new',
@@ -25,12 +43,79 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
     },
   ];
 
+  const handleDataSourceChange = async (option: SelectOption | null) => {
+    if (option?.value === 'add-new') {
+      onAddNew?.();
+      return;
+    }
+
+    if (!option?.value) {
+      setSelectedEnvironmentDataSource(null, null);
+      return;
+    }
+
+    const [dataSourceId, environmentId] = option.value.split(':');
+    const dataSource = environmentDataSources.find(
+      (eds) => eds.dataSourceId === dataSourceId && eds.environmentId === environmentId,
+    );
+
+    if (!dataSource) {
+      return;
+    }
+
+    // Check if this is actually a change
+    if (
+      selectedEnvironmentDataSource.dataSourceId === dataSourceId &&
+      selectedEnvironmentDataSource.environmentId === environmentId
+    ) {
+      return; // No change needed
+    }
+
+    setSelectedEnvironmentDataSource(dataSourceId, environmentId);
+
+    // Call the prop function to handle the change
+    onDataSourceChange?.(
+      dataSourceId,
+      environmentId,
+      dataSource.dataSource.name,
+      dataSource.environment.name || 'Unknown',
+    );
+  };
+
   const DropdownIndicator = (props: any) => {
     if (disabled) {
       return null;
     }
 
     return <components.DropdownIndicator {...props} />;
+  };
+
+  const Option = (props: any) => {
+    const { data } = props;
+    return (
+      <components.Option {...props}>
+        <div className="flex items-center justify-between w-full">
+          <span>{data.label}</span>
+          {data.environmentName && (
+            <span className="text-xs bg-gray-600 text-gray-200 px-2 py-1 rounded-full">{data.environmentName}</span>
+          )}
+        </div>
+      </components.Option>
+    );
+  };
+
+  const SingleValue = (props: any) => {
+    const { data } = props;
+    return (
+      <components.SingleValue {...props}>
+        <div className="flex items-center gap-2">
+          <span>{data.label}</span>
+          {data.environmentName && (
+            <span className="text-xs bg-gray-600 text-gray-200 px-2 py-1 rounded-full">{data.environmentName}</span>
+          )}
+        </div>
+      </components.SingleValue>
+    );
   };
 
   const customStyles = {
@@ -47,8 +132,9 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
       },
       paddingLeft: '4px',
       gap: '8px',
-      minWidth: 'auto',
-      maxWidth: '250px',
+      minWidth: '200px',
+      maxWidth: '400px',
+      width: 'auto',
     }),
     valueContainer: (base: any) => ({
       ...base,
@@ -63,7 +149,7 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
     }),
     menu: (base: any) => ({
       ...base,
-      minWidth: '200px',
+      minWidth: '250px',
       borderRadius: '1rem',
       backgroundColor: 'var(--color-depth-2)',
       boxShadow: '0 4px 6px 2px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
@@ -102,27 +188,25 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({ onAddNew, di
     }),
   };
 
+  // Find the currently selected option based on dataSourceId and environmentId
+  const selectedValue =
+    selectedEnvironmentDataSource.dataSourceId && selectedEnvironmentDataSource.environmentId
+      ? `${selectedEnvironmentDataSource.dataSourceId}:${selectedEnvironmentDataSource.environmentId}`
+      : null;
+
   return (
     <div className="flex items-center gap-2">
       <BaseSelect
-        value={options.find((option) => option.value === selectedDataSourceId)}
-        onChange={(option) => {
-          if (option?.value === 'add-new') {
-            onAddNew?.();
-            return;
-          }
-
-          setSelectedDataSourceId(option?.value || null);
-        }}
+        value={options.find((option) => option.value === selectedValue)}
+        onChange={handleDataSourceChange}
         options={options}
-        width="auto"
-        minWidth="auto"
         isSearchable={false}
         controlIcon={<IcDatabase className="text-xl" />}
         isDisabled={disabled}
-        components={{ DropdownIndicator }}
+        components={{ DropdownIndicator, Option, SingleValue }}
         styles={customStyles}
-        menuPlacement="bottom"
+        menuPlacement={placement}
+        dataTestId={'data-source-picker-select'}
       />
     </div>
   );

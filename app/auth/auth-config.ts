@@ -3,7 +3,7 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from '~/lib/prisma';
 import { env } from '~/env';
 import { createAuthMiddleware } from 'better-auth/plugins';
-import { UserManagementPluginManager } from '~/lib/plugins/user-management/user-management-plugin-manager';
+import { userService } from '~/lib/services/userService';
 
 const { BASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, LICENSE_KEY } = env.server;
 
@@ -62,15 +62,6 @@ export const auth = betterAuth({
         if (!newSession?.user?.email) {
           throw new Error('Unable to complete Google OAuth signup: Missing user email');
         }
-
-        const managementPlugin = await UserManagementPluginManager.getPlugin();
-
-        try {
-          await managementPlugin.createOrganizationFromEmail(newSession.user.email, newSession.user.id);
-        } catch (error) {
-          console.error('Organization setup failed:', error);
-          throw new Error('Unable to complete signup: Failed to setup organization');
-        }
       }
 
       // Handle email/password signups (only for free licenses or fallback)
@@ -80,16 +71,56 @@ export const auth = betterAuth({
         if (!newSession?.user?.email) {
           throw new Error('Unable to complete email signup: Missing user email');
         }
-
-        const managementPlugin = await UserManagementPluginManager.getPlugin();
-
-        try {
-          await managementPlugin.createOrganizationFromEmail(newSession.user.email, newSession.user.id);
-        } catch (error) {
-          console.error('Organization setup failed:', error);
-          throw new Error('Unable to complete signup: Failed to setup organization');
-        }
       }
+
+      const newSession = ctx.context.newSession;
+      const email = newSession?.user?.email as string | undefined;
+
+      if (!email) {
+        return;
+      }
+
+      const createdUser = await prisma.user.findUnique({ where: { email } });
+
+      if (!createdUser) {
+        return;
+      }
+
+      // Skip anonymous users — we only want to grant system admin to the first
+      // non-anonymous user.
+      if (createdUser.isAnonymous) {
+        return;
+      }
+
+      // Check and potentially grant first-user system admin access
+
+      // Use a transaction to serialize the check; attempt an advisory lock but
+      // don't fail the whole flow if the DB doesn't support it or permissions
+      // prevent it. We also treat `isAnonymous = null` as a non-anonymous user
+      // (OAuth users), matching `userService.isFirstPremiumUser` behavior.
+      await prisma.$transaction(async (tx) => {
+        try {
+          // Arbitrary 64-bit integer key. Keep constant across deployments.
+          // Using pg_advisory_xact_lock ensures the lock is held for the duration
+          // of the current transaction only.
+          await tx.$executeRaw`select pg_advisory_xact_lock(${BigInt(424242424242)})`;
+        } catch {
+          // Advisory locks aren't supported or allowed in some DB setups;
+          // continue without the lock so the signup flow doesn't break.
+        }
+
+        const nonAnonymousCount = await tx.user.count({
+          where: {
+            OR: [{ isAnonymous: false }, { isAnonymous: null }],
+          },
+        });
+
+        // If there's exactly one non-anonymous user after this signup, it's the
+        // newly created user — grant system admin access.
+        if (nonAnonymousCount === 1) {
+          await userService.grantSystemAdminAccess(createdUser.id);
+        }
+      });
     }),
   },
 });

@@ -1,7 +1,7 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
-import { type DataSource } from './datasourceService';
+import { DataAccessor } from 'shared/src/data-access/dataAccessor';
+import { type DataSource } from './dataSourceService';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 
 import { logger } from '~/utils/logger';
@@ -40,7 +40,7 @@ export async function generateSchemaBasedSuggestions(dataSource: DataSource): Pr
       return getRandomSuggestions(cachedSuggestions, 3);
     }
 
-    const accessor = await DataSourcePluginManager.getAccessor(dataSource.connectionString);
+    const accessor = DataAccessor.getAccessor(dataSource.connectionString);
 
     await accessor.initialize(dataSource.connectionString);
 

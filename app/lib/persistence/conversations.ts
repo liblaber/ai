@@ -33,12 +33,15 @@ type ConversationResponse = {
   createdAt: number;
   updatedAt: number;
   dataSourceId: string;
+  environmentId: string;
 };
 
 export type SimpleConversationResponse = Omit<ConversationResponse, 'messages'>;
 
 export type UpdateConversationRequest = {
   description?: string;
+  environmentId?: string;
+  dataSourceId?: string;
 };
 
 type UIConversation = Omit<ConversationResponse, 'messages'> & {
@@ -87,13 +90,18 @@ export async function getConversation(id: string): Promise<UIConversation> {
   };
 }
 
-export async function createConversation(dataSourceId: string, messages?: MessageRequest[]): Promise<string> {
+export async function createConversation(
+  dataSourceId: string,
+  environmentId: string,
+  messages?: MessageRequest[],
+): Promise<string> {
   const response = await fetch(CONVERSATIONS_API, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      environmentId, // This should be set based on your application logic
       dataSourceId,
       messages,
     }),
@@ -166,7 +174,11 @@ export async function forkConversation(conversationId: string, messageId: string
     snapshot: undefined,
   }));
 
-  const forkedConversationId = await createConversation(conversation.dataSourceId, messages);
+  const forkedConversationId = await createConversation(
+    conversation.dataSourceId,
+    conversation.environmentId,
+    messages,
+  );
 
   await trackTelemetryEvent({
     eventType: TelemetryEventType.USER_CHAT_FORK,

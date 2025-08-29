@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createEnvironment, getEnvironments } from '~/lib/services/environmentService';
-import { organizationService } from '~/lib/services/organizationService';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
+
+export type CreateEnvironmentResponse =
+  | {
+      success: true;
+      environment?: {
+        id: string;
+        name: string;
+        description?: string;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }
+  | {
+      success: false;
+      error: string;
+    };
 
 export async function GET(request: NextRequest) {
   const { userAbility } = await requireUserAbility(request);
@@ -17,7 +32,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { userId, userAbility } = await requireUserAbility(request);
+  const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.create, PermissionResource.Environment)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
@@ -28,14 +43,8 @@ export async function POST(request: NextRequest) {
     description?: string;
   };
 
-  const organization = await organizationService.getOrganizationByUser(userId);
-
-  if (!organization) {
-    return NextResponse.json({ success: false, error: 'Organization not found' }, { status: 404 });
-  }
-
   try {
-    const environment = await createEnvironment(body.name, body.description, organization.id);
+    const environment = await createEnvironment(body.name, body.description);
 
     return NextResponse.json({ success: true, environment });
   } catch (error) {

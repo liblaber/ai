@@ -1,5 +1,5 @@
 import { prisma } from '~/lib/prisma';
-import { RoleScope } from '@prisma/client';
+import { RoleScope, Prisma, PrismaClient } from '@prisma/client';
 import { type Role, PermissionAction, PermissionResource } from '@prisma/client';
 import { permissionLevels, type PermissionLevel } from '~/lib/services/permissionService';
 
@@ -42,6 +42,36 @@ export async function getRoles(): Promise<Role[]> {
   }));
 }
 
+export async function createRole(
+  name: string,
+  description: string | undefined = undefined,
+  scope: RoleScope = RoleScope.GENERAL,
+  resourceId?: string,
+): Promise<Role> {
+  return prisma.role.create({
+    data: {
+      name,
+      description: description || null,
+      scope,
+      resourceId,
+    },
+  });
+}
+
+export async function updateRole(id: string, name: string, description?: string): Promise<Role> {
+  return prisma.role.update({
+    where: { id },
+    data: {
+      name,
+      description: description || null,
+    },
+  });
+}
+
+export async function deleteRole(id: string) {
+  return prisma.role.delete({ where: { id } });
+}
+
 export async function getResourceRoleByUser(
   scope: ResourceRoleScope,
   resourceId: string,
@@ -64,14 +94,14 @@ export async function findOrCreateResourceRole(
   scope: ResourceRoleScope,
   resourceId: string,
   permissionLevel: PermissionLevel,
-  organizationId: string,
+  prismaClient: Prisma.TransactionClient | PrismaClient = prisma, // Optional to allow transaction
 ): Promise<Role | null> {
   const permissionDetails = permissionLevels[permissionLevel];
 
   const name = `${scope}_${permissionDetails.label}_${resourceId}`;
 
   const existingRole = await prisma.role.findFirst({
-    where: { scope, resourceId, name, organizationId },
+    where: { scope, resourceId, name },
   });
 
   if (existingRole) {
@@ -101,11 +131,10 @@ export async function findOrCreateResourceRole(
       break;
   }
 
-  return prisma.role.create({
+  return prismaClient.role.create({
     data: {
       name,
       description: `Grants ${permissionLevel} access to ${scope} ${resourceId}`,
-      organizationId,
       scope,
       resourceId,
       permissions: {
@@ -115,34 +144,57 @@ export async function findOrCreateResourceRole(
   });
 }
 
-export async function createRole(
-  name: string,
-  description: string | undefined = undefined,
-  organizationId: string,
-  scope: RoleScope = RoleScope.GENERAL,
-  resourceId?: string,
-): Promise<Role> {
-  return prisma.role.create({
+export async function addUserToResourceRole(
+  userId: string,
+  resourceId: string,
+  roleScope: ResourceRoleScope,
+  permissionLevel: PermissionLevel,
+  prismaClient: Prisma.TransactionClient | PrismaClient = prisma, // Optional to allow transaction
+): Promise<void> {
+  const role = await findOrCreateResourceRole(roleScope, resourceId, permissionLevel, prismaClient);
+
+  if (!role) {
+    throw new Error('Role not found and could not be created');
+  }
+
+  await prismaClient.userRole.create({
     data: {
-      name,
-      description: description || null,
-      organizationId,
-      scope,
-      resourceId,
+      userId,
+      roleId: role.id,
     },
   });
 }
 
-export async function updateRole(id: string, name: string, description?: string): Promise<Role> {
-  return prisma.role.update({
-    where: { id },
-    data: {
-      name,
-      description: description || null,
+export async function removeUserFromResourceRole(
+  userId: string,
+  resourceId: string,
+  roleScope: ResourceRoleScope,
+  prismaClient: Prisma.TransactionClient | PrismaClient = prisma, // Optional to allow transaction
+): Promise<void> {
+  const role = await getResourceRoleByUser(roleScope, resourceId, userId);
+
+  if (!role) {
+    throw new Error('Member does not have an association with this resource');
+  }
+
+  await prismaClient.userRole.delete({
+    where: {
+      userId_roleId: {
+        userId,
+        roleId: role.id,
+      },
     },
   });
 }
 
-export async function deleteRole(id: string) {
-  return prisma.role.delete({ where: { id } });
+export async function updateUserRoleForResource(
+  userId: string,
+  resourceId: string,
+  roleScope: ResourceRoleScope,
+  newPermissionLevel: PermissionLevel,
+): Promise<void> {
+  return prisma.$transaction(async (tx) => {
+    await removeUserFromResourceRole(userId, resourceId, roleScope, tx);
+    await addUserToResourceRole(userId, resourceId, roleScope, newPermissionLevel, tx);
+  });
 }
