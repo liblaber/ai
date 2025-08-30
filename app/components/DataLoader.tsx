@@ -83,6 +83,30 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         setUser(currentUser);
       }
 
+      // Check user permissions after user data is loaded
+      if (currentUser && session?.user) {
+        let hasPermissions = false;
+
+        try {
+          const permissionsResponse = await fetch('/api/me/permissions/check');
+
+          if (permissionsResponse.ok) {
+            const data = (await permissionsResponse.json()) as { hasPermissions: boolean };
+            hasPermissions = data.hasPermissions;
+          }
+        } catch (error) {
+          console.error('❌ Error checking permissions:', error);
+          // hasPermissions remains false, will trigger redirect
+        }
+
+        if (!hasPermissions) {
+          console.debug('❌ User has no permissions or check failed, redirecting to access-denied');
+          router.push('/access-denied');
+
+          return;
+        }
+      }
+
       // Handle environment data sources
       let currentEnvironmentDataSources = rootData.environmentDataSources || [];
 
@@ -91,7 +115,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         currentEnvironmentDataSources = await fetchEnvironmentDataSources();
         setEnvironmentDataSources(currentEnvironmentDataSources);
       } else if (rootData.environmentDataSources) {
-        setEnvironmentDataSources(rootData.environmentDataSources);
+        setEnvironmentDataSources(currentEnvironmentDataSources);
       }
 
       // Handle user onboarding flow with telemetry and data sources
