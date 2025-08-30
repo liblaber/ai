@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEnvironmentDataSource } from '~/lib/services/dataSourceService';
 import { generateSchemaBasedSuggestions } from '~/lib/services/suggestionService';
-import { SAMPLE_DATABASE_NAME } from '@liblab/data-access/accessors/sqlite';
 import { logger } from '~/utils/logger';
-import { DataSourcePropertyType } from '@prisma/client';
 import { requireUserId } from '~/auth/session';
 
 export async function POST(request: NextRequest) {
@@ -26,39 +24,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
     }
 
-    const dataSourceProperty = environmentDataSource.dataSourceProperties.find(
-      (dsp) => dsp.type === DataSourcePropertyType.CONNECTION_URL,
-    );
-
-    if (!dataSourceProperty) {
-      return NextResponse.json({ success: false, error: 'Data source property not found' }, { status: 404 });
-    }
-
-    const connectionUrl = dataSourceProperty.environmentVariable.value;
-
-    const isSampleDatabase = connectionUrl === `sqlite://${SAMPLE_DATABASE_NAME}`;
-
     let suggestions: string[];
 
-    if (isSampleDatabase) {
-      suggestions = suggestions = [
-        'create a revenue dashboard',
-        'make user management app',
-        'build a sales overview page',
-      ];
-    } else {
-      // Generate schema-based suggestions for non-sample databases
-      // Create a compatible dataSource object for the suggestion service
-      const dataSourceForSuggestions = {
-        id: environmentDataSource.dataSource.id,
-        name: environmentDataSource.dataSource.name,
-        connectionString: connectionUrl || '',
-        environmentId: environmentDataSource.environmentId,
-        environmentName: environmentDataSource.environment.name,
-        createdAt: environmentDataSource.dataSource.createdAt,
-        updatedAt: environmentDataSource.dataSource.updatedAt,
-      };
-      suggestions = await generateSchemaBasedSuggestions(dataSourceForSuggestions);
+    try {
+      // Generate schema-based suggestions using the new service signature
+      suggestions = await generateSchemaBasedSuggestions(dataSourceId, userId, environmentId);
+    } catch (error) {
+      // Fallback to sample suggestions if there's an error
+      logger.warn('Failed to generate schema-based suggestions, using fallback:', error);
+      suggestions = ['create a revenue dashboard', 'make user management app', 'build a sales overview page'];
     }
 
     return NextResponse.json({

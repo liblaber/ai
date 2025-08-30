@@ -1,38 +1,47 @@
 import { NextResponse } from 'next/server';
+import { DataAccessPluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 
 export async function GET() {
-  /**
-   * Placeholder for DataSourcePluginManager - you'll need to implement this
-   * const databaseTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
-   *
-   * For now, return a basic list of common database types
-   */
-  const databaseTypes = [
-    {
-      id: 'postgres',
-      name: 'PostgreSQL',
-      description: 'Advanced open source database',
-      connectionStringFormat: 'postgresql://username:password@host:port/database',
-    },
-    {
-      id: 'mysql',
-      name: 'MySQL',
-      description: 'Popular open source database',
-      connectionStringFormat: 'mysql://username:password@host:port/database',
-    },
-    {
-      id: 'sqlite',
-      name: 'SQLite',
-      description: 'Lightweight file-based database',
-      connectionStringFormat: 'sqlite://path/to/database.db',
-    },
-    {
-      id: 'sqlserver',
-      name: 'SQL Server',
-      description: 'Microsoft SQL Server database',
-      connectionStringFormat: 'sqlserver://username:password@host:port/database',
-    },
-  ];
+  try {
+    // Get available data source types from the plugin manager
+    const dataSourceTypes = DataAccessPluginManager.getAvailableDataSourceTypes();
 
-  return NextResponse.json(databaseTypes);
+    return NextResponse.json(dataSourceTypes);
+  } catch (error) {
+    console.error('Failed to get data source types:', error);
+
+    // Fallback to basic database types
+    const fallbackTypes = [
+      {
+        pluginId: 'postgres',
+        value: 'postgres',
+        label: 'PostgreSQL',
+        connectionStringFormat: 'postgresql://username:password@host:port/database',
+        available: true,
+      },
+      {
+        pluginId: 'mysql',
+        value: 'mysql',
+        label: 'MySQL',
+        connectionStringFormat: 'mysql://username:password@host:port/database',
+        available: true,
+      },
+      {
+        pluginId: 'sqlite',
+        value: 'sqlite',
+        label: 'SQLite',
+        connectionStringFormat: 'sqlite://path/to/database.db',
+        available: true,
+      },
+      {
+        pluginId: 'sqlserver',
+        value: 'sqlserver',
+        label: 'SQL Server',
+        connectionStringFormat: 'sqlserver://username:password@host:port/database',
+        available: true,
+      },
+    ];
+
+    return NextResponse.json(fallbackTypes);
+  }
 }

@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
     }
 
     const resultData = await executeQuery(databaseUrl, query, params);
-
     const dataBuffer = Buffer.from(JSON.stringify(resultData));
 
     const encryptedResponse = encryptData(env.server.ENCRYPTION_KEY, dataBuffer);
@@ -59,6 +58,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ encryptedData: encryptedResponse });
   } catch (error: any) {
     console.error('Failed to execute query', error);
+
+    // Handle validation errors
+    if (error?.message) {
+      const encryptedError = encryptData(
+        env.server.ENCRYPTION_KEY,
+        Buffer.from(
+          JSON.stringify({
+            success: false,
+            error: 'Query execution failed',
+            details: error.message,
+          }),
+        ),
+      );
+
+      return NextResponse.json(
+        { encryptedData: encryptedError },
+        {
+          status: 400,
+        },
+      );
+    }
+
     return NextResponse.json(
       { error: `Failed to execute query: ${error?.message}` },
       {

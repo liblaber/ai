@@ -4,24 +4,42 @@ import { PostgresAccessor } from '@liblab/data-access/accessors/postgres';
 import { MySQLAccessor } from '@liblab/data-access/accessors/mysql';
 import { SQLiteAccessor } from '@liblab/data-access/accessors/sqlite';
 import { MongoDBAccessor } from '@liblab/data-access/accessors/mongodb';
+import { GoogleDocsAccessor } from '@liblab/data-access/accessors/google-docs';
+import { GoogleSheetsAccessor } from '@liblab/data-access/accessors/google-sheets';
 import { type DataAccessPluginId, PluginType } from '~/lib/plugins/types';
 
-export class DataSourcePluginManager {
-  static isAvailable(type: string): boolean {
+export class DataAccessPluginManager {
+  static async isAvailable(type: string): Promise<boolean> {
     // Normalize type (e.g., 'postgresql' -> 'postgres')
     const normalized = type.replace('postgresql', 'postgres');
-    return PluginManager.getInstance().isPluginAvailable(PluginType.DATA_ACCESS, normalized as DataAccessPluginId);
+    const manager = PluginManager.getInstance();
+    await manager.initialize();
+
+    return manager.isPluginAvailable(PluginType.DATA_ACCESS, normalized as DataAccessPluginId);
   }
 
-  static getAccessor(databaseUrl: string): BaseAccessor {
-    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor, MongoDBAccessor];
+  static async getAccessor(databaseUrl: string): Promise<BaseAccessor> {
+    const allAccessors: BaseAccessorConstructor[] = [
+      PostgresAccessor,
+      MySQLAccessor,
+      SQLiteAccessor,
+      MongoDBAccessor,
+      GoogleDocsAccessor,
+      GoogleSheetsAccessor,
+    ];
 
     // Only allow accessors that are enabled by the plugin manager
-    const enabledAccessors = allAccessors.filter((acc: BaseAccessorConstructor) => {
+    const enabledAccessors = [];
+
+    for (const acc of allAccessors) {
       // Use static pluginId if present, otherwise infer from label
       const pluginId = acc.pluginId || new acc().label.toLowerCase().replace(/\s.*/, '');
-      return DataSourcePluginManager.isAvailable(pluginId);
-    });
+      const isAvailable = await DataAccessPluginManager.isAvailable(pluginId);
+
+      if (isAvailable) {
+        enabledAccessors.push(acc);
+      }
+    }
 
     const accessorClass = enabledAccessors.find((acc: BaseAccessorConstructor) => acc.isAccessor(databaseUrl));
 
@@ -33,7 +51,14 @@ export class DataSourcePluginManager {
   }
 
   static getAccessorPluginId(databaseUrl: string): DataAccessPluginId {
-    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor];
+    const allAccessors: BaseAccessorConstructor[] = [
+      PostgresAccessor,
+      MySQLAccessor,
+      SQLiteAccessor,
+      MongoDBAccessor,
+      GoogleDocsAccessor,
+      GoogleSheetsAccessor,
+    ];
 
     const accessorClass = allAccessors.find((acc: BaseAccessorConstructor) => acc.isAccessor(databaseUrl));
 
@@ -44,23 +69,70 @@ export class DataSourcePluginManager {
     return accessorClass.pluginId as DataAccessPluginId;
   }
 
-  static getAvailableDatabaseTypes(): {
-    value: string;
-    label: string;
-    connectionStringFormat: string;
-    available: boolean;
-  }[] {
-    const allAccessors: BaseAccessorConstructor[] = [PostgresAccessor, MySQLAccessor, SQLiteAccessor, MongoDBAccessor];
-    return allAccessors.map((acc) => {
-      const instance = new acc();
-      const pluginId = acc.pluginId || instance.label.toLowerCase().replace(/\s.*/, '');
+  static async getAvailableDatabaseTypes(): Promise<
+    {
+      value: string;
+      label: string;
+      connectionStringFormat: string;
+      available: boolean;
+    }[]
+  > {
+    const allAccessors: BaseAccessorConstructor[] = [
+      PostgresAccessor,
+      MySQLAccessor,
+      SQLiteAccessor,
+      MongoDBAccessor,
+      GoogleDocsAccessor,
+      GoogleSheetsAccessor,
+    ];
+    return Promise.all(
+      allAccessors.map(async (acc) => {
+        const instance = new acc();
+        const pluginId = acc.pluginId || instance.label.toLowerCase().replace(/\s.*/, '');
 
-      return {
-        value: pluginId,
-        label: instance.label,
-        connectionStringFormat: instance.connectionStringFormat,
-        available: DataSourcePluginManager.isAvailable(pluginId),
-      };
-    });
+        return {
+          value: pluginId,
+          label: instance.label,
+          connectionStringFormat: instance.connectionStringFormat,
+          available: await DataAccessPluginManager.isAvailable(pluginId),
+        };
+      }),
+    );
+  }
+
+  static async getAvailableDataSourceTypes(): Promise<
+    {
+      pluginId: string;
+      value: string;
+      label: string;
+      connectionStringFormat: string;
+      available: boolean;
+    }[]
+  > {
+    const allAccessors: BaseAccessorConstructor[] = [
+      PostgresAccessor,
+      MySQLAccessor,
+      SQLiteAccessor,
+      MongoDBAccessor,
+      // GoogleDocsAccessor, // Hidden for now - needs more work
+      GoogleSheetsAccessor,
+    ];
+    return Promise.all(
+      allAccessors.map(async (acc) => {
+        const instance = new acc();
+        const pluginId = acc.pluginId || instance.label.toLowerCase().replace(/\s.*/, '');
+
+        return {
+          pluginId,
+          value: pluginId,
+          label: instance.label,
+          connectionStringFormat: instance.connectionStringFormat,
+          available: await DataAccessPluginManager.isAvailable(pluginId),
+        };
+      }),
+    );
   }
 }
+
+// Keep the old name for backward compatibility
+export { DataAccessPluginManager as DataSourcePluginManager };

@@ -17,6 +17,7 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { useRouter } from 'next/navigation';
 import { PROJECT_SETUP_ANNOTATION } from '~/utils/constants';
 import { Ellipsis, GitFork, Undo2 } from 'lucide-react';
+import CallStackErrorBoundary from '~/components/debug/CallStackErrorBoundary';
 
 interface MessagesProps {
   id?: string;
@@ -126,63 +127,65 @@ export const Messages = forwardRef<HTMLDivElement, MessagesProps>(
               }
 
               return (
-                <div
-                  key={index}
-                  className={classNames('flex gap-4 p-6 w-full rounded-xl relative', {
-                    'bg-depth-3': isUserMessage || !isStreaming || (isStreaming && !isLast),
-                    'bg-gradient-to-b from-depth-3 from-30% to-transparent': isStreaming && isLast,
-                  })}
-                >
-                  {!isUserMessage && (
-                    <div className="absolute top-3 right-3 flex gap-2 flex-col lg:flex-row h-6 z-10">
-                      {messageId && snapshotId && (
-                        <WithTooltip tooltip="Revert to this message">
-                          <button
-                            onClick={() => handleRewind(snapshotId)}
-                            className={classNames(
-                              'text-2xl opacity-50 hover:opacity-100 text-depth-1 transition-colors',
-                            )}
-                          >
-                            <Undo2
-                              strokeWidth={3}
-                              className="bg-primary cursor-pointer text-depth-3 w-5 h-5 p-0.5 rounded-md"
-                            />
-                          </button>
-                        </WithTooltip>
-                      )}
+                <CallStackErrorBoundary key={`message-boundary-${index}`} componentName={`Message-${role}-${index}`}>
+                  <div
+                    key={index}
+                    className={classNames('flex gap-4 p-6 w-full rounded-xl relative', {
+                      'bg-depth-3': isUserMessage || !isStreaming || (isStreaming && !isLast),
+                      'bg-gradient-to-b from-depth-3 from-30% to-transparent': isStreaming && isLast,
+                    })}
+                  >
+                    {!isUserMessage && (
+                      <div className="absolute top-3 right-3 flex gap-2 flex-col lg:flex-row h-6 z-10">
+                        {messageId && snapshotId && (
+                          <WithTooltip tooltip="Revert to this message">
+                            <button
+                              onClick={() => handleRewind(snapshotId)}
+                              className={classNames(
+                                'text-2xl opacity-50 hover:opacity-100 text-depth-1 transition-colors',
+                              )}
+                            >
+                              <Undo2
+                                strokeWidth={3}
+                                className="bg-primary cursor-pointer text-depth-3 w-5 h-5 p-0.5 rounded-md"
+                              />
+                            </button>
+                          </WithTooltip>
+                        )}
 
-                      {shouldShowForkAction(message.annotations) && (
-                        <WithTooltip tooltip="Fork chat from this message">
-                          <button
-                            onClick={() => handleFork(messageId)}
-                            className={classNames(
-                              'text-2xl opacity-50 hover:opacity-100 text-depth-1 bg-transparent! transition-colors',
-                            )}
-                          >
-                            <GitFork
-                              strokeWidth={3}
-                              className="bg-primary cursor-pointer text-depth-3 w-5 h-5 p-0.5 rounded-md"
-                            />
-                          </button>
-                        </WithTooltip>
+                        {shouldShowForkAction(message.annotations) && (
+                          <WithTooltip tooltip="Fork chat from this message">
+                            <button
+                              onClick={() => handleFork(messageId)}
+                              className={classNames(
+                                'text-2xl opacity-50 hover:opacity-100 text-depth-1 bg-transparent! transition-colors',
+                              )}
+                            >
+                              <GitFork
+                                strokeWidth={3}
+                                className="bg-primary cursor-pointer text-depth-3 w-5 h-5 p-0.5 rounded-md"
+                              />
+                            </button>
+                          </WithTooltip>
+                        )}
+                      </div>
+                    )}
+                    {isUserMessage && <ProfilePicture user={user} />}
+                    <div className="grid grid-col-1 w-full relative">
+                      {isUserMessage ? (
+                        <UserMessage key={message.id} content={content} />
+                      ) : (
+                        <AssistantMessage
+                          key={message.id}
+                          content={content}
+                          annotations={message.annotations}
+                          onRetry={onRetry}
+                          error={isLast ? error : undefined}
+                        />
                       )}
                     </div>
-                  )}
-                  {isUserMessage && <ProfilePicture user={user} />}
-                  <div className="grid grid-col-1 w-full relative">
-                    {isUserMessage ? (
-                      <UserMessage key={message.id} content={content} />
-                    ) : (
-                      <AssistantMessage
-                        key={message.id}
-                        content={content}
-                        annotations={message.annotations}
-                        onRetry={onRetry}
-                        error={isLast ? error : undefined}
-                      />
-                    )}
                   </div>
-                </div>
+                </CallStackErrorBoundary>
               );
             })
           : null}

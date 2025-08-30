@@ -48,10 +48,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const formData = await request.formData();
   const name = formData.get('name') as string;
-  const connectionString = formData.get('connectionString') as string;
 
   try {
-    const updatedDataSource = await updateDataSource({ id, name, connectionString, userId });
+    const updatedDataSource = await updateDataSource(id, userId, { name });
 
     return NextResponse.json({ success: true, dataSource: updatedDataSource });
   } catch (error) {
