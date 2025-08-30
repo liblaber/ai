@@ -107,30 +107,15 @@ export class GoogleSheetsAccessor implements BaseAccessor {
     try {
       parsedQuery = JSON.parse(processedQuery);
     } catch (parseError) {
-      // Enhanced error logging for debugging JSON parsing issues
-      console.error('GoogleSheets JSON parsing failed:', {
-        error: parseError instanceof Error ? parseError.message : String(parseError),
-        queryType: typeof processedQuery,
-        queryLength: processedQuery.length,
-        query: processedQuery,
-        queryBytes: [...processedQuery].map((char) => char.charCodeAt(0)),
-        firstChar: processedQuery.charAt(0),
-        firstCharCode: processedQuery.charCodeAt(0),
-      });
-
       // Try to fix common JSON issues - double-encoded JSON strings
       let fixedQuery = processedQuery;
 
       if (processedQuery.startsWith('"{') && processedQuery.endsWith('}"')) {
-        console.log('GoogleSheets: Attempting to fix double-encoded JSON');
-
         try {
           // Remove outer quotes and unescape
           fixedQuery = processedQuery.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
           parsedQuery = JSON.parse(fixedQuery);
-          console.log('GoogleSheets: Successfully fixed double-encoded JSON:', parsedQuery);
-        } catch (secondParseError) {
-          console.error('GoogleSheets: Failed to fix double-encoded JSON:', secondParseError);
+        } catch {
           throw new GoogleWorkspaceError(
             `Invalid JSON format for Google Sheets query (double-encode fix failed): ${parseError instanceof Error ? parseError.message : String(parseError)}. ` +
               `Original query: ${processedQuery}. Fixed attempt: ${fixedQuery}`,
@@ -336,8 +321,7 @@ export class GoogleSheetsAccessor implements BaseAccessor {
             scope: undefined,
           },
         });
-      } catch (error) {
-        console.warn('Failed to initialize Google OAuth auth manager:', error);
+      } catch {
         // Continue without auth manager - fallback to existing behavior
       }
     }
@@ -834,7 +818,6 @@ See documentation for setup instructions.
             // Retry the operation with the new token
             return await this._executeOAuthWriteOperation(parsedQuery, spreadsheetId);
           } catch (refreshError) {
-            console.error('OAuth token refresh failed:', refreshError);
             throw new GoogleWorkspaceError(
               `OAuth token refresh failed: ${refreshError instanceof Error ? refreshError.message : 'Unknown error'}`,
             );
@@ -983,9 +966,6 @@ See documentation for setup instructions.
     switch (parsedQuery.operation) {
       case 'readSheet':
         // Automatically use pagination for readSheet to prevent memory issues
-        console.warn(
-          'GoogleSheets: readSheet operation is deprecated. Consider using readSheetPaginated for better performance.',
-        );
         return await this._readSheetDataPaginated(
           spreadsheetId,
           parsedQuery.parameters?.sheetName,
@@ -995,7 +975,17 @@ See documentation for setup instructions.
       case 'readSheetPaginated': {
         // Default to 50 for UI display, but allow AI to request any amount for analysis
         const requestedMaxRows = parsedQuery.parameters?.maxRows;
-        const safeMaxRows = requestedMaxRows || 50; // Default to 50 rows for UI display
+
+        // Enforce safety limits to prevent browser crashes
+        const MAX_SAFE_ROWS = 100; // Reduced maximum to prevent crashes
+        const DEFAULT_ROWS = 50; // Safe default for UI
+
+        let safeMaxRows = requestedMaxRows || DEFAULT_ROWS;
+
+        // Apply safety limits
+        if (safeMaxRows > MAX_SAFE_ROWS) {
+          safeMaxRows = MAX_SAFE_ROWS;
+        }
 
         return await this._readSheetDataPaginated(
           spreadsheetId,
@@ -1283,7 +1273,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
     const start = startRow ? Math.max(1, startRow) : 1;
     const end = Math.min(totalDataRows, start + safeMaxRows - 1);
 
-    // Add metadata for pagination (only on first row to avoid duplication)
+    // Add metadata for pagination
     const metadata = {
       totalRows: totalDataRows,
       currentStart: start,
@@ -1432,8 +1422,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
           },
         },
       ];
-    } catch (error) {
-      console.warn('Failed to generate schema from public sheet:', error);
+    } catch {
       return this.generateSampleSchema();
     }
   }
@@ -1484,14 +1473,13 @@ Last error: ${lastError?.message || 'Unknown error'}`;
     }
 
     // Prevent deep recursion stack overflow - reduce max depth for safety
-    if (depth > 20) {
-      console.warn('GoogleSheets: Maximum recursion depth reached, stopping parameter replacement');
+    if (depth > 10) {
+      // Reduced from 20 to 10 for extra safety
       return;
     }
 
-    // Check for circular references
+    // Check for circular references with detailed logging
     if (typeof obj === 'object' && visited.has(obj)) {
-      console.warn('GoogleSheets: Circular reference detected, skipping object');
       return;
     }
 
@@ -1527,9 +1515,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
           }
         }
       }
-    } catch (error) {
-      console.warn('GoogleSheets: Error in parameter replacement:', error);
-    }
+    } catch {}
   }
 
   /**
