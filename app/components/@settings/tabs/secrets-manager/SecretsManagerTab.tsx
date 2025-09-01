@@ -150,6 +150,9 @@ export default function SecretsManagerTab() {
             <div>
               <h2 className="text-lg font-medium text-primary">Secrets Manager</h2>
               <p className="text-sm text-secondary">Manage your environment variables and secrets</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Global secrets can be managed here. Data source secrets are managed in the Data Sources tab.
+              </p>
             </div>
             <button
               onClick={handleAdd}
@@ -322,6 +325,11 @@ export default function SecretsManagerTab() {
                       <div className="font-medium text-gray-900 dark:text-white">{environmentVariable.key}</div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
                         {environmentVariable.environment.name}
+                        {environmentVariable.type === 'DATA_SOURCE' && (
+                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            Data Source
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -337,6 +345,9 @@ export default function SecretsManagerTab() {
                 {selectedEnvironmentId === 'all'
                   ? 'No environment variables have been created yet.'
                   : 'No environment variables found in this environment.'}
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
+                Note: Data source secrets are managed in the Data Sources tab.
               </p>
               <button
                 onClick={() => setShowAddFormLocal(true)}

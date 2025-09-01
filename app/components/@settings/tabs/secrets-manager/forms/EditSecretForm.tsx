@@ -89,6 +89,14 @@ export default function EditSecretForm({
   };
 
   const handleDelete = async () => {
+    // Prevent deletion of DATA_SOURCE type environment variables
+    if (environmentVariable.type === 'DATA_SOURCE') {
+      toast.error('Cannot delete data source secrets from here. Please manage them in the Data Sources tab.');
+      setShowDeleteConfirm(false);
+
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -215,16 +223,24 @@ export default function EditSecretForm({
             id="type"
             value={type}
             onChange={(e) => setType(e.target.value as EnvironmentVariableType)}
+            disabled={environmentVariable.type === 'DATA_SOURCE'}
             className={classNames(
               'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
               'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
               'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
+              {
+                'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed':
+                  environmentVariable.type === 'DATA_SOURCE',
+              },
             )}
             required
           >
             <option value="GLOBAL">Global</option>
             <option value="DATA_SOURCE">Data Source</option>
           </select>
+          {environmentVariable.type === 'DATA_SOURCE' && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">Type cannot be changed for data source secrets</p>
+          )}
         </div>
       </div>
 
@@ -242,6 +258,15 @@ export default function EditSecretForm({
           )}
         />
       </div>
+
+      {/* Data Source Warning */}
+      {environmentVariable.type === 'DATA_SOURCE' && (
+        <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+          <p className="text-sm text-blue-700 dark:text-blue-300">
+            This is a data source secret. For better management, consider editing it in the Data Sources tab.
+          </p>
+        </div>
+      )}
 
       {/* Value Input */}
       <div className="space-y-2">
@@ -318,7 +343,23 @@ export default function EditSecretForm({
       </div>
 
       {/* Submit Button */}
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        {/* Delete Button - Only show for non-DATA_SOURCE types */}
+        {environmentVariable.type !== 'DATA_SOURCE' && (
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={isSubmitting}
+            className={classNames(
+              'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+              'text-red-600 hover:text-red-700',
+              'hover:bg-red-50 dark:hover:bg-red-950/20',
+            )}
+          >
+            Delete Secret
+          </button>
+        )}
+
         <button
           type="submit"
           disabled={isSubmitting || !key.trim()}
