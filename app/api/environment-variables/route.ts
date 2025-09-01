@@ -5,8 +5,16 @@ import {
   getEnvironmentVariablesWithEnvironmentDetails,
 } from '~/lib/services/environmentVariablesService';
 import { logger } from '~/utils/logger';
+import { type EnvironmentVariableType, PermissionAction, PermissionResource } from '@prisma/client';
+import { z } from 'zod';
 
-import { PermissionAction, PermissionResource } from '@prisma/client';
+const postBodySchema = z.object({
+  key: z.string().min(1),
+  value: z.string().min(1),
+  type: z.enum(['GLOBAL', 'DATA_SOURCE']),
+  environmentId: z.string().min(1),
+  description: z.string().optional(),
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,7 +42,7 @@ export async function GET(request: NextRequest) {
       environmentVariables,
     });
   } catch (error) {
-    console.error('Failed to fetch environment variables:', error);
+    logger.error('Failed to fetch environment variables:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch environment variables' }, { status: 500 });
   }
 }
@@ -47,13 +55,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const body = (await request.json()) as {
-      key: string;
-      value: string;
-      type: string;
-      environmentId: string;
-      description?: string;
-    };
+    const body = postBodySchema.parse(await request.json());
 
     const { key, value, type, environmentId, description } = body;
 
@@ -89,7 +91,7 @@ export async function POST(request: NextRequest) {
     const environmentVariable = await createEnvironmentVariable(
       key,
       value,
-      type as any, // Type will be validated by the service
+      type as EnvironmentVariableType,
       environmentId,
       userId,
       description,

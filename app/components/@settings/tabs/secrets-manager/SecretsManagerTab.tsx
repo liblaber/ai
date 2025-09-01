@@ -11,6 +11,7 @@ import { settingsPanelStore, useSettingsStore } from '~/lib/stores/settings';
 import { useStore } from '@nanostores/react';
 import type { EnvironmentWithRelations } from '~/lib/services/environmentService';
 import { BaseSelect } from '~/components/ui/Select';
+import { logger } from '~/utils/logger';
 
 interface EnvironmentVariablesResponse {
   success: boolean;
@@ -84,7 +85,7 @@ export default function SecretsManagerTab() {
           }
         }
       } catch (error) {
-        console.error('Failed to load environments:', error);
+        logger.error('Failed to load environments:', error);
         toast.error('Failed to load environments');
       } finally {
         setIsLoadingEnvironments(false);
@@ -101,8 +102,6 @@ export default function SecretsManagerTab() {
     }
 
     const loadEnvironmentVariables = async () => {
-      console.log('loading environment variables');
-
       try {
         setLoading(true);
 
@@ -116,7 +115,7 @@ export default function SecretsManagerTab() {
 
         // Reset show values map when environment variables change
       } catch (error) {
-        console.error('Failed to load environment variables:', error);
+        logger.error('Failed to load environment variables:', error);
         toast.error('Failed to load environment variables');
       } finally {
         setLoading(false);
@@ -230,7 +229,7 @@ export default function SecretsManagerTab() {
                     setEnvironmentVariables(typedData.environmentVariables);
                   }
                 })
-                .catch((error) => console.error('Failed to reload environment variables after add:', error));
+                .catch((error) => logger.error('Failed to reload environment variables after add:', error));
 
               handleBack();
             }}
@@ -280,7 +279,7 @@ export default function SecretsManagerTab() {
                     setEnvironmentVariables(typedData.environmentVariables);
                   }
                 })
-                .catch((error) => console.error('Failed to reload environment variables after edit:', error));
+                .catch((error) => logger.error('Failed to reload environment variables after edit:', error));
 
               setShowEditForm(false);
               setSelectedEnvironmentVariable(null);
@@ -297,7 +296,7 @@ export default function SecretsManagerTab() {
                     setEnvironmentVariables(typedData.environmentVariables);
                   }
                 })
-                .catch((error) => console.error('Failed to reload environment variables after delete:', error));
+                .catch((error) => logger.error('Failed to reload environment variables after delete:', error));
 
               setShowEditForm(false);
               setSelectedEnvironmentVariable(null);
