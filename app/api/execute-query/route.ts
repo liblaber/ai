@@ -2,6 +2,9 @@ import { decryptData, encryptData } from '@liblab/encryption/encryption';
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '~/lib/database';
 import { env } from '~/env';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('execute-query');
 
 interface EncryptedRequestBody {
   encryptedData: string;
@@ -58,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ encryptedData: encryptedResponse });
   } catch (error: any) {
-    console.error('Failed to execute query', error);
+    logger.error('Failed to execute query', error);
     return NextResponse.json(
       { error: `Failed to execute query: ${error?.message}` },
       {

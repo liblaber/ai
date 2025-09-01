@@ -147,7 +147,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting website:', error);
+    logger.error('Error deleting website:', error);
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to delete website';
 

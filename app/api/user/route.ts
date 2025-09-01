@@ -2,6 +2,9 @@ import { PermissionAction, PermissionResource } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
 import { userService } from '~/lib/services/userService';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('user-api');
 
 type UpdateRoleBody = {
   userId: string;
@@ -20,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, users }, { status: 200 });
   } catch (error) {
-    console.error('Failed to fetch users:', error);
+    logger.error('Failed to fetch users:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch users' }, { status: 500 });
   }
 }
@@ -38,7 +41,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true, user: targetUser });
   } catch (error) {
-    console.error('Failed to update user role:', error);
+    logger.error('Failed to update user role:', error);
     return NextResponse.json({ success: false, error: 'Failed to update user role' }, { status: 500 });
   }
 }

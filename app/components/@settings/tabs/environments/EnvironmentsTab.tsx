@@ -50,7 +50,7 @@ export default function EnvironmentsTab() {
           setEnvironments(data.environments);
         }
       } catch (error) {
-        console.error('Failed to load environments:', error);
+        logger.error('Failed to load environments:', error);
       }
     };
 
@@ -172,7 +172,7 @@ export default function EnvironmentsTab() {
                     setEnvironments(typedData.environments);
                   }
                 })
-                .catch((error) => console.error('Failed to reload environments after add:', error));
+                .catch((error) => logger.error('Failed to reload environments after add:', error));
               handleBack();
             }}
           />
@@ -215,7 +215,7 @@ export default function EnvironmentsTab() {
                     setEnvironments(typedData.environments);
                   }
                 })
-                .catch((error) => console.error('Failed to reload environments after edit:', error));
+                .catch((error) => logger.error('Failed to reload environments after edit:', error));
               handleBack();
             }}
             onDelete={() => handleDeleteClick(selectedEnvironment)}
