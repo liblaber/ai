@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('google-spreadsheet-picker');
 import { Table, Search, Loader, Calendar, ExternalLink, Sheet } from 'lucide-react';
 import { Input } from '~/components/ui/Input';
 import { Button } from '~/components/ui/Button';
@@ -110,7 +113,7 @@ export function GoogleSpreadsheetPicker({ accessToken, onSelect, onError }: Goog
                 })) || [];
             }
           } catch (error) {
-            console.warn(`Failed to load sheet info for ${file.name}:`, error);
+            logger.warn(`Failed to load sheet info for ${file.name}:`, error);
           }
 
           return {
@@ -128,7 +131,7 @@ export function GoogleSpreadsheetPicker({ accessToken, onSelect, onError }: Goog
 
       setSpreadsheets(formattedSheets);
     } catch (error) {
-      console.error('Failed to load spreadsheets:', error);
+      logger.error('Failed to load spreadsheets:', error);
       onError('Failed to load your Google Spreadsheets. Please try again.');
     } finally {
       setLoading(false);

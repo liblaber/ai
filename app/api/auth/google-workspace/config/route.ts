@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('google-workspace-config');
 
 export async function GET() {
   try {
@@ -19,7 +22,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('OAuth config check error:', error);
+    logger.error('OAuth config check error:', error);
     return NextResponse.json(
       {
         configured: false,

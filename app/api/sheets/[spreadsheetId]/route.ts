@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId } from '~/auth/session';
 import { GoogleSheetsAccessor } from '@liblab/data-access/accessors/google-sheets';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('sheets-spreadsheet');
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ spreadsheetId: string }> }) {
   try {
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       throw error;
     }
   } catch (error) {
-    console.error('Sheets read error:', error);
+    logger.error('Sheets read error:', error);
 
     return NextResponse.json(
       {
@@ -94,7 +97,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       throw error;
     }
   } catch (error) {
-    console.error('Sheets update error:', error);
+    logger.error('Sheets update error:', error);
 
     return NextResponse.json(
       {

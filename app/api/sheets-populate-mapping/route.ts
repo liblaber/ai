@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
 import { z } from 'zod';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('sheets-populate-mapping');
 
 const sheetsPopulateRequestSchema = z.object({
   spreadsheetId: z.string().min(1, 'Spreadsheet ID is required'),
@@ -78,7 +81,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Row mapping population failed:', error);
+    logger.error('Row mapping population failed:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('google-workspace-logout');
 
 export async function POST(_request: NextRequest) {
   try {
@@ -15,7 +18,7 @@ export async function POST(_request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Google Workspace logout error:', error);
+    logger.error('Google Workspace logout error:', error);
     return NextResponse.json({ success: false, error: 'Failed to logout' }, { status: 500 });
   }
 }

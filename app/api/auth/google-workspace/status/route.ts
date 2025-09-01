@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
 import { GoogleWorkspaceAuthManager } from '@liblab/data-access/accessors/google-workspace/auth-manager';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('google-workspace-status');
 
 export async function GET(request: NextRequest) {
   try {
@@ -61,7 +64,7 @@ export async function GET(request: NextRequest) {
 
           return response;
         } catch (refreshError) {
-          console.error('Google Workspace token refresh failed during status check:', refreshError);
+          logger.error('Google Workspace token refresh failed during status check:', refreshError);
 
           // Refresh failed, clear the cookie
           const response = NextResponse.json({
@@ -85,7 +88,7 @@ export async function GET(request: NextRequest) {
           : null,
       });
     } catch (decryptError) {
-      console.error('Failed to decrypt Google Workspace credentials:', decryptError);
+      logger.error('Failed to decrypt Google Workspace credentials:', decryptError);
 
       // Invalid/corrupted cookie, clear it
       const response = NextResponse.json({
@@ -98,7 +101,7 @@ export async function GET(request: NextRequest) {
       return response;
     }
   } catch (error) {
-    console.error('Google Workspace status check error:', error);
+    logger.error('Google Workspace status check error:', error);
     return NextResponse.json({ success: false, error: 'Failed to check authentication status' }, { status: 500 });
   }
 }

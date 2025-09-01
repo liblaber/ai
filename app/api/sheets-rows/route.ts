@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
 import { z } from 'zod';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('sheets-rows');
 
 const sheetsRowsRequestSchema = z.object({
   action: z.enum(['register', 'lookup', 'update', 'delete', 'list']),
@@ -152,7 +155,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
     }
   } catch (error) {
-    console.error('[RowMapping] Error:', error);
+    logger.error('[RowMapping] Error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

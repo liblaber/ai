@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('google-document-picker');
 import { FileText, Search, Loader, Calendar, ExternalLink } from 'lucide-react';
 import { Input } from '~/components/ui/Input';
 import { Button } from '~/components/ui/Button';
@@ -69,7 +72,7 @@ export function GoogleDocumentPicker({ accessToken, onSelect, onError }: GoogleD
 
       setDocuments(formattedDocs);
     } catch (error) {
-      console.error('Failed to load documents:', error);
+      logger.error('Failed to load documents:', error);
       onError('Failed to load your Google Documents. Please try again.');
     } finally {
       setLoading(false);

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
 import { GoogleWorkspaceAuthManager } from '@liblab/data-access/accessors/google-workspace/auth-manager';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('google-workspace-refresh');
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,7 +70,7 @@ export async function POST(request: NextRequest) {
 
       return response;
     } catch (error) {
-      console.error('Token refresh failed:', error);
+      logger.error('Token refresh failed:', error);
 
       // Clear invalid cookie
       const response = NextResponse.json(
@@ -83,7 +86,7 @@ export async function POST(request: NextRequest) {
       return response;
     }
   } catch (error) {
-    console.error('Google Workspace token refresh error:', error);
+    logger.error('Google Workspace token refresh error:', error);
     return NextResponse.json(
       {
         success: false,

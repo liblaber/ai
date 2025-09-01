@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { DataAccessPluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('data-sources-types');
 
 export async function GET() {
   try {
@@ -8,7 +11,7 @@ export async function GET() {
 
     return NextResponse.json(dataSourceTypes);
   } catch (error) {
-    console.error('Failed to get data source types:', error);
+    logger.error('Failed to get data source types:', error);
 
     // Fallback to basic database types
     const fallbackTypes = [

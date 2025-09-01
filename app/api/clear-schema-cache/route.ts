@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { clearSchemaCache } from '~/lib/schema';
 import { getDatabaseUrl } from '~/lib/services/dataSourceService';
 import { requireUserId } from '~/auth/session';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('clear-schema-cache');
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Schema cache cleared successfully' });
   } catch (error) {
-    console.error('Error clearing schema cache:', error);
+    logger.error('Error clearing schema cache:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
