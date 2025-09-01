@@ -53,15 +53,18 @@ function log(level: DebugLevel, scope: string | undefined, messages: any[]) {
   }
 
   const allMessages = messages.reduce((acc, current) => {
+    // Handle Error objects to preserve stack traces
+    const processedCurrent = current instanceof Error ? `${current.message}\n${current.stack}` : current;
+
     if (acc.endsWith('\n')) {
-      return acc + current;
+      return acc + processedCurrent;
     }
 
     if (!acc) {
-      return current;
+      return processedCurrent;
     }
 
-    return `${acc} ${current}`;
+    return `${acc} ${processedCurrent}`;
   }, '');
 
   const labelBackgroundColor = getColorForLevel(level);
