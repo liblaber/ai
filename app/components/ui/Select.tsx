@@ -26,11 +26,12 @@ const Option = ({ children, ...props }: OptionProps<SelectOption>) => {
 
 interface ControlWithIconProps extends ControlProps<any> {
   controlIcon?: React.ReactNode;
+  dataTestId?: string;
 }
 
-const Control = ({ children, controlIcon, ...props }: ControlWithIconProps) => {
+const Control = ({ children, controlIcon, dataTestId, ...props }: ControlWithIconProps) => {
   return (
-    <components.Control {...props}>
+    <components.Control {...props} data-testid={dataTestId}>
       {controlIcon && (
         <div
           style={{
@@ -215,13 +216,15 @@ export const BaseSelect = <T extends SelectOption = SelectOption>({
 
   const defaultComponents = {
     Option,
-    ...(controlIcon && { Control: (props: any) => <Control {...props} controlIcon={controlIcon} /> }),
+    ...((controlIcon || dataTestId) && {
+      Control: (props: any) => <Control {...props} controlIcon={controlIcon} dataTestId={dataTestId} />,
+    }),
     ...customComponents,
   };
 
   return (
     <ClientOnly>
-      <div style={{ width, minWidth }} data-testid={dataTestId}>
+      <div style={{ width, minWidth }}>
         <Select<T>
           value={value}
           onChange={onChange}
