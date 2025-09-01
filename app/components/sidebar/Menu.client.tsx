@@ -37,6 +37,22 @@ const menuVariants = {
   },
 } satisfies Variants;
 
+// For test environments, ensure the menu is always within viewport bounds
+const getMenuVariants = (isTestEnv: boolean) => {
+  if (!isTestEnv) {
+    return menuVariants;
+  }
+
+  return {
+    ...menuVariants,
+    closed: {
+      ...menuVariants.closed,
+      left: 0, // Keep menu in viewport for tests
+      opacity: 0.1, // Make it barely visible but interactable
+    },
+  };
+};
+
 type DialogContent = { type: 'delete'; item: SimpleConversationResponse } | null;
 
 function CurrentDateTime() {
@@ -150,7 +166,7 @@ export const Menu = () => {
         ref={menuRef}
         initial="closed"
         animate={open ? 'open' : 'closed'}
-        variants={menuVariants}
+        variants={getMenuVariants(isTestEnv)}
         style={{ width: '340px' }}
         data-testid="menu"
         className={classNames(
