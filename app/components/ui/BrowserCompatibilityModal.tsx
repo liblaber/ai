@@ -1,6 +1,5 @@
 import React from 'react';
 import { toast } from 'sonner';
-import { classNames } from '~/utils/classNames';
 
 interface BrowserCompatibilityModalProps {
   isOpen: boolean;
@@ -32,108 +31,64 @@ export const BrowserCompatibilityModal: React.FC<BrowserCompatibilityModalProps>
   };
 
   return (
-    <div
-      className={classNames('fixed inset-0 flex items-center justify-center')}
-      style={{
-        backdropFilter: 'blur(8px)',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        zIndex: 999999,
-      }}
-    >
-      <div
-        className={classNames('relative max-w-lg mx-4 p-10 rounded-2xl shadow-2xl', 'bg-depth-1 border')}
-        style={{
-          backgroundColor: 'rgb(var(--color-depth-1))',
-          borderColor: 'rgb(var(--color-accent-700))',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(59, 206, 255, 0.2)',
-        }}
-      >
-        {/* Warning Icon */}
-        <div className="flex justify-center mb-8">
-          <div
-            className="p-4 rounded-full relative"
-            style={{
-              backgroundColor: 'rgb(var(--color-accent-500))',
-              boxShadow: '0 0 30px rgba(59, 206, 255, 0.4)',
-            }}
-          >
-            <svg
-              className="w-12 h-12"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              style={{ color: 'rgb(var(--color-depth-1))' }}
-            >
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-        </div>
+    <div className="fixed inset-0 flex items-center justify-center z-50">
+      {/* Background overlay */}
+      <div className="fixed inset-0 bg-black opacity-20"></div>
 
+      {/* Modal */}
+      <div
+        className="rounded-2xl p-7 w-[500px] max-h-[90vh] mx-4 border border-depth-3 shadow-2xl relative z-10"
+        style={{ background: 'var(--Grey-Grey-800, #1E2125)' }}
+      >
         {/* Title */}
-        <h2 className="text-3xl font-bold text-center text-primary mb-6">Browser Not Supported</h2>
+        <h2 className="text-xl font-bold text-primary mb-4">Browser Not Supported</h2>
 
         {/* Description */}
-        <p className="text-center mb-10 text-lg leading-relaxed text-secondary">
+        <p className="text-sm text-secondary mb-5 leading-relaxed">
           This application needs advanced browser features to run code and build applications directly in your browser.
           Please switch to a supported browser for the full interactive experience.
         </p>
 
-        {/* Supported Browsers List */}
-        <div className="mb-10">
-          <h3 className="text-lg font-semibold mb-6 text-center text-primary">Supported Browsers:</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {['Chrome', 'Edge', 'Brave', 'Opera'].map((browser) => (
-              <div
-                key={browser}
-                className="flex items-center justify-center py-3 px-4 rounded-lg transition-all duration-200 relative group bg-depth-2 text-primary border border-accent-800"
-              >
-                <span
-                  className="w-3 h-3 rounded-full mr-3"
-                  style={{ backgroundColor: 'rgb(var(--color-accent-400))' }}
-                ></span>
-                <span className="font-medium relative">
-                  {browser}
-                  <span
-                    className="absolute bottom-0 left-0 h-0.5 bg-accent-400 transition-all duration-300 group-hover:w-full"
-                    style={{
-                      width: '0%',
-                      backgroundColor: 'rgb(var(--color-accent-400))',
-                    }}
-                  ></span>
-                </span>
-              </div>
-            ))}
-          </div>
+        {/* Header Row: Supported Browsers Label and Copy Button */}
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-medium text-primary whitespace-nowrap">Supported Browsers:</h3>
+
+          <button
+            onClick={handleCopyUrl}
+            className="flex items-center gap-0.5 px-3 py-2 text-primary rounded-lg text-sm font-medium transition-colors cursor-pointer hover:opacity-80"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M10.6654 8.60016V11.4002C10.6654 13.7335 9.73203 14.6668 7.3987 14.6668H4.5987C2.26536 14.6668 1.33203 13.7335 1.33203 11.4002V8.60016C1.33203 6.26683 2.26536 5.3335 4.5987 5.3335H7.3987C9.73203 5.3335 10.6654 6.26683 10.6654 8.60016Z"
+                fill="currentColor"
+              />
+              <path
+                d="M11.3998 1.3335H8.59984C6.67914 1.3335 5.71152 1.97043 5.42907 3.49277C5.32748 4.04033 5.79484 4.50016 6.35175 4.50016H7.39984C10.1998 4.50016 11.4998 5.80016 11.4998 8.60016V9.64826C11.4998 10.2052 11.9597 10.6725 12.5072 10.5709C14.0296 10.2885 14.6665 9.32086 14.6665 7.40016V4.60016C14.6665 2.26683 13.7332 1.3335 11.3998 1.3335Z"
+                fill="currentColor"
+              />
+            </svg>
+            Copy URL to Share
+          </button>
         </div>
 
-        {/* CTA Button */}
-        <button
-          onClick={handleCopyUrl}
-          className={classNames(
-            'w-full py-4 px-8 rounded-xl font-semibold text-lg transition-all duration-300',
-            'flex items-center justify-center gap-3',
-            'hover:scale-105 active:scale-95 relative overflow-hidden group',
-            'cursor-pointer',
-          )}
-          style={{
-            backgroundColor: 'rgb(var(--color-accent-500))',
-            color: 'rgb(var(--color-depth-1))',
-            boxShadow: '0 8px 32px rgba(59, 206, 255, 0.3), 0 0 0 1px rgba(59, 206, 255, 0.5)',
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 group-hover:animate-pulse"></div>
-          <svg className="w-5 h-5 relative z-10" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zM6 3a2 2 0 00-2 2v6a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span className="relative z-10">Copy URL to Share</span>
-        </button>
+        {/* Supported Browsers Grid */}
+        <div className="flex gap-2 justify-center">
+          {['Chrome', 'Edge', 'Brave', 'Opera'].map((browser) => (
+            <div
+              key={browser}
+              className="flex flex-col items-center justify-center rounded-lg gap-2"
+              style={{
+                width: '102px',
+                height: '90px',
+                border: '1px solid #FFFFFF33',
+                padding: '16px 12px 12px 12px',
+              }}
+            >
+              <img src={`/icons/${browser}.svg`} alt={`${browser} logo`} width={36} height={36} />
+              <span className="text-xs text-secondary text-center">{browser}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
