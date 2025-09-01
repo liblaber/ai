@@ -48,19 +48,7 @@ async function getRootData() {
       const userAbility = await getUserAbility(typedSession.user.id);
       environmentDataSources = await getEnvironmentDataSources(userAbility);
 
-      // Get environment variables for the user's environments
-      if (environmentDataSources.length > 0) {
-        // For now, get environment variables for the first environment
-        // In the future, this could be enhanced to get variables for all environments
-        const firstEnvironmentId = environmentDataSources[0].environmentId;
-
-        try {
-          environmentVariables = await getEnvironmentVariables(firstEnvironmentId);
-        } catch (error) {
-          console.error('Failed to fetch environment variables:', error);
-          environmentVariables = [];
-        }
-      }
+      environmentVariables = await getEnvironmentVariables();
     }
 
     // Initialize plugin manager

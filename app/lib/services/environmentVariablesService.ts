@@ -18,9 +18,8 @@ export async function getEnvironmentVariable(id: string): Promise<EnvironmentVar
   return envVar ? decryptEnvironmentVariable(envVar) : null;
 }
 
-export async function getEnvironmentVariables(environmentId: string): Promise<EnvironmentVariable[]> {
+export async function getEnvironmentVariables(): Promise<EnvironmentVariable[]> {
   const envVars = await prisma.environmentVariable.findMany({
-    where: { environmentId },
     include: {
       environment: true,
       createdBy: true,
