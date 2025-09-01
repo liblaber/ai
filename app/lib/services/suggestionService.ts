@@ -1,7 +1,7 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { DataAccessor } from 'shared/src/data-access/dataAccessor';
-import { type DataSource } from './datasourceService';
+import { type DataSource } from './dataSourceService';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 
 import { logger } from '~/utils/logger';

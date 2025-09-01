@@ -11,6 +11,7 @@ interface BaseIconButtonProps {
   title?: string;
   disabled?: boolean;
   onClick?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  dataTestId?: string;
 }
 
 type IconButtonWithoutChildrenProps = {
@@ -37,6 +38,7 @@ export const IconButton = forwardRef(
       title,
       onClick,
       children,
+      dataTestId,
     }: IconButtonProps,
     ref: ForwardedRef<HTMLButtonElement>,
   ) => {
@@ -52,6 +54,7 @@ export const IconButton = forwardRef(
         )}
         title={title}
         disabled={disabled}
+        data-testid={dataTestId}
         onClick={(event) => {
           if (disabled) {
             return;

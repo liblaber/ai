@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import useViewport from '~/lib/hooks';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
-import { useDataSourcesStore } from '~/lib/stores/dataSources';
+import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import {
   addDeploymentLog,
   addErrorLogs,
@@ -25,6 +25,7 @@ import { PublishProgressModal } from '~/components/publish/PublishProgressModal.
 import JSZip from 'jszip';
 import type { NetlifySiteInfo } from '~/types/netlify';
 import { AlertTriangle, Check, ChevronDown, CodeXml, Lock, MessageCircle, Rocket, Settings } from 'lucide-react';
+import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 
 interface ProgressData {
   step: number;
@@ -86,7 +87,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   const devMode = useStore(workbenchStore.devMode);
   const { showChat } = useStore(chatStore);
   const { website } = useStore(websiteStore);
-  const { dataSources, selectedDataSourceId } = useDataSourcesStore();
+  const { environmentDataSources, selectedEnvironmentDataSource } = useEnvironmentDataSourcesStore();
   const isSmallViewport = useViewport(1024);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -98,11 +99,15 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   const chatDescription = useStore(description);
   const [modalMode, setModalMode] = useState<'publish' | 'settings' | 'initializing'>('publish');
   const [hasNetlifyToken, setHasNetlifyToken] = useState(false);
+  const [isPublishingDisabled, setIsPublishingDisabled] = useState(false);
   const [deploymentTypesConfig, setDeploymentTypesConfig] = useState(DEPLOYMENT_TYPES);
 
   // we want to disable sqlite deployments since we do not support remote sqlite nor do we copy the source file yet
-  const currentDataSource = dataSources.find(({ id }) => id === selectedDataSourceId);
-  const isCurrentDataSourceSQLite = currentDataSource?.connectionString?.startsWith('sqlite://') || false;
+  const currentDataSource = environmentDataSources.find(
+    ({ environmentId, dataSourceId }) =>
+      environmentId === selectedEnvironmentDataSource.environmentId &&
+      dataSourceId === selectedEnvironmentDataSource.dataSourceId,
+  );
 
   useEffect(() => {
     async function checkDeploymentConfig() {
@@ -143,6 +148,16 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
     }
 
     checkDeploymentConfig();
+
+    async function checkPublishingCapability() {
+      if (!currentDataSource || !currentDataSource.dataSourceId || !currentDataSource.environmentId) {
+        setIsPublishingDisabled(true);
+      } else {
+        const url = await getDataSourceUrl(currentDataSource.dataSourceId, currentDataSource.environmentId);
+        setIsPublishingDisabled(url.startsWith('sqlite'));
+      }
+    }
+    checkPublishingCapability();
   }, []);
 
   useEffect(() => {
@@ -494,21 +509,19 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
         <button
           onClick={handlePublishClick}
           disabled={
-            isCurrentDataSourceSQLite || !deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled
+            isPublishingDisabled || !deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled
           }
           className={classNames(
             'w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2',
             {
               'opacity-50 cursor-not-allowed':
-                isCurrentDataSourceSQLite ||
-                !deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled,
+                isPublishingDisabled || !deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled,
               'hover:bg-gray-100 dark:hover:bg-gray-800':
-                !isCurrentDataSourceSQLite &&
-                !!deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled,
+                !isPublishingDisabled && !!deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled,
             },
           )}
           title={
-            isCurrentDataSourceSQLite
+            isPublishingDisabled
               ? 'SQLite database publishing is not supported'
               : !deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled
                 ? 'Selected deployment type is not configured'
@@ -535,26 +548,24 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
         <div className="relative" ref={dropdownRef}>
           <div className="flex border border-depth-3 rounded-md overflow-hidden mr-2 text-sm">
             <Button
-              active={!isCurrentDataSourceSQLite}
-              disabled={isCurrentDataSourceSQLite}
+              active={!isPublishingDisabled}
+              disabled={isPublishingDisabled}
               title={
-                isCurrentDataSourceSQLite
-                  ? 'SQLite database publishing is not supported'
-                  : 'Publish your site to the web'
+                isPublishingDisabled ? 'SQLite database publishing is not supported' : 'Publish your site to the web'
               }
-              onClick={() => !isCurrentDataSourceSQLite && setIsDropdownOpen(!isDropdownOpen)}
+              onClick={() => !isPublishingDisabled && setIsDropdownOpen(!isDropdownOpen)}
               className={classNames('px-4 flex items-center gap-2', {
-                'opacity-50 grayscale': isCurrentDataSourceSQLite,
+                'opacity-50 grayscale': isPublishingDisabled,
               })}
             >
-              {isCurrentDataSourceSQLite ? (
+              {isPublishingDisabled ? (
                 <Lock className="w-4 h-4" />
               ) : (
                 <span className="text-sm">
                   {deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.icon}
                 </span>
               )}
-              {selectedDeploymentType !== 'netlify' && !isCurrentDataSourceSQLite && (
+              {selectedDeploymentType !== 'netlify' && !isPublishingDisabled && (
                 <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
                   ({deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name})
                 </span>

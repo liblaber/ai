@@ -1,28 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDataSource } from '~/lib/services/datasourceService';
+import { getEnvironmentDataSource } from '~/lib/services/dataSourceService';
 import { generateSchemaBasedSuggestions } from '~/lib/services/suggestionService';
-import { requireUserId } from '~/auth/session';
 import { SAMPLE_DATABASE_NAME } from '@liblab/data-access/accessors/sqlite';
 import { logger } from '~/utils/logger';
+import { DataSourcePropertyType } from '@prisma/client';
+import { requireUserId } from '~/auth/session';
 
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireUserId(request);
-    const { dataSourceId } = await request.json<{ dataSourceId: string }>();
+    const { dataSourceId, environmentId } = await request.json<{ dataSourceId: string; environmentId: string }>();
 
     if (!dataSourceId) {
       return NextResponse.json({ success: false, error: 'Data source ID is required' }, { status: 400 });
     }
 
-    // Fetch the data source using the service
-    const dataSource = await getDataSource(dataSourceId, userId);
+    if (!environmentId) {
+      return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
+    }
 
-    if (!dataSource) {
+    // Fetch the environment data source using the service
+    const environmentDataSource = await getEnvironmentDataSource(dataSourceId, userId, environmentId);
+
+    if (!environmentDataSource) {
       return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
     }
 
-    // Check if it's the sample database
-    const isSampleDatabase = dataSource.connectionString === `sqlite://${SAMPLE_DATABASE_NAME}`;
+    const dataSourceProperty = environmentDataSource.dataSourceProperties.find(
+      (dsp) => dsp.type === DataSourcePropertyType.CONNECTION_URL,
+    );
+
+    if (!dataSourceProperty) {
+      return NextResponse.json({ success: false, error: 'Data source property not found' }, { status: 404 });
+    }
+
+    const connectionUrl = dataSourceProperty.environmentVariable.value;
+
+    const isSampleDatabase = connectionUrl === `sqlite://${SAMPLE_DATABASE_NAME}`;
 
     let suggestions: string[];
 
@@ -34,7 +48,17 @@ export async function POST(request: NextRequest) {
       ];
     } else {
       // Generate schema-based suggestions for non-sample databases
-      suggestions = await generateSchemaBasedSuggestions(dataSource);
+      // Create a compatible dataSource object for the suggestion service
+      const dataSourceForSuggestions = {
+        id: environmentDataSource.dataSource.id,
+        name: environmentDataSource.dataSource.name,
+        connectionString: connectionUrl || '',
+        environmentId: environmentDataSource.environmentId,
+        environmentName: environmentDataSource.environment.name,
+        createdAt: environmentDataSource.dataSource.createdAt,
+        updatedAt: environmentDataSource.dataSource.updatedAt,
+      };
+      suggestions = await generateSchemaBasedSuggestions(dataSourceForSuggestions);
     }
 
     return NextResponse.json({

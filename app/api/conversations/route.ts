@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
       dataSourceId: string;
       description?: string;
       messages?: Message[];
+      environmentId: string;
     };
 
     if (!body?.dataSourceId) {
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
 
       const conversation = await conversationService.createConversation(
         body.dataSourceId,
+        body.environmentId,
         userId,
         body.description,
         tx,

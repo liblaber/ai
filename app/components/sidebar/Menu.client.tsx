@@ -150,6 +150,7 @@ export const Menu = () => {
         animate={open ? 'open' : 'closed'}
         variants={menuVariants}
         style={{ width: '340px' }}
+        data-testid="menu"
         className={classNames(
           'flex selection-accent flex-col side-menu fixed top-0 h-full',
           'bg-white dark:bg-gray-950 border-r border-gray-100 dark:border-gray-800/50',
