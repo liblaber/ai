@@ -1,6 +1,8 @@
 import React from 'react';
 import { toast } from 'sonner';
 
+const SUPPORTED_BROWSERS = ['Chrome', 'Edge', 'Brave', 'Opera'] as const;
+
 interface BrowserCompatibilityModalProps {
   isOpen: boolean;
 }
@@ -36,10 +38,7 @@ export const BrowserCompatibilityModal: React.FC<BrowserCompatibilityModalProps>
       <div className="fixed inset-0 bg-black opacity-20"></div>
 
       {/* Modal */}
-      <div
-        className="rounded-2xl p-7 w-[500px] max-h-[90vh] mx-4 border border-depth-3 shadow-2xl relative z-10"
-        style={{ background: 'var(--Grey-Grey-800, #1E2125)' }}
-      >
+      <div className="rounded-2xl p-7 w-[500px] max-h-[90vh] mx-4 border border-depth-3 shadow-2xl relative z-10 bg-[var(--Grey-Grey-800,#1E2125)]">
         {/* Title */}
         <h2 className="text-xl font-bold text-primary mb-4">Browser Not Supported</h2>
 
@@ -73,16 +72,10 @@ export const BrowserCompatibilityModal: React.FC<BrowserCompatibilityModalProps>
 
         {/* Supported Browsers Grid */}
         <div className="flex gap-2 justify-center">
-          {['Chrome', 'Edge', 'Brave', 'Opera'].map((browser) => (
+          {SUPPORTED_BROWSERS.map((browser) => (
             <div
               key={browser}
-              className="flex flex-col items-center justify-center rounded-lg gap-2"
-              style={{
-                width: '102px',
-                height: '90px',
-                border: '1px solid #FFFFFF33',
-                padding: '16px 12px 12px 12px',
-              }}
+              className="flex flex-col items-center justify-center rounded-lg gap-2 w-[102px] h-[90px] border border-white/20 pt-4 px-3 pb-3"
             >
               <img src={`/icons/${browser}.svg`} alt={`${browser} logo`} width={36} height={36} />
               <span className="text-xs text-secondary text-center">{browser}</span>
