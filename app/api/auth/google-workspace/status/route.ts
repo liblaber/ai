@@ -22,8 +22,10 @@ export async function GET(request: NextRequest) {
       const credentials = authManager.decryptCredentials(authCookie.value);
 
       // Check if tokens are still valid (not expired)
-      const now = Date.now();
-      const isExpired = credentials.expiry_date <= now;
+      // Convert both dates to UTC for consistent comparison
+      const nowUtc = Date.now();
+      const expiryDateUtc = new Date(credentials.expiry_date).getTime();
+      const isExpired = expiryDateUtc <= nowUtc;
 
       if (isExpired && credentials.refresh_token) {
         // Try to refresh tokens

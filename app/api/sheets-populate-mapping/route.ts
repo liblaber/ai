@@ -1,25 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
+import { z } from 'zod';
+
+const sheetsPopulateRequestSchema = z.object({
+  spreadsheetId: z.string().min(1, 'Spreadsheet ID is required'),
+  data: z.array(z.unknown()).min(1, 'Data array must not be empty'),
+  startRow: z.number().int().positive().optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
     await requireUserAbility(request);
 
-    const body = (await request.json()) as {
-      spreadsheetId: string;
-      data: any[];
-      startRow?: number;
-    };
-
-    if (!body.spreadsheetId || !Array.isArray(body.data)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Missing spreadsheetId or data array',
-        },
-        { status: 400 },
-      );
-    }
+    const rawBody = await request.json();
+    const body = sheetsPopulateRequestSchema.parse(rawBody);
 
     const registrationPromises = body.data.map(async (rowData, index) => {
       const rowIndex = (body.startRow || 1) + index; // Default start row is 1 (after headers)
@@ -40,7 +34,13 @@ export async function POST(request: NextRequest) {
           }),
         });
 
-        const result = (await response.json()) as any;
+        interface SheetsRowsResponse {
+          success: boolean;
+          rowKey?: string;
+          error?: string;
+        }
+
+        const result = (await response.json()) as SheetsRowsResponse;
 
         if (result.success) {
           return {
@@ -79,6 +79,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Row mapping population failed:', error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request data',
+          details: error.errors,
+        },
+        { status: 400 },
+      );
+    }
 
     return NextResponse.json(
       {

@@ -22,6 +22,33 @@ interface GoogleSpreadsheetPickerProps {
   onError: (error: string) => void;
 }
 
+interface GoogleDriveFile {
+  id: string;
+  name: string;
+  createdTime: string;
+  modifiedTime: string;
+  webViewLink: string;
+  thumbnailLink?: string;
+  owners?: Array<{ displayName: string; emailAddress: string }>;
+}
+
+interface GoogleDriveResponse {
+  files?: GoogleDriveFile[];
+}
+
+interface GoogleSheetProperties {
+  title: string;
+  sheetId: number;
+}
+
+interface GoogleSheet {
+  properties: GoogleSheetProperties;
+}
+
+interface GoogleSheetsResponse {
+  sheets?: GoogleSheet[];
+}
+
 export function GoogleSpreadsheetPicker({ accessToken, onSelect, onError }: GoogleSpreadsheetPickerProps) {
   const [spreadsheets, setSpreadsheets] = useState<GoogleSpreadsheet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,11 +82,11 @@ export function GoogleSpreadsheetPicker({ accessToken, onSelect, onError }: Goog
         throw new Error(`Failed to load spreadsheets: ${response.statusText}`);
       }
 
-      const data = (await response.json()) as { files?: any[] };
+      const data = (await response.json()) as GoogleDriveResponse;
 
       // Get additional sheet info for each spreadsheet
       const formattedSheets: GoogleSpreadsheet[] = await Promise.all(
-        (data.files || []).map(async (file: any) => {
+        (data.files || []).map(async (file: GoogleDriveFile) => {
           let sheets: Array<{ title: string; sheetId: number }> = [];
 
           try {
@@ -75,9 +102,9 @@ export function GoogleSpreadsheetPicker({ accessToken, onSelect, onError }: Goog
             );
 
             if (sheetsResponse.ok) {
-              const sheetsData = (await sheetsResponse.json()) as { sheets?: any[] };
+              const sheetsData = (await sheetsResponse.json()) as GoogleSheetsResponse;
               sheets =
-                sheetsData.sheets?.map((sheet: any) => ({
+                sheetsData.sheets?.map((sheet: GoogleSheet) => ({
                   title: sheet.properties.title,
                   sheetId: sheet.properties.sheetId,
                 })) || [];

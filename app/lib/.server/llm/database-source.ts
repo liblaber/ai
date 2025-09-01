@@ -57,6 +57,9 @@ export interface Column {
 export interface Table {
   tableName: string;
   columns: Column[];
+  metadata?: {
+    actualSheetName?: string;
+  };
 }
 
 export type GenerateSqlQueriesOptions = {
@@ -155,8 +158,8 @@ export function formatDbSchemaForLLM(schema: Table[]): string {
     result += `Table: ${table.tableName}\n`;
 
     // Add actual sheet name for Google Sheets if available
-    if ((table as any).metadata?.actualSheetName) {
-      result += `Actual Sheet Name: ${(table as any).metadata.actualSheetName}\n`;
+    if (table.metadata?.actualSheetName) {
+      result += `Actual Sheet Name: ${table.metadata.actualSheetName}\n`;
     }
 
     result += 'Columns:\n';

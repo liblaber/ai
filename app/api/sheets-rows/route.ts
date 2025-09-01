@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { z } from 'zod';
 
-// Helper to generate a unique key for a row based on its data
+const sheetsRowsRequestSchema = z.object({
+  action: z.enum(['register', 'lookup', 'update', 'delete', 'list']),
+  data: z.unknown().optional(),
+  rowIndex: z.number().int().positive().optional(),
+  spreadsheetId: z.string().min(1).optional(),
+  rowKey: z.string().min(1).optional(),
+});
+
 function generateRowKey(data: any): string {
-  // Create a hash-like key from the data to identify unique rows
   const sortedKeys = Object.keys(data)
     .filter((k) => !['id', '_id'].includes(k))
     .sort();
@@ -14,61 +19,22 @@ function generateRowKey(data: any): string {
   return Buffer.from(values).toString('base64').substring(0, 16);
 }
 
-// Temporary file-based persistence for row mappings
-const MAPPINGS_DIR = path.join(process.cwd(), '.tmp', 'row-mappings');
+const userMappings = new Map<string, Map<string, any>>();
 
-// Ensure the mappings directory exists
-async function ensureMappingsDir() {
-  try {
-    await fs.mkdir(MAPPINGS_DIR, { recursive: true });
-  } catch {
-    // Directory might already exist, ignore error
+function loadMappings(userId: string): Map<string, any> {
+  if (!userMappings.has(userId)) {
+    userMappings.set(userId, new Map());
   }
-}
 
-// Load mappings from file
-async function loadMappings(userId: string): Promise<Map<string, any>> {
-  try {
-    await ensureMappingsDir();
-
-    const filePath = path.join(MAPPINGS_DIR, `${userId}.json`);
-    const data = await fs.readFile(filePath, 'utf-8');
-    const parsedData = JSON.parse(data);
-
-    return new Map(Object.entries(parsedData));
-  } catch {
-    // File doesn't exist or error reading, return empty map
-    return new Map();
-  }
-}
-
-// Save mappings to file
-async function saveMappings(userId: string, mappings: Map<string, any>): Promise<void> {
-  try {
-    await ensureMappingsDir();
-
-    const filePath = path.join(MAPPINGS_DIR, `${userId}.json`);
-    const data = Object.fromEntries(mappings);
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
-  } catch (error) {
-    console.error('Failed to save mappings:', error);
-  }
+  return userMappings.get(userId)!;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Authentication required and userId is used for persistent storage
     const { userId } = await requireUserAbility(request);
-    const body = (await request.json()) as {
-      action: 'register' | 'lookup' | 'update' | 'delete' | 'list';
-      data?: any;
-      rowIndex?: number;
-      spreadsheetId?: string;
-      rowKey?: string;
-    };
-
-    // Load persistent mappings for this user
-    const userMapping = await loadMappings(userId);
+    const rawBody = await request.json();
+    const body = sheetsRowsRequestSchema.parse(rawBody);
+    const userMapping = loadMappings(userId);
 
     switch (body.action) {
       case 'register': {
@@ -82,9 +48,6 @@ export async function POST(request: NextRequest) {
           data: body.data,
           spreadsheetId: body.spreadsheetId,
         });
-
-        // Save the updated mappings
-        await saveMappings(userId, userMapping);
 
         return NextResponse.json({
           success: true,
@@ -135,9 +98,6 @@ export async function POST(request: NextRequest) {
         // Update the stored data
         mapping.data = { ...mapping.data, ...body.data };
 
-        // Save the updated mappings
-        await saveMappings(userId, userMapping);
-
         return NextResponse.json({
           success: true,
           mapping: {
@@ -162,9 +122,6 @@ export async function POST(request: NextRequest) {
 
         const deletedMapping = { ...mapping };
         userMapping.delete(body.rowKey);
-
-        // Save the updated mappings
-        await saveMappings(userId, userMapping);
 
         return NextResponse.json({
           success: true,
@@ -196,6 +153,18 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('[RowMapping] Error:', error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request data',
+          details: error.errors,
+        },
+        { status: 400 },
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Row mapping operation failed' },
       { status: 500 },
