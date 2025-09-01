@@ -45,7 +45,11 @@ export type WorkbenchViewType = 'code' | 'diff' | 'preview';
 export class WorkbenchStore {
   artifacts: Artifacts = map({});
   devMode: WritableAtom<boolean> = atom(false);
-  currentView: WritableAtom<WorkbenchViewType> = atom('preview');
+  currentView: WritableAtom<WorkbenchViewType> = atom(
+    typeof window !== 'undefined' && window.navigator.userAgent.includes('HeadlessChrome')
+      ? 'preview' // Force preview mode in test environments
+      : 'preview',
+  );
   unsavedFiles: WritableAtom<Set<string>> = atom(new Set<string>());
   codeErrors: WritableAtom<CodeError[]> = atom<CodeError[]>([]);
   artifactIdList: string[] = [];

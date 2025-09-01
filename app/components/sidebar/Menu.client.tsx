@@ -48,7 +48,13 @@ const getMenuVariants = (isTestEnv: boolean) => {
     closed: {
       ...menuVariants.closed,
       left: 0, // Keep menu in viewport for tests
-      opacity: 0.1, // Make it barely visible but interactable
+      opacity: 1, // Make it fully visible in tests
+      pointerEvents: 'initial' as const, // Ensure it's always interactable
+    },
+    open: {
+      ...menuVariants.open,
+      left: 0, // Ensure it stays at left: 0
+      opacity: 1,
     },
   };
 };

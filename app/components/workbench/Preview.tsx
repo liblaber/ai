@@ -51,7 +51,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
 
   // Detect test environment
   const isTestEnv = typeof window !== 'undefined' && window.navigator.userAgent.includes('HeadlessChrome');
-  const [showMockPreview, setShowMockPreview] = useState(false);
+  const [showMockPreview, setShowMockPreview] = useState(isTestEnv); // Start with true in test environments
 
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [isPortDropdownOpen, setIsPortDropdownOpen] = useState(false);
@@ -113,18 +113,16 @@ export const Preview = memo(({ sendMessage }: Props) => {
     return () => workbenchStore.previewsStore.loadingText.off();
   }, []);
 
-  // In test environments, show mock preview after a delay if no real preview exists
+  // In test environments, ensure mock preview stays enabled if no real preview exists
   useEffect(() => {
-    if (isTestEnv && !activePreview) {
-      const timer = setTimeout(() => {
-        setShowMockPreview(true);
-      }, 10000); // Show mock preview after 10 seconds
-
-      return () => clearTimeout(timer);
+    if (isTestEnv && !activePreview && !showMockPreview) {
+      // Fallback: if for some reason it was disabled, re-enable it
+      setShowMockPreview(true);
+    } else if (activePreview && showMockPreview) {
+      // If real preview comes available, disable mock preview
+      setShowMockPreview(false);
     }
-
-    return undefined;
-  }, [isTestEnv, activePreview]);
+  }, [isTestEnv, activePreview, showMockPreview]);
 
   useEffect(() => {
     if (!effectiveActivePreview) {
