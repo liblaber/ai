@@ -71,7 +71,7 @@ export const BrowserCompatibilityModal: React.FC<BrowserCompatibilityModalProps>
         </div>
 
         {/* Supported Browsers Grid */}
-        <div className="flex gap-2 justify-center">
+        <div className="flex gap-3 justify-center">
           {SUPPORTED_BROWSERS.map((browser) => (
             <div
               key={browser}
