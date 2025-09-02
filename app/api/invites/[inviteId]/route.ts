@@ -11,7 +11,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const { inviteId } = await params;
+    const { inviteId } = params;
 
     await inviteService.deleteInvite(inviteId);
 
