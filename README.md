@@ -169,7 +169,7 @@ cd ai
 
 **Run the quickstart**
 
-Make sure your Docker Desktop is running. 
+Make sure your Docker Desktop is running.
 
 Run the following command to set up and start the app:
 
