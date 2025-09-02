@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { resetControlPanelHeader, setControlPanelHeader } from '~/lib/stores/settings';
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { classNames } from '~/utils/classNames';
+import { format } from 'date-fns';
 
 interface Role {
   id: string;
@@ -223,7 +224,7 @@ export default function UsersDetails({ onBack }: UsersDetailsProps) {
                   <div>
                     <div className="text-sm text-white">{invite.email}</div>
                     <div className="text-xs text-gray-400">
-                      Role: {invite.roleName} • Sent {new Date(invite.createdAt).toLocaleDateString()}
+                      Role: {invite.roleName} • Sent {format(new Date(invite.createdAt), 'PP')}
                     </div>
                   </div>
                 </div>
