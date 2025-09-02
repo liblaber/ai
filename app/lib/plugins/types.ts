@@ -1,3 +1,5 @@
+import { type Website } from '~/lib/stores/websiteStore';
+
 export enum PluginType {
   DATA_ACCESS = 'data-access',
   AUTH = 'auth',
@@ -89,7 +91,7 @@ export interface DeploymentResult {
     url: string;
     chatId: string;
   };
-  website: any;
+  website: Website;
 }
 
 export interface DeploymentPlugin extends Plugin {

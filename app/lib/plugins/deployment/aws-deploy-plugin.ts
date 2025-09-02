@@ -1,27 +1,17 @@
-import type { DeploymentConfig, DeploymentPlugin, DeploymentProgress, DeploymentResult } from '~/lib/plugins/types';
+import type { DeploymentConfig, DeploymentProgress, DeploymentResult } from '~/lib/plugins/types';
 import { logger } from '~/utils/logger';
-import fs, { mkdir, unlink, writeFile } from 'fs/promises';
+import fs, { writeFile } from 'fs/promises';
 import { join } from 'path';
-import { tmpdir } from 'os';
-import AdmZip from 'adm-zip';
-import { prisma } from '~/lib/prisma';
-import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
-import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
-import { userService } from '~/lib/services/userService';
-import { parse } from 'dotenv';
+import { BaseDeploymentPlugin, type SiteInfo } from './base-deployment-plugin';
 import rimraf from 'rimraf';
-
-interface CommandResult {
-  output: string;
-  error: string;
-}
 
 const TOTAL_STEPS = 6;
 
-export class AwsDeployPlugin implements DeploymentPlugin {
+export class AwsDeployPlugin extends BaseDeploymentPlugin {
   pluginId = 'aws' as const;
   name = 'AWS (SST)';
   description = 'Deploy your application to AWS using Serverless Stack (SST)';
+  protected totalSteps = TOTAL_STEPS;
 
   async deploy(
     zipFile: File,
@@ -40,93 +30,66 @@ export class AwsDeployPlugin implements DeploymentPlugin {
 
     // Send initial progress
     logger.info('Initializing AWS deployment', JSON.stringify({ chatId }));
-    await onProgress({
-      step: currentStepIndex,
-      totalSteps: TOTAL_STEPS,
-      message: 'Initializing AWS deployment...',
-      status: 'in_progress',
-    });
+
+    await this.sendProgress(
+      currentStepIndex,
+      this.totalSteps,
+      'Initializing AWS deployment...',
+      'in_progress',
+      onProgress,
+    );
 
     // Create a temporary directory for the deployment
-    const tempDir = join(tmpdir(), `aws-deploy-${chatId}`);
-    await mkdir(tempDir, { recursive: true });
-    logger.info('Created temporary directory', JSON.stringify({ chatId, tempDir }));
+    const tempDir = await this.createTempDirectory(chatId, 'aws-deploy');
 
     try {
-      // Write the zip file to disk
-      logger.info('Preparing deployment files', JSON.stringify({ chatId }));
-      await onProgress({
-        step: ++currentStepIndex,
-        totalSteps: TOTAL_STEPS,
-        message: 'Preparing deployment files...',
-        status: 'in_progress',
-      });
-
-      const zipPath = join(tempDir, 'project.zip');
-      const arrayBuffer = await zipFile.arrayBuffer();
-      await writeFile(zipPath, new Uint8Array(arrayBuffer));
-
       // Extract the zip file
-      const zip = new AdmZip(zipPath);
-      zip.extractAllTo(tempDir, true);
-
-      // Remove the zip file
-      await unlink(zipPath);
-      logger.info('Files extracted successfully', JSON.stringify({ chatId }));
+      await this.sendProgress(
+        ++currentStepIndex,
+        this.totalSteps,
+        'Preparing deployment files...',
+        'in_progress',
+        onProgress,
+      );
+      await this.extractZipFile(zipFile, tempDir, chatId);
 
       logger.info('SST not configured, setting up basic SST configuration', JSON.stringify({ chatId }));
-      await onProgress({
-        step: ++currentStepIndex,
-        totalSteps: TOTAL_STEPS,
-        message: 'Setting up SST configuration...',
-        status: 'in_progress',
-      });
+      await this.sendProgress(
+        ++currentStepIndex,
+        this.totalSteps,
+        'Setting up SST configuration...',
+        'in_progress',
+        onProgress,
+      );
 
       await rimraf(join(tempDir, '.sst'));
       await rimraf(join(tempDir, '.next'));
 
       // read environment variables from .env file in zip
-      const envFilePath = join(tempDir, '.env');
-      const envFile: Record<string, string> = {};
-
-      if (await this._fileExists(envFilePath)) {
-        const envContentString = await fs.readFile(envFilePath, 'utf-8');
-        const envContent = parse(envContentString);
-        Object.entries(envContent).forEach(([key, value]) => {
-          if (value) {
-            envFile[key] = value;
-          }
-        });
-      } else {
-        logger.warn('No .env file found in the zip, using default environment variables');
-      }
+      const envFile = await this.readEnvFile(tempDir);
 
       // Create basic SST configuration
       await this._createSstConfig(tempDir, chatId, envFile);
 
       // Install dependencies
       logger.info('Installing dependencies', JSON.stringify({ chatId }));
-      await onProgress({
-        step: ++currentStepIndex,
-        totalSteps: TOTAL_STEPS,
-        message: 'Installing dependencies...',
-        status: 'in_progress',
-      });
+      await this.sendProgress(
+        ++currentStepIndex,
+        this.totalSteps,
+        'Installing dependencies...',
+        'in_progress',
+        onProgress,
+      );
 
-      await this._runCommand('pnpm', ['install'], tempDir);
+      await this.runCommand('pnpm', ['install'], tempDir);
 
       logger.info('Dependencies installed successfully', JSON.stringify({ chatId }));
 
       // Deploy using SST
       logger.info('Starting SST deployment', JSON.stringify({ chatId }));
-      await onProgress({
-        step: ++currentStepIndex,
-        totalSteps: TOTAL_STEPS,
-        message: 'Deploying to AWS...',
-        status: 'in_progress',
-      });
+      await this.sendProgress(++currentStepIndex, this.totalSteps, 'Deploying to AWS...', 'in_progress', onProgress);
 
-      const deployResult = await this._runCommand(
+      const deployResult = await this.runCommand(
         'npx',
         ['sst', 'deploy', '--stage', this._generateStageName(chatId)],
         tempDir,
@@ -144,7 +107,7 @@ export class AwsDeployPlugin implements DeploymentPlugin {
       const deploymentInfo = this._parseSstOutput(deployResult.output);
 
       // Create site info for consistency with other plugins
-      const siteInfo = {
+      const siteInfo: SiteInfo = {
         id: deploymentInfo.stackName || `aws-${chatId}`,
         name: `aws-${chatId}`,
         url: deploymentInfo.appUrl || `https://${deploymentInfo.stackName}.sst.dev`,
@@ -152,18 +115,10 @@ export class AwsDeployPlugin implements DeploymentPlugin {
       };
 
       // Track telemetry
-      const telemetry = await getTelemetry();
-      const user = await userService.getUser(userId);
-      await telemetry.trackTelemetryEvent(
-        {
-          eventType: TelemetryEventType.USER_APP_DEPLOY,
-          properties: { websiteInfo: siteInfo, provider: 'aws' },
-        },
-        user,
-      );
+      await this.trackDeploymentTelemetry(siteInfo, userId, 'aws');
 
       // Update database
-      const website = await this._updateWebsiteDatabase(
+      const website = await this.updateWebsiteDatabase(
         websiteId,
         siteInfo.id,
         siteInfo.name,
@@ -183,19 +138,9 @@ export class AwsDeployPlugin implements DeploymentPlugin {
       };
     } catch (error: any) {
       logger.error('Error during AWS deployment', JSON.stringify({ chatId, error: error.message }));
-
       throw new Error(`AWS deployment failed: ${error.message}`);
     } finally {
-      await rimraf(tempDir);
-    }
-  }
-
-  private async _fileExists(filePath: string): Promise<boolean> {
-    try {
-      await import('fs/promises').then((fs) => fs.access(filePath));
-      return true;
-    } catch {
-      return false;
+      await this.cleanupTempDirectory(tempDir, chatId);
     }
   }
 
@@ -367,93 +312,12 @@ CMD ["node", "server.js"]
 
     return { stackName, appUrl };
   }
-
-  private async _runCommand(
-    command: string,
-    args: string[],
-    cwd: string,
-    env: Record<string, string> = {},
-    timeout?: number,
-  ): Promise<CommandResult> {
-    return new Promise((resolve, reject) => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { spawn } = require('child_process');
-      const proc = spawn(command, args, {
-        cwd,
-        env: {
-          ...env,
-          ...process.env,
-        },
-        timeout,
-      });
-
-      let output = '';
-      let error = '';
-
-      proc.stdout?.on('data', (data: Buffer) => {
-        const message = data.toString();
-        output += message;
-        logger.info(message);
-      });
-
-      proc.stderr?.on('data', (data: Buffer) => {
-        const message = data.toString();
-        error += message;
-        logger.error(message);
-      });
-
-      proc.on('close', (code: number | null) => {
-        if (code === 0) {
-          resolve({ output, error });
-        } else {
-          reject(new Error(`Command failed: ${error}`));
-        }
-      });
-
-      proc.on('error', (err: Error) => {
-        reject(err);
-      });
-    });
-  }
-
-  private async _updateWebsiteDatabase(
-    websiteId: string | undefined,
-    siteId: string,
-    siteName: string,
-    siteUrl: string,
-    chatId: string,
-    userId: string,
-  ): Promise<any> {
-    if (websiteId) {
-      // Update existing website
-      const website = await prisma.website.update({
-        where: {
-          id: websiteId,
-          createdById: userId,
-        },
-        data: {
-          siteId,
-          siteName,
-          siteUrl,
-        },
-      });
-      logger.info('Website updated in database', JSON.stringify({ chatId, siteId }));
-
-      return website;
-    } else {
-      // Create new website
-      const website = await prisma.website.create({
-        data: {
-          siteId,
-          siteName,
-          siteUrl,
-          chatId,
-          createdById: userId,
-        },
-      });
-      logger.info('Website saved to database successfully', JSON.stringify({ chatId, siteId }));
-
-      return website;
+  private async _fileExists(filePath: string): Promise<boolean> {
+    try {
+      await import('fs/promises').then((fs) => fs.access(filePath));
+      return true;
+    } catch {
+      return false;
     }
   }
 }
