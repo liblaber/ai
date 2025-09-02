@@ -195,22 +195,22 @@ export const inviteService = {
     }
 
     // Add user to role
-    await prisma.userRole.create({
-      data: {
-        userId,
-        roleId: invite.roleId,
-      },
-    });
-
-    // Update invite status
-    await prisma.userInvite.update({
-      where: { id: inviteId },
-      data: {
-        status: InviteStatus.ACCEPTED,
-        acceptedAt: new Date(),
-        existingUserId: userId,
-      },
-    });
+    await prisma.$transaction([
+      prisma.userRole.create({
+        data: {
+          userId,
+          roleId: invite.roleId,
+        },
+      }),
+      prisma.userInvite.update({
+        where: { id: inviteId },
+        data: {
+          status: InviteStatus.ACCEPTED,
+          acceptedAt: new Date(),
+          existingUserId: userId,
+        },
+      }),
+    ]);
   },
 
   async deleteInvite(inviteId: string): Promise<void> {
