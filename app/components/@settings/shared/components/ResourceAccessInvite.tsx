@@ -16,7 +16,7 @@ export const permissionOptions: SelectOption[] = [
 
 type ResourceAccessMembersProps = {
   resourceScope: ResourceRoleScope;
-  resource: any;
+  resource: { id: string; name?: string; site_name?: string };
   onBack: () => void;
 };
 
@@ -162,9 +162,7 @@ export default function ResourceAccessInvite({ resourceScope, resource, onBack }
         </div>
 
         <div>
-          <Label htmlFor="invite-email-input" className="mb-3 block text-gray-300">
-            Permission
-          </Label>
+          <Label className="mb-3 block text-gray-300">Permission</Label>
           <BaseSelect
             value={permissionOption}
             onChange={(option: SelectOption | null) => {

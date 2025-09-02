@@ -61,7 +61,7 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onInv
     };
 
     fetchResourceAccessMembers();
-  }, []);
+  }, [resourceType, resourceId]);
 
   const filteredMembers = useMemo(
     () =>
