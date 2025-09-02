@@ -92,8 +92,8 @@ export default function EditDataSourceForm({
           setEnvironmentOptions(options);
 
           // Auto-select first environment if available
-          if (options.length > 0) {
-            setSelectedEnvironment(options[0]);
+          if (!selectedEnvironment && options.length > 0) {
+            setSelectedEnvironment((previouslySelectedEnvironment) => previouslySelectedEnvironment || options[0]);
           }
         } else {
           setError(result.error || 'Failed to fetch environments');
@@ -120,6 +120,7 @@ export default function EditDataSourceForm({
       value: selectedDataSource.environment.id,
       description: selectedDataSource.environment.description || undefined,
     };
+
     setSelectedEnvironment(currentEnvironment);
 
     if (selectedDataSource.dataSource.name === 'Sample Database') {
