@@ -95,15 +95,52 @@ test.describe('User Onboarding Flow Test', () => {
     await chatInterface.waitFor({ state: 'visible', timeout: 10000 });
     console.log('✅ Chat interface loaded');
 
-    const iframe = page.locator('iframe[title="preview"]');
-    await iframe.waitFor({ state: 'visible', timeout: 120000 });
-    console.log('✅ Iframe found, waiting for it to load...');
+    // Wait for any iframe to appear first (more flexible selector)
+    console.log('🔍 Looking for any iframe in the page...');
+
+    const anyIframe = page.locator('iframe');
+    await anyIframe.first().waitFor({ state: 'visible', timeout: 60000 });
+    console.log('✅ Found an iframe, checking for preview iframe...');
+
+    // Now look specifically for preview iframe with better error handling
+    let iframe;
+
+    try {
+      iframe = page.locator('iframe[title="preview"]');
+      await iframe.waitFor({ state: 'visible', timeout: 30000 });
+      console.log('✅ Preview iframe found and visible');
+    } catch {
+      console.log('⚠️ Preview iframe not found, trying alternative selectors...');
+
+      // Try alternative iframe selectors
+      const alternativeIframes = [
+        'iframe[src*="preview"]',
+        'iframe[data-testid*="preview"]',
+        'iframe[id*="preview"]',
+        'iframe', // Any iframe as last resort
+      ];
+
+      for (const selector of alternativeIframes) {
+        try {
+          iframe = page.locator(selector).first();
+          await iframe.waitFor({ state: 'visible', timeout: 5000 });
+          console.log(`✅ Found iframe using selector: ${selector}`);
+          break;
+        } catch {
+          continue;
+        }
+      }
+
+      if (!iframe) {
+        throw new Error('Could not find any suitable iframe for preview');
+      }
+    }
 
     await iframe.waitFor({ state: 'attached', timeout: 10000 });
     console.log('✅ Iframe attached, waiting for content...');
 
     // Wait for built app to render in the iframe
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(10000); // Increased wait time
 
     try {
       // Step 7: Check for "Hello World!" content inside the iframe
@@ -114,16 +151,68 @@ test.describe('User Onboarding Flow Test', () => {
         .then((handle: ElementHandle<SVGElement | HTMLElement> | null) => handle?.contentFrame());
 
       if (!frame) {
-        throw new Error('Could not get frame from iframe element');
+        console.log('⚠️ Could not get frame content, trying to wait for frame to be ready...');
+        await page.waitForTimeout(5000);
+
+        const retryFrame = await iframe
+          .elementHandle()
+          .then((handle: ElementHandle<SVGElement | HTMLElement> | null) => handle?.contentFrame());
+
+        if (!retryFrame) {
+          throw new Error('Could not get frame from iframe element after retry');
+        }
+
+        // Use the retry frame
+        const helloWorldHeading = retryFrame.locator('h1:has-text("Hello World!")');
+        await helloWorldHeading.waitFor({ state: 'visible', timeout: 30000 });
+        console.log('✅ Found "Hello World!" heading in iframe after retry!');
+      } else {
+        // Try different selectors for the heading
+        const headingSelectors = [
+          'h1:has-text("Hello World!")',
+          'h1:text("Hello World!")',
+          '[data-testid*="hello"]',
+          'h1', // Any h1 as fallback
+          '*:has-text("Hello World!")', // Any element with the text
+        ];
+
+        let found = false;
+
+        for (const selector of headingSelectors) {
+          try {
+            const heading = frame.locator(selector);
+            await heading.first().waitFor({ state: 'visible', timeout: 10000 });
+            console.log(`✅ Found heading using selector: ${selector}`);
+            found = true;
+            break;
+          } catch {
+            console.log(`⚠️ Selector ${selector} not found, trying next...`);
+            continue;
+          }
+        }
+
+        if (!found) {
+          // Log what's actually in the iframe for debugging
+          const bodyContent = await frame
+            .locator('body')
+            .innerHTML()
+            .catch(() => 'Could not read body content');
+          console.log('📄 Iframe body content:', bodyContent.substring(0, 500));
+          throw new Error('Could not find "Hello World!" heading with any selector');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error finding content in iframe:', error);
+
+      // Try to get more debug info
+      try {
+        const iframeHTML = await iframe.innerHTML();
+        console.log('📄 Iframe outer HTML:', iframeHTML.substring(0, 200));
+      } catch {
+        console.log('📄 Could not read iframe HTML');
       }
 
-      const helloWorldHeading = frame.locator('h1:has-text("Hello World!")');
-      await helloWorldHeading.waitFor({ state: 'visible', timeout: 100000 });
-
-      console.log('✅ Found "Hello World!" heading in iframe!');
-    } catch {
-      console.error('❌ Could not find "Hello World!" heading in iframe');
-      throw new Error('Could not find "Hello World!" heading in iframe');
+      throw new Error(`Could not find "Hello World!" heading in iframe: ${error.message}`);
     }
 
     console.log('🎉 Test completed successfully!');

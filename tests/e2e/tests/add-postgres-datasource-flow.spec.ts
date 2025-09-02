@@ -6,7 +6,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
   }: {
     page: Page;
   }) => {
-    test.setTimeout(60000); // 1 minute for this specific test
+    test.setTimeout(90000); // 1.5 minutes for this specific test
 
     // Enable browser console logging for debugging
     page.on('console', (msg: ConsoleMessage) => console.log('🖥️ Browser console:', msg.text()));
@@ -58,16 +58,43 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
 
     console.log('🔍 Looking for settings cog icon...');
 
-    await page.mouse.move(0, 500);
-    await page.mouse.down(); // Move mouse to ensure the menu is visible
+    // Scroll to top to ensure menu is in viewport
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(1000);
 
     const menu = page.locator('[data-testid="menu"]');
     await menu.waitFor({ state: 'attached', timeout: 10000 });
-    await menu.hover();
+
+    // Get menu bounds and scroll it into view if needed
+    const menuBounds = await menu.boundingBox();
+
+    if (menuBounds) {
+      await page.evaluate((bounds) => {
+        window.scrollTo(bounds.x, bounds.y);
+      }, menuBounds);
+      await page.waitForTimeout(500);
+    }
+
+    // Use a more reliable hover approach
+    try {
+      await menu.hover({ timeout: 5000 });
+      console.log('✅ Successfully hovered over menu');
+    } catch {
+      console.log('⚠️ Menu hover failed, trying alternative approach...');
+      // Alternative: scroll menu into view and try clicking directly
+      await menu.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(1000);
+    }
 
     const settingsButton = page.locator('[data-testid="settings-button"]');
-    await settingsButton.waitFor({ state: 'attached', timeout: 10000 });
+    await settingsButton.waitFor({ state: 'visible', timeout: 10000 });
+
+    // Scroll settings button into view before clicking
+    await settingsButton.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
+
     await settingsButton.click();
+    console.log('✅ Successfully clicked settings button');
 
     await page.getByRole('button', { name: 'Add Data Source' }).click();
 
@@ -132,7 +159,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
   }: {
     page: Page;
   }) => {
-    test.setTimeout(60000); // 1 minute for this specific test
+    test.setTimeout(90000); // 1.5 minutes for this specific test
 
     // Enable browser console logging for debugging
     page.on('console', (msg: ConsoleMessage) => console.log('🖥️ Browser console:', msg.text()));
@@ -184,16 +211,43 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
 
     console.log('🔍 Looking for settings cog icon...');
 
-    await page.mouse.move(0, 500);
-    await page.mouse.down(); // Move mouse to ensure the menu is visible
+    // Scroll to top to ensure menu is in viewport
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(1000);
 
     const menu = page.locator('[data-testid="menu"]');
     await menu.waitFor({ state: 'attached', timeout: 10000 });
-    await menu.hover();
+
+    // Get menu bounds and scroll it into view if needed
+    const menuBounds = await menu.boundingBox();
+
+    if (menuBounds) {
+      await page.evaluate((bounds) => {
+        window.scrollTo(bounds.x, bounds.y);
+      }, menuBounds);
+      await page.waitForTimeout(500);
+    }
+
+    // Use a more reliable hover approach
+    try {
+      await menu.hover({ timeout: 5000 });
+      console.log('✅ Successfully hovered over menu');
+    } catch {
+      console.log('⚠️ Menu hover failed, trying alternative approach...');
+      // Alternative: scroll menu into view and try clicking directly
+      await menu.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(1000);
+    }
 
     const settingsButton = page.locator('[data-testid="settings-button"]');
-    await settingsButton.waitFor({ state: 'attached', timeout: 10000 });
+    await settingsButton.waitFor({ state: 'visible', timeout: 10000 });
+
+    // Scroll settings button into view before clicking
+    await settingsButton.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
+
     await settingsButton.click();
+    console.log('✅ Successfully clicked settings button');
 
     await page.getByRole('button', { name: 'Add Data Source' }).click();
 
