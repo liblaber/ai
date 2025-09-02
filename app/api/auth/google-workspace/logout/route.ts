@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createScopedLogger } from '~/utils/logger';
+import { env } from '~/env/server';
 
 const logger = createScopedLogger('google-workspace-logout');
 
@@ -10,7 +11,7 @@ export async function POST(_request: NextRequest) {
 
     response.cookies.set('google_workspace_auth', '', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 0, // Expire immediately
       path: '/',

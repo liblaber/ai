@@ -69,7 +69,8 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
   const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
   // Helper to check if selected database type is Google Sheets
-  const isGoogleSheetsSelected = dbType.value === 'google-sheets' || dbType.label?.toLowerCase().includes('sheets');
+  // Only relying on the value property for consistent behavior across the codebase
+  const isGoogleSheetsSelected = dbType.value === 'google-sheets';
 
   // Fetch environments on component mount
   useEffect(() => {

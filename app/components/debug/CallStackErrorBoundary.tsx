@@ -14,6 +14,12 @@ interface State {
   error: Error | null;
 }
 
+/**
+ * CallStackErrorBoundary provides graceful error handling for React components.
+ * It catches JavaScript errors anywhere in the child component tree, logs those errors,
+ * and displays a fallback UI instead of crashing the entire application.
+ * Used throughout the app to isolate component failures and improve user experience.
+ */
 class CallStackErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);

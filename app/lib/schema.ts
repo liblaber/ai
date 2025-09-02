@@ -2,6 +2,7 @@ import { type Table } from '@liblab/types';
 import { createScopedLogger } from '~/utils/logger';
 import { prisma } from '~/lib/prisma';
 import crypto from 'crypto';
+import { env } from '~/env/server';
 
 import { getDatabaseUrl } from '~/lib/services/dataSourceService';
 import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
@@ -194,7 +195,7 @@ async function shouldRefreshGoogleSheetsCache(connectionUrl: string): Promise<bo
 
     // Enhanced semantic mapping with multi-row analysis
     // If cache doesn't have this version marker, force refresh
-    const currentSemanticVersion = parseInt(process.env.GOOGLE_SHEETS_SEMANTIC_VERSION || '3');
+    const currentSemanticVersion = parseInt(env.GOOGLE_SHEETS_SEMANTIC_VERSION);
 
     if (!schema._semantic_mapping_version || schema._semantic_mapping_version < currentSemanticVersion) {
       logger.debug(

@@ -1,14 +1,8 @@
 import { decryptData, encryptData } from '@/lib/encryption/encryption';
+import { decodeUrlCompletely } from '@/utils/url-decoder';
 
 export async function executeQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
-  let databaseUrl = process.env.DATABASE_URL || '';
-
-  // Handle double URL encoding - decode until we get a valid URL format
-  while (databaseUrl.includes('%')) {
-    const decoded = decodeURIComponent(databaseUrl);
-    if (decoded === databaseUrl) break; // No more decoding needed
-    databaseUrl = decoded;
-  }
+  const databaseUrl = decodeUrlCompletely(process.env.DATABASE_URL || '');
 
   const requestBody = {
     query,

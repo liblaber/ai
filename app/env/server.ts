@@ -100,6 +100,9 @@ export const env = createEnv({
     // Development configuration
     npm_package_version: z.string().optional(),
     CUSTOM_KEY: z.string().optional(),
+
+    // Google Sheets configuration
+    GOOGLE_SHEETS_SEMANTIC_VERSION: z.string().default('3'),
   },
   experimental__runtimeEnv: process.env,
 });

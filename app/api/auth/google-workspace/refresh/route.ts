@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
 import { GoogleWorkspaceAuthManager } from '@liblab/data-access/accessors/google-workspace/auth-manager';
 import { createScopedLogger } from '~/utils/logger';
+import { env } from '~/env/server';
 
 const logger = createScopedLogger('google-workspace-refresh');
 
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // Decrypt existing tokens
-      const authManager = new GoogleWorkspaceAuthManager(process.env.GOOGLE_AUTH_ENCRYPTION_KEY);
+      const authManager = new GoogleWorkspaceAuthManager(env.GOOGLE_AUTH_ENCRYPTION_KEY);
       const credentials = authManager.decryptCredentials(authCookie.value);
 
       if (!credentials.refresh_token) {
@@ -40,8 +41,8 @@ export async function POST(request: NextRequest) {
       // Initialize auth manager with existing credentials
       await authManager.initialize({
         type: 'oauth2',
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
         credentials,
         scopes: [],
       });
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
 
       response.cookies.set('google_workspace_auth', authManager.encryptCredentials(refreshedCredentials), {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: cookieMaxAge,
         path: '/',

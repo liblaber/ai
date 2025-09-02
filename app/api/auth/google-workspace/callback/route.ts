@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
     // Try multiple approaches to ensure the cookie is set
     response.cookies.set('google_workspace_auth', encryptedCredentials, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: cookieMaxAge,
       path: '/',
