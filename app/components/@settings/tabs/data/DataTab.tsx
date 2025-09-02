@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowLeft, ChevronRight, Database, Plus, Trash2 } from '
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import AddDataSourceForm from './forms/AddDataSourceForm';
 import EditDataSourceForm from './forms/EditDataSourceForm';
+import ResourceAccessInvite from '~/components/@settings/shared/components/ResourceAccessInvite';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
 import { type EnvironmentDataSource, useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
@@ -24,6 +25,7 @@ export default function DataTab() {
   const { showAddForm } = useStore(settingsPanelStore);
   const [showAddFormLocal, setShowAddFormLocal] = useState(showAddForm);
   const [showEditForm, setShowEditForm] = useState(false);
+  const [showInviteForm, setShowInviteForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedEnvironmentDataSource, setSelectedEnvironmentDataSource] = useState<EnvironmentDataSource | null>(
     null,
@@ -224,8 +226,25 @@ export default function DataTab() {
             handleBack();
           }}
           onDelete={handleDeleteClick}
+          onInvite={() => {
+            setShowEditForm(false);
+            setShowInviteForm(true);
+          }}
         />
       </div>
+    );
+  }
+
+  if (showInviteForm && selectedEnvironmentDataSource?.dataSource) {
+    return (
+      <ResourceAccessInvite
+        resourceScope="DATA_SOURCE"
+        resource={selectedEnvironmentDataSource.dataSource}
+        onBack={() => {
+          setShowEditForm(true);
+          setShowInviteForm(false);
+        }}
+      />
     );
   }
 
