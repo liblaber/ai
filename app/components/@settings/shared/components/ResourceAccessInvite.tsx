@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { RoleScope } from '@prisma/client';
 import { classNames } from '~/utils/classNames';
 import type { ResourceRoleScope } from '~/lib/services/roleService';
+import { isValidEmail } from '~/lib/utils/invite-utils';
 import { Badge } from '~/components/ui/Badge';
 import { BaseSelect, type SelectOption } from '~/components/ui/Select';
 import { Input } from '~/components/ui/Input';
@@ -57,9 +58,7 @@ export default function ResourceAccessInvite({ resourceScope, resource, onBack }
       return;
     }
 
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-    if (!emailRegex.test(trimmedEmail)) {
+    if (!isValidEmail(trimmedEmail)) {
       setAddEmailMessage('Please enter a valid email address.');
       return;
     }
@@ -79,9 +78,11 @@ export default function ResourceAccessInvite({ resourceScope, resource, onBack }
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, permissionLevel: permissionOption.value }),
-          }).catch(() => {
-            console.error(`Failed to invite "${email}"`);
-            toast.error(`Failed to invite "${email}"`);
+          }).then(async (res) => {
+            if (!res.ok) {
+              console.error(`Failed to invite "${email}"`);
+              toast.error(`Failed to invite "${email}"`);
+            }
           }),
         ),
       );
