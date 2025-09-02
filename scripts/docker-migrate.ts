@@ -32,7 +32,9 @@ const runMigrations = async (): Promise<void> => {
     migrateSpinner.stop('✅ Database migrations completed successfully');
   } catch (error) {
     migrateSpinner.stop('❌ Database migrations failed');
-    log.error(`Migration error: ${JSON.stringify(error)}`);
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log.error(`Migration error: ${errorMessage}`);
     throw error;
   }
 };
@@ -54,7 +56,9 @@ const backupDatabase = async (): Promise<void> => {
     log.info(chalk.blue(`Backup saved as: ${backupFile}`));
   } catch (error) {
     backupSpinner.stop('❌ Database backup failed');
-    log.error(`Backup error: ${JSON.stringify(error)}`);
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log.error(`Backup error: ${errorMessage}`);
     throw error;
   }
 };
@@ -131,7 +135,9 @@ const main = async (): Promise<void> => {
           resetSpinner.stop('✅ Database reset completed');
         } catch (error) {
           resetSpinner.stop('❌ Database reset failed');
-          log.error(`Reset error: ${JSON.stringify(error)}`);
+
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          log.error(`Reset error: ${errorMessage}`);
           throw error;
         }
       } else {
@@ -152,6 +158,7 @@ const main = async (): Promise<void> => {
 };
 
 main().catch((error) => {
-  log.error(`❌ Migration failed: ${error}`);
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  log.error(`❌ Migration failed: ${errorMessage}`);
   process.exit(1);
 });

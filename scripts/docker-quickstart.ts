@@ -26,14 +26,14 @@ const checkExistingVolumes = async (): Promise<boolean> => {
     });
 
     // Check if any containers are running or if volumes exist
-    return result.out.includes('liblab-postgres') || result.out.includes('liblab_ai-app');
+    return result.out.includes('liblab-postgres') || result.out.includes('liblab-ai-app');
   } catch {
     // If we can't check, assume no existing setup
     return false;
   }
 };
 
-const showVolumeWarning = async (): Promise<boolean> => {
+const showVolumeWarning = async (): Promise<{ shouldContinue: boolean; preserveDb: boolean }> => {
   log.warn(chalk.yellow('⚠️  Existing Docker setup detected!'));
   log.info('This will rebuild the Docker images with the latest code.');
 
@@ -45,6 +45,8 @@ const showVolumeWarning = async (): Promise<boolean> => {
   if (preserveDb) {
     log.info(chalk.green('✅ Database data will be preserved'));
     log.info(chalk.blue('ℹ️  Note: If there are database schema changes, you may need to run migrations manually'));
+
+    return { shouldContinue: true, preserveDb: true };
   } else {
     log.warn(chalk.red('⚠️  Database data will be LOST!'));
     log.info('This will remove all existing data including:');
@@ -59,11 +61,11 @@ const showVolumeWarning = async (): Promise<boolean> => {
 
     if (!confirmed) {
       log.info('Operation cancelled. Use --preserve-db to keep your data.');
-      return false;
+      return { shouldContinue: false, preserveDb: false };
     }
-  }
 
-  return true;
+    return { shouldContinue: true, preserveDb: false };
+  }
 };
 
 const main = async (): Promise<void> => {
@@ -78,6 +80,9 @@ const main = async (): Promise<void> => {
     process.exit(1);
   }
 
+  // Track whether to preserve database data
+  let preserveDb = preserve;
+
   // Check for existing setup unless forced
   if (!force && !fresh && !preserve) {
     const hasExistingSetup = await checkExistingVolumes();
@@ -85,12 +90,13 @@ const main = async (): Promise<void> => {
     if (hasExistingSetup) {
       quickstartSpinner.stop();
 
-      const shouldContinue = await showVolumeWarning();
+      const { shouldContinue, preserveDb: userChoice } = await showVolumeWarning();
 
       if (!shouldContinue) {
         process.exit(0);
       }
 
+      preserveDb = userChoice;
       quickstartSpinner.start('🚀 Starting liblab AI quickstart');
     }
   }
@@ -101,7 +107,7 @@ const main = async (): Promise<void> => {
     // Determine compose options based on flags
     const commandOptions: string[] = ['--build'];
 
-    if (fresh || (!preserve && !force)) {
+    if (fresh || (!preserveDb && !force)) {
       // Remove volumes to start fresh
       commandOptions.push('--force-recreate');
       quickstartSpinner.message('🗑️  Removing old containers and volumes');
@@ -135,7 +141,7 @@ const main = async (): Promise<void> => {
 
   quickstartSpinner.stop('✅ liblab AI quickstart completed');
 
-  if (fresh || (!preserve && !force)) {
+  if (fresh || (!preserveDb && !force)) {
     log.info(chalk.green('🆕 Fresh installation with latest code and clean database'));
   } else {
     log.info(chalk.blue('🔄 Updated to latest code while preserving database'));

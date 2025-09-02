@@ -211,25 +211,18 @@ This provides options to:
 - Create backups before migrating
 - Reset database (⚠️ **loses all data**)
 
-### **When Quickstart Updates vs. Preserves**
+### How Quickstart Handles Your Data
 
-**Quickstart ALWAYS pulls latest code when:**
+**Your data is PRESERVED when:**
 
-- You run `pnpm run quickstart` (any time)
-- You run `pnpm run quickstart:fresh`
 - You run `pnpm run quickstart:preserve`
+- You run the standard `pnpm run quickstart` and choose to preserve data when prompted (this is the default)
 
-**Quickstart preserves your data when:**
+**Your data is REMOVED (fresh start) when:**
 
-- You have existing Docker containers/volumes
-- You choose to preserve database during interactive prompts
-- You use the `--preserve-db` flag
-
-**Quickstart starts fresh when:**
-
-- You use `pnpm run quickstart:fresh`
-- You choose to reset database during interactive prompts
-- No existing containers are found (first-time setup)
+- You run `pnpm run quickstart:fresh`
+- You run the standard `pnpm run quickstart` and choose to reset the database when prompted
+- No existing data is found (e.g., on first-time setup)
 
 **Important Notes:**
 
