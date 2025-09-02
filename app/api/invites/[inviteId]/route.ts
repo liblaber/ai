@@ -3,7 +3,7 @@ import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource } from '@prisma/client';
 import { inviteService } from '~/lib/services/inviteService';
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ inviteId: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: { inviteId: string } }) {
   try {
     const { userAbility } = await requireUserAbility(request);
 
