@@ -10,6 +10,16 @@ export interface UserProfile {
   telemetryEnabled?: boolean | null;
 }
 
+export interface UserWithRole {
+  id: string;
+  name: string;
+  email: string;
+  image?: string | null;
+  roleId: string;
+  roleName: string;
+  telemetryEnabled?: boolean | null;
+}
+
 export const userService = {
   async getUser(userId: string): Promise<UserProfile> {
     const user = await prisma.user.findUnique({
@@ -253,5 +263,118 @@ export const userService = {
         `Failed to grant system admin access: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
+  },
+
+  async getAllUsersWithRoles(): Promise<UserWithRole[]> {
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [{ isAnonymous: false }, { isAnonymous: null }],
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    return users
+      .filter((user) => user.roles.length > 0) // Only include users who have at least one role
+      .map((user) => {
+        // Get the first role (assuming users have one primary role)
+        const primaryRole = user.roles[0]?.role;
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          roleId: primaryRole?.id || '',
+          roleName: primaryRole?.name || 'No Role',
+          telemetryEnabled: user.telemetryEnabled,
+        };
+      });
+  },
+
+  async getAllUsersWithoutRoles(): Promise<UserWithRole[]> {
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [{ isAnonymous: false }, { isAnonymous: null }],
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    return users
+      .filter((user) => user.roles.length === 0) // Only include users who have no roles
+      .map((user) => {
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          roleId: '',
+          roleName: 'No Role',
+          telemetryEnabled: user.telemetryEnabled,
+        };
+      });
+  },
+
+  async updateUserRoleToNewSystem(userId: string, roleId: string): Promise<UserWithRole> {
+    // First, verify the role exists
+    const role = await prisma.role.findUnique({
+      where: { id: roleId },
+    });
+
+    if (!role) {
+      throw new Error('Role not found');
+    }
+
+    // First, remove all existing roles for the user
+    await prisma.userRole.deleteMany({
+      where: { userId },
+    });
+
+    // Add the new role
+    await prisma.userRole.create({
+      data: {
+        userId,
+        roleId,
+      },
+    });
+
+    // Get the updated user with role information
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const primaryRole = user.roles[0]?.role;
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      roleId: primaryRole?.id || '',
+      roleName: primaryRole?.name || 'No Role',
+      telemetryEnabled: user.telemetryEnabled,
+    };
   },
 };

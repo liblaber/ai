@@ -4,6 +4,7 @@ import { prisma } from '~/lib/prisma';
 import { env } from '~/env';
 import { createAuthMiddleware } from 'better-auth/plugins';
 import { userService } from '~/lib/services/userService';
+import { inviteService } from '~/lib/services/inviteService';
 
 const { BASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, LICENSE_KEY } = env.server;
 
@@ -121,6 +122,19 @@ export const auth = betterAuth({
           await userService.grantSystemAdminAccess(createdUser.id);
         }
       });
+
+      // Check for pending invites and auto-accept them
+      try {
+        const pendingInvite = await inviteService.getInviteByEmail(email);
+
+        if (pendingInvite) {
+          await inviteService.acceptInvite(pendingInvite.id, createdUser.id);
+          console.log(`✅ Auto-accepted invite for user ${email}`);
+        }
+      } catch (error) {
+        console.error(`❌ Failed to auto-accept invite for user ${email}:`, error);
+        // Don't fail the auth flow if invite acceptance fails
+      }
     }),
   },
 });
