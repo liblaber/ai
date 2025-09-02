@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, CircleX } from 'lucide-react';
 import { toast } from 'sonner';
 import { RoleScope } from '@prisma/client';
@@ -27,31 +27,26 @@ export default function ResourceAccessInvite({ resourceScope, resource, onBack }
   const [permissionOption, setPermissionOption] = useState<SelectOption>(permissionOptions[0]);
   const [isInviting, setIsInviting] = useState(false);
 
-  const resourceType = useMemo(() => {
-    switch (resourceScope) {
-      case RoleScope.ENVIRONMENT:
-        return 'environments';
-      case RoleScope.DATA_SOURCE:
-        return 'data-sources';
-      case RoleScope.WEBSITE:
-        return 'websites';
-      default:
-        return 'unknown';
-    }
-  }, [resourceScope]);
+  let resourceType: string;
+  let resourceLabel: string;
 
-  const resourceLabel = useMemo(() => {
-    switch (resourceScope) {
-      case RoleScope.ENVIRONMENT:
-        return 'Environment';
-      case RoleScope.DATA_SOURCE:
-        return 'Data Source';
-      case RoleScope.WEBSITE:
-        return 'App';
-      default:
-        return 'Resource';
-    }
-  }, [resourceScope]);
+  switch (resourceScope) {
+    case RoleScope.ENVIRONMENT:
+      resourceType = 'environments';
+      resourceLabel = 'Environment';
+      break;
+    case RoleScope.DATA_SOURCE:
+      resourceType = 'data-sources';
+      resourceLabel = 'Data Source';
+      break;
+    case RoleScope.WEBSITE:
+      resourceType = 'websites';
+      resourceLabel = 'App';
+      break;
+    default:
+      resourceType = 'unknown';
+      resourceLabel = 'Resource';
+  }
 
   const resourceName = resource.name || resource.site_name || '';
 
@@ -84,11 +79,9 @@ export default function ResourceAccessInvite({ resourceScope, resource, onBack }
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, permissionLevel: permissionOption.value }),
-          }).then((res) => {
-            if (!res.ok) {
-              console.error(`Failed to invite "${email}"`);
-              toast.error(`Failed to invite "${email}"`);
-            }
+          }).catch(() => {
+            console.error(`Failed to invite "${email}"`);
+            toast.error(`Failed to invite "${email}"`);
           }),
         ),
       );

@@ -28,18 +28,21 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onInv
   const [resourceMembers, setResourceMembers] = useState<ResourceMember[]>([]);
   const [removeMember, setRemoveMember] = useState<ResourceMember | null>(null);
 
-  const resourceType = useMemo(() => {
-    switch (resourceScope) {
-      case RoleScope.ENVIRONMENT:
-        return 'environments';
-      case RoleScope.DATA_SOURCE:
-        return 'data-sources';
-      case RoleScope.WEBSITE:
-        return 'websites';
-      default:
-        return 'unknown';
-    }
-  }, [resourceScope]);
+  let resourceType: string;
+
+  switch (resourceScope) {
+    case RoleScope.ENVIRONMENT:
+      resourceType = 'environments';
+      break;
+    case RoleScope.DATA_SOURCE:
+      resourceType = 'data-sources';
+      break;
+    case RoleScope.WEBSITE:
+      resourceType = 'websites';
+      break;
+    default:
+      resourceType = 'unknown';
+  }
 
   useEffect(() => {
     const fetchResourceAccessMembers = async () => {
