@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChevronDown, Check, Search, Filter, X, Plus, ChevronRight } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -222,8 +222,12 @@ export default function UsersTab() {
     [users, searchQuery, activeFilters],
   );
 
+  const handleBack = useCallback(() => {
+    setShowDetails(false);
+  }, []);
+
   if (showDetails) {
-    return <UsersDetails onBack={() => setShowDetails(false)} />;
+    return <UsersDetails onBack={handleBack} />;
   }
 
   if (isLoading) {
