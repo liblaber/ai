@@ -24,7 +24,7 @@ import { chatId, description } from '~/lib/persistence/useConversationHistory';
 import { PublishProgressModal } from '~/components/publish/PublishProgressModal.client';
 import JSZip from 'jszip';
 import type { NetlifySiteInfo } from '~/types/netlify';
-import { AlertTriangle, Check, ChevronDown, CodeXml, Lock, MessageCircle, Rocket, Settings } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, CodeXml, MessageCircle, Rocket, Settings } from 'lucide-react';
 import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 
 interface ProgressData {
@@ -62,21 +62,18 @@ const DEPLOYMENT_TYPES = [
     id: 'netlify',
     name: 'Netlify',
     description: 'Deploy to Netlify',
-    icon: '🚀',
     enabled: true, // Will be updated based on config
   },
   {
     id: 'aws',
-    name: 'AWS (SST)',
-    description: 'Deploy to AWS using SST',
-    icon: '☁️',
+    name: 'AWS',
+    description: 'Deploy to AWS',
     enabled: true, // Will be updated based on config
   },
   {
     id: 'vercel',
     name: 'Vercel',
     description: 'Deploy to Vercel',
-    icon: '⚡',
     enabled: false, // Placeholder for future
   },
 ] as const;
@@ -458,7 +455,6 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
             className="w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-between"
           >
             <div className="flex items-center gap-2">
-              <span>{deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.icon}</span>
               <span>{deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name}</span>
             </div>
             <ChevronDown className="w-4 h-4" />
@@ -481,7 +477,6 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
                   })}
                 >
                   <div className="flex items-center gap-2">
-                    <span>{type.icon}</span>
                     <div className="text-left">
                       <div className="font-medium">{type.name}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">{type.description}</div>
@@ -554,17 +549,13 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
                 isPublishingDisabled ? 'SQLite database publishing is not supported' : 'Publish your site to the web'
               }
               onClick={() => !isPublishingDisabled && setIsDropdownOpen(!isDropdownOpen)}
-              className={classNames('px-4 flex items-center gap-2', {
-                'opacity-50 grayscale': isPublishingDisabled,
-              })}
-            >
-              {isPublishingDisabled ? (
-                <Lock className="w-4 h-4" />
-              ) : (
-                <span className="text-sm">
-                  {deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.icon}
-                </span>
+              className={classNames(
+                'px-4 flex items-center gap-2 bg-accent-500 dark:bg-accent-500 hover:bg-accent-800 dark:hover:bg-accent-800 text-white dark:text-gray-900',
+                {
+                  'opacity-50 grayscale': isPublishingDisabled,
+                },
               )}
+            >
               {selectedDeploymentType !== 'netlify' && !isPublishingDisabled && (
                 <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
                   ({deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name})

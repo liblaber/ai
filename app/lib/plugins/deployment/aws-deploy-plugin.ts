@@ -16,9 +16,6 @@ interface CommandResult {
   error: string;
 }
 
-const debugLogPath = '/Users/stevan/Downloads/debug.log';
-const debugProjectPath = '/Users/stevan/Downloads/aws-deploy-debug';
-
 const TOTAL_STEPS = 6;
 
 export class AwsDeployPlugin implements DeploymentPlugin {
@@ -33,14 +30,6 @@ export class AwsDeployPlugin implements DeploymentPlugin {
   ): Promise<DeploymentResult> {
     const { websiteId, chatId, userId } = config;
     let currentStepIndex = 1;
-
-    if (await this._fileExists(debugProjectPath)) {
-      await rimraf(debugProjectPath);
-    }
-
-    if (await this._fileExists(debugLogPath)) {
-      await unlink(debugLogPath);
-    }
 
     // Check if AWS credentials are configured
     if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
@@ -197,13 +186,6 @@ export class AwsDeployPlugin implements DeploymentPlugin {
 
       throw new Error(`AWS deployment failed: ${error.message}`);
     } finally {
-      // Clean up temporary directory
-      logger.info('Cleaning up temporary directory', JSON.stringify({ chatId, tempDir }));
-      await rimraf(join(tempDir, 'node_modules'));
-      await rimraf(join(tempDir, '.sst'));
-      await rimraf(join(tempDir, '.next'));
-
-      await fs.cp(tempDir, debugProjectPath, { recursive: true });
       await rimraf(tempDir);
     }
   }
@@ -351,12 +333,35 @@ CMD ["node", "server.js"]
     let appUrl: string | undefined;
 
     for (const line of lines) {
+      // Look for stack name in various formats
       if (line.includes('Stack:') && !stackName) {
         stackName = line.split('Stack:')[1]?.trim();
       }
 
-      if (line.includes('url:') && !appUrl) {
-        appUrl = line.split('url:')[1]?.trim();
+      // Look for the complete line with the deployed URL
+      // Format: "   liblab-xxx: https://xxx.cloudfront.net"
+      const urlMatch = line.match(/^\s*liblab-[^:]+:\s*(https?:\/\/[^\s]+)/);
+
+      if (urlMatch && !appUrl) {
+        appUrl = urlMatch[1];
+
+        // Extract stack name from the same line if not already found
+        if (!stackName) {
+          const stackMatch = line.match(/^\s*(liblab-[^:]+):/);
+
+          if (stackMatch) {
+            stackName = stackMatch[1];
+          }
+        }
+      }
+
+      // Fallback: look for any line containing a cloudfront URL
+      if (!appUrl && line.includes('cloudfront.net')) {
+        const cloudfrontMatch = line.match(/(https?:\/\/[^\s]*cloudfront\.net[^\s]*)/);
+
+        if (cloudfrontMatch) {
+          appUrl = cloudfrontMatch[1];
+        }
       }
     }
 
@@ -398,13 +403,6 @@ CMD ["node", "server.js"]
       });
 
       proc.on('close', (code: number | null) => {
-        const outputLog = {
-          error,
-          output,
-        };
-
-        fs.writeFile(debugLogPath, JSON.stringify(outputLog, null, 2));
-
         if (code === 0) {
           resolve({ output, error });
         } else {
@@ -413,12 +411,6 @@ CMD ["node", "server.js"]
       });
 
       proc.on('error', (err: Error) => {
-        const outputLog = {
-          error,
-          output,
-        };
-
-        fs.writeFile(debugLogPath, JSON.stringify(outputLog, null, 2));
         reject(err);
       });
     });
