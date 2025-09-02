@@ -9,6 +9,7 @@ import { Badge } from '~/components/ui/Badge';
 import { BaseSelect, type SelectOption } from '~/components/ui/Select';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
+import { logger } from '~/utils/logger';
 
 export const permissionOptions: SelectOption[] = [
   { value: 'manage', label: 'Full Access' },
@@ -80,7 +81,7 @@ export default function ResourceAccessInvite({ resourceScope, resource, onBack }
             body: JSON.stringify({ email, permissionLevel: permissionOption.value }),
           }).then(async (res) => {
             if (!res.ok) {
-              console.error(`Failed to invite "${email}"`);
+              logger.error(`Failed to invite "${email}"`);
               toast.error(`Failed to invite "${email}"`);
             }
           }),

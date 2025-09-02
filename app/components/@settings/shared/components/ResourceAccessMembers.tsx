@@ -9,6 +9,7 @@ import type { ResourceMember } from '~/lib/utils/resource-utils';
 import { BaseSelect, type SelectOption } from '~/components/ui/Select';
 import WithTooltip from '~/components/ui/Tooltip';
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
+import { logger } from '~/utils/logger';
 
 export const permissionOptions: SelectOption[] = [
   { value: 'manage', label: 'Full Access' },
@@ -53,7 +54,7 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onInv
         const data: { members: ResourceMember[] } = await response.json();
         setResourceMembers(data.members);
       } catch (error) {
-        console.error(`Error fetching ${resourceType} members:`, error);
+        logger.error(`Error fetching ${resourceType} members:`, error);
         toast.error(`Failed to fetch ${resourceType} members`);
       } finally {
         setIsLoading(false);
@@ -93,7 +94,7 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onInv
         ),
       );
     } catch (error) {
-      console.error(`Error updating permission for member ${memberId}:`, error);
+      logger.error(`Error updating permission for member ${memberId}:`, error);
       toast.error(`Failed to update permission for member ${memberId}`);
     }
   };
@@ -117,7 +118,7 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onInv
 
       setResourceMembers((prev) => prev.filter((member) => member.id !== removeMember.id));
     } catch (error) {
-      console.error(`Error removing member ${removeMember.id}:`, error);
+      logger.error(`Error removing member ${removeMember.id}:`, error);
       toast.error(`Failed to remove member ${removeMember.id}`);
     } finally {
       setRemoveMember(null);
