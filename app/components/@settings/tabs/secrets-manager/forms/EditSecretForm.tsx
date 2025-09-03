@@ -23,7 +23,7 @@ export default function EditSecretForm({
   onDelete,
 }: EditSecretFormProps) {
   const [key, setKey] = useState(environmentVariable.key);
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(environmentVariable.value);
   const [description, setDescription] = useState(environmentVariable.description || '');
   const [showValue, setShowValue] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -31,21 +31,21 @@ export default function EditSecretForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!key.trim()) {
+    if (!key.trim() || !value.trim()) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     // Validate key format (alphanumeric and underscores only)
-    if (!/^[A-Za-z0-9_]+$/.test(key.trim())) {
-      toast.error('Key can only contain letters, numbers, and underscores');
+    if (!/^[A-Z0-9_]+$/.test(key.trim())) {
+      toast.error('Secret key can only contain uppercase letters, numbers, and underscores');
       return;
     }
 
     // Check if any changes were made
     const hasChanges =
       key.trim().toUpperCase() !== environmentVariable.key ||
-      (value.trim() && value.trim() !== environmentVariable.value) ||
+      value.trim() !== environmentVariable.value ||
       description.trim() !== (environmentVariable.description || '');
 
     if (!hasChanges) {
@@ -63,7 +63,7 @@ export default function EditSecretForm({
         },
         body: JSON.stringify({
           key: key.trim().toUpperCase(),
-          value: value.trim() || environmentVariable.value, // Use new value or keep current
+          value: value.trim(),
           type: EnvironmentVariableType.GLOBAL,
           description: description.trim() || undefined,
         }),
@@ -230,7 +230,7 @@ export default function EditSecretForm({
           <input
             type={showValue ? 'text' : 'password'}
             id="value"
-            value={value || environmentVariable.value}
+            value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="Enter secret value"
             className={classNames(
