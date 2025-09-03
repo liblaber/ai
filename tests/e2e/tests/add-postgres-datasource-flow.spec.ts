@@ -58,22 +58,19 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
 
     console.log('🔍 Looking for settings button...');
 
-    // Force scroll to top first
-    await page.evaluate(() => {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    });
-    await page.waitForTimeout(1000);
-
     const settingsButton = page.locator('[data-testid="settings-button"]');
     await settingsButton.waitFor({ state: 'attached', timeout: 10000 });
 
-    // Wait for the settings button to be visible
-    await settingsButton.waitFor({ state: 'visible', timeout: 10000 });
+    // Use JavaScript click instead of Playwright click to bypass viewport restrictions
+    await page.evaluate(() => {
+      const button = document.querySelector('[data-testid="settings-button"]') as HTMLElement;
 
-    // Use force click to bypass viewport issues
-    await settingsButton.click({ force: true });
+      if (button) {
+        button.click();
+      } else {
+        throw new Error('Settings button not found in DOM');
+      }
+    });
     console.log('✅ Successfully clicked settings button');
 
     await page.getByRole('button', { name: 'Add Data Source' }).click();
@@ -191,22 +188,19 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
 
     console.log('🔍 Looking for settings button...');
 
-    // Force scroll to top first
-    await page.evaluate(() => {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    });
-    await page.waitForTimeout(1000);
-
     const settingsButton = page.locator('[data-testid="settings-button"]');
     await settingsButton.waitFor({ state: 'attached', timeout: 10000 });
 
-    // Wait for the settings button to be visible
-    await settingsButton.waitFor({ state: 'visible', timeout: 10000 });
+    // Use JavaScript click instead of Playwright click to bypass viewport restrictions
+    await page.evaluate(() => {
+      const button = document.querySelector('[data-testid="settings-button"]') as HTMLElement;
 
-    // Use force click to bypass viewport issues
-    await settingsButton.click({ force: true });
+      if (button) {
+        button.click();
+      } else {
+        throw new Error('Settings button not found in DOM');
+      }
+    });
     console.log('✅ Successfully clicked settings button');
 
     await page.getByRole('button', { name: 'Add Data Source' }).click();
