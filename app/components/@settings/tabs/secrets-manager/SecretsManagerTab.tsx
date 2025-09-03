@@ -238,26 +238,27 @@ export default function SecretsManagerTab() {
 
       {/* Edit Form */}
       {showEditForm && selectedEnvironmentVariable && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-medium text-primary">Edit Secret</h2>
-              <p className="text-sm text-secondary">Update the environment variable configuration</p>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => {
+                  setShowEditForm(false);
+                  setSelectedEnvironmentVariable(null);
+                }}
+                className={classNames(
+                  'inline-flex items-center gap-2 p-2 text-sm font-medium rounded-lg transition-colors',
+                  'dark:bg-gray-900 dark:text-gray-300',
+                  'hover:bg-gray-100 dark:hover:bg-gray-800',
+                )}
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <div>
+                <h2 className="text-lg font-medium text-primary">Edit Secret</h2>
+                <p className="text-sm text-secondary">Update the environment variable configuration</p>
+              </div>
             </div>
-            <button
-              onClick={() => {
-                setShowEditForm(false);
-                setSelectedEnvironmentVariable(null);
-              }}
-              className={classNames(
-                'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700',
-                'text-gray-700 dark:text-gray-300',
-              )}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
-            </button>
           </div>
 
           <EditSecretForm

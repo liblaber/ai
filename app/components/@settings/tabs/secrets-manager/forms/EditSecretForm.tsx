@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Copy, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { Eye, EyeSlash } from 'iconsax-reactjs';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
 import type { EnvironmentVariableWithDetails } from '~/lib/stores/environmentVariables';
-import type { EnvironmentVariableType } from '@prisma/client';
+import { EnvironmentVariableType } from '@prisma/client';
 
 interface EditSecretFormProps {
   environmentVariable: EnvironmentVariableWithDetails;
@@ -24,11 +24,9 @@ export default function EditSecretForm({
 }: EditSecretFormProps) {
   const [key, setKey] = useState(environmentVariable.key);
   const [value, setValue] = useState('');
-  const [type, setType] = useState<EnvironmentVariableType>(environmentVariable.type);
   const [description, setDescription] = useState(environmentVariable.description || '');
   const [showValue, setShowValue] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [hasCopied, setHasCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +46,6 @@ export default function EditSecretForm({
     const hasChanges =
       key.trim().toUpperCase() !== environmentVariable.key ||
       (value.trim() && value.trim() !== environmentVariable.value) ||
-      type !== environmentVariable.type ||
       description.trim() !== (environmentVariable.description || '');
 
     if (!hasChanges) {
@@ -67,7 +64,7 @@ export default function EditSecretForm({
         body: JSON.stringify({
           key: key.trim().toUpperCase(),
           value: value.trim() || environmentVariable.value, // Use new value or keep current
-          type,
+          type: EnvironmentVariableType.GLOBAL,
           description: description.trim() || undefined,
         }),
       });
@@ -125,17 +122,6 @@ export default function EditSecretForm({
     setShowValue(!showValue);
   };
 
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(environmentVariable.value);
-      setHasCopied(true);
-      setTimeout(() => setHasCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
-      toast.error('Failed to copy to clipboard');
-    }
-  };
-
   if (showDeleteConfirm) {
     return (
       <motion.div
@@ -189,61 +175,6 @@ export default function EditSecretForm({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Key */}
-        <div className="space-y-2">
-          <label htmlFor="key" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Key <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="key"
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            placeholder="DATABASE_URL"
-            className={classNames(
-              'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
-              'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
-              'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
-              'placeholder-gray-500 dark:placeholder-gray-400',
-            )}
-            required
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Use uppercase letters, numbers, and underscores only
-          </p>
-        </div>
-
-        {/* Type */}
-        <div className="space-y-2">
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Type <span className="text-red-500">*</span>
-          </label>
-          <select
-            id="type"
-            value={type}
-            onChange={(e) => setType(e.target.value as EnvironmentVariableType)}
-            disabled={environmentVariable.type === 'DATA_SOURCE'}
-            className={classNames(
-              'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
-              'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
-              'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
-              {
-                'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed':
-                  environmentVariable.type === 'DATA_SOURCE',
-              },
-            )}
-            required
-          >
-            <option value="GLOBAL">Global</option>
-            <option value="DATA_SOURCE">Data Source</option>
-          </select>
-          {environmentVariable.type === 'DATA_SOURCE' && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">Type cannot be changed for data source secrets</p>
-          )}
-        </div>
-      </div>
-
       {/* Environment (Read-only) */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Environment</label>
@@ -257,6 +188,28 @@ export default function EditSecretForm({
             'cursor-not-allowed',
           )}
         />
+      </div>
+
+      {/* Key */}
+      <div className="space-y-2">
+        <label htmlFor="key" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Key <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          id="key"
+          value={key}
+          onChange={(e) => setKey(e.target.value)}
+          placeholder="MY_SECRET_KEY"
+          className={classNames(
+            'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
+            'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
+            'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
+            'placeholder-gray-500 dark:placeholder-gray-400',
+          )}
+          required
+        />
+        <p className="text-xs text-gray-500 dark:text-gray-400">Use uppercase letters, numbers, and underscores only</p>
       </div>
 
       {/* Data Source Warning */}
@@ -299,26 +252,7 @@ export default function EditSecretForm({
             </span>
           </button>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={copyToClipboard}
-            className={classNames(
-              'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors',
-              'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700',
-              'text-gray-700 dark:text-gray-300',
-            )}
-          >
-            {hasCopied ? (
-              'Copied to clipboard'
-            ) : (
-              <>
-                <Copy className="w-4 h-4" />
-                Copy
-              </>
-            )}
-          </button>
-        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400">This value will be encrypted before storage</p>
       </div>
 
       {/* Description */}
