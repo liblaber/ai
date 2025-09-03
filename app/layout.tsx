@@ -12,6 +12,9 @@ import { auth } from '~/auth/auth-config';
 import type { Session } from '~/auth/session';
 import { getEnvironmentVariables } from '~/lib/services/environmentVariablesService';
 
+// Force dynamic rendering to prevent static generation issues with headers
+export const dynamic = 'force-dynamic';
+
 const inlineThemeCode = `
   setLiblabTheme();
   function setLiblabTheme() {

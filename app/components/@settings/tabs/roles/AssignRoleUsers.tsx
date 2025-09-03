@@ -169,7 +169,7 @@ export default function AssignRoleUsers({ role, onRoleUpdate, closeAssignUsers }
             className="px-4 py-2 bg-accent-500 hover:bg-accent-600 text-gray-950 dark:text-gray-950 rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving
-              ? 'Assigning Users...'
+              ? 'Assigning Members...'
               : `Assign ${selectedUsers.size ? selectedUsers.size : ''} User${selectedUsers.size !== 1 ? 's' : ''}`}
           </button>
         </div>
