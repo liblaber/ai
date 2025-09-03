@@ -1,64 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '~/lib/prisma';
+import { z } from 'zod';
 import { logger } from '~/utils/logger';
-import { requireUserId } from '~/auth/session';
+import { requireUserAbility } from '~/auth/session';
+import { createWebsite, getWebsites } from '~/lib/services/websiteService';
+import { PermissionAction, PermissionResource } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
-  const userId = await requireUserId(request);
+  const { userAbility } = await requireUserAbility(request);
 
-  const websites = await prisma.website.findMany({
-    where: {
-      createdById: userId,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
+  if (userAbility.cannot(PermissionAction.read, PermissionResource.Website)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
 
-  return NextResponse.json({ websites });
+  const websites = await getWebsites(userAbility);
+
+  return NextResponse.json({ success: true, websites });
 }
 
-interface CreateWebsiteRequest {
-  chatId: string;
-}
+const postRequestSchema = z.object({
+  chatId: z.string().min(1, 'Chat ID is required'),
+  createdById: z.string().min(1, 'User ID is required'),
+  siteId: z.string().optional().default(''),
+  siteName: z.string().optional().default(''),
+  siteUrl: z.string().optional().default(''),
+});
 
 export async function POST(request: NextRequest) {
-  const userId = await requireUserId(request);
-
   try {
-    const { chatId } = (await request.json()) as CreateWebsiteRequest;
+    const { userAbility } = await requireUserAbility(request);
 
-    if (!chatId) {
-      return NextResponse.json({ error: 'Chat ID is required' }, { status: 400 });
+    const body = await request.json();
+    const parsedBody = postRequestSchema.safeParse(body);
+
+    if (!parsedBody.success) {
+      return NextResponse.json({ success: false, error: parsedBody.error.flatten().fieldErrors }, { status: 400 });
     }
 
-    // Create a new website with empty strings for nullable fields
-    const website = await prisma.website.create({
-      data: {
-        chatId,
-        createdById: userId,
-        siteId: '',
-        siteName: '',
-        siteUrl: '',
-      },
-    });
+    if (userAbility.cannot(PermissionAction.create, PermissionResource.Website)) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
 
-    logger.info('Website created successfully', JSON.stringify({ chatId, websiteId: website.id }));
+    const website = await createWebsite(parsedBody.data);
 
-    return NextResponse.json({ website });
-  } catch (error) {
-    logger.error(
-      'Failed to create website',
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }),
+    logger.info(
+      'Website created successfully',
+      JSON.stringify({ chatId: parsedBody.data.chatId, websiteId: website.id }),
     );
 
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to create website',
-      },
-      { status: 500 },
-    );
+    return NextResponse.json({ success: true, website });
+  } catch {
+    return NextResponse.json({ success: false, error: 'Failed to create website' }, { status: 500 });
   }
 }
