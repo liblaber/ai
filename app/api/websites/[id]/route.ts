@@ -5,6 +5,7 @@ import { subject } from '@casl/ability';
 import { requireUserAbility } from '~/auth/session';
 import { deleteWebsite, getWebsite, updateWebsite } from '~/lib/services/websiteService';
 import { env } from '~/env';
+import { logger } from '~/utils/logger';
 
 // Netlify API client
 const NETLIFY_API_URL = 'https://api.netlify.com/api/v1';
@@ -107,6 +108,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    logger.error('Error deleting website:', error);
+
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
       return NextResponse.json({ success: false, error: `Website not found` }, { status: 404 });
     }

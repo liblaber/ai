@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(conversation);
   } catch (error) {
-    console.error('Error fetching conversation:', error);
+    logger.error('Error fetching conversation:', error);
     return NextResponse.json(
       {
         error: 'Failed to fetch conversation',

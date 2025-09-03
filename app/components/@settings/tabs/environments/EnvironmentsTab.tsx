@@ -52,7 +52,7 @@ export default function EnvironmentsTab() {
           setEnvironments(data.environments);
         }
       } catch (error) {
-        console.error('Failed to load environments:', error);
+        logger.error('Failed to load environments:', error);
       }
     };
 
