@@ -1,6 +1,6 @@
 /**
  * Specified enum values for sample database
- * These values correspond to the data in 01-init.sql
+ * These values correspond to the data in sample-db-init.sql
  *
  * This is used to populate the enum values for the sample database
  * because the SQLite database does not have a native support for this.

@@ -34,7 +34,7 @@ async function setupSampleDatabase(): Promise<void> {
     }
 
     // Read and execute the init SQL file
-    const initSql = fs.readFileSync(path.join(__dirname, '..', 'init', '01-init.sql'), 'utf-8');
+    const initSql = fs.readFileSync(path.join(__dirname, '..', 'init', 'sample-db-init.sql'), 'utf-8');
     db.exec(initSql);
 
     setupSpinner.stop('✅ Database initialized successfully');

@@ -6,7 +6,7 @@ Securely connect your database, build an app, and deploy in seconds.
 
 **🚀 [Jump to Quick Start](#-quick-start)** - Get up and running in minutes!
 
-![Alt text](https://github.com/liblaber/ai/raw/main/assets/videos/liblab-ai-preview.gif)
+![Alt text](https://github.com/liblaber/ai/raw/main/assets/videos/revenue-dashboard-demo.gif)
 
 ## **✨ Key features**
 
@@ -167,18 +167,14 @@ git clone https://github.com/liblaber/ai.git
 cd ai
 ```
 
-**Run the setup**
+**Run the quickstart**
+
+Make sure your Docker Desktop is running.
+
+Run the following command to set up and start the app:
 
 ```bash
 pnpm run quickstart
-```
-
-**Start with Docker**
-
-After setup is complete, start the app with Docker:
-
-```bash
-pnpm run docker:start
 ```
 
 **That's it! 🎉** The app will be available at [http://localhost:3000](http://localhost:3000/)
