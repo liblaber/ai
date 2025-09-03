@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { ChevronDown, Check, Search, Filter, X, Plus, ChevronRight } from 'lucide-react';
+import { ChevronDown, Check, Search, Filter, X, Plus, ChevronRight, Mail, Trash2, Clock } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { toast } from 'sonner';
@@ -18,6 +18,18 @@ interface User {
   name: string;
   roleId: string;
   roleName: string;
+}
+
+interface PendingInvite {
+  id: string;
+  email: string;
+  roleId: string;
+  roleName: string;
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt?: string | null;
+  invitedBy: string;
 }
 
 type LoaderData = {
@@ -90,6 +102,7 @@ export default function UsersTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [usersWithoutRoles, setUsersWithoutRoles] = useState<User[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
@@ -135,8 +148,23 @@ export default function UsersTab() {
       }
     };
 
+    const fetchPendingInvites = async () => {
+      try {
+        const response = await fetch('/api/invites?status=PENDING');
+        const data = (await response.json()) as { success: boolean; invites?: PendingInvite[] };
+
+        if (data.success && data.invites) {
+          setPendingInvites(data.invites);
+        }
+      } catch (error) {
+        console.error('Error fetching pending invites:', error);
+        toast.error('Failed to fetch pending invites');
+      }
+    };
+
     fetchUsers();
     fetchRoles();
+    fetchPendingInvites();
   }, []);
 
   const handleRoleChange = async (userId: string, newRoleId: string) => {
@@ -204,23 +232,70 @@ export default function UsersTab() {
     setActiveFilters([]);
   };
 
-  const filteredUsers = useMemo(
-    () =>
-      users.filter((user) => {
-        const matchesSearch =
-          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchQuery.toLowerCase());
+  const handleDeleteInvite = async (inviteId: string) => {
+    try {
+      const response = await fetch(`/api/invites/${inviteId}`, {
+        method: 'DELETE',
+      });
 
-        const matchesFilters =
-          activeFilters.length === 0 ||
-          activeFilters.some((filter) => {
-            return user.roleName === filter;
-          });
+      const data = (await response.json()) as { success: boolean; error?: string };
 
-        return matchesSearch && matchesFilters;
-      }),
-    [users, searchQuery, activeFilters],
-  );
+      if (data.success) {
+        setPendingInvites((prev) => prev.filter((invite) => invite.id !== inviteId));
+        toast.success('Invite removed successfully');
+      } else {
+        toast.error(data.error || 'Failed to remove invite');
+      }
+    } catch (error) {
+      console.error('Error deleting invite:', error);
+      toast.error('Failed to remove invite');
+    }
+  };
+
+  const formatExpirationDate = (expiresAt: string) => {
+    const date = new Date(expiresAt);
+    const now = new Date();
+    const diffInHours = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60));
+
+    if (diffInHours <= 0) {
+      return 'Expired';
+    } else if (diffInHours < 24) {
+      return `${diffInHours}h left`;
+    } else {
+      const diffInDays = Math.ceil(diffInHours / 24);
+      return `${diffInDays}d left`;
+    }
+  };
+
+  const filteredUsers = useMemo(() => {
+    // Combine users and pending invites into a single list
+    const allMembers = [
+      ...users.map((user) => ({ ...user, type: 'user' as const })),
+      ...pendingInvites.map((invite) => ({
+        id: invite.id,
+        email: invite.email,
+        name: invite.email, // Use email as name for invites
+        roleId: invite.roleId,
+        roleName: invite.roleName,
+        type: 'invite' as const,
+        expiresAt: invite.expiresAt,
+      })),
+    ];
+
+    return allMembers.filter((member) => {
+      const matchesSearch =
+        member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        member.email.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesFilters =
+        activeFilters.length === 0 ||
+        activeFilters.some((filter) => {
+          return member.roleName === filter;
+        });
+
+      return matchesSearch && matchesFilters;
+    });
+  }, [users, pendingInvites, searchQuery, activeFilters]);
 
   const handleBack = useCallback(() => {
     setShowDetails(false);
@@ -250,7 +325,12 @@ export default function UsersTab() {
         <div className="flex items-center justify-between p-2">
           <div className="flex items-center gap-2">
             <h2 className="text-lg text-white">Members</h2>
-            <span className="text-lg text-gray-400">{filteredUsers.length}</span>
+            <span className="text-lg text-gray-400">
+              {filteredUsers.length}
+              {pendingInvites.length > 0 && (
+                <span className="text-sm text-blue-400 ml-1">({pendingInvites.length} pending)</span>
+              )}
+            </span>
           </div>
           <button
             onClick={() => setShowDetails(true)}
@@ -332,26 +412,70 @@ export default function UsersTab() {
           </div>
 
           <div className="overflow-y-auto h-89 space-y-px">
-            {filteredUsers.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-4 border-b border-gray-700/50">
+            {filteredUsers.map((member) => (
+              <div
+                key={member.id}
+                className={`flex items-center justify-between p-4 border-b border-gray-700/50 ${
+                  member.type === 'invite' ? 'bg-blue-900/10' : ''
+                }`}
+              >
                 <div className="space-y-1">
-                  <div className="text-sm text-white">{user.name}</div>
-                  <div className="text-sm text-gray-400">{user.email}</div>
+                  <div className="text-sm text-white flex items-center gap-2">
+                    {member.type === 'invite' && <Mail className="w-3 h-3 text-blue-400" />}
+                    {member.name}
+                  </div>
+                  <div className="text-sm text-gray-400 flex items-center gap-2">
+                    {member.type === 'invite' && (
+                      <>
+                        <Clock className="w-3 h-3" />
+                        {formatExpirationDate(member.expiresAt)}
+                      </>
+                    )}
+                    {member.type === 'user' && member.email}
+                  </div>
                 </div>
-                <div>
-                  {user.id !== currentUserId ? (
-                    <RoleDropdown
-                      value={user.roleId}
-                      onChange={(newRoleId) => handleRoleChange(user.id, newRoleId)}
-                      roles={roles}
-                      triggerClassName={
-                        updatingUserId === user.id
-                          ? 'px-3 py-1.5 text-sm rounded-lg bg-gray-600/70 text-white hover:bg-gray-600 transition-colors flex items-center gap-2 min-w-[102px] justify-between opacity-50 cursor-not-allowed'
-                          : undefined
-                      }
-                    />
+                <div className="flex items-center gap-2">
+                  {member.type === 'invite' ? (
+                    <>
+                      <span className="px-2 py-1 text-xs rounded bg-blue-500/20 text-blue-300">{member.roleName}</span>
+                      <Tooltip.Root>
+                        <Tooltip.Trigger asChild>
+                          <button
+                            onClick={() => handleDeleteInvite(member.id)}
+                            className="p-1.5 rounded hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Portal>
+                          <Tooltip.Content
+                            className="bg-[#1A1A1A] p-2 rounded-lg text-xs text-gray-300 border border-[#333333] z-[99999] select-none animate-in fade-in-0 zoom-in-95"
+                            side="left"
+                            sideOffset={5}
+                          >
+                            Remove invite
+                            <Tooltip.Arrow className="fill-[#333333]" />
+                          </Tooltip.Content>
+                        </Tooltip.Portal>
+                      </Tooltip.Root>
+                    </>
                   ) : (
-                    <span className="text-sm text-gray-400">{user.roleName}</span>
+                    <>
+                      {member.id !== currentUserId ? (
+                        <RoleDropdown
+                          value={member.roleId}
+                          onChange={(newRoleId) => handleRoleChange(member.id, newRoleId)}
+                          roles={roles}
+                          triggerClassName={
+                            updatingUserId === member.id
+                              ? 'px-3 py-1.5 text-sm rounded-lg bg-gray-600/70 text-white hover:bg-gray-600 transition-colors flex items-center gap-2 min-w-[102px] justify-between opacity-50 cursor-not-allowed'
+                              : undefined
+                          }
+                        />
+                      ) : (
+                        <span className="text-sm text-gray-400">{member.roleName}</span>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
