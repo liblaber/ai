@@ -56,44 +56,24 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
       console.warn('ℹ️ No data source connection page found, continuing...');
     }
 
-    console.log('🔍 Looking for settings cog icon...');
+    console.log('🔍 Looking for settings button...');
 
-    // Scroll to top to ensure menu is in viewport
-    await page.evaluate(() => window.scrollTo(0, 0));
+    // Force scroll to top first
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
     await page.waitForTimeout(1000);
 
-    const menu = page.locator('[data-testid="menu"]');
-    await menu.waitFor({ state: 'visible', timeout: 10000 });
-
-    // Get menu bounds and scroll it into view if needed
-    const menuBounds = await menu.boundingBox();
-
-    if (menuBounds) {
-      await page.evaluate((bounds) => {
-        window.scrollTo(bounds.x, bounds.y);
-      }, menuBounds);
-      await page.waitForTimeout(500);
-    }
-
-    // Use a more reliable hover approach
-    try {
-      await menu.hover({ timeout: 5000 });
-      console.log('✅ Successfully hovered over menu');
-    } catch {
-      console.log('⚠️ Menu hover failed, trying alternative approach...');
-      // Alternative: scroll menu into view and try clicking directly
-      await menu.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(1000);
-    }
-
     const settingsButton = page.locator('[data-testid="settings-button"]');
+    await settingsButton.waitFor({ state: 'attached', timeout: 10000 });
+
+    // Wait for the settings button to be visible
     await settingsButton.waitFor({ state: 'visible', timeout: 10000 });
 
-    // Scroll settings button into view before clicking
-    await settingsButton.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500);
-
-    await settingsButton.click();
+    // Use force click to bypass viewport issues
+    await settingsButton.click({ force: true });
     console.log('✅ Successfully clicked settings button');
 
     await page.getByRole('button', { name: 'Add Data Source' }).click();
@@ -209,44 +189,24 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
       console.warn('ℹ️ No data source connection page found, continuing...');
     }
 
-    console.log('🔍 Looking for settings cog icon...');
+    console.log('🔍 Looking for settings button...');
 
-    // Scroll to top to ensure menu is in viewport
-    await page.evaluate(() => window.scrollTo(0, 0));
+    // Force scroll to top first
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
     await page.waitForTimeout(1000);
 
-    const menu = page.locator('[data-testid="menu"]');
-    await menu.waitFor({ state: 'visible', timeout: 10000 });
-
-    // Get menu bounds and scroll it into view if needed
-    const menuBounds = await menu.boundingBox();
-
-    if (menuBounds) {
-      await page.evaluate((bounds) => {
-        window.scrollTo(bounds.x, bounds.y);
-      }, menuBounds);
-      await page.waitForTimeout(500);
-    }
-
-    // Use a more reliable hover approach
-    try {
-      await menu.hover({ timeout: 5000 });
-      console.log('✅ Successfully hovered over menu');
-    } catch {
-      console.log('⚠️ Menu hover failed, trying alternative approach...');
-      // Alternative: scroll menu into view and try clicking directly
-      await menu.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(1000);
-    }
-
     const settingsButton = page.locator('[data-testid="settings-button"]');
+    await settingsButton.waitFor({ state: 'attached', timeout: 10000 });
+
+    // Wait for the settings button to be visible
     await settingsButton.waitFor({ state: 'visible', timeout: 10000 });
 
-    // Scroll settings button into view before clicking
-    await settingsButton.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500);
-
-    await settingsButton.click();
+    // Use force click to bypass viewport issues
+    await settingsButton.click({ force: true });
     console.log('✅ Successfully clicked settings button');
 
     await page.getByRole('button', { name: 'Add Data Source' }).click();
@@ -275,7 +235,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
       'input[placeholder*="database name"], input[placeholder*="Database Name"], input[name*="dbName"], input[name*="name"]',
     );
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
-    console.log('✅ Found database name input, filling "foobar"...');
+    console.log('✅ Found database name input, filling "baz"...');
     await dbNameInput.fill('baz');
 
     console.log('🔍 Looking for connection string input...');

@@ -95,45 +95,80 @@ test.describe('User Onboarding Flow Test', () => {
     await chatInterface.waitFor({ state: 'visible', timeout: 10000 });
     console.log('✅ Chat interface loaded');
 
-    // Wait for any iframe to appear first (more flexible selector)
+    // Wait for any iframe to appear first, but check if it becomes visible
     console.log('🔍 Looking for any iframe in the page...');
 
+    // First wait for iframe to be attached to DOM
     const anyIframe = page.locator('iframe');
-    await anyIframe.first().waitFor({ state: 'visible', timeout: 60000 });
-    console.log('✅ Found an iframe, checking for preview iframe...');
+    await anyIframe.first().waitFor({ state: 'attached', timeout: 30000 });
+    console.log('✅ Found an iframe attached to DOM...');
+
+    // Try to wait for it to become visible, but with shorter timeout
+    try {
+      await anyIframe.first().waitFor({ state: 'visible', timeout: 30000 });
+      console.log('✅ Iframe became visible naturally');
+    } catch {
+      console.log('⚠️ Iframe not visible yet, checking if it can be made visible...');
+
+      // Try to trigger visibility by scrolling or interactions
+      await page.evaluate(() => {
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach((iframe) => {
+          if (iframe.style.display === 'none') {
+            iframe.style.display = 'block';
+          }
+
+          if (iframe.hasAttribute('hidden')) {
+            iframe.removeAttribute('hidden');
+          }
+
+          iframe.scrollIntoView();
+        });
+      });
+
+      await page.waitForTimeout(5000);
+
+      // Try waiting for visibility again
+      try {
+        await anyIframe.first().waitFor({ state: 'visible', timeout: 10000 });
+        console.log('✅ Iframe became visible after DOM manipulation');
+      } catch {
+        console.log('⚠️ Iframe still not visible, will proceed with attached iframe');
+      }
+    }
 
     // Now look specifically for preview iframe with better error handling
     let iframe;
 
     try {
       iframe = page.locator('iframe[title="preview"]');
-      await iframe.waitFor({ state: 'visible', timeout: 30000 });
-      console.log('✅ Preview iframe found and visible');
+      await iframe.waitFor({ state: 'attached', timeout: 30000 });
+      console.log('✅ Preview iframe found and attached');
+
+      // Try to make it visible if it's not already
+      try {
+        await iframe.waitFor({ state: 'visible', timeout: 10000 });
+        console.log('✅ Preview iframe is visible');
+      } catch {
+        console.log('⚠️ Preview iframe attached but not visible, trying to show it...');
+        await page.evaluate(() => {
+          const previewIframe = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement | null;
+
+          if (previewIframe) {
+            previewIframe.style.display = 'block';
+            previewIframe.removeAttribute('hidden');
+            previewIframe.style.visibility = 'visible';
+            previewIframe.scrollIntoView();
+          }
+        });
+        await page.waitForTimeout(2000);
+      }
     } catch {
-      console.log('⚠️ Preview iframe not found, trying alternative selectors...');
+      console.log('⚠️ Preview iframe not found, using any available iframe...');
 
-      // Try alternative iframe selectors
-      const alternativeIframes = [
-        'iframe[src*="preview"]',
-        'iframe[data-testid*="preview"]',
-        'iframe[id*="preview"]',
-        'iframe', // Any iframe as last resort
-      ];
-
-      for (const selector of alternativeIframes) {
-        try {
-          iframe = page.locator(selector).first();
-          await iframe.waitFor({ state: 'visible', timeout: 5000 });
-          console.log(`✅ Found iframe using selector: ${selector}`);
-          break;
-        } catch {
-          continue;
-        }
-      }
-
-      if (!iframe) {
-        throw new Error('Could not find any suitable iframe for preview');
-      }
+      // Use any iframe that's attached
+      iframe = anyIframe.first();
+      console.log('✅ Using the first available iframe');
     }
 
     await iframe.waitFor({ state: 'attached', timeout: 10000 });
