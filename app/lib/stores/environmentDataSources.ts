@@ -9,7 +9,7 @@ export interface EnvironmentVariable {
   value: string;
   description: string | null;
   // this must be synced with EnvironmentVariableType enum in prisma
-  type: 'CONNECTION_URL' | 'ACCESS_TOKEN' | 'REFRESH_TOKEN' | 'CLIENT_ID' | 'CLIENT_SECRET' | 'API_KEY';
+  type: 'GLOBAL' | 'DATA_SOURCE';
   environmentId: string;
   dataSourceId: string | null;
   createdById: string;
