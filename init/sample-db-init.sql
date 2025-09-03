@@ -1,141 +1,191 @@
 -- Create tables
-CREATE TABLE organizations (
-                             organization_id INTEGER PRIMARY KEY,
-                             organization_name TEXT NOT NULL,
-                             industry TEXT,
-                             address TEXT,
-                             phone TEXT,
-                             email TEXT,
-                             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                             subscription_tier TEXT DEFAULT 'free',
-                             last_payment_date DATETIME,
-                             next_payment_date DATETIME
+CREATE TABLE organizations
+(
+  organization_id   INTEGER PRIMARY KEY,
+  organization_name TEXT NOT NULL,
+  industry          TEXT,
+  address           TEXT,
+  phone             TEXT,
+  email             TEXT,
+  created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+  subscription_tier TEXT     DEFAULT 'free',
+  last_payment_date DATETIME,
+  next_payment_date DATETIME
 );
 
-CREATE TABLE users (
-                     user_id INTEGER PRIMARY KEY,
-                     organization_id INTEGER REFERENCES organizations(organization_id),
-                     username TEXT NOT NULL UNIQUE,
-                     email TEXT NOT NULL UNIQUE,
-                     first_name TEXT,
-                     last_name TEXT,
-                     role TEXT,
-                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                     last_login_at DATETIME,
-                     is_active INTEGER DEFAULT 1
+CREATE TABLE users
+(
+  user_id         INTEGER PRIMARY KEY,
+  organization_id INTEGER REFERENCES organizations (organization_id),
+  username        TEXT NOT NULL UNIQUE,
+  email           TEXT NOT NULL UNIQUE,
+  first_name      TEXT,
+  last_name       TEXT,
+  role            TEXT,
+  created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_login_at   DATETIME,
+  is_active       INTEGER  DEFAULT 1
 );
 
-CREATE TABLE subscriptions (
-                             subscription_id INTEGER PRIMARY KEY,
-                             organization_id INTEGER REFERENCES organizations(organization_id),
-                             plan_name TEXT NOT NULL,
-                             start_date DATETIME NOT NULL,
-                             end_date DATETIME,
-                             status TEXT DEFAULT 'active',
-                             monthly_price REAL NOT NULL,
-                             features TEXT,
-                             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE subscriptions
+(
+  subscription_id INTEGER PRIMARY KEY,
+  organization_id INTEGER REFERENCES organizations (organization_id),
+  plan_name       TEXT     NOT NULL,
+  start_date      DATETIME NOT NULL,
+  end_date        DATETIME,
+  status          TEXT     DEFAULT 'active',
+  monthly_price   REAL     NOT NULL,
+  features        TEXT,
+  created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE products (
-                        product_id INTEGER PRIMARY KEY,
-                        organization_id INTEGER REFERENCES organizations(organization_id),
-                        product_name TEXT NOT NULL,
-                        description TEXT,
-                        price REAL NOT NULL,
-                        cost REAL NOT NULL,
-                        stock_quantity INTEGER NOT NULL,
-                        category TEXT,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        last_restock_date DATETIME
+CREATE TABLE products
+(
+  product_id        INTEGER PRIMARY KEY,
+  organization_id   INTEGER REFERENCES organizations (organization_id),
+  product_name      TEXT    NOT NULL,
+  description       TEXT,
+  price             REAL    NOT NULL,
+  cost              REAL    NOT NULL,
+  stock_quantity    INTEGER NOT NULL,
+  category          TEXT,
+  created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_restock_date DATETIME
 );
 
-CREATE TABLE sales (
-                     sale_id INTEGER PRIMARY KEY,
-                     organization_id INTEGER REFERENCES organizations(organization_id),
-                     user_id INTEGER REFERENCES users(user_id),
-                     sale_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                     total_amount REAL NOT NULL,
-                     payment_method TEXT,
-                     status TEXT DEFAULT 'completed',
-                     discount_amount REAL DEFAULT 0,
-                     tax_amount REAL DEFAULT 0
+CREATE TABLE sales
+(
+  sale_id         INTEGER PRIMARY KEY,
+  organization_id INTEGER REFERENCES organizations (organization_id),
+  user_id         INTEGER REFERENCES users (user_id),
+  sale_date       DATETIME DEFAULT CURRENT_TIMESTAMP,
+  total_amount    REAL NOT NULL,
+  payment_method  TEXT,
+  status          TEXT     DEFAULT 'completed',
+  discount_amount REAL     DEFAULT 0,
+  tax_amount      REAL     DEFAULT 0
 );
 
-CREATE TABLE sale_items (
-                          sale_item_id INTEGER PRIMARY KEY,
-                          sale_id INTEGER REFERENCES sales(sale_id),
-                          product_id INTEGER REFERENCES products(product_id),
-                          quantity INTEGER NOT NULL,
-                          unit_price REAL NOT NULL,
-                          total_price REAL NOT NULL,
-                          discount_percentage REAL DEFAULT 0
+CREATE TABLE sale_items
+(
+  sale_item_id        INTEGER PRIMARY KEY,
+  sale_id             INTEGER REFERENCES sales (sale_id),
+  product_id          INTEGER REFERENCES products (product_id),
+  quantity            INTEGER NOT NULL,
+  unit_price          REAL    NOT NULL,
+  total_price         REAL    NOT NULL,
+  discount_percentage REAL DEFAULT 0
 );
 
-CREATE TABLE revenue (
-                       revenue_id INTEGER PRIMARY KEY,
-                       organization_id INTEGER REFERENCES organizations(organization_id),
-                       date DATE NOT NULL,
-                       total_revenue REAL NOT NULL,
-                       total_cost REAL NOT NULL,
-                       gross_profit REAL NOT NULL,
-                       net_profit REAL NOT NULL,
-                       subscription_revenue REAL DEFAULT 0,
-                       product_revenue REAL DEFAULT 0
+CREATE TABLE revenue
+(
+  revenue_id           INTEGER PRIMARY KEY,
+  organization_id      INTEGER REFERENCES organizations (organization_id),
+  date                 DATE NOT NULL,
+  total_revenue        REAL NOT NULL,
+  total_cost           REAL NOT NULL,
+  gross_profit         REAL NOT NULL,
+  net_profit           REAL NOT NULL,
+  subscription_revenue REAL DEFAULT 0,
+  product_revenue      REAL DEFAULT 0
 );
 
 -- Insert organizations with temporal data
-INSERT INTO organizations (organization_name, industry, address, phone, email, created_at, subscription_tier, last_payment_date, next_payment_date) VALUES
-                                                                                                                                                      ('Tech Solutions Inc.', 'Technology', '123 Tech Park, Silicon Valley', '+1234567890', 'info@techsolutions.com', '2023-01-15 09:00:00', 'enterprise', '2025-04-01 00:00:00', '2025-05-01 00:00:00'),
-                                                                                                                                                      ('Green Energy Corp.', 'Renewable Energy', '456 Green Ave, Eco City', '+1987654321', 'contact@greenenergy.com', '2023-03-20 10:30:00', 'pro', '2025-04-15 00:00:00', '2025-05-15 00:00:00'),
-                                                                                                                                                      ('Global Retail Ltd.', 'Retail', '789 Market St, Commerce City', '+1122334455', 'support@globalretail.com', '2023-06-10 14:15:00', 'business', '2025-04-10 00:00:00', '2025-05-10 00:00:00'),
-                                                                                                                                                      ('AI Innovations', 'Artificial Intelligence', '321 AI Boulevard, Tech City', '+1555666777', 'contact@aiinnovations.com', '2023-09-05 11:20:00', 'enterprise', '2025-04-05 00:00:00', '2025-05-05 00:00:00'),
-                                                                                                                                                      ('Cloud Services Co.', 'Cloud Computing', '654 Cloud Drive, Data Center', '+1888999000', 'info@cloudservices.com', '2023-11-25 16:45:00', 'pro', '2025-04-20 00:00:00', '2025-05-20 00:00:00'),
-                                                                                                                                                      ('StartupHub Inc.', 'Technology Incubator', '987 Innovation Lane, Startup Valley', '+1777888999', 'hello@startuphub.com', '2024-01-10 08:30:00', 'starter', '2025-04-25 00:00:00', '2025-05-25 00:00:00'),
-                                                                                                                                                      ('Premium Consulting Group', 'Business Consulting', '147 Executive Plaza, Business District', '+1666777888', 'contact@premiumconsulting.com', '2024-02-20 13:45:00', 'premium', '2025-04-30 00:00:00', '2025-05-30 00:00:00'),
-                                                                                                                                                      ('FreeTech Community', 'Open Source Software', '258 Community Center, Dev Town', '+1444555666', 'info@freetech.org', '2024-03-15 10:15:00', 'free', NULL, NULL);
+INSERT INTO organizations (organization_name, industry, address, phone, email, created_at, subscription_tier,
+                           last_payment_date, next_payment_date)
+VALUES ('Tech Solutions Inc.', 'Technology', '123 Tech Park, Silicon Valley', '+1234567890', 'info@techsolutions.com',
+        '2023-01-15 09:00:00', 'enterprise', '2025-04-01 00:00:00', '2025-05-01 00:00:00'),
+       ('Green Energy Corp.', 'Renewable Energy', '456 Green Ave, Eco City', '+1987654321', 'contact@greenenergy.com',
+        '2023-03-20 10:30:00', 'pro', '2025-04-15 00:00:00', '2025-05-15 00:00:00'),
+       ('Global Retail Ltd.', 'Retail', '789 Market St, Commerce City', '+1122334455', 'support@globalretail.com',
+        '2023-06-10 14:15:00', 'business', '2025-04-10 00:00:00', '2025-05-10 00:00:00'),
+       ('AI Innovations', 'Artificial Intelligence', '321 AI Boulevard, Tech City', '+1555666777',
+        'contact@aiinnovations.com', '2023-09-05 11:20:00', 'enterprise', '2025-04-05 00:00:00', '2025-05-05 00:00:00'),
+       ('Cloud Services Co.', 'Cloud Computing', '654 Cloud Drive, Data Center', '+1888999000',
+        'info@cloudservices.com', '2023-11-25 16:45:00', 'pro', '2025-04-20 00:00:00', '2025-05-20 00:00:00'),
+       ('StartupHub Inc.', 'Technology Incubator', '987 Innovation Lane, Startup Valley', '+1777888999',
+        'hello@startuphub.com', '2024-01-10 08:30:00', 'starter', '2025-04-25 00:00:00', '2025-05-25 00:00:00'),
+       ('Premium Consulting Group', 'Business Consulting', '147 Executive Plaza, Business District', '+1666777888',
+        'contact@premiumconsulting.com', '2024-02-20 13:45:00', 'premium', '2025-04-30 00:00:00',
+        '2025-05-30 00:00:00'),
+       ('FreeTech Community', 'Open Source Software', '258 Community Center, Dev Town', '+1444555666',
+        'info@freetech.org', '2024-03-15 10:15:00', 'free', NULL, NULL);
 
 -- Insert users with temporal data
-INSERT INTO users (organization_id, username, email, first_name, last_name, role, created_at, last_login_at, is_active) VALUES
-                                                                                                                          (1, 'jsmith', 'john.smith@techsolutions.com', 'John', 'Smith', 'Sales Manager', '2023-01-16 10:00:00', '2025-05-01 15:30:00', 1),
-                                                                                                                          (1, 'mjohnson', 'mary.johnson@techsolutions.com', 'Mary', 'Johnson', 'Sales Representative', '2023-02-01 09:15:00', '2025-05-02 16:45:00', 1),
-                                                                                                                          (2, 'dwilliams', 'david.williams@greenenergy.com', 'David', 'Williams', 'Account Manager', '2023-03-21 11:00:00', '2025-05-03 14:20:00', 1),
-                                                                                                                          (3, 'sbrown', 'sarah.brown@globalretail.com', 'Sarah', 'Brown', 'Store Manager', '2023-06-11 15:30:00', '2025-05-04 10:15:00', 1),
-                                                                                                                          (4, 'rlee', 'robert.lee@aiinnovations.com', 'Robert', 'Lee', 'Data Scientist', '2023-09-06 12:00:00', '2025-05-05 09:30:00', 1),
-                                                                                                                          (5, 'lchen', 'lisa.chen@cloudservices.com', 'Lisa', 'Chen', 'Cloud Architect', '2023-11-26 17:00:00', '2025-05-06 16:00:00', 1),
-                                                                                                                          (6, 'agarcia', 'alex.garcia@startuphub.com', 'Alex', 'Garcia', 'Sales Manager', '2024-01-11 09:00:00', '2025-05-07 11:30:00', 1),
-                                                                                                                          (6, 'mwilson', 'mike.wilson@startuphub.com', 'Mike', 'Wilson', 'Sales Representative', '2024-01-15 10:30:00', '2025-05-08 14:15:00', 1),
-                                                                                                                          (7, 'ktaylor', 'karen.taylor@premiumconsulting.com', 'Karen', 'Taylor', 'Account Manager', '2024-02-21 14:00:00', '2025-05-09 16:45:00', 1),
-                                                                                                                          (8, 'janderson', 'john.anderson@freetech.org', 'John', 'Anderson', 'Data Scientist', '2024-03-16 11:30:00', '2025-05-10 13:20:00', 1);
+INSERT INTO users (organization_id, username, email, first_name, last_name, role, created_at, last_login_at, is_active)
+VALUES (1, 'jsmith', 'john.smith@techsolutions.com', 'John', 'Smith', 'Sales Manager', '2023-01-16 10:00:00',
+        '2025-05-01 15:30:00', 1),
+       (1, 'mjohnson', 'mary.johnson@techsolutions.com', 'Mary', 'Johnson', 'Sales Representative',
+        '2023-02-01 09:15:00', '2025-05-02 16:45:00', 1),
+       (2, 'dwilliams', 'david.williams@greenenergy.com', 'David', 'Williams', 'Account Manager', '2023-03-21 11:00:00',
+        '2025-05-03 14:20:00', 1),
+       (3, 'sbrown', 'sarah.brown@globalretail.com', 'Sarah', 'Brown', 'Store Manager', '2023-06-11 15:30:00',
+        '2025-05-04 10:15:00', 1),
+       (4, 'rlee', 'robert.lee@aiinnovations.com', 'Robert', 'Lee', 'Data Scientist', '2023-09-06 12:00:00',
+        '2025-05-05 09:30:00', 1),
+       (5, 'lchen', 'lisa.chen@cloudservices.com', 'Lisa', 'Chen', 'Cloud Architect', '2023-11-26 17:00:00',
+        '2025-05-06 16:00:00', 1),
+       (6, 'agarcia', 'alex.garcia@startuphub.com', 'Alex', 'Garcia', 'Sales Manager', '2024-01-11 09:00:00',
+        '2025-05-07 11:30:00', 1),
+       (6, 'mwilson', 'mike.wilson@startuphub.com', 'Mike', 'Wilson', 'Sales Representative', '2024-01-15 10:30:00',
+        '2025-05-08 14:15:00', 1),
+       (7, 'ktaylor', 'karen.taylor@premiumconsulting.com', 'Karen', 'Taylor', 'Account Manager', '2024-02-21 14:00:00',
+        '2025-05-09 16:45:00', 1),
+       (8, 'janderson', 'john.anderson@freetech.org', 'John', 'Anderson', 'Data Scientist', '2024-03-16 11:30:00',
+        '2025-05-10 13:20:00', 1);
 
 -- Insert subscriptions
-INSERT INTO subscriptions (organization_id, plan_name, start_date, end_date, status, monthly_price, features) VALUES
-                                                                                                                (1, 'Enterprise', '2023-01-15 00:00:00', '2025-12-31 23:59:59', 'active', 999.99, '{"users": 100, "storage": "1TB", "support": "24/7"}'),
-                                                                                                                (2, 'Professional', '2023-03-20 00:00:00', '2025-12-31 23:59:59', 'active', 499.99, '{"users": 50, "storage": "500GB", "support": "business hours"}'),
-                                                                                                                (3, 'Business', '2023-06-10 00:00:00', '2025-12-31 23:59:59', 'active', 299.99, '{"users": 25, "storage": "250GB", "support": "business hours"}'),
-                                                                                                                (4, 'Enterprise', '2023-09-05 00:00:00', '2025-12-31 23:59:59', 'active', 999.99, '{"users": 100, "storage": "1TB", "support": "24/7"}'),
-                                                                                                                (5, 'Professional', '2023-11-25 00:00:00', '2025-12-31 23:59:59', 'active', 499.99, '{"users": 50, "storage": "500GB", "support": "business hours"}'),
-                                                                                                                (6, 'Starter', '2024-01-10 00:00:00', '2025-12-31 23:59:59', 'active', 99.99, '{"users": 5, "storage": "50GB", "support": "email only"}'),
-                                                                                                                (7, 'Premium', '2024-02-20 00:00:00', '2025-12-31 23:59:59', 'active', 799.99, '{"users": 75, "storage": "750GB", "support": "priority 24/7"}'),
-                                                                                                                (8, 'Free', '2024-03-15 00:00:00', NULL, 'active', 0.00, '{"users": 1, "storage": "1GB", "support": "community"}'),
-                                                                                                                (1, 'Professional', '2022-01-15 00:00:00', '2023-01-14 23:59:59', 'inactive', 499.99, '{"users": 50, "storage": "500GB", "support": "business hours"}'),
-                                                                                                                (2, 'Enterprise', '2024-06-01 00:00:00', NULL, 'pending', 999.99, '{"users": 100, "storage": "1TB", "support": "24/7"}'),
-                                                                                                                (3, 'Professional', '2024-01-01 00:00:00', '2024-03-31 23:59:59', 'cancelled', 499.99, '{"users": 50, "storage": "500GB", "support": "business hours"}'),
-                                                                                                                (4, 'Basic', '2024-04-01 00:00:00', '2024-05-15 23:59:59', 'suspended', 199.99, '{"users": 10, "storage": "100GB", "support": "email only"}');
+INSERT INTO subscriptions (organization_id, plan_name, start_date, end_date, status, monthly_price, features)
+VALUES (1, 'Enterprise', '2023-01-15 00:00:00', '2025-12-31 23:59:59', 'active', 999.99,
+        '{"users": 100, "storage": "1TB", "support": "24/7"}'),
+       (2, 'Professional', '2023-03-20 00:00:00', '2025-12-31 23:59:59', 'active', 499.99,
+        '{"users": 50, "storage": "500GB", "support": "business hours"}'),
+       (3, 'Business', '2023-06-10 00:00:00', '2025-12-31 23:59:59', 'active', 299.99,
+        '{"users": 25, "storage": "250GB", "support": "business hours"}'),
+       (4, 'Enterprise', '2023-09-05 00:00:00', '2025-12-31 23:59:59', 'active', 999.99,
+        '{"users": 100, "storage": "1TB", "support": "24/7"}'),
+       (5, 'Professional', '2023-11-25 00:00:00', '2025-12-31 23:59:59', 'active', 499.99,
+        '{"users": 50, "storage": "500GB", "support": "business hours"}'),
+       (6, 'Starter', '2024-01-10 00:00:00', '2025-12-31 23:59:59', 'active', 99.99,
+        '{"users": 5, "storage": "50GB", "support": "email only"}'),
+       (7, 'Premium', '2024-02-20 00:00:00', '2025-12-31 23:59:59', 'active', 799.99,
+        '{"users": 75, "storage": "750GB", "support": "priority 24/7"}'),
+       (8, 'Free', '2024-03-15 00:00:00', NULL, 'active', 0.00,
+        '{"users": 1, "storage": "1GB", "support": "community"}'),
+       (1, 'Professional', '2022-01-15 00:00:00', '2023-01-14 23:59:59', 'inactive', 499.99,
+        '{"users": 50, "storage": "500GB", "support": "business hours"}'),
+       (2, 'Enterprise', '2024-06-01 00:00:00', NULL, 'pending', 999.99,
+        '{"users": 100, "storage": "1TB", "support": "24/7"}'),
+       (3, 'Professional', '2024-01-01 00:00:00', '2024-03-31 23:59:59', 'cancelled', 499.99,
+        '{"users": 50, "storage": "500GB", "support": "business hours"}'),
+       (4, 'Basic', '2024-04-01 00:00:00', '2024-05-15 23:59:59', 'suspended', 199.99,
+        '{"users": 10, "storage": "100GB", "support": "email only"}');
 
 -- Insert products with temporal data
-INSERT INTO products (organization_id, product_name, description, price, cost, stock_quantity, category, created_at, last_restock_date) VALUES
-                                                                                                                                          (1, 'Enterprise Software Suite', 'Complete business management solution', 999.99, 300.00, 50, 'Software', '2023-01-20 10:00:00', '2025-05-01 09:00:00'),
-                                                                                                                                          (1, 'Cloud Storage Package', 'Secure cloud storage solution', 49.99, 15.00, 100, 'Cloud Services', '2023-02-01 11:00:00', '2025-05-02 10:00:00'),
-                                                                                                                                          (2, 'Solar Panel Kit', 'Residential solar power system', 2999.99, 1500.00, 30, 'Solar Energy', '2023-03-25 14:00:00', '2025-05-03 13:00:00'),
-                                                                                                                                          (2, 'Wind Turbine', 'Small-scale wind power generator', 1999.99, 1000.00, 20, 'Wind Energy', '2023-04-15 15:00:00', '2025-05-04 14:00:00'),
-                                                                                                                                          (3, 'Smart Home Hub', 'Central control for smart devices', 199.99, 80.00, 200, 'Electronics', '2023-06-15 09:00:00', '2025-05-05 08:00:00'),
-                                                                                                                                          (3, 'Wireless Router', 'High-speed internet router', 89.99, 35.00, 150, 'Networking', '2023-07-01 10:00:00', '2025-05-06 09:00:00'),
-                                                                                                                                          (4, 'AI Analytics Platform', 'Advanced data analysis tool', 1499.99, 500.00, 40, 'AI Software', '2023-09-10 11:00:00', '2025-05-01 10:00:00'),
-                                                                                                                                          (5, 'Cloud Backup Solution', 'Enterprise-grade backup service', 199.99, 60.00, 100, 'Cloud Services', '2023-11-30 13:00:00', '2025-05-02 12:00:00');
+INSERT INTO products (organization_id, product_name, description, price, cost, stock_quantity, category, created_at,
+                      last_restock_date)
+VALUES (1, 'Enterprise Software Suite', 'Complete business management solution', 999.99, 300.00, 50, 'Software',
+        '2023-01-20 10:00:00', '2025-05-01 09:00:00'),
+       (1, 'Cloud Storage Package', 'Secure cloud storage solution', 49.99, 15.00, 100, 'Cloud Services',
+        '2023-02-01 11:00:00', '2025-05-02 10:00:00'),
+       (2, 'Solar Panel Kit', 'Residential solar power system', 2999.99, 1500.00, 30, 'Solar Energy',
+        '2023-03-25 14:00:00', '2025-05-03 13:00:00'),
+       (2, 'Wind Turbine', 'Small-scale wind power generator', 1999.99, 1000.00, 20, 'Wind Energy',
+        '2023-04-15 15:00:00', '2025-05-04 14:00:00'),
+       (3, 'Smart Home Hub', 'Central control for smart devices', 199.99, 80.00, 200, 'Electronics',
+        '2023-06-15 09:00:00', '2025-05-05 08:00:00'),
+       (3, 'Wireless Router', 'High-speed internet router', 89.99, 35.00, 150, 'Networking', '2023-07-01 10:00:00',
+        '2025-05-06 09:00:00'),
+       (4, 'AI Analytics Platform', 'Advanced data analysis tool', 1499.99, 500.00, 40, 'AI Software',
+        '2023-09-10 11:00:00', '2025-05-01 10:00:00'),
+       (5, 'Cloud Backup Solution', 'Enterprise-grade backup service', 199.99, 60.00, 100, 'Cloud Services',
+        '2023-11-30 13:00:00', '2025-05-02 12:00:00');
 
 -- Insert sales data for multiple months
-INSERT INTO sales (organization_id, user_id, sale_date, total_amount, payment_method, status, discount_amount, tax_amount) VALUES
+INSERT INTO sales (organization_id, user_id, sale_date, total_amount, payment_method, status, discount_amount,
+                   tax_amount)
+VALUES
 -- April 2023
 (1, 1, '2023-04-05 10:30:00', 999.99, 'Credit Card', 'completed', 0, 99.99),
 (2, 3, '2023-04-10 14:15:00', 2999.99, 'Bank Transfer', 'completed', 0, 299.99),
@@ -253,7 +303,8 @@ INSERT INTO sales (organization_id, user_id, sale_date, total_amount, payment_me
 (7, 9, '2024-05-10 16:00:00', 149.99, 'Cash', 'completed', 0, 14.99);
 
 -- Insert sale items
-INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, total_price, discount_percentage) VALUES
+INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, total_price, discount_percentage)
+VALUES
 -- April 2023
 (1, 1, 1, 999.99, 999.99, 0),
 (2, 3, 1, 2999.99, 2999.99, 0),
@@ -389,7 +440,9 @@ INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, total_price, 
 (82, 8, 2, 199.99, 399.98, 10);
 
 -- Insert revenue data for multiple months
-INSERT INTO revenue (organization_id, date, total_revenue, total_cost, gross_profit, net_profit, subscription_revenue, product_revenue) VALUES
+INSERT INTO revenue (organization_id, date, total_revenue, total_cost, gross_profit, net_profit, subscription_revenue,
+                     product_revenue)
+VALUES
 -- April 2023
 (1, '2023-04-30', 999.99, 300.00, 699.99, 599.99, 999.99, 0.00),
 (2, '2023-04-30', 2999.99, 1500.00, 1499.99, 1299.99, 499.99, 2500.00),
@@ -498,4 +551,3 @@ INSERT INTO revenue (organization_id, date, total_revenue, total_cost, gross_pro
 (3, '2025-12-31', 199.99, 80.00, 119.99, 99.99, 299.99, -100.00),
 (4, '2025-12-31', 1499.99, 500.00, 999.99, 849.99, 999.99, 500.00),
 (5, '2025-12-31', 399.98, 120.00, 279.98, 239.98, 499.99, -100.01);
-</sql>
