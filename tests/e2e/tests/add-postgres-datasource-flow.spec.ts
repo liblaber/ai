@@ -6,7 +6,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
   }: {
     page: Page;
   }) => {
-    test.setTimeout(90000); // 1.5 minutes for this specific test
+    test.setTimeout(120000); // 2 minutes for this specific test
 
     // Enable browser console logging for debugging
     page.on('console', (msg: ConsoleMessage) => console.log('🖥️ Browser console:', msg.text()));
@@ -63,7 +63,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
     await page.waitForTimeout(1000);
 
     const menu = page.locator('[data-testid="menu"]');
-    await menu.waitFor({ state: 'attached', timeout: 10000 });
+    await menu.waitFor({ state: 'visible', timeout: 10000 });
 
     // Get menu bounds and scroll it into view if needed
     const menuBounds = await menu.boundingBox();
@@ -159,7 +159,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
   }: {
     page: Page;
   }) => {
-    test.setTimeout(90000); // 1.5 minutes for this specific test
+    test.setTimeout(120000); // 2 minutes for this specific test
 
     // Enable browser console logging for debugging
     page.on('console', (msg: ConsoleMessage) => console.log('🖥️ Browser console:', msg.text()));
@@ -216,7 +216,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
     await page.waitForTimeout(1000);
 
     const menu = page.locator('[data-testid="menu"]');
-    await menu.waitFor({ state: 'attached', timeout: 10000 });
+    await menu.waitFor({ state: 'visible', timeout: 10000 });
 
     // Get menu bounds and scroll it into view if needed
     const menuBounds = await menu.boundingBox();

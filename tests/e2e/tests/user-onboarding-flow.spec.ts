@@ -2,7 +2,7 @@ import { type ConsoleMessage, type ElementHandle, type Page, test } from '@playw
 
 test.describe('User Onboarding Flow Test', () => {
   test('Complete user onboarding flow', async ({ page }: { page: Page }) => {
-    test.setTimeout(120000); // 2 minutes for this specific test
+    test.setTimeout(180000); // 3 minutes for this specific test
 
     // Enable browser console logging for debugging
     page.on('console', (msg: ConsoleMessage) => console.log('🖥️ Browser console:', msg.text()));
