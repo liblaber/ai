@@ -5,6 +5,7 @@ import { subject } from '@casl/ability';
 import { requireUserAbility } from '~/auth/session';
 import { deleteWebsite, getWebsite, updateWebsite } from '~/lib/services/websiteService';
 import { env } from '~/env';
+import { logger } from '~/utils/logger';
 
 // Netlify API client
 const NETLIFY_API_URL = 'https://api.netlify.com/api/v1';
