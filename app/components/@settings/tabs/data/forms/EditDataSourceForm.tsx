@@ -2,7 +2,6 @@ import { classNames } from '~/utils/classNames';
 import { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle, Info, Loader2, Plug, Save, Trash2, XCircle } from 'lucide-react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
-import { type DataSource } from '~/components/@settings/tabs/data/DataTab';
 import { toast } from 'sonner';
 import { BaseSelect } from '~/components/ui/Select';
 import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/database/SelectDatabaseTypeOptions';
@@ -13,6 +12,8 @@ import {
   SAMPLE_DATABASE,
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
+import type { EnvironmentDataSource } from '~/lib/stores/environmentDataSources';
+import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 import type { DataSourcePropertyDescriptor } from '@liblab/data-access/utils/types';
 import { DataSourcePropertyType } from '~/lib/datasource';
 
@@ -22,8 +23,27 @@ interface DataSourceResponse {
   error?: string;
 }
 
+interface Environment {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+interface EnvironmentOption {
+  label: string;
+  value: string;
+  description?: string;
+}
+
+interface EnvironmentsResponse {
+  success: boolean;
+  environments: Environment[];
+  error?: string;
+}
+
+// TODO: @skos update the form to use EnvironmentDataSource
 interface EditDataSourceFormProps {
-  selectedDataSource: DataSource | null;
+  selectedDataSource: EnvironmentDataSource | null;
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
@@ -42,43 +62,91 @@ export default function EditDataSourceForm({
   const [dbType, setDbType] = useState<DataSourceOption>({} as DataSourceOption);
   const [dbName, setDbName] = useState('');
   const [propertyValues, setPropertyValues] = useState<Record<string, string>>({});
+  const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
+  const [environmentOptions, setEnvironmentOptions] = useState<EnvironmentOption[]>([]);
+  const [isLoadingEnvironments, setIsLoadingEnvironments] = useState(true);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
   const [showConnStr, setShowConnStr] = useState(false);
 
+  // Fetch environments on component mount
+  useEffect(() => {
+    const fetchEnvironments = async () => {
+      try {
+        const response = await fetch('/api/environments');
+        const result: EnvironmentsResponse = await response.json();
+
+        if (result.success) {
+          // Transform environments to options
+          const options: EnvironmentOption[] = result.environments.map((env) => ({
+            label: env.name,
+            value: env.id,
+            description: env.description || undefined,
+          }));
+          setEnvironmentOptions(options);
+
+          // Auto-select first environment if available
+          if (!selectedEnvironment && options.length > 0) {
+            setSelectedEnvironment((previouslySelectedEnvironment) => previouslySelectedEnvironment || options[0]);
+          }
+        } else {
+          setError(result.error || 'Failed to fetch environments');
+        }
+      } catch (error) {
+        setError('Failed to fetch environments');
+        console.error('Error fetching environments:', error);
+      } finally {
+        setIsLoadingEnvironments(false);
+      }
+    };
+
+    fetchEnvironments();
+  }, []);
+
   useEffect(() => {
     if (!selectedDataSource) {
       return;
     }
 
-    if (selectedDataSource.name === 'Sample Database') {
+    // Set the current environment from the selected data source
+    const currentEnvironment: EnvironmentOption = {
+      label: selectedDataSource.environment.name,
+      value: selectedDataSource.environment.id,
+      description: selectedDataSource.environment.description || undefined,
+    };
+
+    setSelectedEnvironment(currentEnvironment);
+
+    if (selectedDataSource.dataSource.name === 'Sample Database') {
       setDbType(DEFAULT_DATA_SOURCES[0]);
       setDbName('');
       setPropertyValues({});
     } else {
-      console.log(selectedDataSource);
+      // For non-sample databases, we need to get the connection string from the API
+      // since it's not stored in the EnvironmentDataSource object
+      // This will be handled when we need to update the data source
 
-      console.log(availableDataSourceOptions);
+      setDbName(selectedDataSource.dataSource.name);
 
-      const matchingOption = availableDataSourceOptions.find((opt) => opt.type === selectedDataSource.type);
+      getDataSourceUrl(selectedDataSource.dataSource.id, currentEnvironment.value).then((databaseUrl) => {
+        const matchingOption = availableDataSourceOptions.find(
+          (opt) => opt.value === selectedDataSource.dataSource.type,
+        );
 
-      setDbType(matchingOption || DEFAULT_DATA_SOURCES[0]);
-      setDbName(selectedDataSource.name);
+        setDbType(matchingOption || DEFAULT_DATA_SOURCES[0]);
+        setDbName(selectedDataSource.dataSource.name);
 
-      // @depends Temporary until the new schema is in place that supports multiple properties per data source
-      if (matchingOption && matchingOption.properties.length > 0) {
-        const firstProperty = matchingOption.properties[0];
         setPropertyValues({
-          [firstProperty.label]: selectedDataSource.connectionString,
+          'Connection String': databaseUrl,
         });
-      }
+      });
     }
 
     setError(null);
     setTestResult(null);
-  }, [selectedDataSource?.id, selectedDataSource?.name]);
+  }, [selectedDataSource?.dataSourceId, selectedDataSource?.dataSource.name, selectedDataSource?.environment]);
 
   const handlePropertyChange = (propertyLabel: string, value: string) => {
     setPropertyValues((prev) => ({
@@ -111,6 +179,11 @@ export default function EditDataSourceForm({
 
         if (!hasAllRequiredProperties) {
           setError('Please fill in all required fields');
+          return;
+        }
+
+        if (!selectedEnvironment) {
+          setError('Please select an environment');
           return;
         }
 
@@ -173,6 +246,13 @@ export default function EditDataSourceForm({
       }
     }
 
+    if (!selectedEnvironment) {
+      setError('Please select an environment');
+      setTestResult(null);
+
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     setTestResult(null);
@@ -190,10 +270,13 @@ export default function EditDataSourceForm({
       }));
       formData.append('properties', JSON.stringify(properties));
 
-      const response = await fetch(`/api/data-sources/${selectedDataSource?.id}`, {
-        method: 'PUT',
-        body: formData,
-      });
+      const response = await fetch(
+        `/api/data-sources/${selectedDataSource?.dataSourceId}?environmentId=${selectedEnvironment.value}`,
+        {
+          method: 'PUT',
+          body: formData,
+        },
+      );
 
       const data = await response.json<DataSourceResponse>();
 
@@ -254,6 +337,27 @@ export default function EditDataSourceForm({
                 }}
               />
             </div>
+          </div>
+
+          <div className="mb-6">
+            <label className="mb-3 block text-sm font-medium text-secondary">Environment</label>
+            <BaseSelect
+              value={selectedEnvironment}
+              onChange={(value: EnvironmentOption | null) => {
+                setSelectedEnvironment(value);
+                setError(null);
+                setTestResult(null);
+              }}
+              options={environmentOptions}
+              placeholder={isLoadingEnvironments ? 'Loading environments...' : 'Select environment'}
+              isDisabled={isLoadingEnvironments}
+              width="100%"
+              minWidth="100%"
+              isSearchable={false}
+            />
+            {selectedEnvironment?.description && (
+              <div className="text-gray-400 text-sm mt-2">{selectedEnvironment.description}</div>
+            )}
           </div>
 
           {dbType.value !== SAMPLE_DATABASE && (
@@ -383,6 +487,7 @@ export default function EditDataSourceForm({
                   }}
                   disabled={
                     isTestingConnection ||
+                    !selectedEnvironment ||
                     isSubmitting ||
                     (dbType.properties &&
                       dbType.properties.length > 0 &&
@@ -432,6 +537,7 @@ export default function EditDataSourceForm({
                 disabled={
                   isSubmitting ||
                   dbType.value === SAMPLE_DATABASE ||
+                  !selectedEnvironment ||
                   !dbName ||
                   (dbType.properties &&
                     dbType.properties.length > 0 &&

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createRole, getRoles } from '~/lib/services/roleService';
-import { organizationService } from '~/lib/services/organizationService';
 import { requireUserAbility } from '~/auth/session';
-import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
+import { PermissionAction, PermissionResource, Prisma, RoleScope } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   const { userAbility } = await requireUserAbility(request);
@@ -16,26 +16,31 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ success: true, roles });
 }
 
+const postRequestSchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  scope: z.enum([RoleScope.GENERAL, RoleScope.ENVIRONMENT, RoleScope.DATA_SOURCE, RoleScope.WEBSITE]).optional(),
+  resourceId: z.string().optional(),
+});
+
 export async function POST(request: NextRequest) {
-  const { userId, userAbility } = await requireUserAbility(request);
+  const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.create, PermissionResource.AdminApp)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const body = (await request.json()) as {
-    name: string;
-    description?: string;
-  };
+  const body = await request.json();
+  const parsedBody = postRequestSchema.safeParse(body);
 
-  const organization = await organizationService.getOrganizationByUser(userId);
-
-  if (!organization) {
-    return NextResponse.json({ success: false, error: 'Organization not found' }, { status: 404 });
+  if (!parsedBody.success) {
+    return NextResponse.json({ success: false, error: parsedBody.error.flatten().fieldErrors }, { status: 400 });
   }
 
+  const { name, description, scope, resourceId } = parsedBody.data;
+
   try {
-    const role = await createRole(body.name, body.description, organization.id);
+    const role = await createRole(name, description, scope, resourceId);
 
     return NextResponse.json({ success: true, role });
   } catch (error) {

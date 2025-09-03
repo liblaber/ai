@@ -2,13 +2,17 @@ import './styles/index.scss';
 import type { ReactNode } from 'react';
 import { ClientProviders } from './components/ClientProviders';
 import './globals.css';
-import { getDataSources } from '~/lib/services/datasourceService';
+import { getEnvironmentDataSources } from '~/lib/services/dataSourceService';
 import { userService } from '~/lib/services/userService';
 import { getUserAbility } from './lib/casl/user-ability';
 import PluginManager, { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager';
 import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import { headers } from 'next/headers';
 import { auth } from '~/auth/auth-config';
+import type { Session } from '~/auth/session';
+
+// Force dynamic rendering to prevent static generation issues with headers
+export const dynamic = 'force-dynamic';
 
 const inlineThemeCode = `
   setLiblabTheme();
@@ -30,30 +34,33 @@ async function getRootData() {
       headers: headersList,
     });
 
+    // Type the session properly using the imported Session type
+    const typedSession = session as Session;
+
     let user = null;
-    let dataSources: any[] = [];
-    let pluginAccess = FREE_PLUGIN_ACCESS;
+    let environmentDataSources: any[] = [];
     let dataSourceTypes: any[] = [];
 
-    if (session?.user) {
+    if (typedSession?.user) {
       // Get user profile
-      user = await userService.getUser(session.user.id);
+      user = await userService.getUser(typedSession.user.id);
 
       // Get data sources for the user
-      const userAbility = await getUserAbility(session.user.id);
-      dataSources = await getDataSources(userAbility);
-
-      // Initialize plugin manager
-      await PluginManager.getInstance().initialize();
-      pluginAccess = PluginManager.getInstance().getAccessMap();
-
-      // Get available data source types
-      dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
+      const userAbility = await getUserAbility(typedSession.user.id);
+      environmentDataSources = await getEnvironmentDataSources(userAbility);
     }
+
+    // Initialize plugin manager
+    await PluginManager.getInstance().initialize();
+
+    const pluginAccess = PluginManager.getInstance().getAccessMap();
+
+    // Get available data source types
+    dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
 
     return {
       user,
-      dataSources,
+      environmentDataSources,
       pluginAccess,
       dataSourceTypes,
     };
@@ -61,7 +68,7 @@ async function getRootData() {
     console.error('Error loading root data:', error);
     return {
       user: null,
-      dataSources: [],
+      environmentDataSources: [],
       pluginAccess: FREE_PLUGIN_ACCESS,
       dataSourceTypes: [],
     };

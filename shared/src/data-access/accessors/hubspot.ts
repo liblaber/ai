@@ -23,8 +23,22 @@ export class HubspotAccessor implements BaseAccessor {
   }
 
   async testConnection(_dataSourceProperties: DataSourceProperty[]): Promise<boolean> {
-    // TODO: Implement actual connection test to HubSpot API
-    return true;
+    const accessToken = _dataSourceProperties.find((prop) => prop.type === DataSourcePropertyType.ACCESS_TOKEN);
+
+    if (!accessToken || !accessToken.value) {
+      return false;
+    }
+
+    try {
+      const response = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
+        headers: { Authorization: `Bearer ${accessToken.value}` },
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error testing HubSpot connection:', error);
+      return false;
+    }
   }
 
   validateProperties(dataSourceProperties: DataSourceProperty[]) {

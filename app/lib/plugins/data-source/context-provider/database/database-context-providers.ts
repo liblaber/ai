@@ -17,16 +17,26 @@ import {
   type Table,
 } from '~/lib/plugins/data-source/context-provider/database/types';
 import type { DataSourceType } from '@liblab/data-access/utils/types';
+import { DataSourcePropertyType } from '@prisma/client';
 
 export abstract class DatabaseContextProvider implements DataSourceContextProvider {
-  async getContext({ dataSource, userPrompt }: AdditionalContextInput): Promise<AdditionalContextOutput> {
+  async getContext({ environmentDataSource, userPrompt }: AdditionalContextInput): Promise<AdditionalContextOutput> {
+    const dataSource = environmentDataSource.dataSource;
     const accessor = DataAccessor.getDatabaseAccessor(dataSource.type as DataSourceType);
 
     if (!accessor) {
       throw new Error(`No accessor found for database type: ${dataSource.type}`);
     }
 
-    const schema: Table[] = (await getSchemaCache(dataSource.connectionString)) || (await accessor.getSchema());
+    const connectionString = environmentDataSource.dataSourceProperties.find(
+      (dsp) => dsp.type === DataSourcePropertyType.CONNECTION_URL,
+    )?.environmentVariable?.value;
+
+    if (!connectionString) {
+      throw new Error('Connection string not found for data source');
+    }
+
+    const schema: Table[] = (await getSchemaCache(connectionString)) || (await accessor.getSchema());
     const formattedSchema = formatDbSchemaForPrompt(schema);
 
     logger.debug('Schema', schema);

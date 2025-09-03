@@ -11,6 +11,7 @@ import { getFilePaths } from './select-context';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 import type { StarterPluginId } from '~/lib/plugins/types';
 import type { ImplementationPlan } from '~/lib/.server/llm/create-implementation-plan';
+import { type Conversation } from '@prisma/client';
 
 export type Messages = Message[];
 
@@ -23,7 +24,7 @@ export async function streamText(props: {
   options?: StreamingOptions;
   files?: FileMap;
   promptId?: string;
-  starterId?: StarterPluginId;
+  conversation: Conversation;
   contextOptimization?: boolean;
   contextFiles?: FileMap;
   summary?: string;
@@ -37,14 +38,13 @@ export async function streamText(props: {
     options,
     files,
     promptId,
-    starterId,
+    conversation,
+    implementationPlan,
     contextOptimization,
     contextFiles,
     summary,
     additionalDataSourceContext,
   } = props;
-
-  logger.debug('STREAM TEXT ADDITIONAL DATA SOURCE CONTEXT', additionalDataSourceContext);
 
   let processedMessages = messages.map((message) => {
     if (message.role === MessageRole.User) {
@@ -71,7 +71,7 @@ export async function streamText(props: {
   let systemPrompt =
     (await PromptLibrary.getPromptFromLibrary(promptId || 'default', {
       cwd: WORK_DIR,
-      starterId,
+      starterId: conversation.starterId as StarterPluginId,
       allowedHtmlElements: allowedHTMLElements,
       modificationTagName: MODIFICATIONS_TAG_NAME,
     })) ?? (await getSystemPrompt());
@@ -115,6 +115,12 @@ ${props.summary}
         }
       }
     }
+  }
+
+  if (implementationPlan) {
+    systemPrompt = `${systemPrompt}
+    Below is the implementation plan that you should follow:\n
+    ${implementationPlan.implementationPlan}\n`;
   }
 
   if (additionalDataSourceContext) {
@@ -161,41 +167,4 @@ function getLastUserMessageContent(messages: Omit<Message, 'id'>[]): string | un
   }
 
   return content;
-}
-
-function isFirstUserMessage(
-  processedMessages: Omit<
-    Message & {
-      isFirstUserMessage?: boolean;
-    },
-    'id'
-  >[],
-) {
-  return processedMessages[processedMessages.length - 1].isFirstUserMessage || false;
-}
-
-/**
- * Extracts all SQL query strings defined using `export const query =` from the given code context.
- *
- * This function searches for SQL queries written as template literals or string literals
- * and returns an array of the raw SQL strings found.
- *
- * Example of a supported query format:
- * ```
- * export const userQuery = `
- *   SELECT id, name FROM users WHERE is_active = true;
- * `;
- * ```
- *
- * @param codeContext - A string containing the code to search through.
- * @returns An array of extracted SQL query strings.
- */
-function extractSqlQueries(codeContext: string): string[] {
-  if (!codeContext) {
-    return [];
-  }
-
-  const regex = /export\s+const\s+\w*query\s*=\s*(["'`])([\s\S]*?)\1;/gi;
-
-  return [...codeContext.matchAll(regex)].map((m) => m[2].trim());
 }

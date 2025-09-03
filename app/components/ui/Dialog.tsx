@@ -69,15 +69,14 @@ export const dialogBackdropVariants = {
 
 export const dialogVariants = {
   closed: {
-    x: '-50%',
-    y: '-40%',
+    // Do not animate x/y here — leave positioning to the CSS classes
+    // (top-1/2 left-1/2 + -translate-x-1/2 -translate-y-1/2) so we don't
+    // override the transform via inline styles. Only animate scale/opacity.
     scale: 0.96,
     opacity: 0,
     transition,
   },
   open: {
-    x: '-50%',
-    y: '-50%',
     scale: 1,
     opacity: 1,
     transition,

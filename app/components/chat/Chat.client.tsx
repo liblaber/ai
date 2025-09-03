@@ -21,9 +21,7 @@ import { createSampler } from '~/utils/sampler';
 import { getStarterTemplateFiles, getStarterTemplateMessages } from '~/utils/selectStarterTemplate';
 import { streamingState } from '~/lib/stores/streaming';
 import { filesToArtifacts } from '~/utils/fileUtils';
-import { type OutputAppEvent, OutputAppEventType } from '~/utils/output-app';
-import { QueryModal } from '~/components/chat/query-modal/QueryModal';
-import { useDataSourcesStore } from '~/lib/stores/dataSources';
+import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { type Message, useChat } from '@ai-sdk/react';
 import { generateId } from 'ai';
 import { useGitPullSync } from '~/lib/stores/git';
@@ -138,7 +136,7 @@ export const ChatImpl = ({
     chatStore.setKey('started', chatStarted);
   }, [chatStarted]);
 
-  const { selectedDataSourceId } = useDataSourcesStore();
+  const { selectedEnvironmentDataSource } = useEnvironmentDataSourcesStore();
 
   const { showChat } = useStore(chatStore);
 
@@ -325,7 +323,15 @@ export const ChatImpl = ({
     if (!chatStarted) {
       setChatStarted(true);
       await workbenchStore.initialize();
-      await startChatWithInitialMessage(messageContent, selectedDataSourceId!, files, dataList);
+      await startChatWithInitialMessage(
+        messageContent,
+        {
+          dataSourceId: selectedEnvironmentDataSource.dataSourceId!,
+          environmentId: selectedEnvironmentDataSource.environmentId!,
+        },
+        files,
+        dataList,
+      );
 
       return;
     }
@@ -346,7 +352,10 @@ export const ChatImpl = ({
           role: 'user',
           content: formatMessageWithModelInfo({
             messageContent: userUpdateArtifact + messageContent,
-            dataSourceId: selectedDataSourceId!,
+            environmentDataSource: {
+              dataSourceId: selectedEnvironmentDataSource.dataSourceId!,
+              environmentId: selectedEnvironmentDataSource.environmentId!,
+            },
             dataList,
           }),
           annotations: isFixMessage ? [FIX_ANNOTATION] : undefined,
@@ -366,7 +375,10 @@ export const ChatImpl = ({
           role: 'user',
           content: formatMessageWithModelInfo({
             messageContent,
-            dataSourceId: selectedDataSourceId!,
+            environmentDataSource: {
+              dataSourceId: selectedEnvironmentDataSource.dataSourceId!,
+              environmentId: selectedEnvironmentDataSource.environmentId!,
+            },
             dataList,
           }),
           annotations: isFixMessage ? [FIX_ANNOTATION] : undefined,
@@ -435,7 +447,10 @@ export const ChatImpl = ({
         annotations: ['hidden', FIX_ANNOTATION],
         content: formatMessageWithModelInfo({
           messageContent: `${userUpdateArtifact}${message}`,
-          dataSourceId: selectedDataSourceId!,
+          environmentDataSource: {
+            dataSourceId: selectedEnvironmentDataSource.dataSourceId!,
+            environmentId: selectedEnvironmentDataSource.environmentId!,
+          },
         }),
       },
     ]);
@@ -459,7 +474,7 @@ export const ChatImpl = ({
 
   async function startChatWithInitialMessage(
     messageContent: string,
-    datasourceId: string,
+    environmentDataSource: { dataSourceId: string; environmentId: string },
     files: File[],
     dataList: string[],
   ) {
@@ -469,14 +484,22 @@ export const ChatImpl = ({
     let conversationId = chatId.get();
 
     if (!conversationId) {
-      conversationId = await createConversation(datasourceId);
+      conversationId = await createConversation(
+        environmentDataSource.dataSourceId,
+        environmentDataSource.environmentId,
+      );
       chatId.set(conversationId);
 
       // Don't update URL during active chat - causes component unmounting
       // Store the conversation ID for potential future navigation
     }
 
-    const dataSourceUrlResponse = await fetch(`/api/data-sources/${datasourceId}/properties`);
+    logger.info('Environment data source for new chat:', JSON.stringify(environmentDataSource));
+
+    // TODO @lane add environment id to this endpoint
+    const dataSourceUrlResponse = await fetch(
+      `/api/data-sources/${environmentDataSource.dataSourceId}/properties?environmentId=${environmentDataSource.environmentId}`,
+    );
 
     if (!dataSourceUrlResponse.ok) {
       console.error('Failed to fetch database URL:', dataSourceUrlResponse.status);
@@ -509,7 +532,10 @@ export const ChatImpl = ({
       content: formatMessageWithModelInfo({
         messageContent,
         firstUserMessage: true,
-        dataSourceId: selectedDataSourceId!,
+        environmentDataSource: {
+          dataSourceId: selectedEnvironmentDataSource.dataSourceId!,
+          environmentId: selectedEnvironmentDataSource.environmentId!,
+        },
         dataList,
       }),
       experimental_attachments: createExperimentalAttachments(dataList, files),
@@ -585,9 +611,6 @@ export const ChatImpl = ({
     }
   }, []);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedQueryId, setSelectedQueryId] = useState<string | number | null>(null);
-
   const handleRetry = async (errorMessage: string) => {
     const messagesWithoutLastAssistant = messages.filter(
       (message, index) => !(message.role === 'assistant' && index === messages.length - 1),
@@ -614,25 +637,6 @@ export const ChatImpl = ({
       },
     });
   };
-
-  useEffect(() => {
-    const handleIframeMessage = (event: MessageEvent<OutputAppEvent>) => {
-      try {
-        const data = event.data;
-
-        if (data.eventType === OutputAppEventType.EDIT_QUERY) {
-          setSelectedQueryId(data.queryId);
-          setIsModalOpen(true);
-        }
-      } catch (error) {
-        console.error('Error handling iframe message:', error);
-      }
-    };
-
-    window.addEventListener('message', handleIframeMessage);
-
-    return () => window.removeEventListener('message', handleIframeMessage);
-  }, []);
 
   return (
     <>
@@ -676,21 +680,13 @@ export const ChatImpl = ({
         setMessages={setMessages}
         onRetry={handleRetry}
       />
-      {selectedQueryId && (
-        <QueryModal
-          isOpen={isModalOpen}
-          onOpenChange={setIsModalOpen}
-          queryId={selectedQueryId}
-          dataSourceId={selectedDataSourceId!}
-        />
-      )}
     </>
   );
 };
 
 interface MessageWithModelInfo {
   messageContent: string;
-  dataSourceId: string;
+  environmentDataSource: { dataSourceId: string; environmentId: string };
   firstUserMessage?: boolean;
   dataList?: string[];
 }
@@ -704,7 +700,7 @@ const createExperimentalAttachments = (dataList: string[], files: File[]) =>
 
 const formatMessageWithModelInfo = ({
   messageContent,
-  dataSourceId,
+  environmentDataSource,
   firstUserMessage,
   dataList,
 }: MessageWithModelInfo) => {
@@ -714,7 +710,8 @@ const formatMessageWithModelInfo = ({
     formattedMessage += `\n\n[FirstUserMessage: true]`;
   }
 
-  formattedMessage += `\n\n[DataSourceId: ${dataSourceId}]`;
+  formattedMessage += `\n\n[DataSourceId: ${environmentDataSource.dataSourceId}]`;
+  formattedMessage += `\n\n[EnvironmentId: ${environmentDataSource.environmentId}]`;
 
   if (dataList) {
     formattedMessage += `\n\n[Files: ${dataList.join('## ')}]`;

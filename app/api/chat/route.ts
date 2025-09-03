@@ -10,11 +10,9 @@ import { messageService } from '~/lib/services/messageService';
 import { MESSAGE_ROLE } from '~/types/database';
 import { createId } from '@paralleldrive/cuid2';
 import { conversationService } from '~/lib/services/conversationService';
-import type { StarterPluginId } from '~/lib/plugins/types';
 import type { FileMap } from '~/lib/stores/files';
 import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
-import { prisma } from '~/lib/prisma';
 import { LLMManager } from '~/lib/modules/llm/manager';
 import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import { type UserProfile, userService } from '~/lib/services/userService';
@@ -33,7 +31,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function chatAction(request: NextRequest) {
-  await requireUserId(request);
+  const userId = await requireUserId(request);
 
   const body = await request.json<{
     messages: Messages;
@@ -55,7 +53,8 @@ async function chatAction(request: NextRequest) {
   }
 
   const conversation = await conversationService.getConversation(conversationId);
-  const dataSource = await conversationService.getConversationDataSource(conversationId);
+  const environmentDataSource = await conversationService.getConversationEnvironmentDataSource(conversationId, userId);
+  const dataSource = environmentDataSource.dataSource;
 
   const cumulativeUsage = {
     completionTokens: 0,
@@ -255,7 +254,7 @@ async function chatAction(request: NextRequest) {
                   userPrompt: userMessage.content,
                   conversationSummary: summary,
                   implementationPlan: implementationPlan?.implementationPlan,
-                  dataSource,
+                  environmentDataSource,
                 });
 
               additionalDataSourceContext = additionalContext;
@@ -337,6 +336,7 @@ async function chatAction(request: NextRequest) {
 
                 const userId = await requireUserId(request);
                 const user = await userService.getUser(userId);
+
                 await trackChatPrompt(conversationId, currentModel, user, userMessageProperties.content);
               } catch (error) {
                 logger.error('Failed to save prompt', error);
@@ -382,7 +382,7 @@ async function chatAction(request: NextRequest) {
             options,
             files,
             promptId,
-            starterId: conversation?.starterId as StarterPluginId,
+            conversation: conversation!,
             contextOptimization,
             contextFiles: filteredFiles,
             summary,
@@ -488,37 +488,28 @@ async function trackChatPrompt(
   userMessage: string,
 ): Promise<void> {
   try {
-    const conversationWithDataSource = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-      include: {
-        dataSource: {
-          select: {
-            connectionString: true,
-            type: true,
-          },
+    const environmentDataSource = await conversationService.getConversationEnvironmentDataSource(
+      conversationId,
+      user.id,
+    );
+
+    const pluginId = DataSourcePluginManager.getAccessorPluginId(
+      environmentDataSource.dataSource.type as DataSourceType,
+    );
+
+    const telemetry = await getTelemetry();
+    await telemetry.trackTelemetryEvent(
+      {
+        eventType: TelemetryEventType.USER_CHAT_PROMPT,
+        properties: {
+          conversationId,
+          dataSourceType: pluginId,
+          llmModel,
+          userMessage,
         },
       },
-    });
-
-    if (conversationWithDataSource?.dataSource?.type) {
-      const pluginId = DataSourcePluginManager.getAccessorPluginId(
-        conversationWithDataSource?.dataSource.type as DataSourceType,
-      );
-
-      const telemetry = await getTelemetry();
-      await telemetry.trackTelemetryEvent(
-        {
-          eventType: TelemetryEventType.USER_CHAT_PROMPT,
-          properties: {
-            conversationId,
-            dataSourceType: pluginId,
-            llmModel,
-            userMessage,
-          },
-        },
-        user,
-      );
-    }
+      user,
+    );
   } catch (telemetryError) {
     logger.error('Failed to track telemetry event', telemetryError);
   }

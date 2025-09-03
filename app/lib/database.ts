@@ -1,8 +1,8 @@
 import { logger } from '~/utils/logger';
 import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
-import { getDataSourceByConnectionString } from '~/lib/services/datasourceService';
 import type { BaseDatabaseAccessor } from '@liblab/data-access/baseDatabaseAccessor';
 import type { DataSourceType } from '@liblab/data-access/utils/types';
+import { getDataSourceByConnectionString } from '~/lib/services/dataSourceService';
 
 export async function executeQuery(connectionUrl: string, query: string, params?: string[]): Promise<any[]> {
   const dataSource = await getDataSourceByConnectionString(connectionUrl);

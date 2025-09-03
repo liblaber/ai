@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle, Lock } from 'lucide-react';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Label } from '~/components/ui/Label';
 import { BaseSelect } from '~/components/ui/Select';
 import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/database/SelectDatabaseTypeOptions';
-import { useDataSourceActions, useDataSourcesStore } from '~/lib/stores/dataSources';
+import { useDataSourceActions, useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { useRouter } from 'next/navigation';
 import { Header } from '~/components/header/Header';
 import {
@@ -26,24 +26,83 @@ interface ApiResponse {
   };
 }
 
+interface Environment {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+interface EnvironmentOption {
+  label: string;
+  value: string;
+  description?: string;
+}
+
+interface EnvironmentsResponse {
+  success: boolean;
+  environments: Environment[];
+  error?: string;
+}
+
 export default function DataSourceConnectionPage() {
   const [dbType, setDbType] = useState<DataSourceOption>(DEFAULT_DATA_SOURCES[0]);
   const [dbName, setDbName] = useState('');
   const [connStr, setConnStr] = useState('');
+  const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
+  const [environmentOptions, setEnvironmentOptions] = useState<EnvironmentOption[]>([]);
+  const [isLoadingEnvironments, setIsLoadingEnvironments] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { setSelectedDataSourceId } = useDataSourcesStore();
-  const { refetchDataSources } = useDataSourceActions();
+  const { setSelectedEnvironmentDataSource } = useEnvironmentDataSourcesStore();
+  const { refetchEnvironmentDataSources } = useDataSourceActions();
   const router = useRouter();
 
   const { availableDataSourceOptions } = useDataSourceTypesPlugin();
+
+  useEffect(() => {
+    const fetchEnvironments = async () => {
+      try {
+        const response = await fetch('/api/environments');
+        const result: EnvironmentsResponse = await response.json();
+
+        if (result.success) {
+          // Transform environments to options
+          const options: EnvironmentOption[] = result.environments.map((env) => ({
+            label: env.name,
+            value: env.id,
+            description: env.description,
+          }));
+          setEnvironmentOptions(options);
+
+          // Auto-select first environment if available
+          if (options.length > 0) {
+            setSelectedEnvironment(options[0]);
+          }
+        } else {
+          setError(result.error || 'Failed to fetch environments');
+        }
+      } catch (error) {
+        setError('Failed to fetch environments');
+        console.error('Error fetching environments:', error);
+      } finally {
+        setIsLoadingEnvironments(false);
+      }
+    };
+
+    fetchEnvironments();
+  }, []);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsTesting(true);
     setError(null);
+
+    if (!selectedEnvironment) {
+      setError('Please select an environment');
+      return;
+    }
 
     if (!dbName) {
       setError('Please enter a database name');
@@ -86,6 +145,7 @@ export default function DataSourceConnectionPage() {
       const formData = new FormData();
       formData.append('name', dbName);
       formData.append('connectionString', connStr);
+      formData.append('environmentId', selectedEnvironment!.value);
 
       const response = await fetch('/api/data-sources', {
         method: 'POST',
@@ -96,8 +156,8 @@ export default function DataSourceConnectionPage() {
 
       if (result.success && result.dataSource) {
         setIsSuccess(true);
-        refetchDataSources();
-        setSelectedDataSourceId(result.dataSource.id);
+        refetchEnvironmentDataSources();
+        setSelectedEnvironmentDataSource(result.dataSource.id, selectedEnvironment!.value);
         setTimeout(() => {
           router.push('/');
         }, 1000);
@@ -113,17 +173,30 @@ export default function DataSourceConnectionPage() {
     setError(null);
     setIsConnecting(true);
 
+    if (!selectedEnvironment) {
+      setError('Please select an environment');
+      setIsConnecting(false);
+
+      return;
+    }
+
     try {
-      const response = await fetch('/api/data-sources/example', {
+      const response = await fetch(`/api/data-sources/example?environmentId=${selectedEnvironment.value}`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          environmentId: selectedEnvironment.value,
+        }),
       });
 
       const result = (await response.json()) as ApiResponse;
 
       if (result.success && result.dataSource) {
         setIsSuccess(true);
-        refetchDataSources();
-        setSelectedDataSourceId(result.dataSource.id);
+        refetchEnvironmentDataSources();
+        setSelectedEnvironmentDataSource(result.dataSource.id, selectedEnvironment!.value);
         setTimeout(() => {
           router.push('/');
         }, 1000);
@@ -175,6 +248,25 @@ export default function DataSourceConnectionPage() {
               />
             </div>
           </div>
+          <div className="mb-6">
+            <Label className="mb-3 block text-gray-300">Environment</Label>
+            <BaseSelect
+              value={selectedEnvironment}
+              onChange={(value: EnvironmentOption | null) => {
+                setSelectedEnvironment(value);
+                setError(null);
+              }}
+              options={environmentOptions}
+              placeholder={isLoadingEnvironments ? 'Loading environments...' : 'Select environment'}
+              isDisabled={isLoadingEnvironments}
+              width="100%"
+              minWidth="100%"
+              isSearchable={false}
+            />
+            {selectedEnvironment?.description && (
+              <div className="text-gray-400 text-sm mt-2">{selectedEnvironment.description}</div>
+            )}
+          </div>
           {dbType.value !== 'sample' && (
             <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
               <div>
@@ -207,7 +299,7 @@ export default function DataSourceConnectionPage() {
                 type="submit"
                 variant="primary"
                 className={`min-w-[150px] max-w-[220px] transition-all duration-300 ${isSuccess ? 'bg-green-500 hover:bg-green-500 !disabled:opacity-100' : ''}`}
-                disabled={!dbName || !connStr || isTesting || isSuccess}
+                disabled={!selectedEnvironment || !dbName || !connStr || isTesting || isSuccess}
               >
                 {isSuccess ? (
                   <div className="flex items-center gap-2">
@@ -241,7 +333,7 @@ export default function DataSourceConnectionPage() {
                 variant="primary"
                 className={`min-w-[150px] transition-all duration-300 ${isSuccess ? 'bg-green-500 hover:bg-green-500 !disabled:opacity-100' : ''}`}
                 onClick={handleSampleDatabase}
-                disabled={isSuccess}
+                disabled={!selectedEnvironment || isSuccess}
               >
                 {isSuccess ? (
                   <div className="flex items-center gap-2">

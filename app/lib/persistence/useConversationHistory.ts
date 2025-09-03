@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { atom } from 'nanostores';
 import { type Message } from 'ai';
 import { toast } from 'sonner';
-import { useDataSourcesStore } from '~/lib/stores/dataSources';
+import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { saveSnapshot, type SnapshotResponse } from '~/lib/persistence/snapshots';
 import { createCommandsMessage, detectProjectCommandsFromFileMap } from '~/utils/projectCommands';
 import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
@@ -35,7 +35,7 @@ export const description = atom<string | undefined>(undefined);
 
 export function useConversationHistory(id?: string) {
   const router = useRouter();
-  const { selectedDataSourceId, setSelectedDataSourceId } = useDataSourcesStore();
+  const { selectedEnvironmentDataSource, setSelectedEnvironmentDataSource } = useEnvironmentDataSourcesStore();
 
   const [initialMessages, setInitialMessages] = useState<Message[]>([]);
   const [commandMessage, setCommandMessage] = useState<Message>();
@@ -81,8 +81,8 @@ export function useConversationHistory(id?: string) {
             logger.error('Failed to load snapshot into container', reason);
           });
 
-        if (conversation.dataSourceId && conversation.dataSourceId !== selectedDataSourceId) {
-          setSelectedDataSourceId(conversation.dataSourceId);
+        if (conversation.dataSourceId && conversation.dataSourceId !== selectedEnvironmentDataSource.dataSourceId) {
+          setSelectedEnvironmentDataSource(conversation.dataSourceId, conversation.environmentId);
         }
 
         chatId.set(conversation.id);
@@ -97,7 +97,7 @@ export function useConversationHistory(id?: string) {
         // Redirect to main chat page if conversation not found
         router.replace('/chat');
       });
-  }, [id, router, selectedDataSourceId, setSelectedDataSourceId]);
+  }, [id, router, selectedEnvironmentDataSource, setSelectedEnvironmentDataSource]);
 
   return {
     ready: !id || ready,

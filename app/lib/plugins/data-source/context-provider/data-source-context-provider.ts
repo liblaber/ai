@@ -1,4 +1,4 @@
-import { type DataSource, DataSourceType } from '@prisma/client';
+import { DataSourceType } from '@prisma/client';
 import { logger } from '~/utils/logger';
 import { HubspotContextProvider } from '~/lib/plugins/data-source/context-provider/hubspot-context-provider';
 import type { LanguageModelUsage } from 'ai';
@@ -8,12 +8,12 @@ import {
   PostgresContextProvider,
   SQLiteContextProvider,
 } from './database/database-context-providers';
+import type { ComplexEnvironmentDataSource } from '~/lib/services/dataSourceService';
 
 export type AdditionalContextInput = {
   userPrompt: string;
-  dataSource: DataSource;
+  environmentDataSource: ComplexEnvironmentDataSource;
   conversationSummary?: string;
-  // @Lane To be changed to a more specific type if needed
   implementationPlan?: string;
 };
 

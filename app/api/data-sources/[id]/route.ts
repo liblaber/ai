@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   deleteDataSource,
   getConversationCount,
-  getDataSource,
+  getEnvironmentDataSource,
   updateDataSource,
-} from '~/lib/services/datasourceService';
+} from '~/lib/services/dataSourceService';
 import { requireUserId } from '~/auth/session';
 import { DataSourceType } from '@prisma/client';
 import type { DataSourceProperty } from '@liblab/data-access/utils/types';
@@ -13,26 +13,38 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const userId = await requireUserId(request);
 
   const { id } = await params;
+  const { searchParams } = new URL(request.url);
+  const environmentId = searchParams.get('environmentId');
 
-  const dataSource = await getDataSource(id, userId);
+  if (!environmentId) {
+    return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
+  }
 
-  if (!dataSource) {
+  const environmentDataSource = await getEnvironmentDataSource(id, userId, environmentId);
+
+  if (!environmentDataSource) {
     return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
   }
 
   const conversationCount = await getConversationCount(id, userId);
 
-  return NextResponse.json({ success: true, dataSource, conversationCount });
+  return NextResponse.json({ success: true, environmentDataSource, conversationCount });
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await requireUserId(request);
 
   const { id } = await params;
+  const { searchParams } = new URL(request.url);
+  const environmentId = searchParams.get('environmentId');
 
-  const dataSource = await getDataSource(id, userId);
+  if (!environmentId) {
+    return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
+  }
 
-  if (!dataSource) {
+  const environmentDataSource = await getEnvironmentDataSource(id, userId, environmentId);
+
+  if (!environmentDataSource) {
     return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
   }
 
@@ -63,10 +75,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await requireUserId(request);
   const { id } = await params;
+  const { searchParams } = new URL(request.url);
+  const environmentId = searchParams.get('environmentId');
 
-  const dataSource = await getDataSource(id, userId);
+  if (!environmentId) {
+    return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
+  }
 
-  if (!dataSource) {
+  const environmentDataSource = await getEnvironmentDataSource(id, userId, environmentId);
+
+  if (!environmentDataSource) {
     return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
   }
 

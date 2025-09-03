@@ -63,7 +63,8 @@ export class PostgresAccessor extends BaseDatabaseAccessor implements BaseAccess
   validateProperties(dataSourceProperties: DataSourceProperty[]): void {
     const connectionString = this.getConnectionStringFromProperties(dataSourceProperties);
 
-    const regex = /^postgres(?:ql)?:\/\/([a-zA-Z0-9_-]+):(.+)@([a-zA-Z0-9.-]+):([0-9]{1,5})\/([a-zA-Z0-9_-]+)(\?.*)?$/;
+    const regex =
+      /^postgres(?:ql)?:\/\/([a-zA-Z0-9_-]+):(.+)@([a-zA-Z0-9.-]+):([0-9]{1,5})\/([a-zA-Z0-9_\s%]+)(\?.*)?$/;
     const match = connectionString.match(regex);
 
     if (!match) {

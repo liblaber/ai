@@ -1,12 +1,19 @@
 import { prisma } from '~/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId } from '~/auth/session';
-import { DataSourceType } from '@prisma/client';
+import { createSampleDataSource } from '~/lib/services/dataSourceService';
 
 export async function POST(request: NextRequest) {
   const userId = await requireUserId(request);
 
   try {
+    const body = await request.json();
+    const { environmentId } = body as { environmentId: string };
+
+    if (!environmentId) {
+      return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
+    }
+
     const existingSampleDatabase = await prisma.dataSource.findFirst({
       where: {
         createdById: userId,
@@ -18,13 +25,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Sample database already exists' }, { status: 400 });
     }
 
-    const dataSource = await prisma.dataSource.create({
-      data: {
-        createdById: userId,
-        name: 'Sample Database',
-        connectionString: 'sqlite://sample.db',
-        type: DataSourceType.SQLITE,
-      },
+    const dataSource = await createSampleDataSource({
+      createdById: userId,
+      environmentId,
     });
 
     return NextResponse.json({ success: true, dataSource });

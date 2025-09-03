@@ -134,6 +134,7 @@ Use the following Hubspot API knowledge for more accurate endpoint selection:
     .join('\n  \n')}
 </hubspotEndpoints>
 
+IMPORANT: NEVER set limit parameters higher than 100 in any endpoint.
 VERY IMPORTANT: Always use process.env.ACCESS_TOKEN for Bearer authentication in generated code.`;
   }
 }
