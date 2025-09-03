@@ -70,7 +70,7 @@ export default function SecretsManagerTab() {
 
           // Transform environments to options
           const options: EnvironmentOption[] = [
-            { label: 'All Environments', value: 'all', description: 'Show variables from all environments' },
+            { label: 'All Environments', value: 'all', description: 'Secrets from all environments' },
             ...data.environments.map((env) => ({
               label: env.name,
               value: env.id,
@@ -148,10 +148,7 @@ export default function SecretsManagerTab() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-medium text-primary">Secrets Manager</h2>
-              <p className="text-sm text-secondary">Manage your environment variables and secrets</p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                Global secrets can be managed here. Data source secrets are managed in the Data Sources tab.
-              </p>
+              <p className="text-sm text-secondary">Manage your environment secrets</p>
             </div>
             <button
               onClick={handleAdd}
@@ -340,25 +337,7 @@ export default function SecretsManagerTab() {
             <div className="text-center py-12">
               <Lock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No secrets found</h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
-                {selectedEnvironmentId === 'all'
-                  ? 'No environment variables have been created yet.'
-                  : 'No environment variables found in this environment.'}
-              </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
-                Note: Data source secrets are managed in the Data Sources tab.
-              </p>
-              <button
-                onClick={() => setShowAddFormLocal(true)}
-                className={classNames(
-                  'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                  'bg-accent-500 hover:bg-accent-600',
-                  'text-gray-950 dark:text-gray-950',
-                )}
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Your First Secret</span>
-              </button>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">No secrets have been created yet</p>
             </div>
           )}
         </div>

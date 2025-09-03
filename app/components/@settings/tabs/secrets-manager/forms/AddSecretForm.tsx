@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
-import type { EnvironmentVariableType } from '@prisma/client';
+import { EnvironmentVariableType } from '@prisma/client';
 
 interface AddSecretFormProps {
   isSubmitting: boolean;
@@ -19,26 +19,13 @@ export default function AddSecretForm({
   setIsSubmitting,
   onSuccess,
   selectedEnvironmentId,
-  showEnvironmentSelector = false,
   availableEnvironments = [],
 }: AddSecretFormProps) {
   const [key, setKey] = useState('');
   const [value, setValue] = useState('');
-  const [type, setType] = useState<EnvironmentVariableType>('GLOBAL');
   const [description, setDescription] = useState('');
   const [showValue, setShowValue] = useState(false);
-  const [createdSecret, setCreatedSecret] = useState<{
-    key: string;
-    value: string;
-    type: EnvironmentVariableType;
-    description?: string;
-  } | null>(null);
   const [environmentId, setEnvironmentId] = useState(selectedEnvironmentId);
-
-  // Update local environment ID when prop changes
-  useEffect(() => {
-    setEnvironmentId(selectedEnvironmentId);
-  }, [selectedEnvironmentId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,9 +35,9 @@ export default function AddSecretForm({
       return;
     }
 
-    // Validate key format (alphanumeric and underscores only)
-    if (!/^[A-Za-z0-9_]+$/.test(key.trim())) {
-      toast.error('Key can only contain letters, numbers, and underscores');
+    // Validate a key format (alphanumeric and underscores only)
+    if (!/^[A-Z0-9_]+$/.test(key.trim())) {
+      toast.error('Secret key can only contain uppercase letters, numbers, and underscores');
       return;
     }
 
@@ -65,7 +52,7 @@ export default function AddSecretForm({
         body: JSON.stringify({
           key: key.trim().toUpperCase(),
           value: value.trim(),
-          type,
+          type: EnvironmentVariableType.GLOBAL,
           environmentId,
           description: description.trim() || undefined,
         }),
@@ -75,21 +62,7 @@ export default function AddSecretForm({
 
       if (data.success) {
         toast.success('Secret created successfully');
-
-        // Store the created secret to show it
-        setCreatedSecret({
-          key: key.trim().toUpperCase(),
-          value: value.trim(),
-          type,
-          description: description.trim() || undefined,
-        });
-
-        // Clear the form
-        setKey('');
-        setValue('');
-        setDescription('');
-        setShowValue(false);
-        setEnvironmentId(selectedEnvironmentId);
+        onSuccess();
       } else {
         toast.error(data.error || 'Failed to create secret');
       }
@@ -105,112 +78,6 @@ export default function AddSecretForm({
     setShowValue(!showValue);
   };
 
-  const handleBack = () => {
-    onSuccess();
-  };
-
-  // Show the created secret if available
-  if (createdSecret) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-medium text-primary">Secret Created Successfully</h2>
-            <p className="text-sm text-secondary">Your new environment variable has been created</p>
-          </div>
-          <button
-            onClick={handleBack}
-            className={classNames(
-              'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-              'bg-accent-500 hover:bg-accent-600',
-              'text-gray-950 dark:text-gray-950',
-            )}
-          >
-            <span>Continue</span>
-          </button>
-        </div>
-
-        {/* Display the created secret */}
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Key</label>
-              <input
-                type="text"
-                value={createdSecret.key}
-                readOnly
-                className={classNames(
-                  'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                  'text-primary border-[#E5E5E5] dark:border-[#1A1A1A]',
-                  'cursor-default',
-                )}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
-              <input
-                type="text"
-                value={createdSecret.type}
-                readOnly
-                className={classNames(
-                  'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                  'text-primary border-[#E5E5E5] dark:border-[#1A1A1A]',
-                  'cursor-default',
-                )}
-              />
-            </div>
-
-            {createdSecret.description && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-                <input
-                  type="text"
-                  value={createdSecret.description}
-                  readOnly
-                  className={classNames(
-                    'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                    'text-primary border-[#E5E5E5] dark:border-[#1A1A1A]',
-                    'cursor-default',
-                  )}
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Value</label>
-              <div className="relative">
-                <input
-                  type={showValue ? 'text' : 'password'}
-                  value={createdSecret.value}
-                  readOnly
-                  className={classNames(
-                    'w-full px-4 py-2.5 pr-12 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                    'text-primary border-[#E5E5E5] dark:border-[#1A1A1A]',
-                    'cursor-default',
-                  )}
-                />
-                <button
-                  type="button"
-                  onClick={toggleShowValue}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group"
-                  tabIndex={-1}
-                >
-                  <span className="text-gray-400 group-hover:text-white transition-colors">
-                    {showValue ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </span>
-                </button>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                This value has been encrypted and stored securely
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <motion.form
       onSubmit={handleSubmit}
@@ -219,93 +86,51 @@ export default function AddSecretForm({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Key */}
-        <div className="space-y-2">
-          <label htmlFor="key" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Key <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="key"
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            placeholder="DATABASE_URL"
-            className={classNames(
-              'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
-              'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
-              'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
-              'placeholder-gray-500 dark:placeholder-gray-400',
-            )}
-            required
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Use uppercase letters, numbers, and underscores only
-          </p>
-        </div>
-
-        {/* Type */}
-        <div className="space-y-2">
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Type <span className="text-red-500">*</span>
-          </label>
-          <select
-            id="type"
-            value={type}
-            onChange={(e) => setType(e.target.value as EnvironmentVariableType)}
-            className={classNames(
-              'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
-              'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
-              'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
-            )}
-            required
-          >
-            <option value="GLOBAL">Global</option>
-            <option value="DATA_SOURCE">Data Source</option>
-          </select>
-        </div>
+      {/* Environment */}
+      <div className="space-y-2">
+        <label htmlFor="environment" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Environment <span className="text-red-500">*</span>
+        </label>
+        <select
+          id="environment"
+          value={environmentId}
+          onChange={(e) => setEnvironmentId(e.target.value)}
+          className={classNames(
+            'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
+            'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
+            'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
+          )}
+          required
+        >
+          {availableEnvironments.map((env) => (
+            <option key={env.id} value={env.id}>
+              {env.name}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Environment */}
-      {showEnvironmentSelector ? (
-        <div className="space-y-2">
-          <label htmlFor="environment" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Environment <span className="text-red-500">*</span>
-          </label>
-          <select
-            id="environment"
-            value={environmentId}
-            onChange={(e) => setEnvironmentId(e.target.value)}
-            className={classNames(
-              'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
-              'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
-              'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
-            )}
-            required
-          >
-            <option value="">Select an environment</option>
-            {availableEnvironments.map((env) => (
-              <option key={env.id} value={env.id}>
-                {env.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Environment</label>
-          <input
-            type="text"
-            value={selectedEnvironmentId}
-            disabled
-            className={classNames(
-              'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
-              'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
-              'cursor-not-allowed',
-            )}
-          />
-        </div>
-      )}
+      {/* Key */}
+      <div className="space-y-2">
+        <label htmlFor="key" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Key <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          id="key"
+          value={key}
+          onChange={(e) => setKey(e.target.value)}
+          placeholder="MY_SECRET_KEY"
+          className={classNames(
+            'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
+            'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
+            'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
+            'placeholder-gray-500 dark:placeholder-gray-400',
+          )}
+          required
+        />
+        <p className="text-xs text-gray-500 dark:text-gray-400">Use uppercase letters, numbers, and underscores only</p>
+      </div>
 
       {/* Value */}
       <div className="space-y-2">
