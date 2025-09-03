@@ -34,7 +34,7 @@ export default function DeployedAppsTab() {
           setWebsites(data.websites);
         }
       } catch (error) {
-        logger.error('Failed to load websites:', error);
+        logger.error('Failed to load apps:', error);
       }
     };
 
@@ -71,8 +71,8 @@ export default function DeployedAppsTab() {
         toast.error(data.error || 'Failed to delete app');
       }
     } catch (error) {
-      logger.error('Failed to load websites:', JSON.stringify(error));
-      toast.error('Failed to load apps');
+      logger.error('Failed to delete app:', JSON.stringify(error));
+      toast.error('Failed to delete app');
     }
   };
 
@@ -128,7 +128,7 @@ export default function DeployedAppsTab() {
                   setWebsites(typedData.websites);
                 }
               })
-              .catch((error) => logger.error('Failed to reload websites after edit:', error));
+              .catch((error) => logger.error('Failed to reload apps after edit:', error));
             handleBack();
           }}
           onDelete={() => handleDeleteClick(selectedWebsite)}

@@ -48,7 +48,8 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json({ success: true, website });
-  } catch {
+  } catch (error) {
+    logger.error('Failed to create website', error);
     return NextResponse.json({ success: false, error: 'Failed to create website' }, { status: 500 });
   }
 }

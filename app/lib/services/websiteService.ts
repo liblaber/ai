@@ -12,8 +12,6 @@ export interface Website {
   isPublic: boolean;
   createdById: string;
   environmentId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export async function getWebsites(userAbility: AppAbility): Promise<Website[]> {
@@ -31,7 +29,7 @@ export async function getWebsites(userAbility: AppAbility): Promise<Website[]> {
   });
 }
 
-export async function getWebsite(id: string): Promise<Website | null> {
+export async function getWebsite(id: string): Promise<Website> {
   return prisma.website.findUniqueOrThrow({
     where: { id },
   });
@@ -55,19 +53,15 @@ export async function createWebsite(data: {
   });
 }
 
-export async function updateWebsite(id: string, data: { siteName: string }): Promise<Website | null> {
-  const website = await prisma.website.update({
+export async function updateWebsite(id: string, data: { siteName: string }): Promise<Website> {
+  return await prisma.website.update({
     where: { id },
     data,
   });
-
-  return website;
 }
 
-export async function deleteWebsite(id: string): Promise<Website | null> {
-  const website = await prisma.website.delete({
+export async function deleteWebsite(id: string): Promise<Website> {
+  return await prisma.website.delete({
     where: { id },
   });
-
-  return website;
 }
