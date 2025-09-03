@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { signIn, useSession } from '~/auth/auth-client';
-import { useDataSourcesStore } from '~/lib/stores/dataSources';
+import { type DataSource, useDataSourcesStore } from '~/lib/stores/dataSources';
 import { usePluginStore } from '~/lib/plugins/plugin-store';
 import type { DataSourceType } from '~/lib/stores/dataSourceTypes';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
@@ -13,17 +13,10 @@ import { DATA_SOURCE_CONNECTION_ROUTE, TELEMETRY_CONSENT_ROUTE } from '~/lib/con
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
 import type { UserProfile } from '~/lib/services/userService';
 import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
-import type { DataSource } from '~/components/@settings/tabs/data/DataTab';
 
 export interface RootData {
   user: UserProfile | null;
-  dataSources: Array<{
-    id: string;
-    name: string;
-    connectionString: string;
-    createdAt: string;
-    updatedAt: string;
-  }>;
+  dataSources: Array<DataSource>;
   pluginAccess: PluginAccessMap;
   dataSourceTypes: DataSourceType[];
 }
@@ -104,12 +97,9 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       if (currentUser) {
         // Redirect to telemetry consent screen if user hasn't answered yet
         if (currentUser.telemetryEnabled === null) {
-          const currentPath = window.location.pathname;
+          router.push(TELEMETRY_CONSENT_ROUTE);
 
-          if (currentPath !== TELEMETRY_CONSENT_ROUTE) {
-            router.push(TELEMETRY_CONSENT_ROUTE);
-            return;
-          }
+          return;
         }
 
         // Initialize telemetry if enabled
@@ -119,12 +109,9 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
 
         // Redirect to data source connection if no data sources exist
         if (currentDataSources.length === 0) {
-          const currentPath = window.location.pathname;
+          router.push(DATA_SOURCE_CONNECTION_ROUTE);
 
-          if (currentPath !== DATA_SOURCE_CONNECTION_ROUTE) {
-            router.push(DATA_SOURCE_CONNECTION_ROUTE);
-            return;
-          }
+          return;
         }
       }
 
