@@ -36,7 +36,7 @@ export interface EnvironmentDataSource {
   dataSourceProperties: [
     {
       // this must be synced with DataSourcePropertyType enum in prisma
-      type: 'GLOBAL' | 'DATA_SOURCE';
+      type: 'CONNECTION_URL' | 'ACCESS_TOKEN' | 'REFRESH_TOKEN' | 'CLIENT_ID' | 'CLIENT_SECRET' | 'API_KEY';
       environmentVariables: EnvironmentVariable[];
     },
   ];
