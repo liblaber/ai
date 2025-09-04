@@ -1,5 +1,6 @@
 import { prisma } from '~/lib/prisma';
 import { DeprecatedRole } from '@prisma/client';
+import type { User } from '@prisma/client';
 import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('user-service');
@@ -11,123 +12,147 @@ export interface UserProfile {
   image?: string | null;
   role?: DeprecatedRole;
   telemetryEnabled?: boolean | null;
+  roles?: UserRole[];
+}
+
+export interface UserRole {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
+export interface UserWithRole {
+  id: string;
+  name: string;
+  email: string;
+  image?: string | null;
+  roleId: string;
+  roleName: string;
+  telemetryEnabled?: boolean | null;
+}
+
+type UserUpdateData = Partial<Omit<UserProfile, 'id' | 'roles'>>;
+
+const userSelect = {
+  id: true,
+  name: true,
+  email: true,
+  image: true,
+  role: true,
+  telemetryEnabled: true,
+};
+
+const userSelectWithRoles = {
+  ...userSelect,
+  roles: {
+    select: {
+      role: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+        },
+      },
+    },
+  },
+};
+
+type UserWithRoles = Partial<User> & {
+  roles?: { role: { id: string; name: string; description: string | null } }[];
+};
+
+function mapToUserProfile(user: UserWithRoles): UserProfile {
+  const userProfile = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    image: user.image,
+    role: user.role,
+    telemetryEnabled: user.telemetryEnabled,
+  } as UserProfile;
+
+  if (user.roles) {
+    userProfile.roles = user.roles.map((r) => ({
+      id: r.role.id,
+      name: r.role.name,
+      description: r.role.description || undefined,
+    }));
+  }
+
+  return userProfile;
 }
 
 export const userService = {
   async getUser(userId: string): Promise<UserProfile> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
+      select: userSelectWithRoles,
     });
 
     if (!user) {
       throw new Error('User not found');
     }
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      image: user.image,
-      role: user.role,
-      telemetryEnabled: user.telemetryEnabled,
-    };
+    return mapToUserProfile(user);
   },
 
   async getAllUsers(): Promise<UserProfile[]> {
-    return await prisma.user.findMany({
+    const users = await prisma.user.findMany({
       where: {
         OR: [{ isAnonymous: false }, { isAnonymous: null }],
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        role: true,
-        telemetryEnabled: true,
-      },
+      select: userSelectWithRoles,
     });
+
+    return users.map((user) => mapToUserProfile(user));
   },
 
   async getUserByEmail(email: string): Promise<UserProfile> {
     const user = await prisma.user.findUnique({
       where: { email },
+      select: userSelectWithRoles,
     });
 
     if (!user) {
       throw new Error('User not found');
     }
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      image: user.image,
-      role: user.role,
-      telemetryEnabled: user.telemetryEnabled,
-    };
+    return mapToUserProfile(user);
   },
 
-  async updateUser(
-    userId: string,
-    data: Partial<Pick<UserProfile, 'name' | 'email' | 'image' | 'telemetryEnabled'>>,
-  ): Promise<UserProfile> {
+  async updateUser(userId: string, data: UserUpdateData): Promise<UserProfile> {
     const user = await prisma.user.update({
       where: { id: userId },
       data,
+      select: userSelect,
     });
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      image: user.image,
-      role: user.role,
-      telemetryEnabled: user.telemetryEnabled,
-    };
+    return mapToUserProfile(user);
   },
 
   async updateTelemetryConsent(userId: string, telemetryEnabled: boolean): Promise<UserProfile> {
     const user = await prisma.user.update({
       where: { id: userId },
       data: { telemetryEnabled },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        telemetryEnabled: true,
-      },
+      select: userSelect,
     });
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      telemetryEnabled: user.telemetryEnabled,
-    };
+    return mapToUserProfile(user);
   },
 
   async getUsersByRole(roleId: string): Promise<UserProfile[]> {
-    const userRoles = await prisma.userRole.findMany({
+    const users = await prisma.user.findMany({
       where: {
-        roleId,
-      },
-      select: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            telemetryEnabled: true,
+        roles: {
+          some: {
+            roleId,
           },
         },
       },
+      select: userSelect,
     });
 
-    return userRoles.map((userRole) => userRole.user);
+    return users.map((user) => mapToUserProfile(user));
   },
 
   async addUserToRole(userId: string, roleId: string): Promise<UserProfile> {
@@ -138,18 +163,12 @@ export const userService = {
       },
       select: {
         user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            telemetryEnabled: true,
-          },
+          select: userSelectWithRoles,
         },
       },
     });
 
-    return userRole.user;
+    return mapToUserProfile(userRole.user);
   },
 
   async removeUserFromRole(userId: string, roleId: string): Promise<void> {
@@ -163,9 +182,9 @@ export const userService = {
     });
   },
 
-  async updateUserRole(_userId: string, role: DeprecatedRole) {
+  async updateUserRole(userId: string, role: DeprecatedRole) {
     return await prisma.user.update({
-      where: { id: _userId },
+      where: { id: userId },
       data: { role },
     });
   },
@@ -256,5 +275,150 @@ export const userService = {
         `Failed to grant system admin access: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
+  },
+
+  async getAllUsersWithRoles(): Promise<UserWithRole[]> {
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [{ isAnonymous: false }, { isAnonymous: null }],
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    return users
+      .filter((user) => user.roles.length > 0) // Only include users who have at least one role
+      .map((user) => {
+        // Get the highest scoped role (Admin > Member, etc.)
+        // Sort roles by name to get consistent ordering, with Admin first
+        const sortedRoles = user.roles.sort((a, b) => {
+          const roleA = a.role.name.toLowerCase();
+          const roleB = b.role.name.toLowerCase();
+
+          if (roleA === 'admin') {
+            return -1;
+          }
+
+          if (roleB === 'admin') {
+            return 1;
+          }
+
+          return roleA.localeCompare(roleB);
+        });
+
+        const primaryRole = sortedRoles[0]?.role;
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          roleId: primaryRole?.id || '',
+          roleName: primaryRole?.name || 'No Role',
+          telemetryEnabled: user.telemetryEnabled,
+        };
+      });
+  },
+
+  async getAllUsersWithoutRoles(): Promise<UserWithRole[]> {
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [{ isAnonymous: false }, { isAnonymous: null }],
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    return users
+      .filter((user) => user.roles.length === 0) // Only include users who have no roles
+      .map((user) => {
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          roleId: '',
+          roleName: 'No Role',
+          telemetryEnabled: user.telemetryEnabled,
+        };
+      });
+  },
+
+  async updateUserRoleToNewSystem(userId: string, roleId: string): Promise<UserWithRole> {
+    // First, verify the role exists
+    const role = await prisma.role.findUnique({
+      where: { id: roleId },
+    });
+
+    if (!role) {
+      throw new Error('Role not found');
+    }
+
+    // First, remove all existing roles for the user
+    await prisma.userRole.deleteMany({
+      where: { userId },
+    });
+
+    // Add the new role
+    await prisma.userRole.create({
+      data: {
+        userId,
+        roleId,
+      },
+    });
+
+    // Get the updated user with role information
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Get the highest scoped role (Admin > Member, etc.)
+    const sortedRoles = user.roles.sort((a, b) => {
+      const roleA = a.role.name.toLowerCase();
+      const roleB = b.role.name.toLowerCase();
+
+      if (roleA === 'admin') {
+        return -1;
+      }
+
+      if (roleB === 'admin') {
+        return 1;
+      }
+
+      return roleA.localeCompare(roleB);
+    });
+
+    const primaryRole = sortedRoles[0]?.role;
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      roleId: primaryRole?.id || '',
+      roleName: primaryRole?.name || 'No Role',
+      telemetryEnabled: user.telemetryEnabled,
+    };
   },
 };
