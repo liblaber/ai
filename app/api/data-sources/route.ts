@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
 import { DataSourceType, PermissionAction, PermissionResource } from '@prisma/client';
-import { createDataSource, getEnvironmentDataSources } from '~/lib/services/dataSourceService';
+import { createDataSource, getEnvironmentDataSources } from '~/lib/services/datasourceService';
 
 export async function GET(request: NextRequest) {
   const { userAbility } = await requireUserAbility(request);

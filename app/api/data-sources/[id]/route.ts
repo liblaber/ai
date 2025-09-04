@@ -4,7 +4,7 @@ import {
   getConversationCount,
   getEnvironmentDataSource,
   updateDataSource,
-} from '~/lib/services/dataSourceService';
+} from '~/lib/services/datasourceService';
 import { requireUserId } from '~/auth/session';
 import { DataSourceType } from '@prisma/client';
 import type { DataSourceProperty } from '@liblab/data-access/utils/types';

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId } from '~/auth/session';
-import { getDataSourceProperties } from '~/lib/services/dataSourceService';
+import { getDataSourceProperties } from '~/lib/services/datasourceService';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await requireUserId(request);

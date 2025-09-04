@@ -8,7 +8,7 @@ import {
   PostgresContextProvider,
   SQLiteContextProvider,
 } from './database/database-context-providers';
-import type { ComplexEnvironmentDataSource } from '~/lib/services/dataSourceService';
+import type { ComplexEnvironmentDataSource } from '~/lib/services/datasourceService';
 
 export type AdditionalContextInput = {
   userPrompt: string;

@@ -2,7 +2,7 @@ import './styles/index.scss';
 import type { ReactNode } from 'react';
 import { ClientProviders } from './components/ClientProviders';
 import './globals.css';
-import { getEnvironmentDataSources } from '~/lib/services/dataSourceService';
+import { getEnvironmentDataSources } from '~/lib/services/datasourceService';
 import { userService } from '~/lib/services/userService';
 import { getUserAbility } from './lib/casl/user-ability';
 import PluginManager, { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager';

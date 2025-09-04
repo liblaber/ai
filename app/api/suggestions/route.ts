@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEnvironmentDataSource } from '~/lib/services/dataSourceService';
+import { getEnvironmentDataSource } from '~/lib/services/datasourceService';
 import { generateSchemaBasedSuggestions } from '~/lib/services/suggestionService';
 import { SAMPLE_DATABASE_NAME } from '@liblab/data-access/accessors/sqlite';
 import { logger } from '~/utils/logger';

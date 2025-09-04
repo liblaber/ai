@@ -1,7 +1,7 @@
 import { prisma } from '~/lib/prisma';
 import { type Conversation, type Prisma } from '@prisma/client';
 import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
-import { getEnvironmentDataSource } from '~/lib/services/dataSourceService';
+import { getEnvironmentDataSource } from '~/lib/services/datasourceService';
 
 export const conversationService = {
   async getConversation(conversationId: string): Promise<Conversation | null> {
