@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
-import { Mail, Globe, UserPlus, Trash2 } from 'lucide-react';
+import { Mail, Globe, UserPlus, Trash2, CircleX } from 'lucide-react';
 import { toast } from 'sonner';
 import { resetControlPanelHeader, setControlPanelHeader } from '~/lib/stores/settings';
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { classNames } from '~/utils/classNames';
 import { format } from 'date-fns';
+import { isValidEmail } from '~/lib/utils/invite-utils';
+import { Badge } from '~/components/ui/Badge';
+import { Input } from '~/components/ui/Input';
+import { Label } from '~/components/ui/Label';
 
 interface Role {
   id: string;
@@ -47,7 +51,9 @@ export default function MembersDetails({ onBack }: MembersDetailsProps) {
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
 
   // Invite specific users state
+  const [inviteEmails, setInviteEmails] = useState(new Set<string>());
   const [inviteEmail, setInviteEmail] = useState('');
+  const [addEmailMessage, setAddEmailMessage] = useState('');
   const [inviteRoleId, setInviteRoleId] = useState<string>('');
   const [isInviting, setIsInviting] = useState(false);
 
@@ -128,31 +134,84 @@ export default function MembersDetails({ onBack }: MembersDetailsProps) {
     }
   };
 
+  const handleAddEmail = () => {
+    const trimmedEmail = inviteEmail.trim();
+
+    if (!trimmedEmail) {
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setAddEmailMessage('Please enter a valid email address.');
+      return;
+    }
+
+    setInviteEmails((prev) => new Set(prev).add(trimmedEmail));
+    setInviteEmail('');
+    setAddEmailMessage('');
+  };
+
   const getTabComponent = (tab: string) => {
     switch (tab) {
       case 'Invite Members':
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
               <h3 className="text-sm font-medium text-white mb-3">Invite Specific Members</h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <label htmlFor="inviteEmail" className="block text-sm font-medium text-gray-300 mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    id="inviteEmail"
-                    type="email"
+                  <Label htmlFor="invite-email-input" className="mb-3 block text-gray-300">
+                    Emails
+                  </Label>
+                  <Input
+                    id="invite-email-input"
+                    autoComplete="off"
+                    type="text"
                     value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter email address"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setInviteEmail(e.target.value);
+
+                      if (addEmailMessage) {
+                        setAddEmailMessage('');
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddEmail();
+                      }
+                    }}
+                    placeholder="Enter email and press enter..."
                   />
+                  {addEmailMessage && <p className="text-sm text-red-500">{addEmailMessage}</p>}
                 </div>
+
                 <div>
-                  <label htmlFor="inviteRole" className="block text-sm font-medium text-gray-300 mb-2">
+                  {Array.from(inviteEmails).map((email) => (
+                    <Badge
+                      key={email}
+                      className="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 mr-2 mb-2"
+                    >
+                      {email}
+                      <CircleX
+                        className="pl-2 cursor-pointer"
+                        onClick={() => {
+                          setInviteEmails((prev) => {
+                            const newSet = new Set(prev);
+                            newSet.delete(email);
+
+                            return newSet;
+                          });
+                        }}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+
+                <div>
+                  <Label htmlFor="inviteRole" className="mb-3 block text-gray-300">
                     Role
-                  </label>
+                  </Label>
                   <select
                     id="inviteRole"
                     value={inviteRoleId}
@@ -171,10 +230,11 @@ export default function MembersDetails({ onBack }: MembersDetailsProps) {
                     )}
                   </select>
                 </div>
+
                 <div className="flex items-center justify-end gap-3 pt-4">
                   <button
                     onClick={handleInviteMember}
-                    disabled={!inviteEmail.trim() || isInviting}
+                    disabled={inviteEmails.size === 0 || isInviting}
                     className={classNames(
                       'inline-flex items-center gap-2 px-6 py-2 text-sm font-medium rounded-lg transition-colors',
                       'bg-accent-500 hover:bg-accent-600 disabled:bg-accent-300',
@@ -182,7 +242,9 @@ export default function MembersDetails({ onBack }: MembersDetailsProps) {
                       'disabled:cursor-not-allowed',
                     )}
                   >
-                    {isInviting ? 'Inviting...' : <>Add Member</>}
+                    {isInviting
+                      ? 'Inviting...'
+                      : `Create ${inviteEmails.size > 0 ? inviteEmails.size : ''} member${inviteEmails.size !== 1 ? 's' : ''}`}
                   </button>
                 </div>
               </div>
@@ -244,37 +306,58 @@ export default function MembersDetails({ onBack }: MembersDetailsProps) {
   };
 
   const handleInviteMember = async () => {
-    if (!inviteEmail.trim() || !inviteRoleId) {
+    if (inviteEmails.size === 0 || !inviteRoleId) {
       return;
     }
 
     try {
       setIsInviting(true);
 
-      const response = await fetch('/api/invites', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: inviteEmail,
-          roleId: inviteRoleId,
-        }),
-      });
+      // Send invites for all emails
+      const invitePromises = Array.from(inviteEmails).map((email) =>
+        fetch('/api/invites', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            roleId: inviteRoleId,
+          }),
+        })
+          .then(async (response) => {
+            const data = (await response.json()) as { success: boolean; message?: string; error?: string };
 
-      const data = (await response.json()) as { success: boolean; message?: string; error?: string };
+            if (!data.success) {
+              throw new Error(data.error || `Failed to invite ${email}`);
+            }
 
-      if (data.success) {
-        setInviteEmail('');
-        toast.success(data.message || 'Invitation sent successfully');
+            return { email, success: true };
+          })
+          .catch((error) => {
+            console.error(`Error inviting ${email}:`, error);
+            return { email, success: false, error: error.message };
+          }),
+      );
+
+      const results = await Promise.all(invitePromises);
+
+      const successful = results.filter((r) => r.success);
+      const failed = results.filter((r) => !r.success);
+
+      if (successful.length > 0) {
+        setInviteEmails(new Set());
+        toast.success(`${successful.length} invitation${successful.length !== 1 ? 's' : ''} sent successfully`);
         // Refresh the invites list
         fetchInvites();
-      } else {
-        toast.error(data.error || 'Failed to send invite');
+      }
+
+      if (failed.length > 0) {
+        toast.error(`${failed.length} invitation${failed.length !== 1 ? 's' : ''} failed to send`);
       }
     } catch (error) {
-      console.error('Error sending invite:', error);
-      toast.error('Failed to send invite');
+      console.error('Error sending invites:', error);
+      toast.error('Failed to send invites');
     } finally {
       setIsInviting(false);
     }
