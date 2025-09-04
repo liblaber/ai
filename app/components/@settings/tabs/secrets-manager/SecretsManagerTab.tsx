@@ -105,15 +105,12 @@ export default function SecretsManagerTab() {
       try {
         setLoading(true);
 
-        // Use the single API call with "all" parameter support
         const response = await fetch(`/api/environment-variables?environmentId=${selectedEnvironmentId}`);
         const data = (await response.json()) as EnvironmentVariablesResponse;
 
         if (data.success) {
           setEnvironmentVariables(data.environmentVariables);
         }
-
-        // Reset show values map when environment variables change
       } catch (error) {
         logger.error('Failed to load environment variables:', error);
         toast.error('Failed to load environment variables');
@@ -208,7 +205,7 @@ export default function SecretsManagerTab() {
               </button>
               <div>
                 <h2 className="text-lg font-medium text-primary">Create Secret</h2>
-                <p className="text-sm text-secondary">Add a new environment variable</p>
+                <p className="text-sm text-secondary">Add a new environment secret</p>
               </div>
             </div>
           </div>
@@ -256,7 +253,7 @@ export default function SecretsManagerTab() {
               </button>
               <div>
                 <h2 className="text-lg font-medium text-primary">Edit Secret</h2>
-                <p className="text-sm text-secondary">Update the environment variable configuration</p>
+                <p className="text-sm text-secondary">Update the environment secret</p>
               </div>
             </div>
           </div>
