@@ -7,6 +7,7 @@ import {
   PluginType,
   type StarterPluginId,
   type UserManagementPluginId,
+  type DeploymentPluginId,
 } from '~/lib/plugins/types';
 
 export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
@@ -30,6 +31,12 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
     'single-user': true,
     'multi-user': false,
   },
+  [PluginType.DEPLOYMENT]: {
+    netlify: true,
+    vercel: false,
+    railway: false,
+    aws: false,
+  },
 };
 
 export const PREMIUM_PLUGIN_ACCESS = {
@@ -52,6 +59,12 @@ export const PREMIUM_PLUGIN_ACCESS = {
   [PluginType.USER_MANAGEMENT]: {
     'single-user': true,
     'multi-user': true,
+  },
+  [PluginType.DEPLOYMENT]: {
+    netlify: true,
+    vercel: true,
+    railway: true,
+    aws: true,
   },
 };
 
@@ -90,6 +103,8 @@ class PluginManager {
       return this._pluginAccess[pluginType][pluginId as StarterPluginId];
     } else if (pluginType === PluginType.USER_MANAGEMENT) {
       return this._pluginAccess[pluginType][pluginId as UserManagementPluginId];
+    } else if (pluginType === PluginType.DEPLOYMENT) {
+      return this._pluginAccess[pluginType][pluginId as DeploymentPluginId];
     }
 
     return false;
