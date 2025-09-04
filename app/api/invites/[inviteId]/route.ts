@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource } from '@prisma/client';
 import { inviteService } from '~/lib/services/inviteService';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('api.invites');
 
 export async function DELETE(request: NextRequest, { params }: { params: { inviteId: string } }) {
   try {
@@ -20,7 +23,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { invit
       message: 'Invite removed successfully',
     });
   } catch (error) {
-    console.error('Error deleting invite:', error);
+    logger.error('Error deleting invite:', error);
 
     if (error instanceof Error && error.message === 'Invite not found') {
       return NextResponse.json({ success: false, error: 'Invite not found' }, { status: 404 });

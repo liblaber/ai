@@ -4,6 +4,9 @@ import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource } from '@prisma/client';
 import { inviteService } from '~/lib/services/inviteService';
 import { InviteStatus } from '@prisma/client';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('api.invites');
 
 const createInviteSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, invites });
   } catch (error) {
-    console.error('Error fetching invites:', error);
+    logger.error('Error fetching invites:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch invites' }, { status: 500 });
   }
 }
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest) {
       message: 'Invitation sent successfully',
     });
   } catch (error) {
-    console.error('Error creating invite:', error);
+    logger.error('Error creating invite:', error);
 
     if (error instanceof Error) {
       if (error.message.includes('already exists') || error.message.includes('already a pending invite')) {

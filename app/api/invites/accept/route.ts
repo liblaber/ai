@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireUserAbility } from '~/auth/session';
 import { inviteService } from '~/lib/services/inviteService';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('api.invites');
 
 const acceptInviteSchema = z.object({
   inviteId: z.string().min(1, 'Invite ID is required'),
@@ -27,7 +30,7 @@ export async function POST(request: NextRequest) {
       message: 'Invite accepted successfully',
     });
   } catch (error) {
-    console.error('Error accepting invite:', error);
+    logger.error('Error accepting invite:', error);
 
     if (error instanceof Error) {
       if (
