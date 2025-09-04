@@ -51,7 +51,6 @@ interface AddDataSourceFormProps {
   onSuccess: () => void;
 }
 
-// TODO: @skos update the form to use EnvironmentDataSource
 export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuccess }: AddDataSourceFormProps) {
   const [dbType, setDbType] = useState<DataSourceOption>(DEFAULT_DATA_SOURCES[0]);
   const [dbName, setDbName] = useState('');
