@@ -2,10 +2,17 @@ import { decryptData, encryptData } from '@liblab/encryption/encryption';
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '~/lib/database';
 import { env } from '~/env';
+import { z } from 'zod';
 
-interface EncryptedRequestBody {
-  encryptedData: string;
-}
+const encryptedRequestSchema = z.object({
+  encryptedData: z.string().min(1, 'Encrypted data is required'),
+});
+
+const decryptedQuerySchema = z.object({
+  query: z.string().min(1, 'Query is required'),
+  databaseUrl: z.string().min(1, 'Database URL is required'),
+  params: z.array(z.any()).optional(),
+});
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -15,40 +22,35 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as EncryptedRequestBody;
+    const body = await request.json();
+    const bodyValidation = encryptedRequestSchema.safeParse(body);
+
+    if (!bodyValidation.success) {
+      return NextResponse.json(
+        { error: bodyValidation.error.errors[0]?.message || 'Invalid request format' },
+        { status: 400 },
+      );
+    }
 
     const encryptionKey = env.server.ENCRYPTION_KEY;
 
     if (!encryptionKey) {
-      return NextResponse.json(
-        { error: 'Encryption key not found' },
-        {
-          status: 500,
-        },
-      );
+      return NextResponse.json({ error: 'Encryption key not found' }, { status: 500 });
     }
 
-    const decryptedData = decryptData(env.server.ENCRYPTION_KEY, body.encryptedData);
+    const decryptedData = decryptData(env.server.ENCRYPTION_KEY, bodyValidation.data.encryptedData);
     const decryptedBody = JSON.parse(decryptedData.toString());
-    const { query, databaseUrl, params } = decryptedBody;
 
-    if (!databaseUrl) {
+    const decryptedValidation = decryptedQuerySchema.safeParse(decryptedBody);
+
+    if (!decryptedValidation.success) {
       return NextResponse.json(
-        { error: 'Database connection URL must be provided in the request body' },
-        {
-          status: 400,
-        },
+        { error: decryptedValidation.error.errors[0]?.message || 'Invalid decrypted data format' },
+        { status: 400 },
       );
     }
 
-    if (!query) {
-      return NextResponse.json(
-        { error: 'Query must be provided in the request body' },
-        {
-          status: 400,
-        },
-      );
-    }
+    const { query, databaseUrl, params } = decryptedValidation.data;
 
     const resultData = await executeQuery(databaseUrl, query, params);
     const dataBuffer = Buffer.from(JSON.stringify(resultData));

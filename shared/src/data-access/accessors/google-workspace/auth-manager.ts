@@ -1,6 +1,7 @@
 import { OAuth2Client } from 'google-auth-library';
 import { GoogleAuth, JWT } from 'google-auth-library';
 import crypto from 'crypto';
+import { env } from '~/env';
 import { type GoogleWorkspaceConfig, type GoogleCredentials, GoogleAuthError, GOOGLE_WORKSPACE_SCOPES } from './types';
 
 export class GoogleWorkspaceAuthManager {
@@ -13,11 +14,11 @@ export class GoogleWorkspaceAuthManager {
     // Use provided key or fail if not available in production
     if (encryptionKey) {
       this._encryptionKey = encryptionKey;
-    } else if (process.env.GOOGLE_AUTH_ENCRYPTION_KEY) {
-      this._encryptionKey = process.env.GOOGLE_AUTH_ENCRYPTION_KEY;
+    } else if (env.server.GOOGLE_AUTH_ENCRYPTION_KEY) {
+      this._encryptionKey = env.server.GOOGLE_AUTH_ENCRYPTION_KEY;
     } else {
       // In production, this should fail - never generate a key
-      if (process.env.NODE_ENV === 'production') {
+      if (env.server.NODE_ENV === 'production') {
         throw new Error('GOOGLE_AUTH_ENCRYPTION_KEY is required in production environment');
       }
 

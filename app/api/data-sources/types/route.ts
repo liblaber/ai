@@ -9,7 +9,7 @@ export async function GET() {
     // Get available data source types from the plugin manager
     const dataSourceTypes = DataAccessPluginManager.getAvailableDataSourceTypes();
 
-    return NextResponse.json(dataSourceTypes);
+    return NextResponse.json({ success: true, dataSourceTypes });
   } catch (error) {
     logger.error('Failed to get data source types:', error);
 
@@ -45,6 +45,6 @@ export async function GET() {
       },
     ];
 
-    return NextResponse.json(fallbackTypes);
+    return NextResponse.json({ success: true, dataSourceTypes: fallbackTypes });
   }
 }

@@ -15,6 +15,7 @@ export async function GET() {
     const configured = hasClientId && hasClientSecret && hasEncryptionKey;
 
     return NextResponse.json({
+      success: true,
       configured,
       missing: {
         ...(!hasClientId && { GOOGLE_CLIENT_ID: 'Google OAuth Client ID is required' }),
@@ -26,6 +27,7 @@ export async function GET() {
     logger.error('OAuth config check error:', error);
     return NextResponse.json(
       {
+        success: false,
         configured: false,
         error: 'Failed to check OAuth configuration',
       },

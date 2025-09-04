@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createScopedLogger } from '~/utils/logger';
-
-const logger = createScopedLogger('google-spreadsheet-picker');
+import { z } from 'zod';
 import { Table, Search, Loader, Calendar, ExternalLink, Sheet } from 'lucide-react';
 import { Input } from '~/components/ui/Input';
 import { Button } from '~/components/ui/Button';
@@ -25,32 +24,42 @@ interface GoogleSpreadsheetPickerProps {
   onError: (error: string) => void;
 }
 
-interface GoogleDriveFile {
-  id: string;
-  name: string;
-  createdTime: string;
-  modifiedTime: string;
-  webViewLink: string;
-  thumbnailLink?: string;
-  owners?: Array<{ displayName: string; emailAddress: string }>;
-}
+const logger = createScopedLogger('google-spreadsheet-picker');
 
-interface GoogleDriveResponse {
-  files?: GoogleDriveFile[];
-}
+// Zod schemas for API response validation
+const googleDriveFileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  createdTime: z.string(),
+  modifiedTime: z.string(),
+  webViewLink: z.string(),
+  thumbnailLink: z.string().optional(),
+  owners: z
+    .array(
+      z.object({
+        displayName: z.string(),
+        emailAddress: z.string(),
+      }),
+    )
+    .optional(),
+});
 
-interface GoogleSheetProperties {
-  title: string;
-  sheetId: number;
-}
+const googleDriveResponseSchema = z.object({
+  files: z.array(googleDriveFileSchema).optional(),
+});
 
-interface GoogleSheet {
-  properties: GoogleSheetProperties;
-}
+const googleSheetPropertiesSchema = z.object({
+  title: z.string(),
+  sheetId: z.number(),
+});
 
-interface GoogleSheetsResponse {
-  sheets?: GoogleSheet[];
-}
+const googleSheetSchema = z.object({
+  properties: googleSheetPropertiesSchema,
+});
+
+const googleSheetsResponseSchema = z.object({
+  sheets: z.array(googleSheetSchema).optional(),
+});
 
 export function GoogleSpreadsheetPicker({ accessToken, onSelect, onError }: GoogleSpreadsheetPickerProps) {
   const [spreadsheets, setSpreadsheets] = useState<GoogleSpreadsheet[]>([]);
@@ -85,11 +94,19 @@ export function GoogleSpreadsheetPicker({ accessToken, onSelect, onError }: Goog
         throw new Error(`Failed to load spreadsheets: ${response.statusText}`);
       }
 
-      const data = (await response.json()) as GoogleDriveResponse;
+      const responseData = await response.json();
+      const validationResult = googleDriveResponseSchema.safeParse(responseData);
+
+      if (!validationResult.success) {
+        logger.error('Invalid Google Drive API response:', validationResult.error);
+        throw new Error('Invalid response from Google Drive API');
+      }
+
+      const data = validationResult.data;
 
       // Get additional sheet info for each spreadsheet
       const formattedSheets: GoogleSpreadsheet[] = await Promise.all(
-        (data.files || []).map(async (file: GoogleDriveFile) => {
+        (data.files || []).map(async (file) => {
           let sheets: Array<{ title: string; sheetId: number }> = [];
 
           try {
@@ -105,12 +122,19 @@ export function GoogleSpreadsheetPicker({ accessToken, onSelect, onError }: Goog
             );
 
             if (sheetsResponse.ok) {
-              const sheetsData = (await sheetsResponse.json()) as GoogleSheetsResponse;
-              sheets =
-                sheetsData.sheets?.map((sheet: GoogleSheet) => ({
-                  title: sheet.properties.title,
-                  sheetId: sheet.properties.sheetId,
-                })) || [];
+              const sheetsResponseData = await sheetsResponse.json();
+              const sheetsValidationResult = googleSheetsResponseSchema.safeParse(sheetsResponseData);
+
+              if (sheetsValidationResult.success) {
+                const sheetsData = sheetsValidationResult.data;
+                sheets =
+                  sheetsData.sheets?.map((sheet) => ({
+                    title: sheet.properties.title,
+                    sheetId: sheet.properties.sheetId,
+                  })) || [];
+              } else {
+                logger.warn(`Invalid Sheets API response for ${file.name}:`, sheetsValidationResult.error);
+              }
             }
           } catch (error) {
             logger.warn(`Failed to load sheet info for ${file.name}:`, error);
