@@ -188,10 +188,7 @@ export default function EditSecretForm({
         <select
           id="environment"
           value={environmentId}
-          onChange={(e) => {
-            setEnvironmentId(e.target.value);
-            console.log('Selected environment', e.target.value);
-          }}
+          onChange={(e) => setEnvironmentId(e.target.value)}
           className={classNames(
             'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
             'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
