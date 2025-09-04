@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const environmentId = searchParams.get('environmentId');
+    const type = searchParams.get('type') as EnvironmentVariableType | null;
 
     // Check if user has permission to read environment variables
     const { userAbility } = await requireUserAbility(request);
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
     }
 
-    const environmentVariables = await getEnvironmentVariablesWithEnvironmentDetails(environmentId);
+    const environmentVariables = await getEnvironmentVariablesWithEnvironmentDetails(environmentId, type);
 
     return NextResponse.json({
       success: true,

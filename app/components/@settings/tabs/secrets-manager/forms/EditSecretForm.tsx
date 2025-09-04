@@ -87,7 +87,7 @@ export default function EditSecretForm({
 
   const handleDelete = async () => {
     // Prevent deletion of DATA_SOURCE type environment variables
-    if (environmentVariable.type === 'DATA_SOURCE') {
+    if (environmentVariable.type === EnvironmentVariableType.DATA_SOURCE) {
       toast.error('Cannot delete data source secrets from here. Please manage them in the Data Sources tab.');
       setShowDeleteConfirm(false);
 
@@ -211,15 +211,6 @@ export default function EditSecretForm({
         />
         <p className="text-xs text-gray-500 dark:text-gray-400">Use uppercase letters, numbers, and underscores only</p>
       </div>
-
-      {/* Data Source Warning */}
-      {environmentVariable.type === 'DATA_SOURCE' && (
-        <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            This is a data source secret. For better management, consider editing it in the Data Sources tab.
-          </p>
-        </div>
-      )}
 
       {/* Value Input */}
       <div className="space-y-2">

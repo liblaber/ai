@@ -12,6 +12,7 @@ import { useStore } from '@nanostores/react';
 import type { EnvironmentWithRelations } from '~/lib/services/environmentService';
 import { BaseSelect } from '~/components/ui/Select';
 import { logger } from '~/utils/logger';
+import { EnvironmentVariableType } from '@prisma/client';
 
 interface EnvironmentVariablesResponse {
   success: boolean;
@@ -70,7 +71,7 @@ export default function SecretsManagerTab() {
 
           // Transform environments to options
           const options: EnvironmentOption[] = [
-            { label: 'All Environments', value: 'all', description: 'Secrets from all environments' },
+            { label: 'All Environments', value: 'all', description: 'Global secrets from all environments' },
             ...data.environments.map((env) => ({
               label: env.name,
               value: env.id,
@@ -105,7 +106,9 @@ export default function SecretsManagerTab() {
       try {
         setLoading(true);
 
-        const response = await fetch(`/api/environment-variables?environmentId=${selectedEnvironmentId}`);
+        const response = await fetch(
+          `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
+        );
         const data = (await response.json()) as EnvironmentVariablesResponse;
 
         if (data.success) {
@@ -213,7 +216,9 @@ export default function SecretsManagerTab() {
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
             onSuccess={() => {
-              const reloadResponse = fetch(`/api/environment-variables?environmentId=${selectedEnvironmentId}`);
+              const reloadResponse = fetch(
+                `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=GLOBAL`,
+              );
               reloadResponse
                 .then((response) => response.json())
                 .then((data: unknown) => {
@@ -264,7 +269,9 @@ export default function SecretsManagerTab() {
             setIsSubmitting={setIsSubmitting}
             onSuccess={() => {
               // Reload environment variables using the single API call
-              const reloadResponse = fetch(`/api/environment-variables?environmentId=${selectedEnvironmentId}`);
+              const reloadResponse = fetch(
+                `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=GLOBAL`,
+              );
               reloadResponse
                 .then((response) => response.json())
                 .then((data: unknown) => {
@@ -281,7 +288,9 @@ export default function SecretsManagerTab() {
             }}
             onDelete={() => {
               // Reload environment variables using the single API call
-              const reloadResponse = fetch(`/api/environment-variables?environmentId=${selectedEnvironmentId}`);
+              const reloadResponse = fetch(
+                `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=GLOBAL`,
+              );
               reloadResponse
                 .then((response) => response.json())
                 .then((data: unknown) => {

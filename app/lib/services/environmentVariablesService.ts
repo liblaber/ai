@@ -30,7 +30,10 @@ export async function getEnvironmentVariables(): Promise<EnvironmentVariable[]> 
   return envVars.map(decryptEnvironmentVariable);
 }
 
-export async function getEnvironmentVariablesWithEnvironmentDetails(environmentId: string | 'all'): Promise<
+export async function getEnvironmentVariablesWithEnvironmentDetails(
+  environmentId: string | 'all',
+  type?: EnvironmentVariableType | null,
+): Promise<
   Array<
     EnvironmentVariable & {
       environment: { id: string; name: string };
@@ -40,9 +43,21 @@ export async function getEnvironmentVariablesWithEnvironmentDetails(environmentI
 > {
   let envVars;
 
+  // Build the where clause
+  const whereClause: any = {};
+
+  if (environmentId !== 'all') {
+    whereClause.environmentId = environmentId;
+  }
+
+  if (type) {
+    whereClause.type = type;
+  }
+
   if (environmentId === 'all') {
     // Get all environment variables from all environments
     envVars = await prisma.environmentVariable.findMany({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       include: {
         environment: {
           select: {
@@ -63,7 +78,7 @@ export async function getEnvironmentVariablesWithEnvironmentDetails(environmentI
   } else {
     // Get environment variables for a specific environment
     envVars = await prisma.environmentVariable.findMany({
-      where: { environmentId },
+      where: whereClause,
       include: {
         environment: {
           select: {
