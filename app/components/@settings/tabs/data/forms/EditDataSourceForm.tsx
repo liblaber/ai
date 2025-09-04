@@ -1,11 +1,10 @@
 import { classNames } from '~/utils/classNames';
 import { useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle, Info, Loader2, Plug, Save, Trash2, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Eye, EyeOff, Info, Loader2, Plug, Save, Trash2, XCircle } from 'lucide-react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { toast } from 'sonner';
 import { BaseSelect } from '~/components/ui/Select';
 import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/database/SelectDatabaseTypeOptions';
-import { Eye, EyeSlash } from 'iconsax-reactjs';
 import {
   type DataSourceOption,
   DEFAULT_DATA_SOURCES,
@@ -363,7 +362,11 @@ export default function EditDataSourceForm({
                     tabIndex={-1}
                   >
                     <span className="text-gray-400 group-hover:text-white transition-colors">
-                      {showConnStr ? <EyeSlash variant="Bold" size={20} /> : <Eye variant="Bold" size={20} />}
+                      {showConnStr ? (
+                        <EyeOff className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <Eye className="w-4 h-4 text-gray-400" />
+                      )}
                     </span>
                   </button>
                 </div>

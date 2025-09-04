@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock } from 'lucide-react';
-import { Eye, EyeSlash } from 'iconsax-reactjs';
+import { EyeOff, Lock, Eye } from 'lucide-react';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
 import type { EnvironmentVariableWithDetails } from '~/lib/stores/environmentVariables';
@@ -253,7 +252,7 @@ export default function EditSecretForm({
             tabIndex={-1}
           >
             <span className="text-gray-400 group-hover:text-white transition-colors">
-              {showValue ? <EyeSlash variant="Bold" size={20} /> : <Eye variant="Bold" size={20} />}
+              {showValue ? <EyeOff className="w-4 h-4 text-gray-400" /> : <Eye className="w-4 h-4 text-gray-400" />}
             </span>
           </button>
         </div>

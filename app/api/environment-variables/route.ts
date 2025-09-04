@@ -60,13 +60,6 @@ export async function POST(request: NextRequest) {
 
     const { key, value, type, environmentId, description } = body;
 
-    if (!key || !value || !type || !environmentId) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields: key, value, type, environmentId' },
-        { status: 400 },
-      );
-    }
-
     // Check if user has access to this environment
     if (!userAbility.can(PermissionAction.read, PermissionResource.Environment)) {
       return NextResponse.json({ success: false, error: 'Access denied to this environment' }, { status: 403 });

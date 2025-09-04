@@ -41,8 +41,6 @@ export async function getEnvironmentVariablesWithEnvironmentDetails(
     }
   >
 > {
-  let envVars;
-
   // Build the where clause
   const whereClause: any = {};
 
@@ -54,49 +52,25 @@ export async function getEnvironmentVariablesWithEnvironmentDetails(
     whereClause.type = type;
   }
 
-  if (environmentId === 'all') {
-    // Get all environment variables from all environments
-    envVars = await prisma.environmentVariable.findMany({
-      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
-      include: {
-        environment: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+  const envVars = await prisma.environmentVariable.findMany({
+    where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+    include: {
+      environment: {
+        select: {
+          id: true,
+          name: true,
         },
       },
-      orderBy: [{ environment: { name: 'asc' } }, { key: 'asc' }],
-    });
-  } else {
-    // Get environment variables for a specific environment
-    envVars = await prisma.environmentVariable.findMany({
-      where: whereClause,
-      include: {
-        environment: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
         },
       },
-      orderBy: { key: 'asc' },
-    });
-  }
+    },
+    orderBy: [{ environment: { name: 'asc' } }, { key: 'asc' }],
+  });
 
   return envVars.map(decryptEnvironmentVariableWithRelations);
 }
