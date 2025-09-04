@@ -50,7 +50,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const name = formData.get('name') as string;
 
   try {
-    const updatedDataSource = await updateDataSource(id, userId, { name });
+    const updatedDataSource = await updateDataSource({ id, userId, name, connectionString: '' });
 
     return NextResponse.json({ success: true, dataSource: updatedDataSource });
   } catch (error) {

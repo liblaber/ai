@@ -9,6 +9,7 @@ const logger = createScopedLogger('clear-schema-cache');
 
 const clearSchemaCacheRequestSchema = z.object({
   dataSourceId: z.string().min(1, 'dataSourceId is required'),
+  environmentId: z.string().min(1, 'environmentId is required'),
 });
 
 export async function POST(request: NextRequest) {
@@ -25,9 +26,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { dataSourceId } = validationResult.data;
+    const { dataSourceId, environmentId } = validationResult.data;
 
-    const connectionUrl = await getDatabaseUrl(userId, dataSourceId);
+    const connectionUrl = await getDatabaseUrl(userId, dataSourceId, environmentId);
 
     if (!connectionUrl) {
       return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });

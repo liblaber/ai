@@ -36,9 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const dataSource = await createSampleDataSource({
-      name: 'Sample Database',
-      connectionString: 'postgresql://sample_user:sample_pass@localhost:5432/sample_db',
-      userId,
+      createdById: userId,
       environmentId,
     });
 

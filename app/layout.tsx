@@ -9,6 +9,7 @@ import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-p
 import { headers } from 'next/headers';
 import { auth } from '~/auth/auth-config';
 import type { Session } from '~/auth/session';
+import { getUserAbility } from '~/lib/casl/user-ability';
 
 // Force dynamic rendering to prevent static generation issues with headers
 export const dynamic = 'force-dynamic';
@@ -44,8 +45,11 @@ async function getRootData() {
       // Get user profile
       user = await userService.getUser(typedSession.user.id);
 
+      // Create user ability
+      const userAbility = await getUserAbility(typedSession.user.id);
+
       // Get data sources for the user
-      environmentDataSources = await getEnvironmentDataSources();
+      environmentDataSources = await getEnvironmentDataSources(userAbility);
     }
 
     // Initialize plugin manager

@@ -1,235 +1,304 @@
 import { prisma } from '~/lib/prisma';
-import type { DataSource, Environment, DataSourcePropertyType } from '@prisma/client';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { buildResourceWhereClause } from '@/lib/casl/prisma-helpers';
+import {
+  DataSourcePropertyType,
+  type EnvironmentDataSource,
+  EnvironmentVariableType,
+  PermissionAction,
+  PermissionResource,
+  Prisma,
+} from '@prisma/client';
+import type { AppAbility } from '~/lib/casl/user-ability';
+import { createEnvironmentVariable, decryptEnvironmentVariable } from './environmentVariablesService';
+import { getEnvironmentName } from './environmentService';
 
-export type { DataSource } from '@prisma/client';
-
-// Legacy type for backward compatibility - actual return type is different
-export type EnvironmentDataSourceLegacy = {
+export interface DataSource {
   id: string;
   name: string;
-  environment: Environment;
-  dataSources: DataSource[];
-};
+  connectionString: string;
+  environmentId: string;
+  environmentName: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export async function getDatabaseUrl(userId: string, dataSourceId: string, environmentId?: string): Promise<string> {
-  // Find the environment data source relationship
-  const environmentDataSource = await prisma.environmentDataSource.findFirst({
+const SAMPLE_DATABASE_CONNECTION_STRING = 'sqlite://sample.db';
+
+export async function getEnvironmentDataSources(userAbility: AppAbility): Promise<EnvironmentDataSource[]> {
+  // TODO: @skos Update specific permissions
+  const whereClause = buildResourceWhereClause(
+    userAbility,
+    PermissionAction.read,
+    PermissionResource.DataSource,
+  ) as Prisma.DataSourceWhereInput;
+
+  const environmentDataSources = await prisma.environmentDataSource.findMany({
     where: {
+      dataSource: whereClause,
+    },
+    include: {
+      environment: true,
+      dataSource: true,
+      dataSourceProperties: {
+        include: {
+          environmentVariable: true,
+        },
+      },
+      conversations: true,
+    },
+    orderBy: [{ environment: { name: 'asc' } }, { dataSource: { name: 'asc' } }],
+  });
+
+  return environmentDataSources.map((eds) => ({
+    ...eds,
+    dataSourceProperties: eds.dataSourceProperties.map((dsp) => ({
+      ...dsp,
+      environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
+    })),
+  }));
+}
+
+export async function getEnvironmentDataSource(dataSourceId: string, userId: string, environmentId: string) {
+  const environmentDataSource = await prisma.environmentDataSource.findUnique({
+    where: {
+      environmentId_dataSourceId: {
+        environmentId,
+        dataSourceId,
+      },
+    },
+    include: {
+      environment: true,
+      dataSource: true,
+      dataSourceProperties: {
+        include: {
+          environmentVariable: true,
+        },
+      },
+      conversations: true,
+    },
+  });
+
+  // TODO: @skos Update specific permissions
+  // Verify user has access to this data source
+  if (!environmentDataSource || environmentDataSource.dataSource.createdById !== userId) {
+    return null;
+  }
+
+  return {
+    ...environmentDataSource,
+    dataSourceProperties: environmentDataSource.dataSourceProperties.map((dsp) => ({
+      ...dsp,
+      environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
+    })),
+  };
+}
+
+export async function createDataSource(data: {
+  name: string;
+  createdById: string;
+  environmentId: string;
+  connectionString: string;
+}): Promise<DataSource> {
+  await validateDataSource(data.connectionString);
+
+  // Get environment details for naming
+  const environmentName = await getEnvironmentName(data.environmentId);
+
+  if (!environmentName) {
+    throw new Error('Environment not found');
+  }
+
+  // Use Prisma transaction to ensure full atomicity
+  return prisma.$transaction(async (tx) => {
+    // Create data source
+    const dataSource = await tx.dataSource.create({
+      data: {
+        name: data.name,
+        createdById: data.createdById,
+      },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    // Create EnvironmentDataSource relationship
+    await tx.environmentDataSource.create({
+      data: {
+        environmentId: data.environmentId,
+        dataSourceId: dataSource.id,
+      },
+    });
+
+    // Create environment variable for connection url (if provided)
+    const envVarKey = `${environmentName}_${data.name}_${DataSourcePropertyType.CONNECTION_URL}`
+      .toUpperCase()
+      .replace(/\s+/g, '_');
+
+    const environmentVariable = await createEnvironmentVariable(
+      envVarKey,
+      data.connectionString!,
+      EnvironmentVariableType.DATA_SOURCE,
+      data.environmentId,
+      data.createdById,
+      `Database connection URL for ${data.name} in ${environmentName}`,
+      dataSource.id,
+      tx, // Pass transaction for atomicity
+    );
+
+    await tx.dataSourceProperty.create({
+      data: {
+        type: DataSourcePropertyType.CONNECTION_URL,
+        environmentId: data.environmentId,
+        dataSourceId: dataSource.id,
+        environmentVariableId: environmentVariable.id,
+      },
+    });
+
+    return {
+      ...dataSource,
+      connectionString: data.connectionString!,
+      environmentId: data.environmentId,
+      environmentName,
+    };
+  });
+}
+
+export async function createSampleDataSource(data: {
+  createdById: string;
+  environmentId: string;
+}): Promise<DataSource> {
+  const environmentName = await getEnvironmentName(data.environmentId);
+
+  if (!environmentName) {
+    throw new Error('Environment not found');
+  }
+
+  return prisma.$transaction(async (tx) => {
+    // Create data source
+    const dataSource = await tx.dataSource.create({
+      data: {
+        name: 'Sample Database',
+        createdById: data.createdById,
+      },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    await tx.environmentDataSource.create({
+      data: {
+        environmentId: data.environmentId,
+        dataSourceId: dataSource.id,
+      },
+    });
+
+    // Create environment variable for sample db connection url
+    const envVarKey = `${environmentName}_SAMPLE_${DataSourcePropertyType.CONNECTION_URL}`
+      .toUpperCase()
+      .replace(/\s+/g, '_');
+
+    const environmentVariable = await createEnvironmentVariable(
+      envVarKey,
+      SAMPLE_DATABASE_CONNECTION_STRING,
+      EnvironmentVariableType.DATA_SOURCE,
+      data.environmentId,
+      data.createdById,
+      `Database connection URL for Sample Database in ${environmentName}`,
+      dataSource.id,
+      tx, // Pass transaction for atomicity
+    );
+
+    await tx.dataSourceProperty.create({
+      data: {
+        type: DataSourcePropertyType.CONNECTION_URL,
+        environmentId: data.environmentId,
+        dataSourceId: dataSource.id,
+        environmentVariableId: environmentVariable.id,
+      },
+    });
+
+    return {
+      ...dataSource,
+      connectionString: SAMPLE_DATABASE_CONNECTION_STRING,
+      environmentId: data.environmentId,
+      environmentName,
+    };
+  });
+}
+
+export function getDataSource(id: string) {
+  return prisma.dataSource.findUnique({ where: { id } });
+}
+
+export async function updateDataSource(data: { id: string; name: string; connectionString: string; userId: string }) {
+  await validateDataSource(data.connectionString);
+
+  return prisma.dataSource.update({
+    where: { id: data.id, createdById: data.userId },
+    data: { name: data.name },
+  });
+}
+
+export async function deleteDataSource(id: string, userId: string) {
+  return prisma.dataSource.delete({ where: { id, createdById: userId } });
+}
+
+export async function getDatabaseUrl(
+  userId: string,
+  dataSourceId: string,
+  environmentId: string,
+): Promise<string | null> {
+  const eds = await prisma.environmentDataSource.findFirst({
+    where: {
+      environmentId,
       dataSourceId,
-      ...(environmentId && { environmentId }),
       dataSource: {
-        createdById: userId,
+        createdById: userId, // ownership check
       },
     },
     include: {
       dataSourceProperties: {
         where: {
-          type: 'CONNECTION_URL' as DataSourcePropertyType,
+          type: DataSourcePropertyType.CONNECTION_URL, // only connection URL property
         },
         include: {
-          environmentVariable: true,
+          environmentVariable: true, // pull the encrypted env var
         },
       },
     },
   });
 
-  if (!environmentDataSource) {
-    throw new Error('Data source not found');
-  }
-
-  const connectionProperty = environmentDataSource.dataSourceProperties.find((prop) => prop.type === 'CONNECTION_URL');
-
-  if (!connectionProperty) {
-    throw new Error('Connection URL not found for data source');
-  }
-
-  return connectionProperty.environmentVariable.value;
-}
-
-export async function getEnvironmentDataSources(): Promise<any[]> {
-  // Get all environment data source relationships
-  const environmentDataSources = await prisma.environmentDataSource.findMany({
-    include: {
-      dataSource: true,
-      environment: true,
-      dataSourceProperties: {
-        include: {
-          environmentVariable: true,
-        },
-      },
-    },
-  });
-
-  return environmentDataSources.map((eds) => ({
-    createdAt: eds.createdAt,
-    updatedAt: eds.updatedAt,
-    dataSourceId: eds.dataSourceId,
-    environmentId: eds.environmentId,
-    environment: {
-      id: eds.environment.id,
-      name: eds.environment.name,
-      description: eds.environment.description,
-    },
-    dataSource: {
-      id: eds.dataSource.id,
-      name: eds.dataSource.name,
-      createdAt: eds.dataSource.createdAt,
-      updatedAt: eds.dataSource.updatedAt,
-    },
-    dataSourceProperties:
-      eds.dataSourceProperties.length > 0
-        ? [
-            {
-              type: eds.dataSourceProperties[0].type,
-              environmentVariables: [eds.dataSourceProperties[0].environmentVariable],
-            },
-          ]
-        : [
-            {
-              type: 'CONNECTION_URL',
-              environmentVariables: [],
-            },
-          ],
-  }));
-}
-
-export async function getEnvironmentDataSource(
-  id: string,
-  userId: string,
-  environmentId: string,
-): Promise<DataSource | null> {
-  const environmentDataSource = await prisma.environmentDataSource.findUnique({
-    where: {
-      environmentId_dataSourceId: {
-        environmentId,
-        dataSourceId: id,
-      },
-    },
-    include: {
-      dataSource: true,
-    },
-  });
-
-  if (!environmentDataSource?.dataSource || environmentDataSource.dataSource.createdById !== userId) {
+  if (!eds || eds.dataSourceProperties.length === 0) {
     return null;
   }
 
-  return environmentDataSource.dataSource;
-}
+  const connectionProperty = eds.dataSourceProperties[0];
+  const envVar = connectionProperty.environmentVariable;
 
-export async function createDataSource(data: {
-  name: string;
-  connectionString: string;
-  environmentId: string;
-  userId: string;
-}): Promise<DataSource> {
-  // Create the data source
-  const dataSource = await prisma.dataSource.create({
-    data: {
-      name: data.name,
-      createdById: data.userId,
-    },
-  });
+  if (!envVar) {
+    return null;
+  }
 
-  // Create the environment variable for the connection string
-  const environmentVariable = await prisma.environmentVariable.create({
-    data: {
-      key: `${dataSource.name.toUpperCase().replace(/\s+/g, '_')}_CONNECTION_URL`,
-      value: data.connectionString,
-      type: 'DATA_SOURCE',
-      environmentId: data.environmentId,
-      createdById: data.userId,
-    },
-  });
-
-  // Create the environment data source relationship
-  await prisma.environmentDataSource.create({
-    data: {
-      environmentId: data.environmentId,
-      dataSourceId: dataSource.id,
-      dataSourceProperties: {
-        create: {
-          type: 'CONNECTION_URL' as DataSourcePropertyType,
-          environmentVariableId: environmentVariable.id,
-        },
-      },
-    },
-  });
-
-  return dataSource;
-}
-
-export async function createSampleDataSource(data: {
-  name: string;
-  connectionString: string;
-  environmentId: string;
-  userId: string;
-}): Promise<DataSource> {
-  return createDataSource(data);
-}
-
-export async function updateDataSource(
-  id: string,
-  userId: string,
-  data: Partial<Pick<DataSource, 'name'>>,
-): Promise<DataSource> {
-  return prisma.dataSource.update({
-    where: {
-      id,
-      createdById: userId,
-    },
-    data: {
-      ...(data.name && { name: data.name }),
-    },
-  });
-}
-
-export async function deleteDataSource(id: string, userId: string): Promise<void> {
-  await prisma.dataSource.delete({
-    where: {
-      id,
-      createdById: userId,
-    },
-  });
-}
-
-export async function getDataSources(): Promise<any[]> {
-  // Get all data sources with their connection strings
-  const dataSources = await prisma.dataSource.findMany({
-    include: {
-      environments: {
-        include: {
-          dataSourceProperties: {
-            where: {
-              type: 'CONNECTION_URL' as DataSourcePropertyType,
-            },
-            include: {
-              environmentVariable: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  return dataSources.map((ds) => {
-    const connectionProperty = ds.environments[0]?.dataSourceProperties?.find((prop) => prop.type === 'CONNECTION_URL');
-
-    return {
-      ...ds,
-      connectionString: connectionProperty?.environmentVariable?.value || '',
-    };
-  });
+  return decryptEnvironmentVariable(envVar).value;
 }
 
 export async function getConversationCount(dataSourceId: string, userId: string): Promise<number> {
-  // Get count of conversations that use this data source
-  const count = await prisma.conversation.count({
+  return prisma.conversation.count({
     where: {
-      userId,
       dataSourceId,
+      userId,
     },
   });
+}
 
-  return count;
+async function validateDataSource(connectionString: string) {
+  const accessor = await DataSourcePluginManager.getAccessor(connectionString);
+  accessor.validate(connectionString);
 }

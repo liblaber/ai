@@ -36,7 +36,11 @@ export async function generateSchemaBasedSuggestions(
   environmentId?: string,
 ): Promise<string[]> {
   try {
-    const connectionString = await getDatabaseUrl(userId, dataSourceId, environmentId);
+    const connectionString = await getDatabaseUrl(userId, dataSourceId, environmentId!);
+
+    if (!connectionString) {
+      throw new Error('Database connection string not found');
+    }
 
     // Check cache first (31 days TTL)
     const cachedSuggestions = await getSuggestionsCache(connectionString, 60 * 60 * 24 * 31);
@@ -54,6 +58,10 @@ export async function generateSchemaBasedSuggestions(
 
     try {
       const schema = (await getSchemaCache(connectionString)) || (await accessor.getSchema());
+
+      if (!schema) {
+        throw new Error('Could not retrieve database schema');
+      }
 
       const llm = await getLlm();
 

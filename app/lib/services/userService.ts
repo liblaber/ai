@@ -1,5 +1,8 @@
 import { prisma } from '~/lib/prisma';
 import { DeprecatedRole } from '@prisma/client';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('user-service');
 
 export interface UserProfile {
   id: string;
@@ -246,9 +249,9 @@ export const userService = {
         data: { role: DeprecatedRole.ADMIN },
       });
 
-      console.log(`✅ Granted system admin access to user ${userId}`);
+      logger.info(`Granted system admin access to user ${userId}`);
     } catch (error) {
-      console.error(`❌ Failed to grant system admin access to user ${userId}:`, error);
+      logger.error(`Failed to grant system admin access to user ${userId}:`, error);
       throw new Error(
         `Failed to grant system admin access: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
