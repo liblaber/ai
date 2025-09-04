@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleWorkspaceAuthManager } from '@liblab/data-access/accessors/google-workspace/auth-manager';
 import { env } from '~/env/server';
 import { createScopedLogger } from '~/utils/logger';
+import { generateOAuthCallbackHTML } from '~/lib/oauth-templates';
 
 const logger = createScopedLogger('google-workspace-callback');
 
@@ -10,22 +11,14 @@ export async function GET(request: NextRequest) {
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GOOGLE_AUTH_ENCRYPTION_KEY) {
     logger.error('Google Workspace auth is not configured. Missing required environment variables.');
     return new NextResponse(
-      `
-      <html>
-        <body>
-          <h1>Configuration Error</h1>
-          <p>Google Workspace authentication is not configured.</p>
-          <script>
-            window.opener?.postMessage({
-              type: 'GOOGLE_AUTH_ERROR',
-              error: 'Google Workspace authentication is not configured'
-            }, window.location.origin);
-            window.close();
-          </script>
-        </body>
-      </html>
-    `,
-      { status: 500, headers: { 'Content-Type': 'text/html' } },
+      generateOAuthCallbackHTML({
+        type: 'error',
+        error: 'Google Workspace authentication is not configured',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'text/html' },
+      },
     );
   }
 
@@ -37,20 +30,10 @@ export async function GET(request: NextRequest) {
   // Handle OAuth errors
   if (error) {
     return new NextResponse(
-      `
-      <html>
-        <head><title>Authentication Error</title></head>
-        <body>
-          <script>
-            window.opener?.postMessage({
-              type: 'GOOGLE_AUTH_ERROR',
-              error: 'Authentication was cancelled or failed'
-            }, window.location.origin);
-            window.close();
-          </script>
-        </body>
-      </html>
-      `,
+      generateOAuthCallbackHTML({
+        type: 'error',
+        error: 'Authentication was cancelled or failed',
+      }),
       {
         status: 200,
         headers: { 'Content-Type': 'text/html' },
@@ -60,20 +43,10 @@ export async function GET(request: NextRequest) {
 
   if (!code || !state) {
     return new NextResponse(
-      `
-      <html>
-        <head><title>Authentication Error</title></head>
-        <body>
-          <script>
-            window.opener?.postMessage({
-              type: 'GOOGLE_AUTH_ERROR',
-              error: 'Missing authorization code or state'
-            }, window.location.origin);
-            window.close();
-          </script>
-        </body>
-      </html>
-      `,
+      generateOAuthCallbackHTML({
+        type: 'error',
+        error: 'Missing authorization code or state',
+      }),
       {
         status: 400,
         headers: { 'Content-Type': 'text/html' },
@@ -100,10 +73,8 @@ export async function GET(request: NextRequest) {
     // Exchange code for tokens
     const credentials = await authManager.exchangeCodeForTokens(code);
 
-    // Store tokens in session/database (you may want to implement proper storage)
-    // For now, we'll pass them back to the client
+    // Return success HTML page
     const successData = {
-      type: 'GOOGLE_AUTH_SUCCESS',
       tokens: {
         access_token: credentials.access_token,
         refresh_token: credentials.refresh_token,
@@ -114,27 +85,10 @@ export async function GET(request: NextRequest) {
     };
 
     const response = new NextResponse(
-      `
-      <html>
-        <head><title>Auth</title></head>
-        <body>
-          <script>
-            // Send message to parent immediately and close
-            try {
-              const messageData = ${JSON.stringify(successData)};
-              if (window.opener) {
-                window.opener.postMessage(messageData, window.location.origin);
-              }
-            } catch (error) {
-              console.error('Message send failed:', error);
-            }
-            
-            // Close immediately
-            window.close();
-          </script>
-        </body>
-      </html>
-      `,
+      generateOAuthCallbackHTML({
+        type: 'success',
+        data: successData,
+      }),
       {
         status: 200,
         headers: { 'Content-Type': 'text/html' },
@@ -160,20 +114,10 @@ export async function GET(request: NextRequest) {
     logger.error('Google Workspace callback error:', error);
 
     return new NextResponse(
-      `
-      <html>
-        <head><title>Authentication Error</title></head>
-        <body>
-          <script>
-            window.opener?.postMessage({
-              type: 'GOOGLE_AUTH_ERROR',
-              error: 'Failed to complete authentication'
-            }, window.location.origin);
-            window.close();
-          </script>
-        </body>
-      </html>
-      `,
+      generateOAuthCallbackHTML({
+        type: 'error',
+        error: 'Failed to complete authentication',
+      }),
       {
         status: 500,
         headers: { 'Content-Type': 'text/html' },
