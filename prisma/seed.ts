@@ -1,5 +1,5 @@
 import type { Account, Role, User } from '@prisma/client';
-import { DeprecatedRole, PermissionAction, PermissionResource, PrismaClient } from '@prisma/client';
+import { PermissionAction, PermissionResource, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -32,7 +32,6 @@ async function seedInitialUser(): Promise<User> {
         email: 'anonymous@anonymous.com',
         name: 'Anonymous',
         emailVerified: false,
-        role: DeprecatedRole.ADMIN,
         isAnonymous: true,
         createdAt: new Date(),
         updatedAt: new Date(),

@@ -222,11 +222,6 @@ model Role {
   @@map("role")
 }
 
-enum DeprecatedRole {
-  ADMIN
-  MEMBER
-}
-
 model User {
   id                   String                @id @default(uuid())
   name                 String
@@ -239,7 +234,6 @@ model User {
   accounts             Account[]
   conversations        Conversation[]
   roles                UserRole[]
-  role                 DeprecatedRole        @default(MEMBER)
   dataSources          DataSource[]
   websites             Website[]
   environmentVariables EnvironmentVariable[]

@@ -1,5 +1,4 @@
 import { prisma } from '~/lib/prisma';
-import { DeprecatedRole } from '@prisma/client';
 import type { User } from '@prisma/client';
 import { createScopedLogger } from '~/utils/logger';
 
@@ -10,7 +9,6 @@ export interface UserProfile {
   name: string;
   email: string;
   image?: string | null;
-  role?: DeprecatedRole;
   telemetryEnabled?: boolean | null;
   roles?: UserRole[];
 }
@@ -38,7 +36,6 @@ const userSelect = {
   name: true,
   email: true,
   image: true,
-  role: true,
   telemetryEnabled: true,
 };
 
@@ -67,7 +64,6 @@ function mapToUserProfile(user: UserWithRoles): UserProfile {
     name: user.name,
     email: user.email,
     image: user.image,
-    role: user.role,
     telemetryEnabled: user.telemetryEnabled,
   } as UserProfile;
 
@@ -182,13 +178,6 @@ export const userService = {
     });
   },
 
-  async updateUserRole(userId: string, role: DeprecatedRole) {
-    return await prisma.user.update({
-      where: { id: userId },
-      data: { role },
-    });
-  },
-
   async isFirstPremiumUser(): Promise<boolean> {
     // Check if this is the first non-anonymous user in the system
     // isAnonymous can be null (for OAuth users) or false (for non-anonymous users)
@@ -204,14 +193,6 @@ export const userService = {
 
   async grantSystemAdminAccess(userId: string): Promise<void> {
     try {
-      // // First, ensure the user has the organizationId set and role set to ADMIN
-      // await prisma.user.update({
-      //   where: { id: userId },
-      //   data: {
-      //     role: DeprecatedRole.ADMIN, // Set legacy role field to ADMIN for first user
-      //   },
-      // });
-
       // // Create a System Admin role if it doesn't exist
       // let systemAdminRole = await prisma.role.findFirst({
       //   where: {
@@ -260,12 +241,6 @@ export const userService = {
           userId,
           roleId: systemAdminRole.id,
         },
-      });
-
-      // Set the deprecated role
-      await prisma.user.update({
-        where: { id: userId },
-        data: { role: DeprecatedRole.ADMIN },
       });
 
       logger.info(`Granted system admin access to user ${userId}`);
