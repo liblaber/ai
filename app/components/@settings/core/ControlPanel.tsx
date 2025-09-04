@@ -19,8 +19,8 @@ import { Settings } from 'lucide-react';
 import DataTab from '~/components/@settings/tabs/data/DataTab';
 import DeployedAppsTab from '~/components/@settings/tabs/deployed-apps/DeployedAppsTab';
 import GitHubTab from '~/components/@settings/tabs/connections/GitHubTab';
-import { useUserStore } from '~/lib/stores/user';
-import { DeprecatedRole } from '@prisma/client';
+import { Can } from '@casl/react';
+import { AbilityContext } from '~/components/ability/AbilityProvider';
 import MembersTab from '~/components/@settings/tabs/users/UsersTab';
 import RolesTab from '~/components/@settings/tabs/roles/RolesTab';
 import EnvironmentsTab from '~/components/@settings/tabs/environments';
@@ -84,8 +84,6 @@ export const ControlPanel = () => {
 
   // Store values
   const tabConfiguration = useStore(tabConfigurationStore);
-  const { user } = useUserStore();
-  const role = user?.role;
 
   // Memoize the base tab configurations to avoid recalculation
   const baseTabConfig = useMemo(() => {
@@ -222,11 +220,11 @@ export const ControlPanel = () => {
                 <div className="flex-1 overflow-y-auto p-4">
                   <TabSection title="Workspace" tabs={visibleTabs} activeTab={activeTab} onTabClick={handleTabClick} />
 
-                  {role === DeprecatedRole.ADMIN && (
+                  <Can I="view" a="AdminApp" ability={React.useContext(AbilityContext)}>
                     <div className="mt-6">
                       <TabSection title="Admin" tabs={adminTabs} activeTab={activeTab} onTabClick={handleTabClick} />
                     </div>
-                  )}
+                  </Can>
                 </div>
               </div>
 
