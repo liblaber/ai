@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
 import { userService } from '~/lib/services/userService';
 import { z } from 'zod';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('user-api');
 
 const updateRoleSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest) {
       { status: 200 },
     );
   } catch (error) {
-    console.error('Failed to fetch users:', error);
+    logger.error('Failed to fetch users:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch users' }, { status: 500 });
   }
 }
@@ -56,7 +59,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true, user: targetUser });
   } catch (error) {
-    console.error('Failed to update user role:', error);
+    logger.error('Failed to update user role:', error);
     return NextResponse.json({ success: false, error: 'Failed to update user role' }, { status: 500 });
   }
 }

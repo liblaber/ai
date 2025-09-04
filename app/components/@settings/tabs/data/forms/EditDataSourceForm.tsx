@@ -15,6 +15,7 @@ import {
 import type { EnvironmentDataSource } from '~/lib/stores/environmentDataSources';
 import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 import { getConnectionProtocol } from '@liblab/data-access/utils/connection';
+import ResourceAccessMembers from '~/components/@settings/shared/components/ResourceAccessMembers';
 
 interface DataSourceResponse {
   success: boolean;
@@ -40,13 +41,13 @@ interface EnvironmentsResponse {
   error?: string;
 }
 
-// TODO: @skos update the form to use EnvironmentDataSource
 interface EditDataSourceFormProps {
   selectedDataSource: EnvironmentDataSource | null;
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
   onDelete: () => void;
+  onInvite: () => void;
 }
 
 function getDataSourceType(databaseUrl: string) {
@@ -60,6 +61,7 @@ export default function EditDataSourceForm({
   setIsSubmitting,
   onSuccess,
   onDelete,
+  onInvite,
 }: EditDataSourceFormProps) {
   const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
@@ -92,8 +94,8 @@ export default function EditDataSourceForm({
           setEnvironmentOptions(options);
 
           // Auto-select first environment if available
-          if (options.length > 0) {
-            setSelectedEnvironment(options[0]);
+          if (!selectedEnvironment && options.length > 0) {
+            setSelectedEnvironment((previouslySelectedEnvironment) => previouslySelectedEnvironment || options[0]);
           }
         } else {
           setError(result.error || 'Failed to fetch environments');
@@ -120,6 +122,7 @@ export default function EditDataSourceForm({
       value: selectedDataSource.environment.id,
       description: selectedDataSource.environment.description || undefined,
     };
+
     setSelectedEnvironment(currentEnvironment);
 
     if (selectedDataSource.dataSource.name === 'Sample Database') {
@@ -414,6 +417,14 @@ export default function EditDataSourceForm({
               </div>
             </div>
           )}
+        </div>
+
+        <div>
+          <ResourceAccessMembers
+            resourceScope="DATA_SOURCE"
+            resourceId={selectedDataSource.dataSource.id}
+            onInvite={onInvite}
+          />
         </div>
 
         <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
