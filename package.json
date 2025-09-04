@@ -59,6 +59,7 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "@casl/ability": "^6.7.3",
     "@casl/prisma": "^1.5.1",
+    "@casl/react": "^5.0.0",
     "@clack/prompts": "^0.11.0",
     "@codemirror/autocomplete": "^6.18.3",
     "@codemirror/commands": "^6.7.1",

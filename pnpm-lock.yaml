@@ -48,6 +48,9 @@ importers:
       '@casl/prisma':
         specifier: ^1.5.1
         version: 1.5.2(@casl/ability@6.7.3)(@prisma/client@6.13.0(prisma@6.13.0(typescript@5.9.2))(typescript@5.9.2))
+      '@casl/react':
+        specifier: ^5.0.0
+        version: 5.0.0(@casl/ability@6.7.3)(react@18.3.1)
       '@clack/prompts':
         specifier: ^0.11.0
         version: 0.11.0
@@ -1561,6 +1564,12 @@ packages:
     peerDependencies:
       '@casl/ability': ^5.3.0 || ^6.0.0
       '@prisma/client': ^2.14.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0
+
+  '@casl/react@5.0.0':
+    resolution: {integrity: sha512-jiwr6uOBnQA7h0gs+RJIbFVF24Dw6JLiUPL4pfU0OEjWSJFCcYBz6RPU21XNciWL6xwFDOds81cHosuElxfdmw==}
+    peerDependencies:
+      '@casl/ability': ^4.0.0 || ^5.1.0 || ^6.0.0
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
 
   '@clack/core@0.5.0':
     resolution: {integrity: sha512-p3y0FIOwaYRUPRcMO7+dlmLh8PSRcrjuTndsiA0WAFbWES0mLZlrjVoBRZ9DzkPFJZG6KGkJmoEAY0ZcVWTkow==}
@@ -12615,6 +12624,11 @@ snapshots:
       '@prisma/client': 6.13.0(prisma@6.13.0(typescript@5.9.2))(typescript@5.9.2)
       '@ucast/core': 1.10.2
       '@ucast/js': 3.0.4
+
+  '@casl/react@5.0.0(@casl/ability@6.7.3)(react@18.3.1)':
+    dependencies:
+      '@casl/ability': 6.7.3
+      react: 18.3.1
 
   '@clack/core@0.5.0':
     dependencies:
