@@ -1,6 +1,6 @@
 import { prisma } from '~/lib/prisma';
 import type { EnvironmentVariable, EnvironmentVariableType } from '@prisma/client';
-import { encryptData, decryptData } from '@liblab/encryption/encryption';
+import { decryptData, encryptData } from '@liblab/encryption/encryption';
 import { env } from '~/env';
 import { logger } from '~/utils/logger';
 
@@ -117,7 +117,7 @@ export function decryptEnvironmentVariable(envVar: EnvironmentVariable): Environ
   }
 }
 
-function encryptValue(value: string): string {
+export function encryptValue(value: string): string {
   const encryptionKey = env.server.ENCRYPTION_KEY;
 
   if (!encryptionKey) {

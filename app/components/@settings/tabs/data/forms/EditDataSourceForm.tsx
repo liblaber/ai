@@ -13,9 +13,8 @@ import {
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
 import type { EnvironmentDataSource } from '~/lib/stores/environmentDataSources';
-import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
+import { getDataSourceProperties } from '~/components/@settings/utils/data-sources';
 import type { DataSourcePropertyDescriptor } from '@liblab/data-access/utils/types';
-import { DataSourcePropertyType } from '~/lib/datasource';
 
 interface DataSourceResponse {
   success: boolean;
@@ -69,7 +68,7 @@ export default function EditDataSourceForm({
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
-  const [showConnStr, setShowConnStr] = useState(false);
+  const [showSensitiveInput, setShowSensitiveInput] = useState(false);
 
   // Fetch environments on component mount
   useEffect(() => {
@@ -130,17 +129,15 @@ export default function EditDataSourceForm({
 
       setDbName(selectedDataSource.dataSource.name);
 
-      getDataSourceUrl(selectedDataSource.dataSource.id, currentEnvironment.value).then((databaseUrl) => {
+      getDataSourceProperties(selectedDataSource.dataSource.id, currentEnvironment.value).then((properties) => {
         const matchingOption = availableDataSourceOptions.find(
-          (opt) => opt.value === selectedDataSource.dataSource.type,
+          (opt) => opt.value === selectedDataSource.dataSource.type.toLowerCase(),
         );
 
         setDbType(matchingOption || DEFAULT_DATA_SOURCES[0]);
         setDbName(selectedDataSource.dataSource.name);
 
-        setPropertyValues({
-          'Connection String': databaseUrl,
-        });
+        setPropertyValues(properties.reduce((acc, prop) => ({ ...acc, [prop.type]: prop.value }), {}));
       });
     }
 
@@ -302,6 +299,12 @@ export default function EditDataSourceForm({
     setShowSaveConfirmation(true);
   };
 
+  const isFormDisabled =
+    isTestingConnection ||
+    !selectedEnvironment ||
+    isSubmitting ||
+    !dbType?.properties?.every((prop) => propertyValues?.[prop.type]);
+
   if (!selectedDataSource) {
     return null;
   }
@@ -388,9 +391,9 @@ export default function EditDataSourceForm({
                     <label className="mb-3 block text-sm font-medium text-secondary">{property.label}</label>
                     <div className="relative">
                       <input
-                        type={property.type === DataSourcePropertyType.ACCESS_TOKEN ? 'password' : 'text'}
-                        value={propertyValues[property.label] || ''}
-                        onChange={(e) => handlePropertyChange(property.label, e.target.value)}
+                        type={showSensitiveInput ? 'text' : 'password'}
+                        value={propertyValues[property.type] || ''}
+                        onChange={(e) => handlePropertyChange(property.type, e.target.value)}
                         disabled={isSubmitting}
                         className={classNames(
                           'w-full px-4 py-2.5 pr-12 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
@@ -402,18 +405,21 @@ export default function EditDataSourceForm({
                         )}
                         placeholder={property.format}
                       />
-                      {property.type === DataSourcePropertyType.ACCESS_TOKEN && (
-                        <button
-                          type="button"
-                          onClick={() => setShowConnStr((prev) => !prev)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group"
-                          tabIndex={-1}
-                        >
-                          <span className="text-gray-400 group-hover:text-white transition-colors">
-                            {showConnStr ? <EyeSlash variant="Bold" size={20} /> : <Eye variant="Bold" size={20} />}
-                          </span>
-                        </button>
-                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setShowSensitiveInput((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group"
+                        tabIndex={-1}
+                      >
+                        <span className="text-gray-400 group-hover:text-white transition-colors">
+                          {showSensitiveInput ? (
+                            <EyeSlash variant="Bold" size={20} />
+                          ) : (
+                            <Eye variant="Bold" size={20} />
+                          )}
+                        </span>
+                      </button>
                     </div>
                     <label className="mb-3 block !text-[13px] text-secondary mt-2">e.g. {property.format}</label>
                   </div>
@@ -485,16 +491,7 @@ export default function EditDataSourceForm({
                     e.preventDefault();
                     await handleTestConnection();
                   }}
-                  disabled={
-                    isTestingConnection ||
-                    !selectedEnvironment ||
-                    isSubmitting ||
-                    (dbType.properties &&
-                      dbType.properties.length > 0 &&
-                      !dbType.properties.every(
-                        (prop) => propertyValues[prop.label] && propertyValues[prop.label].trim() !== '',
-                      ))
-                  }
+                  disabled={isFormDisabled}
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                     'bg-blue-500 hover:bg-blue-600',

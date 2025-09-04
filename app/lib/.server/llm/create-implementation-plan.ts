@@ -52,6 +52,7 @@ You are an expert software engineer capable of generating an short and concise i
 Your task is to:
 1. Create a concise, step-by-step implementation plan that will be used to guide the application code generation
 2. Determine whether the implementation requires additional context from the data source
+ - Implementation plan should never suggest data mocking, instead it should suggest using real data from the data source
 
 For the implementation plan:
 - Make it clear, simple, actionable, and focused on the main tasks required
@@ -96,7 +97,10 @@ ${starterInstructions}
       throw new Error('No result object received from LLM for implementation plan');
     }
 
-    return response.object;
+    return {
+      ...response.object,
+      requiresAdditionalDataSourceContext: isFirstUserMessage || response.object.requiresAdditionalDataSourceContext,
+    };
   } catch (error) {
     logger.error(`Error occurred while creating implementation plan`, error);
     throw error;

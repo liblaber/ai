@@ -27,7 +27,7 @@ import type { SendMessageFn } from './Chat.client';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { type BrowserInfo, detectBrowser } from '~/lib/utils/browser-detection';
 import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
-import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
+import { getDataSourceProperties } from '~/components/@settings/utils/data-sources';
 import { updateLatestSnapshot } from '~/lib/persistence/snapshots';
 import { MessageRole } from '~/utils/constants';
 import { logger } from '~/utils/logger';
@@ -146,10 +146,17 @@ export const BaseChat = ({
     setIsUpdatingDataSource(true);
 
     try {
-      const url = await getDataSourceUrl(pendingDataSourceChange.dataSourceId, pendingDataSourceChange.environmentId);
+      const dataSourceProperties = await getDataSourceProperties(
+        pendingDataSourceChange.dataSourceId,
+        pendingDataSourceChange.environmentId,
+      );
 
-      const encodedConnectionString = encodeURIComponent(url);
-      const updatedEnvContent = await ActionRunner.updateEnvironmentVariable('DATABASE_URL', encodedConnectionString);
+      let updatedEnvContent: string = '';
+
+      for (const dataSourceProperty of dataSourceProperties) {
+        const encodedPropertyValue = encodeURIComponent(dataSourceProperty.value);
+        updatedEnvContent = await ActionRunner.updateEnvironmentVariable(dataSourceProperty.type, encodedPropertyValue);
+      }
 
       const { setSelectedEnvironmentDataSource } = useEnvironmentDataSourcesStore.getState();
       setSelectedEnvironmentDataSource(pendingDataSourceChange.dataSourceId, pendingDataSourceChange.environmentId);
@@ -168,7 +175,7 @@ export const BaseChat = ({
             .reverse()
             .find((msg) => msg.role === MessageRole.User);
 
-          if (lastUserMessage?.id) {
+          if (lastUserMessage?.id && updatedEnvContent) {
             await updateLatestSnapshot(currentChatId, '.env', updatedEnvContent);
           }
         } catch (error) {

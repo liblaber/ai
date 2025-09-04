@@ -48,7 +48,6 @@ async function writeSensitiveDataToEnvFile(
   }
 
   // Until we support multiple data sources, just use the first one
-  content += `DATA_SOURCE_TYPE='${dataSourceProperties[0]?.dataSourceType}'\n`;
   content += `ENCRYPTION_KEY='${encryptionKey}'\n`;
 
   return {

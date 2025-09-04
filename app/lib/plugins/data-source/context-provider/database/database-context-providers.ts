@@ -36,10 +36,10 @@ export abstract class DatabaseContextProvider implements DataSourceContextProvid
       throw new Error('Connection string not found for data source');
     }
 
+    await accessor.initialize(connectionString);
+
     const schema: Table[] = (await getSchemaCache(connectionString)) || (await accessor.getSchema());
     const formattedSchema = formatDbSchemaForPrompt(schema);
-
-    logger.debug('Schema', schema);
 
     const systemPrompt = accessor.generateSystemPrompt(accessor.label, formattedSchema, [], userPrompt);
 

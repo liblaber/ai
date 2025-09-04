@@ -13,7 +13,6 @@ import {
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
 import type { DataSourcePropertyDescriptor } from '@liblab/data-access/utils/types';
-import { DataSourcePropertyType } from '~/lib/datasource';
 
 interface DataSourceResponse {
   success: boolean;
@@ -125,7 +124,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
 
         // Check if all required properties are filled
         const hasAllRequiredProperties = dbType.properties.every((prop) => {
-          const value = propertyValues[prop.label];
+          const value = propertyValues[prop.type];
           return value && value.trim() !== '';
         });
 
@@ -145,7 +144,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
         // Convert property values to DataSourceProperty format
         const properties = dbType.properties.map((prop) => ({
           type: prop.type,
-          value: propertyValues[prop.label] || '',
+          value: propertyValues[prop.type] || '',
         }));
         formData.append('properties', JSON.stringify(properties));
 
@@ -247,7 +246,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     const hasAllRequiredProperties =
       dbType.properties && dbType.properties.length > 0
         ? dbType.properties.every((prop) => {
-            const value = propertyValues[prop.label];
+            const value = propertyValues[prop.type];
             return value && value.trim() !== '';
           })
         : true; // If no properties, consider it valid
@@ -268,10 +267,9 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
       formData.append('name', dbName);
       formData.append('type', dbType.type || dbType.value.toUpperCase());
 
-      // Convert property values to DataSourceProperty format
       const properties = dbType.properties.map((prop) => ({
         type: prop.type,
-        value: propertyValues[prop.label] || '',
+        value: propertyValues[prop.type] || '',
       }));
       formData.append('properties', JSON.stringify(properties));
       formData.append('environmentId', selectedEnvironment.value);
@@ -308,6 +306,12 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     setDbName('');
     setPropertyValues({});
   };
+
+  const isFormDisabled =
+    isTestingConnection ||
+    !selectedEnvironment ||
+    isSubmitting ||
+    !dbType?.properties?.every((prop) => propertyValues?.[prop.type]);
 
   return (
     <div className="space-y-6">
@@ -381,9 +385,9 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   <div key={property.label}>
                     <label className="mb-3 block text-sm font-medium text-secondary">{property.label}</label>
                     <input
-                      type={property.type === DataSourcePropertyType.ACCESS_TOKEN ? 'password' : 'text'}
-                      value={propertyValues[property.label] || ''}
-                      onChange={(e) => handlePropertyChange(property.label, e.target.value)}
+                      type="text"
+                      value={propertyValues[property.type] || ''}
+                      onChange={(e) => handlePropertyChange(property.type, e.target.value)}
                       disabled={isSubmitting}
                       className={classNames(
                         'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
@@ -453,16 +457,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                     e.preventDefault();
                     await handleTestConnection();
                   }}
-                  disabled={
-                    isTestingConnection ||
-                    isSubmitting ||
-                    !selectedEnvironment ||
-                    (dbType.properties &&
-                      dbType.properties.length > 0 &&
-                      !dbType.properties.every(
-                        (prop) => propertyValues[prop.label] && propertyValues[prop.label].trim() !== '',
-                      ))
-                  }
+                  disabled={isFormDisabled}
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                     'bg-depth-1 bg-depth-1/50 ',
@@ -488,16 +483,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={
-                  isSubmitting ||
-                  !selectedEnvironment ||
-                  (dbType.value !== SAMPLE_DATABASE &&
-                    dbType.properties &&
-                    dbType.properties.length > 0 &&
-                    !dbType.properties.every(
-                      (prop) => propertyValues[prop.label] && propertyValues[prop.label].trim() !== '',
-                    ))
-                }
+                disabled={isFormDisabled}
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',

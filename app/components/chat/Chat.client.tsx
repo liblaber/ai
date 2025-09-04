@@ -38,12 +38,10 @@ import type { ProgressAnnotation } from '~/types/context';
 import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import type { DataSourcePropertyType } from '~/lib/datasource';
-import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 export type DataSourcePropertyResponse = {
   type: DataSourcePropertyType;
   value: string;
-  dataSourceType: DataSourceType;
 };
 
 type DataSourcePropertiesResponse = {
@@ -496,7 +494,6 @@ export const ChatImpl = ({
 
     logger.info('Environment data source for new chat:', JSON.stringify(environmentDataSource));
 
-    // TODO @lane add environment id to this endpoint
     const dataSourceUrlResponse = await fetch(
       `/api/data-sources/${environmentDataSource.dataSourceId}/properties?environmentId=${environmentDataSource.environmentId}`,
     );
