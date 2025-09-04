@@ -96,7 +96,6 @@ export default function SecretsManagerTab() {
     loadEnvironments();
   }, [setEnvironments]);
 
-  // Shared function to fetch environment variables
   const fetchEnvironmentVariables = async (showLoading = false) => {
     if (!selectedEnvironmentId) {
       return;
@@ -107,6 +106,7 @@ export default function SecretsManagerTab() {
         setLoading(true);
       }
 
+      // We only show the GLOBAL environment variables (without the DATA_SOURCE environment variables)
       const response = await fetch(
         `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
       );
