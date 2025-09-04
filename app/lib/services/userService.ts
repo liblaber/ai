@@ -1,5 +1,7 @@
 import { prisma } from '~/lib/prisma';
 import type { User } from '@prisma/client';
+import { RoleScope } from '@prisma/client';
+import { invalidateUserAbilityCache } from '~/lib/casl/user-ability';
 import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('user-service');
@@ -339,9 +341,15 @@ export const userService = {
       throw new Error('Role not found');
     }
 
-    // First, remove all existing roles for the user
+    // First, remove all existing general roles for the user
     await prisma.userRole.deleteMany({
-      where: { userId },
+      where: {
+        userId,
+        role: {
+          scope: RoleScope.GENERAL,
+          resourceId: null,
+        },
+      },
     });
 
     // Add the new role
@@ -363,6 +371,9 @@ export const userService = {
         },
       },
     });
+
+    // invalidate their ability cache
+    invalidateUserAbilityCache(userId);
 
     if (!user) {
       throw new Error('User not found');
