@@ -41,7 +41,7 @@ export function AbilityProvider({ children }: AbilityProviderProps) {
     };
 
     fetchAbility();
-  }, [user?.id]);
+  }, [user]);
 
   const ability = useMemo(() => createPrismaAbility(rules), [rules]);
 
