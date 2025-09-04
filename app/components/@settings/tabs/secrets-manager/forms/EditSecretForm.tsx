@@ -13,6 +13,7 @@ interface EditSecretFormProps {
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
   onDelete: () => void;
+  availableEnvironments: Array<{ id: string; name: string }>;
 }
 
 export default function EditSecretForm({
@@ -21,17 +22,19 @@ export default function EditSecretForm({
   setIsSubmitting,
   onSuccess,
   onDelete,
+  availableEnvironments,
 }: EditSecretFormProps) {
   const [key, setKey] = useState(environmentVariable.key);
   const [value, setValue] = useState(environmentVariable.value);
   const [description, setDescription] = useState(environmentVariable.description || '');
+  const [environmentId, setEnvironmentId] = useState(environmentVariable.environment.id);
   const [showValue, setShowValue] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!key.trim() || !value.trim()) {
+    if (!key.trim() || !value.trim() || !environmentId) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -46,7 +49,8 @@ export default function EditSecretForm({
     const hasChanges =
       key.trim().toUpperCase() !== environmentVariable.key ||
       value.trim() !== environmentVariable.value ||
-      description.trim() !== (environmentVariable.description || '');
+      description.trim() !== (environmentVariable.description || '') ||
+      environmentId !== environmentVariable.environment.id;
 
     if (!hasChanges) {
       toast.info('No changes were made');
@@ -65,6 +69,7 @@ export default function EditSecretForm({
           key: key.trim().toUpperCase(),
           value: value.trim(),
           type: EnvironmentVariableType.GLOBAL,
+          environmentId,
           description: description.trim() || undefined,
         }),
       });
@@ -175,19 +180,31 @@ export default function EditSecretForm({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* Environment (Read-only) */}
+      {/* Environment */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Environment</label>
-        <input
-          type="text"
-          value={environmentVariable.environment.name}
-          disabled
+        <label htmlFor="environment" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Environment <span className="text-red-500">*</span>
+        </label>
+        <select
+          id="environment"
+          value={environmentId}
+          onChange={(e) => {
+            setEnvironmentId(e.target.value);
+            console.log('Selected environment', e.target.value);
+          }}
           className={classNames(
             'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg',
-            'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
-            'cursor-not-allowed',
+            'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
+            'focus:ring-2 focus:ring-accent-500 focus:border-transparent',
           )}
-        />
+          required
+        >
+          {availableEnvironments.map((env) => (
+            <option key={env.id} value={env.id}>
+              {env.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Key */}
@@ -276,9 +293,9 @@ export default function EditSecretForm({
             onClick={() => setShowDeleteConfirm(true)}
             disabled={isSubmitting}
             className={classNames(
-              'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-              'text-red-600 hover:text-red-700',
-              'hover:bg-red-50 dark:hover:bg-red-950/20',
+              'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+              'bg-red-600 hover:bg-red-700 disabled:bg-red-400',
+              'text-white',
             )}
           >
             Delete Secret

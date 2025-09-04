@@ -133,6 +133,7 @@ export async function updateEnvironmentVariable(
   key: string,
   value: string,
   type: EnvironmentVariableType,
+  environmentId: string,
   description?: string,
 ): Promise<EnvironmentVariable> {
   const valueToStore = encryptValue(value);
@@ -144,6 +145,7 @@ export async function updateEnvironmentVariable(
       value: valueToStore,
       description: description || null,
       type,
+      environmentId,
     },
   });
 

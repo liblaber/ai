@@ -217,7 +217,7 @@ export default function SecretsManagerTab() {
             setIsSubmitting={setIsSubmitting}
             onSuccess={() => {
               const reloadResponse = fetch(
-                `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=GLOBAL`,
+                `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
               );
               reloadResponse
                 .then((response) => response.json())
@@ -267,10 +267,11 @@ export default function SecretsManagerTab() {
             environmentVariable={selectedEnvironmentVariable}
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
+            availableEnvironments={environments}
             onSuccess={() => {
               // Reload environment variables using the single API call
               const reloadResponse = fetch(
-                `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=GLOBAL`,
+                `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
               );
               reloadResponse
                 .then((response) => response.json())
@@ -289,7 +290,7 @@ export default function SecretsManagerTab() {
             onDelete={() => {
               // Reload environment variables using the single API call
               const reloadResponse = fetch(
-                `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=GLOBAL`,
+                `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
               );
               reloadResponse
                 .then((response) => response.json())

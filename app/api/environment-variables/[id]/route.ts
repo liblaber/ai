@@ -17,12 +17,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const body = (await request.json()) as {
       key: string;
+      environmentId: string;
       value: string;
       type: string;
       description?: string;
     };
 
-    const { key, value, type, description } = body;
+    const { key, environmentId, value, type, description } = body;
 
     if (!key || !value || !type) {
       return NextResponse.json({ success: false, error: 'Missing required fields: key, value, type' }, { status: 400 });
@@ -51,7 +52,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const existingEnvVar = await prisma.environmentVariable.findFirst({
       where: {
         key,
-        environmentId: envVar.environmentId,
+        environmentId: environmentId || envVar.environmentId,
         id: { not: id },
       },
     });
@@ -68,6 +69,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       key,
       value,
       type as any, // Type will be validated by the service
+      environmentId || envVar.environmentId,
       description,
     );
 
