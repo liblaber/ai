@@ -96,33 +96,42 @@ export default function SecretsManagerTab() {
     loadEnvironments();
   }, [setEnvironments]);
 
+  // Shared function to fetch environment variables
+  const fetchEnvironmentVariables = async (showLoading = false) => {
+    if (!selectedEnvironmentId) {
+      return;
+    }
+
+    try {
+      if (showLoading) {
+        setLoading(true);
+      }
+
+      const response = await fetch(
+        `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
+      );
+      const data = (await response.json()) as EnvironmentVariablesResponse;
+
+      if (data.success) {
+        setEnvironmentVariables(data.environmentVariables);
+      }
+    } catch (error) {
+      logger.error('Failed to load environment variables:', error);
+      toast.error('Failed to load environment variables');
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      }
+    }
+  };
+
   // Load environment variables when environment changes
   useEffect(() => {
     if (!selectedEnvironmentId) {
       return;
     }
 
-    const loadEnvironmentVariables = async () => {
-      try {
-        setLoading(true);
-
-        const response = await fetch(
-          `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
-        );
-        const data = (await response.json()) as EnvironmentVariablesResponse;
-
-        if (data.success) {
-          setEnvironmentVariables(data.environmentVariables);
-        }
-      } catch (error) {
-        logger.error('Failed to load environment variables:', error);
-        toast.error('Failed to load environment variables');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadEnvironmentVariables();
+    fetchEnvironmentVariables(true);
   }, [selectedEnvironmentId, setEnvironmentVariables, setLoading]);
 
   const handleEnvironmentChange = (environmentId: string) => {
@@ -215,21 +224,8 @@ export default function SecretsManagerTab() {
           <AddSecretForm
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
-            onSuccess={() => {
-              const reloadResponse = fetch(
-                `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
-              );
-              reloadResponse
-                .then((response) => response.json())
-                .then((data: unknown) => {
-                  const typedData = data as EnvironmentVariablesResponse;
-
-                  if (typedData.success) {
-                    setEnvironmentVariables(typedData.environmentVariables);
-                  }
-                })
-                .catch((error) => logger.error('Failed to reload environment variables after add:', error));
-
+            onSuccess={async () => {
+              await fetchEnvironmentVariables();
               handleBack();
             }}
             selectedEnvironmentId={selectedEnvironmentId === 'all' ? environments[0].id : selectedEnvironmentId}
@@ -268,41 +264,13 @@ export default function SecretsManagerTab() {
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
             availableEnvironments={environments}
-            onSuccess={() => {
-              // Reload environment variables using the single API call
-              const reloadResponse = fetch(
-                `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
-              );
-              reloadResponse
-                .then((response) => response.json())
-                .then((data: unknown) => {
-                  const typedData = data as EnvironmentVariablesResponse;
-
-                  if (typedData.success) {
-                    setEnvironmentVariables(typedData.environmentVariables);
-                  }
-                })
-                .catch((error) => logger.error('Failed to reload environment variables after edit:', error));
-
+            onSuccess={async () => {
+              await fetchEnvironmentVariables();
               setShowEditForm(false);
               setSelectedEnvironmentVariable(null);
             }}
-            onDelete={() => {
-              // Reload environment variables using the single API call
-              const reloadResponse = fetch(
-                `/api/environment-variables?environmentId=${selectedEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
-              );
-              reloadResponse
-                .then((response) => response.json())
-                .then((data: unknown) => {
-                  const typedData = data as EnvironmentVariablesResponse;
-
-                  if (typedData.success) {
-                    setEnvironmentVariables(typedData.environmentVariables);
-                  }
-                })
-                .catch((error) => logger.error('Failed to reload environment variables after delete:', error));
-
+            onDelete={async () => {
+              await fetchEnvironmentVariables();
               setShowEditForm(false);
               setSelectedEnvironmentVariable(null);
             }}
