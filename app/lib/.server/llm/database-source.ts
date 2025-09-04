@@ -135,7 +135,7 @@ export async function generateSqlQueries({
       return undefined;
     }
   } catch (error) {
-    console.error('Error generating SQL query:', error);
+    logger.error('Error generating SQL query:', error);
     throw new Error('Failed to generate SQL query');
   }
 }
