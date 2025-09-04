@@ -5,6 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { toast } from 'sonner';
 import { useUserStore } from '~/lib/stores/user';
 import UsersDetails from './UsersDetails';
+import { classNames } from '~/utils/classNames';
 
 interface Role {
   id: string;
@@ -334,7 +335,11 @@ export default function UsersTab() {
           </div>
           <button
             onClick={() => setShowDetails(true)}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+            className={classNames(
+              'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+              'bg-accent-500 hover:bg-accent-600',
+              'text-gray-950 dark:text-gray-950',
+            )}
           >
             <Plus className="w-4 h-4" />
             Add member

@@ -13,7 +13,7 @@ interface Role {
   description: string;
 }
 
-interface UserInvite {
+interface MemberInvite {
   id: string;
   email: string;
   roleId: string;
@@ -31,16 +31,16 @@ interface DomainInvite {
   createdAt: string;
 }
 
-const USER_TABS = ['Invite Users', 'Domain Invites', 'Pending Invites'];
+const USER_TABS = ['Invite Members', 'Domain Invites', 'Pending Invites'];
 
-interface UsersDetailsProps {
+interface MembersDetailsProps {
   onBack(): void;
 }
 
-export default function UsersDetails({ onBack }: UsersDetailsProps) {
-  const [activeTab, setActiveTab] = useState('Invite Users');
+export default function MembersDetails({ onBack }: MembersDetailsProps) {
+  const [activeTab, setActiveTab] = useState('Invite Members');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [inviteToDelete, setInviteToDelete] = useState<UserInvite | DomainInvite | null>(null);
+  const [inviteToDelete, setInviteToDelete] = useState<MemberInvite | DomainInvite | null>(null);
 
   // Roles state
   const [roles, setRoles] = useState<Role[]>([]);
@@ -57,12 +57,12 @@ export default function UsersDetails({ onBack }: UsersDetailsProps) {
   // const [setIsAddingDomain] = useState(false);
 
   // Real data from API
-  const [pendingInvites, setPendingInvites] = useState<UserInvite[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<MemberInvite[]>([]);
   const [domainInvites, setDomainInvites] = useState<DomainInvite[]>([]);
 
   useEffect(() => {
     setControlPanelHeader({
-      title: 'Invite Users',
+      title: 'Invite Members',
       onBack,
     });
 
@@ -103,7 +103,7 @@ export default function UsersDetails({ onBack }: UsersDetailsProps) {
   const fetchInvites = async () => {
     try {
       const response = await fetch('/api/invites?status=PENDING');
-      const data = (await response.json()) as { success: boolean; invites?: UserInvite[] };
+      const data = (await response.json()) as { success: boolean; invites?: MemberInvite[] };
 
       if (data.success && data.invites) {
         setPendingInvites(data.invites);
@@ -130,11 +130,11 @@ export default function UsersDetails({ onBack }: UsersDetailsProps) {
 
   const getTabComponent = (tab: string) => {
     switch (tab) {
-      case 'Invite Users':
+      case 'Invite Members':
         return (
           <div className="space-y-4">
             <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-              <h3 className="text-sm font-medium text-white mb-3">Invite Specific Users</h3>
+              <h3 className="text-sm font-medium text-white mb-3">Invite Specific Members</h3>
               <div className="space-y-3">
                 <div>
                   <label htmlFor="inviteEmail" className="block text-sm font-medium text-gray-300 mb-2">
@@ -171,20 +171,20 @@ export default function UsersDetails({ onBack }: UsersDetailsProps) {
                     )}
                   </select>
                 </div>
-                <button
-                  onClick={handleInviteUser}
-                  disabled={!inviteEmail.trim() || isInviting}
-                  className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isInviting ? (
-                    'Inviting...'
-                  ) : (
-                    <>
-                      <Mail className="w-4 h-4" />
-                      Send Invite
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center justify-end gap-3 pt-4">
+                  <button
+                    onClick={handleInviteMember}
+                    disabled={!inviteEmail.trim() || isInviting}
+                    className={classNames(
+                      'inline-flex items-center gap-2 px-6 py-2 text-sm font-medium rounded-lg transition-colors',
+                      'bg-accent-500 hover:bg-accent-600 disabled:bg-accent-300',
+                      'text-gray-950 dark:text-gray-950 disabled:text-gray-600',
+                      'disabled:cursor-not-allowed',
+                    )}
+                  >
+                    {isInviting ? 'Inviting...' : <>Add Member</>}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -213,7 +213,7 @@ export default function UsersDetails({ onBack }: UsersDetailsProps) {
       case 'Pending Invites':
         return (
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-white">Pending User Invites</h3>
+            <h3 className="text-sm font-medium text-white">Pending Member Invites</h3>
             {pendingInvites.map((invite) => (
               <div
                 key={invite.id}
@@ -243,7 +243,7 @@ export default function UsersDetails({ onBack }: UsersDetailsProps) {
     }
   };
 
-  const handleInviteUser = async () => {
+  const handleInviteMember = async () => {
     if (!inviteEmail.trim() || !inviteRoleId) {
       return;
     }
@@ -317,7 +317,7 @@ export default function UsersDetails({ onBack }: UsersDetailsProps) {
   //   }
   // };
 
-  const handleDeleteInvite = (invite: UserInvite | DomainInvite) => {
+  const handleDeleteInvite = (invite: MemberInvite | DomainInvite) => {
     setInviteToDelete(invite);
     setShowDeleteConfirm(true);
   };
@@ -352,7 +352,7 @@ export default function UsersDetails({ onBack }: UsersDetailsProps) {
 
         if (data.success) {
           setPendingInvites(pendingInvites.filter((i) => i.id !== inviteToDelete.id));
-          toast.success(data.message || 'User invite removed successfully');
+          toast.success(data.message || 'Member invite removed successfully');
         } else {
           toast.error(data.error || 'Failed to remove user invite');
         }
@@ -378,7 +378,7 @@ export default function UsersDetails({ onBack }: UsersDetailsProps) {
               setActiveTab(value);
             }
           }}
-          aria-label="User management tabs"
+          aria-label="Member management tabs"
         >
           {USER_TABS.map((tab) => (
             <ToggleGroup.Item
@@ -393,7 +393,7 @@ export default function UsersDetails({ onBack }: UsersDetailsProps) {
               )}
               data-state={activeTab === tab ? 'on' : 'off'}
             >
-              {tab === 'Invite Users' && <UserPlus className="w-4 h-4" />}
+              {tab === 'Invite Members' && <UserPlus className="w-4 h-4" />}
               {tab === 'Domain Invites' && <Globe className="w-4 h-4" />}
               {tab === 'Pending Invites' && <Mail className="w-4 h-4" />}
               {tab}
