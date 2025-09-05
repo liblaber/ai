@@ -1,7 +1,14 @@
 import { decryptData, encryptData } from '@/lib/encryption/encryption';
 
 export async function executeQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
-  const databaseUrl = decodeURIComponent(process.env.DATABASE_URL || '');
+  let databaseUrl = process.env.DATABASE_URL || '';
+
+  // Handle double URL encoding - decode until we get a valid URL format
+  while (databaseUrl.includes('%')) {
+    const decoded = decodeURIComponent(databaseUrl);
+    if (decoded === databaseUrl) break; // No more decoding needed
+    databaseUrl = decoded;
+  }
 
   const requestBody = {
     query,
@@ -67,6 +74,22 @@ async function handleResponse<T>(response: Response): Promise<{ data: T }> {
   const data = await response.json();
 
   if (!response.ok) {
+    // Check if error response is encrypted (has encryptedData property)
+    if (data?.encryptedData && process.env.ENCRYPTION_KEY) {
+      try {
+        const decryptedError = decryptData(process.env.ENCRYPTION_KEY, data.encryptedData);
+        const errorData = JSON.parse(decryptedError.toString());
+        throw new ApiRequestError(
+          response.status,
+          errorData?.error || errorData?.details || 'An error occurred',
+          errorData?.errors,
+        );
+      } catch (decryptError) {
+        // If decryption fails, fallback to original error message
+        throw new ApiRequestError(response.status, data?.error || 'An error occurred', data?.errors);
+      }
+    }
+
     throw new ApiRequestError(response.status, data?.error || 'An error occurred', data?.errors);
   }
 

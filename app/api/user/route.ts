@@ -2,14 +2,15 @@ import { PermissionAction, PermissionResource } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
 import { userService } from '~/lib/services/userService';
+import { z } from 'zod';
 import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('user-api');
 
-type UpdateRoleBody = {
-  userId: string;
-  role: 'ADMIN' | 'MEMBER';
-};
+const updateRoleSchema = z.object({
+  userId: z.string().min(1, 'User ID is required'),
+  roleId: z.string().min(1, 'Role ID is required'),
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,9 +20,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const users = await userService.getAllUsers();
+    const [usersWithRoles, usersWithoutRoles] = await Promise.all([
+      userService.getAllUsersWithRoles(),
+      userService.getAllUsersWithoutRoles(),
+    ]);
 
-    return NextResponse.json({ success: true, users }, { status: 200 });
+    return NextResponse.json(
+      {
+        success: true,
+        users: usersWithRoles,
+        usersWithoutRoles,
+      },
+      { status: 200 },
+    );
   } catch (error) {
     logger.error('Failed to fetch users:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch users' }, { status: 500 });
@@ -31,13 +42,20 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const { userAbility } = await requireUserAbility(request);
-    const body = (await request.json()) as UpdateRoleBody;
+    const body = await request.json();
+    const parsedBody = updateRoleSchema.safeParse(body);
+
+    if (!parsedBody.success) {
+      return NextResponse.json({ success: false, error: parsedBody.error.flatten().fieldErrors }, { status: 400 });
+    }
 
     if (!userAbility.can(PermissionAction.manage, PermissionResource.AdminApp)) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const targetUser = await userService.updateUserRole(body.userId, body.role);
+    const { userId, roleId } = parsedBody.data;
+
+    const targetUser = await userService.updateUserRoleToNewSystem(userId, roleId);
 
     return NextResponse.json({ success: true, user: targetUser });
   } catch (error) {

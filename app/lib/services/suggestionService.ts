@@ -1,7 +1,7 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { DataAccessor } from 'shared/src/data-access/dataAccessor';
-import { type DataSource } from './dataSourceService';
+import { getDatabaseUrl } from './dataSourceService';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 
 import { logger } from '~/utils/logger';
@@ -25,27 +25,43 @@ const suggestionResponseSchema = z.object({
 
 /**
  * Generates contextual suggestions based on the database schema
- * @param dataSource - The ID of the data source
+ * @param dataSourceId - The ID of the data source
+ * @param userId - The user ID
+ * @param environmentId - The environment ID (optional)
  * @returns Promise<string[]> - Array of 3 suggestion prompts
  */
-export async function generateSchemaBasedSuggestions(dataSource: DataSource): Promise<string[]> {
+export async function generateSchemaBasedSuggestions(
+  dataSourceId: string,
+  userId: string,
+  environmentId?: string,
+): Promise<string[]> {
   try {
+    const connectionString = await getDatabaseUrl(userId, dataSourceId, environmentId!);
+
+    if (!connectionString) {
+      throw new Error('Database connection string not found');
+    }
+
     // Check cache first (31 days TTL)
-    const cachedSuggestions = await getSuggestionsCache(dataSource.connectionString, 60 * 60 * 24 * 31);
+    const cachedSuggestions = await getSuggestionsCache(connectionString, 60 * 60 * 24 * 31);
 
     if (cachedSuggestions) {
-      logger.info(`Found cached suggestions for data source ${dataSource.id}`);
+      logger.info(`Found cached suggestions for data source ${dataSourceId}`);
 
       // Return 3 random suggestions from the cached array
       return getRandomSuggestions(cachedSuggestions, 3);
     }
 
-    const accessor = DataAccessor.getAccessor(dataSource.connectionString);
+    const accessor = DataAccessor.getAccessor(connectionString);
 
-    await accessor.initialize(dataSource.connectionString);
+    await accessor.initialize(connectionString);
 
     try {
-      const schema = (await getSchemaCache(dataSource.connectionString)) || (await accessor.getSchema());
+      const schema = (await getSchemaCache(connectionString)) || (await accessor.getSchema());
+
+      if (!schema) {
+        throw new Error('Could not retrieve database schema');
+      }
 
       const llm = await getLlm();
 
@@ -107,9 +123,9 @@ Make sure that the suggestions are not too long, at most 6-7 words.
 
       const allSuggestions = result.object.suggestions;
 
-      await setSuggestionsCache(dataSource.connectionString, allSuggestions, schema);
+      await setSuggestionsCache(connectionString, allSuggestions, schema);
 
-      logger.info(`Generated and cached 12 schema-based suggestions for data source ${dataSource.id}`);
+      logger.info(`Generated and cached 12 schema-based suggestions for data source ${dataSourceId}`);
 
       // Return 3 random suggestions from the generated array
       return getRandomSuggestions(allSuggestions, 3);

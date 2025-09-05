@@ -31,11 +31,19 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({
     useEnvironmentDataSourcesStore();
 
   const options: SelectOption[] = [
-    ...environmentDataSources.map((eds) => ({
-      value: `${eds.dataSourceId}:${eds.environmentId}`,
-      label: eds.dataSource.name,
-      environmentName: eds.environment.name,
-    })),
+    ...(environmentDataSources.length === 0
+      ? [
+          {
+            value: 'no-data-source',
+            label: 'No Data Source',
+            isDisabled: true,
+          },
+        ]
+      : environmentDataSources.map((eds) => ({
+          value: `${eds.dataSourceId}:${eds.environmentId}`,
+          label: eds.dataSource.name,
+          environmentName: eds.environment.name,
+        }))),
     {
       value: 'add-new',
       label: '+ Add New Data Source',
@@ -192,7 +200,9 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({
   const selectedValue =
     selectedEnvironmentDataSource.dataSourceId && selectedEnvironmentDataSource.environmentId
       ? `${selectedEnvironmentDataSource.dataSourceId}:${selectedEnvironmentDataSource.environmentId}`
-      : null;
+      : environmentDataSources.length === 0
+        ? 'no-data-source'
+        : null;
 
   return (
     <div className="flex items-center gap-2">
