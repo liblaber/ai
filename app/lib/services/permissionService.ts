@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { PermissionAction, PermissionResource } from '@prisma/client';
 import type { Permission } from '@prisma/client';
+import { logger } from '~/utils/logger';
 
 export const PERMISSION_LEVELS = ['viewer', 'manage'] as const;
 
@@ -26,6 +27,8 @@ export function getPermissionLevelDetails(level: PermissionLevel): PermissionDet
 }
 
 export async function getUserPermissions(userId: string): Promise<Permission[]> {
+  logger.debug(`Fetching permissions for user ID: ${userId}`);
+
   const userWithRoles = await prisma.user.findUnique({
     where: { id: userId },
     include: {

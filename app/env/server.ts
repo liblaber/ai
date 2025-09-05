@@ -95,10 +95,14 @@ export const env = createEnv({
     // Google OAuth configuration
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
+    GOOGLE_AUTH_ENCRYPTION_KEY: z.string().optional(),
 
     // Development configuration
     npm_package_version: z.string().optional(),
     CUSTOM_KEY: z.string().optional(),
+
+    // Google Sheets configuration
+    GOOGLE_SHEETS_SEMANTIC_VERSION: z.string().default('3'),
   },
   experimental__runtimeEnv: process.env,
 });

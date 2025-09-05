@@ -1,23 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEnvironmentDataSource } from '~/lib/services/dataSourceService';
 import { generateSchemaBasedSuggestions } from '~/lib/services/suggestionService';
-import { SAMPLE_DATABASE_NAME } from '@liblab/data-access/accessors/sqlite';
 import { logger } from '~/utils/logger';
-import { DataSourcePropertyType } from '@prisma/client';
 import { requireUserId } from '~/auth/session';
+import { z } from 'zod';
+
+const suggestionsRequestSchema = z.object({
+  dataSourceId: z.string().min(1, 'Data source ID is required'),
+  environmentId: z.string().min(1, 'Environment ID is required'),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireUserId(request);
-    const { dataSourceId, environmentId } = await request.json<{ dataSourceId: string; environmentId: string }>();
+    const body = await request.json();
 
-    if (!dataSourceId) {
-      return NextResponse.json({ success: false, error: 'Data source ID is required' }, { status: 400 });
+    const validationResult = suggestionsRequestSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { success: false, error: validationResult.error.errors[0]?.message || 'Invalid request data' },
+        { status: 400 },
+      );
     }
 
-    if (!environmentId) {
-      return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
-    }
+    const { dataSourceId, environmentId } = validationResult.data;
 
     // Fetch the environment data source using the service
     const environmentDataSource = await getEnvironmentDataSource(dataSourceId, userId, environmentId);
@@ -26,39 +33,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
     }
 
-    const dataSourceProperty = environmentDataSource.dataSourceProperties.find(
-      (dsp) => dsp.type === DataSourcePropertyType.CONNECTION_URL,
-    );
-
-    if (!dataSourceProperty) {
-      return NextResponse.json({ success: false, error: 'Data source property not found' }, { status: 404 });
-    }
-
-    const connectionUrl = dataSourceProperty.environmentVariable.value;
-
-    const isSampleDatabase = connectionUrl === `sqlite://${SAMPLE_DATABASE_NAME}`;
-
     let suggestions: string[];
 
-    if (isSampleDatabase) {
-      suggestions = suggestions = [
-        'create a revenue dashboard',
-        'make user management app',
-        'build a sales overview page',
-      ];
-    } else {
-      // Generate schema-based suggestions for non-sample databases
-      // Create a compatible dataSource object for the suggestion service
-      const dataSourceForSuggestions = {
-        id: environmentDataSource.dataSource.id,
-        name: environmentDataSource.dataSource.name,
-        connectionString: connectionUrl || '',
-        environmentId: environmentDataSource.environmentId,
-        environmentName: environmentDataSource.environment.name,
-        createdAt: environmentDataSource.dataSource.createdAt,
-        updatedAt: environmentDataSource.dataSource.updatedAt,
-      };
-      suggestions = await generateSchemaBasedSuggestions(dataSourceForSuggestions);
+    try {
+      // Generate schema-based suggestions using the new service signature
+      suggestions = await generateSchemaBasedSuggestions(dataSourceId, userId, environmentId);
+    } catch (error) {
+      // Fallback to sample suggestions if there's an error
+      logger.warn('Failed to generate schema-based suggestions, using fallback:', error);
+      suggestions = ['create a revenue dashboard', 'make user management app', 'build a sales overview page'];
     }
 
     return NextResponse.json({

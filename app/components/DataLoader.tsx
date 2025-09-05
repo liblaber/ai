@@ -28,7 +28,6 @@ interface DataLoaderProps {
 
 export function DataLoader({ children, rootData }: DataLoaderProps) {
   const { data: session } = useSession();
-  // TODO: @skos this is the main idea, keep it this way but fetch envId, envName and connectionUrl
   const { setEnvironmentDataSources } = useEnvironmentDataSourcesStore();
   const { setPluginAccess } = usePluginStore();
   const { setDataSourceTypes } = useDataSourceTypesStore();

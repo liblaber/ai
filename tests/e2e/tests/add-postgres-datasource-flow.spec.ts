@@ -229,7 +229,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
       'input[placeholder*="database name"], input[placeholder*="Database Name"], input[name*="dbName"], input[name*="name"]',
     );
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
-    console.log('✅ Found database name input, filling "foobar"...');
+    console.log('✅ Found database name input, filling "baz"...');
     await dbNameInput.fill('baz');
 
     console.log('🔍 Looking for connection string input...');

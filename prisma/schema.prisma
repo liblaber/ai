@@ -16,13 +16,13 @@ datasource db {
 }
 
 model DataSource {
-  id               String                  @id @default(cuid())
-  name             String
-  createdAt        DateTime                @default(now()) @map("created_at")
-  updatedAt        DateTime                @updatedAt @map("updated_at")
-  createdBy        User                    @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  createdById      String                  @map("created_by_id")
-  environments     EnvironmentDataSource[]
+  id           String                  @id @default(cuid())
+  name         String
+  createdAt    DateTime                @default(now()) @map("created_at")
+  updatedAt    DateTime                @updatedAt @map("updated_at")
+  createdBy    User                    @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdById  String                  @map("created_by_id")
+  environments EnvironmentDataSource[]
 
   directPermissions Permission[]
 
@@ -49,7 +49,7 @@ model DataSourceProperty {
 
   environmentId         String                @map("environment_id")
   dataSourceId          String                @map("data_source_id")
-  environmentDataSource EnvironmentDataSource @relation(fields: [environmentId, dataSourceId], references: [environmentId, dataSourceId])
+  environmentDataSource EnvironmentDataSource @relation(fields: [environmentId, dataSourceId], references: [environmentId, dataSourceId], onDelete: Cascade)
 
   @@map("data_source_property")
 }
@@ -217,13 +217,9 @@ model Role {
   permissions Permission[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
+  UserInvite  UserInvite[]
 
   @@map("role")
-}
-
-enum DeprecatedRole {
-  ADMIN
-  MEMBER
 }
 
 model User {
@@ -238,7 +234,6 @@ model User {
   accounts             Account[]
   conversations        Conversation[]
   roles                UserRole[]
-  role                 DeprecatedRole        @default(MEMBER)
   dataSources          DataSource[]
   websites             Website[]
   environmentVariables EnvironmentVariable[]
@@ -345,4 +340,30 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+model UserInvite {
+  id             String       @id
+  email          String
+  roleId         String
+  status         InviteStatus @default(PENDING)
+  invitedBy      String
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  existingUserId String?
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([email, status])
+  @@index([email])
+  @@index([status])
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
 }
