@@ -24,6 +24,7 @@ import { DeprecatedRole } from '@prisma/client';
 import MembersTab from '~/components/@settings/tabs/users/UsersTab';
 import RolesTab from '~/components/@settings/tabs/roles/RolesTab';
 import EnvironmentsTab from '~/components/@settings/tabs/environments';
+import DeploymentMethodsTab from '~/components/@settings/tabs/deployment-methods/DeploymentMethodsTab';
 
 const LAST_ACCESSED_TAB_KEY = 'control-panel-last-tab';
 
@@ -169,6 +170,8 @@ export const ControlPanel = () => {
         return <DataTab />;
       case 'environments':
         return <EnvironmentsTab />;
+      case 'deployment-methods':
+        return <DeploymentMethodsTab />;
       case 'deployed-apps':
         return <DeployedAppsTab />;
       case 'github':

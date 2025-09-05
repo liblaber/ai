@@ -8,6 +8,7 @@ export const TAB_ICONS: Record<TabType, string | LucideIcon> = {
   members: Users,
   roles: ShieldUser,
   environments: Server,
+  'deployment-methods': Rocket,
 };
 
 export const TAB_LABELS: Record<TabType, string> = {
@@ -17,6 +18,7 @@ export const TAB_LABELS: Record<TabType, string> = {
   members: 'Members',
   roles: 'Roles',
   environments: 'Environments',
+  'deployment-methods': 'Deployment Methods',
 };
 
 export const TAB_DESCRIPTIONS: Record<TabType, string> = {
@@ -26,13 +28,15 @@ export const TAB_DESCRIPTIONS: Record<TabType, string> = {
   members: 'Manage your members',
   roles: 'Manage roles and permissions for users',
   environments: 'Manage your environments',
+  'deployment-methods': 'Manage your deployment method connections',
 };
 
 export const DEFAULT_TAB_CONFIG: TabVisibilityConfig[] = [
   { id: 'data', visible: true, window: 'user', order: 0 },
   { id: 'environments', visible: true, window: 'user', order: 1 },
-  { id: 'github', visible: true, window: 'user', order: 2 },
-  { id: 'deployed-apps', visible: true, window: 'user', order: 3 },
+  { id: 'deployment-methods', visible: true, window: 'user', order: 2 },
+  { id: 'github', visible: true, window: 'user', order: 3 },
+  { id: 'deployed-apps', visible: true, window: 'user', order: 4 },
 
   { id: 'members', visible: true, window: 'admin', order: 1 },
   { id: 'roles', visible: true, window: 'admin', order: 2 },
