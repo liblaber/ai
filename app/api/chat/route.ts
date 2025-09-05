@@ -56,6 +56,8 @@ async function chatAction(request: NextRequest) {
   const environmentDataSource = await conversationService.getConversationEnvironmentDataSource(conversationId, userId);
   const dataSource = environmentDataSource.dataSource;
 
+  const dataSourceContextProvider = resolveDataSourceContextProvider(dataSource.type);
+
   const cumulativeUsage = {
     completionTokens: 0,
     promptTokens: 0,
@@ -205,6 +207,7 @@ async function chatAction(request: NextRequest) {
               isFirstUserMessage: !!userMessageProperties.isFirstUserMessage,
               summary,
               userPrompt: userMessage.content,
+              schema: await dataSourceContextProvider?.getSchema?.(environmentDataSource),
               onFinish: (response) => {
                 if (response.usage) {
                   logger.debug('createImplementationPlan token usage', JSON.stringify(response.usage));
@@ -237,8 +240,6 @@ async function chatAction(request: NextRequest) {
           let additionalDataSourceContext: string | null = null;
 
           if (implementationPlan?.requiresAdditionalDataSourceContext) {
-            const dataSourceContextProvider = resolveDataSourceContextProvider(dataSource.type);
-
             if (dataSourceContextProvider) {
               currentProgressAnnotation = {
                 type: 'progress',

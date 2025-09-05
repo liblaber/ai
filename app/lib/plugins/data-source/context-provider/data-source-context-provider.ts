@@ -27,6 +27,8 @@ export type AdditionalContextOutput = {
 
 export interface DataSourceContextProvider {
   getContext(input: AdditionalContextInput): Promise<AdditionalContextOutput>;
+
+  getSchema?(environmentDataSource: ComplexEnvironmentDataSource): Promise<string>;
 }
 
 export function resolveDataSourceContextProvider(dataSourceType: DataSourceType): DataSourceContextProvider | null {

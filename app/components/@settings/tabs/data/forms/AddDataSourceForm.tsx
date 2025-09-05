@@ -112,7 +112,6 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
 
     try {
       if (dbType.value !== SAMPLE_DATABASE) {
-        // If no properties are required, skip connection testing
         if (!dbType.properties || dbType.properties.length === 0) {
           setTestResult({
             success: true,
@@ -121,7 +120,6 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
           return;
         }
 
-        // Check if all required properties are filled
         const hasAllRequiredProperties = dbType.properties.every((prop) => {
           const value = propertyValues[prop.type];
           return value && value.trim() !== '';
@@ -140,7 +138,6 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
         const formData = new FormData();
         formData.append('type', dbType.type || dbType.value.toUpperCase());
 
-        // Convert property values to DataSourceProperty format
         const properties = dbType.properties.map((prop) => ({
           type: prop.type,
           value: propertyValues[prop.type] || '',
@@ -241,7 +238,6 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
       return;
     }
 
-    // Check if all required properties are filled
     const hasAllRequiredProperties =
       dbType.properties && dbType.properties.length > 0
         ? dbType.properties.every((prop) => {
@@ -297,7 +293,6 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     }
   };
 
-  // Reset property values when database type changes
   const handleDatabaseTypeChange = (value: DataSourceOption) => {
     setDbType(value);
     setError(null);

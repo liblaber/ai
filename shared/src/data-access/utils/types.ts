@@ -7,6 +7,9 @@ export type DataAccessPluginId = 'postgres' | 'mysql' | 'sqlite' | 'mongodb' | '
 export enum DataSourcePropertyType {
   CONNECTION_URL = 'CONNECTION_URL',
   ACCESS_TOKEN = 'ACCESS_TOKEN',
+  REFRESH_TOKEN = 'REFRESH_TOKEN',
+  CLIENT_ID = 'CLIENT_ID',
+  CLIENT_SECRET = 'CLIENT_SECRET',
 }
 
 export enum DataSourceType {

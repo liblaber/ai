@@ -161,7 +161,6 @@ export default function EditDataSourceForm({
 
     try {
       if (dbType.value !== SAMPLE_DATABASE) {
-        // If no properties are required, skip connection testing
         if (!dbType.properties || dbType.properties.length === 0) {
           setTestResult({
             success: true,
@@ -170,7 +169,6 @@ export default function EditDataSourceForm({
           return;
         }
 
-        // Check if all required properties are filled
         const hasAllRequiredProperties = dbType.properties.every((prop) => {
           const value = propertyValues[prop.label];
           return value && value.trim() !== '';
@@ -189,7 +187,6 @@ export default function EditDataSourceForm({
         const formData = new FormData();
         formData.append('type', dbType.type || dbType.value.toUpperCase());
 
-        // Convert property values to DataSourceProperty format
         const properties = dbType.properties.map((prop) => ({
           type: prop.type,
           value: propertyValues[prop.label] || '',
@@ -230,7 +227,6 @@ export default function EditDataSourceForm({
       return;
     }
 
-    // Check if all required properties are filled
     if (dbType.properties && dbType.properties.length > 0) {
       const hasAllRequiredProperties = dbType.properties.every((prop) => {
         const value = propertyValues[prop.label];
@@ -262,7 +258,6 @@ export default function EditDataSourceForm({
       formData.append('name', dbName);
       formData.append('type', dbType.type || dbType.value.toUpperCase());
 
-      // Convert property values to DataSourceProperty format
       const properties = dbType.properties.map((prop) => ({
         type: prop.type,
         value: propertyValues[prop.label] || '',

@@ -18,30 +18,20 @@ import {
 } from '~/lib/plugins/data-source/context-provider/database/types';
 import type { DataSourceType } from '@liblab/data-access/utils/types';
 import { DataSourcePropertyType } from '@prisma/client';
+import type { ComplexEnvironmentDataSource } from '~/lib/services/datasourceService';
+import type { BaseDatabaseAccessor } from '@liblab/data-access/baseDatabaseAccessor';
 
 export abstract class DatabaseContextProvider implements DataSourceContextProvider {
   async getContext({ environmentDataSource, userPrompt }: AdditionalContextInput): Promise<AdditionalContextOutput> {
-    const dataSource = environmentDataSource.dataSource;
-    const accessor = DataAccessor.getDatabaseAccessor(dataSource.type as DataSourceType);
+    const accessor = this._resolveAccessor(environmentDataSource.dataSource.type as DataSourceType);
 
-    if (!accessor) {
-      throw new Error(`No accessor found for database type: ${dataSource.type}`);
-    }
-
-    const connectionString = environmentDataSource.dataSourceProperties.find(
-      (dsp) => dsp.type === DataSourcePropertyType.CONNECTION_URL,
-    )?.environmentVariable?.value;
-
-    if (!connectionString) {
-      throw new Error('Connection string not found for data source');
-    }
+    const connectionString = this._getConnectionString(environmentDataSource);
 
     await accessor.initialize(connectionString);
 
-    const schema: Table[] = (await getSchemaCache(connectionString)) || (await accessor.getSchema());
-    const formattedSchema = formatDbSchemaForPrompt(schema);
+    const schema = await this._getDataSourceSchema(accessor, connectionString);
 
-    const systemPrompt = accessor.generateSystemPrompt(accessor.label, formattedSchema, [], userPrompt);
+    const systemPrompt = accessor.generateSystemPrompt(accessor.label, schema, [], userPrompt);
 
     try {
       const llm = await getLlm();
@@ -95,6 +85,8 @@ export abstract class DatabaseContextProvider implements DataSourceContextProvid
 
         logger.debug(`Generated queries: \n\n${JSON.stringify(queries, null, 2)}`);
 
+        void accessor.close();
+
         return {
           additionalContext: mapSqlQueriesToPrompt(queries),
           llmUsage: result?.usage,
@@ -107,6 +99,48 @@ export abstract class DatabaseContextProvider implements DataSourceContextProvid
       logger.error('Error generating query:', error);
       throw new Error('Failed to generate query');
     }
+  }
+
+  async getSchema(environmentDataSource: ComplexEnvironmentDataSource): Promise<string> {
+    const accessor = this._resolveAccessor(environmentDataSource.dataSource.type as DataSourceType);
+
+    const connectionString = this._getConnectionString(environmentDataSource);
+
+    await accessor.initialize(connectionString);
+
+    const schema = await this._getDataSourceSchema(accessor, connectionString);
+
+    void accessor.close();
+
+    return schema;
+  }
+
+  private _getConnectionString(environmentDataSource: ComplexEnvironmentDataSource): string {
+    const connectionString = environmentDataSource.dataSourceProperties.find(
+      (dsp) => dsp.type === DataSourcePropertyType.CONNECTION_URL,
+    )?.environmentVariable?.value;
+
+    if (!connectionString) {
+      throw new Error('Connection string not found for data source');
+    }
+
+    return connectionString;
+  }
+
+  private async _getDataSourceSchema(accessor: BaseDatabaseAccessor, connectionString: string): Promise<string> {
+    const schema: Table[] = (await getSchemaCache(connectionString)) || (await accessor.getSchema());
+
+    return formatDbSchemaForPrompt(schema);
+  }
+
+  private _resolveAccessor(dataSourceType: DataSourceType): BaseDatabaseAccessor {
+    const accessor = DataAccessor.getDatabaseAccessor(dataSourceType as DataSourceType);
+
+    if (!accessor) {
+      throw new Error(`No accessor found for database type: ${dataSourceType}`);
+    }
+
+    return accessor;
   }
 }
 
