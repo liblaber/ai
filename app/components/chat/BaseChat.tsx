@@ -120,7 +120,6 @@ export const BaseChat = ({
   }, []);
 
   // Data source change handlers
-  // TODO: @skos pretty much this is the switch environment I need
   const handleDataSourceChangeRequest = (
     dataSourceId: string,
     environmentId: string,

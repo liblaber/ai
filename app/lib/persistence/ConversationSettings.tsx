@@ -25,7 +25,7 @@ function SwitchEnvironmentModal({ isOpen, onClose, onConfirm, targetEnvironmentN
   return (
     <DialogRoot open={isOpen} onOpenChange={onClose}>
       <Dialog className="backdrop-blur-[1px]" onClose={onClose} onBackdrop={onClose}>
-        <div className="rounded-xl bg-gray-50 dark:bg-gray-900 overflow-hidden">
+        <div className="rounded-xl bg-gray-50 dark:bg-gray-900 w-[359px] overflow-hidden">
           <div className="p-4">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
