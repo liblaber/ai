@@ -1,7 +1,7 @@
 import { WORK_DIR } from '~/utils/constants';
 import { allowedHTMLElements } from '~/utils/markdown';
 
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
 import type { StarterPluginId } from '~/lib/plugins/types';
 

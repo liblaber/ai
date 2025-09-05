@@ -1,9 +1,10 @@
 import type { Database as SQLiteDatabase } from 'better-sqlite3';
 import Database from 'better-sqlite3';
-import type { BaseAccessor } from '../baseAccessor';
 import { type Column, type Table } from '../../types';
 import { SAMPLE_DB_ENUM_VALUES } from '../../constants/sample-db-enum-values';
 import { format } from 'sql-formatter';
+import { BaseDatabaseAccessor } from '../baseDatabaseAccessor';
+import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '../utils/types';
 
 interface SQLiteColumn {
   name: string;
@@ -18,20 +19,18 @@ interface TableInfo {
 
 export const SAMPLE_DATABASE_NAME = 'sample.db';
 
-export class SQLiteAccessor implements BaseAccessor {
-  static pluginId: string = 'sqlite';
+export class SQLiteAccessor extends BaseDatabaseAccessor {
+  readonly dataSourceType: DataSourceType = DataSourceType.SQLITE;
+  readonly pluginId: DataAccessPluginId = 'sqlite';
   readonly label = 'SQLite';
   readonly preparedStatementPlaceholderExample = '?';
   readonly connectionStringFormat = 'sqlite://path/to/database.db';
   private _db: SQLiteDatabase | null = null;
 
-  static isAccessor(databaseUrl: string): boolean {
-    return databaseUrl.startsWith('sqlite://');
-  }
-
-  async testConnection(databaseUrl: string): Promise<boolean> {
+  async testConnection(dataSourceProperties: DataSourceProperty[]): Promise<boolean> {
     try {
-      const db = await this._createConnection(databaseUrl);
+      const connectionString = this.getConnectionStringFromProperties(dataSourceProperties);
+      const db = await this._createConnection(connectionString);
       db.exec('SELECT 1');
       db.close();
 
@@ -61,7 +60,8 @@ export class SQLiteAccessor implements BaseAccessor {
     }
   }
 
-  validate(connectionString: string): void {
+  validateProperties(dataSourceProperties: DataSourceProperty[]): void {
+    const connectionString = this.getConnectionStringFromProperties(dataSourceProperties);
     const regex = /^sqlite:\/\/(.*)$/;
 
     if (!regex.test(connectionString)) {

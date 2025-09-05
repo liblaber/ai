@@ -20,31 +20,34 @@ Component & Page Structure:
 - For new API endpoints, create a folder under /app/api/[route]/route.ts but always return QueryData type so that data can be wrapped into the WithErrorHandling hoc.
 - When there are multiple pages in the project, add a sidebar for easier navigation between pages, but do not add sidebar links for the pages that do not exist.
 
-WithErrorHandling Usage:
-- Always use the WithErrorHandling HOC from @/components/hoc/WithErrorHandling to wrap any data-fetching component in server components.
-- WithErrorHandling is complementary to the executeQuery function.
-    - queryData has the following type: type QueryData<T> = { isError: false; data: T } | { isError: true; errorMessage: string; };
-    - executeQuery signature: function executeQuery<T>(query: string, params?: string[]): Promise<QueryData<T[]>>
-- Example usage:
-    - <WithErrorHandling queryData={data} component={YourComponent} />
-- The wrapped component (YourComponent) must accept a 'data' prop, which will receive the data from the HOC.
-- If your component requires extra props, pass them using the additionalProps prop:
-    <WithErrorHandling queryData={data} component={YourComponent} additionalProps={{ foo: 'bar' }} />
-- DO NOT CREATE composite objects that consist of multiple QueryData objects. Design the components in a way to use single executeQuery queryData response per WithErrorHandling component.
-- This ensures consistent error handling and UI feedback for all async data.
+WithErrorHandling Usage (USE FOR DATABASE DATA SOURCES ONLY):
+  - When executing queries, always use the WithErrorHandling HOC from @/components/hoc/WithErrorHandling to wrap any component
+  - WithErrorHandling is complementary to the executeQuery function.
+      - queryData has the following type: type QueryData<T> = { isError: false; data: T } | { isError: true; errorMessage: string; };
+      - executeQuery signature: function executeQuery<T>(query: string, params?: string[]): Promise<QueryData<T[]>>
+  - Example usage:
+      - <WithErrorHandling queryData={data} component={YourComponent} />
+  - The wrapped component (YourComponent) must accept a 'data' prop, which will receive the data from the HOC.
+  - If your component requires extra props, pass them using the additionalProps prop:
+      <WithErrorHandling queryData={data} component={YourComponent} additionalProps={{ foo: 'bar' }} />
+  - DO NOT CREATE composite objects that consist of multiple QueryData objects. Design the components in a way to use single executeQuery queryData response per WithErrorHandling component.
+  - This ensures consistent error handling and UI feedback for all async data.
+  - Every component that is wrapped by WithErrorHandling should have 'use client' directive
 
-Data Handling:
-- Write raw SQL queries based on already defined guidelines
-- Use executeQuery from app/db/execute-query.ts to execute queries
-   - VERY IMPORTANT is that this function can be run only on server-side runtime (either in page components, or on the API)
-- Simple queries that does not have parameters, can be executed in server components
+  VERY IMPORTANT: DO NOT USE WithErrorHandling for data sources other than databases (e.g. do not use it for fetching from third-party APIs).
 
-More Complex Data Handling:
-In some cases, you may need to build dynamic, interactive components like tables with pagination, filtering, or live updates. For these scenarios:
-   - Use a separate resource route (e.g. app/api/[route]/route.ts) to handle the dynamic data fetching logic.
-   - Use the fetch api to interact with the resource route from your component.
-   - Place fetch logic in the parent component, and pass the fetcher's result to the UI via the WithErrorHandling component.
-   - Refetch the data by reacting to the event produced by the child component (e.g. handleBuildsTableFiltersChange)
+  Data Handling:
+  - Write raw SQL queries based on already defined guidelines
+  - Use executeQuery from app/db/execute-query.ts to execute queries
+     - VERY IMPORTANT is that this function can be run only on server-side runtime (either in page components, or on the API)
+  - Simple queries that does not have parameters, can be executed in server components
+
+  More Complex Data Handling:
+  In some cases, you may need to build dynamic, interactive components like tables with pagination, filtering, or live updates. For these scenarios:
+     - Use a separate resource route (e.g. app/api/[route]/route.ts) to handle the dynamic data fetching logic.
+     - Use the fetch api to interact with the resource route from your component.
+     - Place fetch logic in the parent component, and pass the fetcher's result to the UI via the WithErrorHandling component.
+     - Refetch the data by reacting to the event produced by the child component (e.g. handleBuildsTableFiltersChange)
 
 Client and Server Components:
 - IT IS VERY IMPORTANT always to add the 'use client' directive at the very top of any file that uses client component only functions (such as useNavigation, useParams, useRouter, useSearchParams, etc.). This is required for these hooks to work in Next.js App Router.
@@ -102,11 +105,11 @@ Layout Principles For Dashboards:
 - You should never force a rigid layout if it doesn't match the data context or user’s needs.
 
 Chart Styling Instructions (IMPORTANT):
-- For charts, pay attention to stackId parameter which should be unique to have all values displayed correctly
 - For any charts like Bar Chart, Line Chart, Pie Chart, Area Chart, Radar Chart, or Radial Chart use the shadcn chart component and follow component principles (https://ui.shadcn.com/docs/components/chart).
 - Use ResponsiveContainer component
-- A chart MUST NOT be wider or higher than the container it is in. It should be responsive and adapt to the container's width. Don't set explicit width or height (i.e. do not add h-[300px] class on the ChartContainer component), it produces a chart that is going out of the bounds of the container.
+- A chart MUST NOT be wider or higher than the container it is in. It should be responsive and adapt to the container's width. Don't set explicit width or height (i.e. DO NOT ADD h-[300px] class on the ChartContainer component), it produces a chart that is going out of the bounds of the container.
 - Use the correct color variable pattern for charts (var(--chart-{number}). When displaying success or error data, use var(--chart-success) or var(--chart-error)
+- For BarChart components, ALWAYS use layout="vertical", and ALWAYS specify dataKey for both X and Y axes, and Bar components (especially X axis, because it is not sufficient to specify it only on Bar component, e.g. <XAxis dataKey="name" />)
 - NEVER use hsl CSS function!
 - NEVER use custom formatter function for ChartTooltip component!
 

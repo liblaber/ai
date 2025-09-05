@@ -25,7 +25,6 @@ import { PublishProgressModal } from '~/components/publish/PublishProgressModal.
 import JSZip from 'jszip';
 import type { NetlifySiteInfo } from '~/types/netlify';
 import { AlertTriangle, CodeXml, Lock, MessageCircle, Rocket, Settings } from 'lucide-react';
-import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 
 interface ProgressData {
   step: number;
@@ -99,8 +98,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       if (!currentDataSource || !currentDataSource.dataSourceId || !currentDataSource.environmentId) {
         setIsPublishingDisabled(true);
       } else {
-        const url = await getDataSourceUrl(currentDataSource.dataSourceId, currentDataSource.environmentId);
-        setIsPublishingDisabled(url.startsWith('sqlite'));
+        setIsPublishingDisabled(currentDataSource.dataSource.type === 'SQLITE');
       }
     }
     checkPublishingCapability();

@@ -37,7 +37,18 @@ import { useTrackStreamProgress } from '~/components/chat/useTrackStreamProgress
 import type { ProgressAnnotation } from '~/types/context';
 import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
-import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
+import type { DataSourcePropertyType } from '~/lib/datasource';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
+
+export type DataSourcePropertyResponse = {
+  type: DataSourcePropertyType;
+  value: string;
+};
+
+export type DataSourcePropertiesResponse = {
+  properties: DataSourcePropertyResponse[];
+  dataSourceType: DataSourceType;
+};
 
 interface ChatProps {
   id?: string;
@@ -118,7 +129,7 @@ export const ChatImpl = ({
   const [fakeLoading, setFakeLoading] = useState(false);
   const files = useStore(workbenchStore.files);
   const { contextOptimizationEnabled } = useSettings();
-  const [dataSourceUrl, setDataSourceUrl] = useState<string>('');
+  const [dataSourceProperties, setDataSourceProperties] = useState<DataSourcePropertiesResponse>();
   const [shouldUpdateUrl, setShouldUpdateUrl] = useState(false);
 
   useEffect(() => {
@@ -195,7 +206,7 @@ export const ChatImpl = ({
           } else {
             // For new conversations, try to get starter template but don't fail if it doesn't work
             try {
-              fileMapToRevertTo = await getStarterTemplateFiles(dataSourceUrl);
+              fileMapToRevertTo = await getStarterTemplateFiles(dataSourceProperties);
             } catch (starterError) {
               logger.warn('Could not load starter template during error recovery, using empty file map:', starterError);
               fileMapToRevertTo = {};
@@ -485,22 +496,33 @@ export const ChatImpl = ({
 
     logger.info('Environment data source for new chat:', JSON.stringify(environmentDataSource));
 
-    const dataSourceUrl = await getDataSourceUrl(
-      environmentDataSource.dataSourceId,
-      environmentDataSource.environmentId,
+    const dataSourceUrlResponse = await fetch(
+      `/api/data-sources/${environmentDataSource.dataSourceId}/properties?environmentId=${environmentDataSource.environmentId}`,
     );
-    setDataSourceUrl(dataSourceUrl);
 
-    const starterTemplateMessages = await getStarterTemplateMessages(messageContent, dataSourceUrl).catch((e) => {
-      if (e.message.includes('rate limit')) {
-        toast.warning('Rate limit exceeded. Skipping starter template\n Continuing with blank template');
-      } else {
-        console.error('Failed to import starter template:', e);
-        toast.warning('Failed to import starter template\n Continuing with blank template');
-      }
+    if (!dataSourceUrlResponse.ok) {
+      console.error('Failed to fetch database URL:', dataSourceUrlResponse.status);
+      toast.error('Failed to fetch database URL');
 
-      return [];
-    });
+      return;
+    }
+
+    const dataSourceProperties = await dataSourceUrlResponse.json<DataSourcePropertiesResponse>();
+
+    setDataSourceProperties(dataSourceProperties);
+
+    const starterTemplateMessages = await getStarterTemplateMessages(messageContent, dataSourceProperties).catch(
+      (e) => {
+        if (e.message.includes('rate limit')) {
+          toast.warning('Rate limit exceeded. Skipping starter template\n Continuing with blank template');
+        } else {
+          console.error('Failed to import starter template:', e);
+          toast.warning('Failed to import starter template\n Continuing with blank template');
+        }
+
+        return [];
+      },
+    );
 
     const userMessage = {
       id: createId(),

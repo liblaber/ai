@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEnvironmentDataSource } from '~/lib/services/dataSourceService';
+import { getEnvironmentDataSource } from '~/lib/services/datasourceService';
 import { generateSchemaBasedSuggestions } from '~/lib/services/suggestionService';
 import { SAMPLE_DATABASE_NAME } from '@liblab/data-access/accessors/sqlite';
 import { logger } from '~/utils/logger';
-import { DataSourcePropertyType } from '@prisma/client';
 import { requireUserId } from '~/auth/session';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
+import { DataSourcePropertyType } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,13 +51,9 @@ export async function POST(request: NextRequest) {
       // Generate schema-based suggestions for non-sample databases
       // Create a compatible dataSource object for the suggestion service
       const dataSourceForSuggestions = {
-        id: environmentDataSource.dataSource.id,
-        name: environmentDataSource.dataSource.name,
+        dataSourceId: environmentDataSource.dataSource.id,
         connectionString: connectionUrl || '',
-        environmentId: environmentDataSource.environmentId,
-        environmentName: environmentDataSource.environment.name,
-        createdAt: environmentDataSource.dataSource.createdAt,
-        updatedAt: environmentDataSource.dataSource.updatedAt,
+        dataSourceType: environmentDataSource.dataSource.type as DataSourceType,
       };
       suggestions = await generateSchemaBasedSuggestions(dataSourceForSuggestions);
     }

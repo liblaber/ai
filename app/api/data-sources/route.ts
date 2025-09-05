@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createDataSource, getEnvironmentDataSources } from '~/lib/services/dataSourceService';
 import { requireUserAbility } from '~/auth/session';
-import { PermissionAction, PermissionResource } from '@prisma/client';
+import { DataSourceType, PermissionAction, PermissionResource } from '@prisma/client';
+import { createDataSource, getEnvironmentDataSources } from '~/lib/services/datasourceService';
 
 export async function GET(request: NextRequest) {
   const { userAbility } = await requireUserAbility(request);
@@ -23,20 +23,24 @@ export async function POST(request: NextRequest) {
   }
 
   const formData = await request.formData();
-  const connectionString = formData.get('connectionString') as string;
   const name = formData.get('name') as string;
+  const type = formData.get('type') as DataSourceType;
   const environmentId = formData.get('environmentId') as string;
 
   if (!environmentId) {
     return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
   }
 
+  const propertiesJson = formData.get('properties') as string;
+  const properties = JSON.parse(propertiesJson);
+
   try {
     const dataSource = await createDataSource({
       name,
-      createdById: userId,
+      type,
+      properties,
       environmentId,
-      connectionString,
+      createdById: userId,
     });
 
     return NextResponse.json({ success: true, dataSource });

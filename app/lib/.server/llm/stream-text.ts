@@ -8,14 +8,10 @@ import { allowedHTMLElements } from '~/utils/markdown';
 import { createScopedLogger } from '~/utils/logger';
 import { createFilesContext, extractPropertiesFromMessage } from './utils';
 import { getFilePaths } from './select-context';
-import { generateSqlQueries, shouldGenerateSqlQueries } from '~/lib/.server/llm/database-source';
-import { getDatabaseSchema } from '~/lib/schema';
-import { mapSqlQueriesToPrompt } from '~/lib/common/prompts/sql';
 import { getLlm } from '~/lib/.server/llm/get-llm';
-import { requireUserId } from '~/auth/session';
 import type { StarterPluginId } from '~/lib/plugins/types';
+import type { ImplementationPlan } from '~/lib/.server/llm/create-implementation-plan';
 import { type Conversation } from '@prisma/client';
-import { getDatabaseUrl } from '~/lib/services/dataSourceService';
 
 export type Messages = Message[];
 
@@ -32,7 +28,8 @@ export async function streamText(props: {
   contextOptimization?: boolean;
   contextFiles?: FileMap;
   summary?: string;
-  implementationPlan?: string;
+  implementationPlan?: ImplementationPlan;
+  additionalDataSourceContext?: string | null;
   messageSliceId?: number;
   request: Request;
 }) {
@@ -42,13 +39,12 @@ export async function streamText(props: {
     files,
     promptId,
     conversation,
+    implementationPlan,
     contextOptimization,
     contextFiles,
     summary,
-    implementationPlan,
-    request,
+    additionalDataSourceContext,
   } = props;
-  const currentDataSourceId: string | undefined = conversation.dataSourceId;
 
   let processedMessages = messages.map((message) => {
     if (message.role === MessageRole.User) {
@@ -124,35 +120,17 @@ ${props.summary}
   if (implementationPlan) {
     systemPrompt = `${systemPrompt}
     Below is the implementation plan that you should follow:\n
-    ${implementationPlan}\n`;
+    ${implementationPlan.implementationPlan}\n`;
   }
 
-  const existingQueries = extractSqlQueries(codeContext);
-
-  if (isFirstUserMessage(processedMessages) || (await shouldGenerateSqlQueries(lastUserMessage, existingQueries))) {
-    const userId = await requireUserId(request);
-
-    const schema = await getDatabaseSchema(currentDataSourceId, conversation.environmentId, userId);
-
-    const databaseUrl = await getDatabaseUrl(userId, currentDataSourceId, conversation.environmentId);
-
-    const sqlQueries = await generateSqlQueries({
-      schema,
-      userPrompt: lastUserMessage,
-      connectionString: databaseUrl!,
-      implementationPlan,
-      existingQueries,
+  if (additionalDataSourceContext) {
+    logger.debug(`Adding additional context queries as the hidden user message`);
+    processedMessages.push({
+      id: generateId(),
+      role: 'user',
+      content: additionalDataSourceContext,
+      annotations: ['hidden'],
     });
-
-    if (sqlQueries?.length) {
-      logger.debug(`Adding SQL queries as the hidden user message`);
-      processedMessages.push({
-        id: generateId(),
-        role: 'user',
-        content: mapSqlQueriesToPrompt(sqlQueries),
-        annotations: ['hidden'],
-      });
-    }
   }
 
   const provider = DEFAULT_PROVIDER;
@@ -189,41 +167,4 @@ function getLastUserMessageContent(messages: Omit<Message, 'id'>[]): string | un
   }
 
   return content;
-}
-
-function isFirstUserMessage(
-  processedMessages: Omit<
-    Message & {
-      isFirstUserMessage?: boolean;
-    },
-    'id'
-  >[],
-) {
-  return processedMessages[processedMessages.length - 1].isFirstUserMessage || false;
-}
-
-/**
- * Extracts all SQL query strings defined using `export const query =` from the given code context.
- *
- * This function searches for SQL queries written as template literals or string literals
- * and returns an array of the raw SQL strings found.
- *
- * Example of a supported query format:
- * ```
- * export const userQuery = `
- *   SELECT id, name FROM users WHERE is_active = true;
- * `;
- * ```
- *
- * @param codeContext - A string containing the code to search through.
- * @returns An array of extracted SQL query strings.
- */
-function extractSqlQueries(codeContext: string): string[] {
-  if (!codeContext) {
-    return [];
-  }
-
-  const regex = /export\s+const\s+\w*query\s*=\s*(["'`])([\s\S]*?)\1;/gi;
-
-  return [...codeContext.matchAll(regex)].map((m) => m[2].trim());
 }

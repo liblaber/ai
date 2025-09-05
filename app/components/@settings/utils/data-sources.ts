@@ -1,15 +1,24 @@
-export async function getDataSourceUrl(dataSourceId: string, environmentId: string) {
-  const response = await fetch(`/api/data-sources/${dataSourceId}/url?environmentId=${environmentId}`);
+import type { DataSourcePropertyResponse } from '~/components/chat/Chat.client';
+
+export async function getDataSourceProperties(
+  dataSourceId: string,
+  environmentId: string,
+): Promise<DataSourcePropertyResponse[]> {
+  const response = await fetch(`/api/data-sources/${dataSourceId}/properties?environmentId=${environmentId}`);
 
   if (!response.ok) {
     throw new Error('Failed to get connection string');
   }
 
-  const data = (await response.json()) as { success: boolean; url?: string; error?: string };
+  const data = (await response.json()) as {
+    success: boolean;
+    properties?: DataSourcePropertyResponse[];
+    error?: string;
+  };
 
-  if (!data.success || !data.url) {
-    throw new Error(data.error || 'No connection string available');
+  if (!data.success || !data.properties) {
+    throw new Error(data.error || 'No data source properties available');
   }
 
-  return data.url;
+  return data.properties;
 }

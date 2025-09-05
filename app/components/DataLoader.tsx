@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react';
 import { signIn, useSession } from '~/auth/auth-client';
 import { type EnvironmentDataSource, useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { usePluginStore } from '~/lib/plugins/plugin-store';
-import type { DataSourceType } from '~/lib/stores/dataSourceTypes';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useRouter } from 'next/navigation';
 import type { PluginAccessMap } from '~/lib/plugins/types';
@@ -13,12 +12,13 @@ import { DATA_SOURCE_CONNECTION_ROUTE, TELEMETRY_CONSENT_ROUTE } from '~/lib/con
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
 import type { UserProfile } from '~/lib/services/userService';
 import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
+import { type DataSourceDescriptor } from '@liblab/data-access/utils/types';
 
 export interface RootData {
   user: UserProfile | null;
   environmentDataSources: EnvironmentDataSource[];
   pluginAccess: PluginAccessMap;
-  dataSourceTypes: DataSourceType[];
+  dataSourceTypes: DataSourceDescriptor[];
 }
 
 interface DataLoaderProps {

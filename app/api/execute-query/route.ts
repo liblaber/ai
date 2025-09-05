@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     const decryptedData = decryptData(env.server.ENCRYPTION_KEY, body.encryptedData);
     const decryptedBody = JSON.parse(decryptedData.toString());
-    const { query, databaseUrl, params } = decryptedBody;
+    const { query, databaseUrl, dataSourceType, params } = decryptedBody;
 
     if (!databaseUrl) {
       return NextResponse.json(
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const resultData = await executeQuery(databaseUrl, query, params);
+    const resultData = await executeQuery(databaseUrl, dataSourceType, query, params);
 
     const dataBuffer = Buffer.from(JSON.stringify(resultData));
 
