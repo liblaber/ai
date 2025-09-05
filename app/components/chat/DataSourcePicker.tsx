@@ -140,8 +140,8 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({
       },
       paddingLeft: '4px',
       gap: '8px',
-      minWidth: '200px',
-      maxWidth: '400px',
+      minWidth: '300px',
+      maxWidth: '500px',
       width: 'auto',
     }),
     valueContainer: (base: any) => ({
