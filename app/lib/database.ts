@@ -2,23 +2,13 @@ import { logger } from '~/utils/logger';
 import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import type { BaseDatabaseAccessor } from '@liblab/data-access/baseDatabaseAccessor';
 import { DataSourceType } from '@liblab/data-access/utils/types';
-import { getDataSourceByConnectionString, SAMPLE_DATABASE_CONNECTION_STRING } from '~/lib/services/datasourceService';
 
-export async function executeQuery(connectionUrl: string, query: string, params?: string[]): Promise<any[]> {
-  let dataSourceType: DataSourceType;
-
-  if (encodeURI(connectionUrl) === SAMPLE_DATABASE_CONNECTION_STRING) {
-    dataSourceType = DataSourceType.SQLITE;
-  } else {
-    const dataSource = await getDataSourceByConnectionString(connectionUrl);
-
-    if (!dataSource) {
-      throw new Error('Data source not found for the provided connection URL');
-    }
-
-    dataSourceType = dataSource.type as DataSourceType;
-  }
-
+export async function executeQuery(
+  connectionUrl: string,
+  dataSourceType: DataSourceType,
+  query: string,
+  params?: string[],
+): Promise<any[]> {
   const dataAccessor = DataSourcePluginManager.getAccessor(dataSourceType) as BaseDatabaseAccessor;
 
   try {

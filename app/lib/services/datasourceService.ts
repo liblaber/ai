@@ -282,6 +282,15 @@ export async function deleteDataSource(id: string, userId: string) {
   return prisma.dataSource.delete({ where: { id, createdById: userId } });
 }
 
+export async function getDataSourceType(dataSourceId: string) {
+  const dataSource = await prisma.dataSource.findUnique({
+    where: { id: dataSourceId },
+    select: { type: true },
+  });
+
+  return dataSource?.type || null;
+}
+
 export async function getDataSourceProperties(
   userId: string,
   dataSourceId: string,
@@ -317,7 +326,9 @@ export async function getDataSourceProperties(
 }
 
 export async function getDataSourceByConnectionString(connectionString: string) {
-  const encryptedConnectionString = encryptValue(connectionString);
+  const encryptedConnectionString = encryptValue(encodeURIComponent(connectionString));
+
+  console.log(encryptedConnectionString);
 
   return prisma.environmentDataSource
     .findFirst({

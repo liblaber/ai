@@ -10,6 +10,8 @@ export const PROJECT_SETUP_ANNOTATION = 'project-setup';
 export const FIX_ANNOTATION = 'fix';
 export const AI_SDK_INVALID_KEY_ERROR =
   'TypeError: Cannot convert argument to a ByteString because the character at index';
+export const ENCRYPTION_KEY_ENVIRONMENT_VARIABLE_NAME = 'ENCRYPTION_KEY';
+export const DATA_SOURCE_TYPE_ENVIRONMENT_VARIABLE_NAME = 'DATA_SOURCE_TYPE';
 
 export enum MessageRole {
   User = 'user',

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId } from '~/auth/session';
-import { getDataSourceProperties } from '~/lib/services/datasourceService';
+import { getDataSourceProperties, getDataSourceType } from '~/lib/services/datasourceService';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await requireUserId(request);
@@ -14,6 +14,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
   }
 
+  const dataSourceType = await getDataSourceType(id);
+
+  if (!dataSourceType) {
+    return NextResponse.json({ success: false, error: 'Data source type not found' }, { status: 404 });
+  }
+
   const dataSourceProperties = await getDataSourceProperties(userId, id, environmentId);
 
   if (!dataSourceProperties) {
@@ -23,5 +29,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   return NextResponse.json({
     success: true,
     properties: dataSourceProperties,
+    dataSourceType,
   });
 }

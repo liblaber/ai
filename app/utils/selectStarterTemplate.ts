@@ -1,10 +1,14 @@
-import { MessageRole } from '~/utils/constants';
+import {
+  DATA_SOURCE_TYPE_ENVIRONMENT_VARIABLE_NAME,
+  ENCRYPTION_KEY_ENVIRONMENT_VARIABLE_NAME,
+  MessageRole,
+} from '~/utils/constants';
 import { type Message } from 'ai';
 import type { FileMap } from '~/lib/stores/files';
 import { loadFileMapIntoContainer } from '~/lib/webcontainer/load-file-map';
 import { logger } from '~/utils/logger';
 import { workbenchStore } from '~/lib/stores/workbench';
-import type { DataSourcePropertyResponse } from '~/components/chat/Chat.client';
+import type { DataSourcePropertiesResponse } from '~/components/chat/Chat.client';
 
 export type RepoFile = { name: string; path: string; content: string };
 
@@ -15,7 +19,7 @@ interface StarterTemplateResponse {
 
 async function writeSensitiveDataToEnvFile(
   files: FileMap,
-  dataSourceProperties: DataSourcePropertyResponse[],
+  dataSourceProperties: DataSourcePropertiesResponse,
 ): Promise<FileMap> {
   const envPath = Object.keys(files).find((key) => key.includes('.env')) || '.env';
   const encryptionKeyResponse = await fetch('/api/encryption-key');
@@ -32,7 +36,7 @@ async function writeSensitiveDataToEnvFile(
 
   let content = '';
 
-  for (const property of dataSourceProperties) {
+  for (const property of dataSourceProperties?.properties) {
     const encodedPropertyValue = encodeURIComponent(property.value);
 
     if (files[envPath] && files[envPath]?.type === 'file') {
@@ -47,8 +51,9 @@ async function writeSensitiveDataToEnvFile(
     }
   }
 
-  // Until we support multiple data sources, just use the first one
-  content += `ENCRYPTION_KEY='${encryptionKey}'\n`;
+  content += `${DATA_SOURCE_TYPE_ENVIRONMENT_VARIABLE_NAME}='${dataSourceProperties.dataSourceType}'\n`;
+
+  content += `${ENCRYPTION_KEY_ENVIRONMENT_VARIABLE_NAME}='${encryptionKey}'\n`;
 
   return {
     ...files,
@@ -61,7 +66,7 @@ async function writeSensitiveDataToEnvFile(
 }
 
 export const getStarterTemplateFiles = async (
-  dataSourceProperties?: DataSourcePropertyResponse[],
+  dataSourceProperties?: DataSourcePropertiesResponse,
 ): Promise<FileMap> => {
   try {
     workbenchStore.previewsStore.loadingText.set('Fetching project assets...');
@@ -86,7 +91,7 @@ export const getStarterTemplateFiles = async (
       throw new Error('No files returned from starter template API');
     }
 
-    if (!dataSourceProperties?.length) {
+    if (!dataSourceProperties) {
       return data.files;
     }
 
@@ -101,7 +106,7 @@ export const getStarterTemplateFiles = async (
 
 export async function getStarterTemplateMessages(
   title: string,
-  dataSourceProperties: DataSourcePropertyResponse[],
+  dataSourceProperties: DataSourcePropertiesResponse,
 ): Promise<Message[]> {
   try {
     const starterFiles = await getStarterTemplateFiles(dataSourceProperties);

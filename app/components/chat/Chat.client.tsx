@@ -38,14 +38,16 @@ import type { ProgressAnnotation } from '~/types/context';
 import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import type { DataSourcePropertyType } from '~/lib/datasource';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 export type DataSourcePropertyResponse = {
   type: DataSourcePropertyType;
   value: string;
 };
 
-type DataSourcePropertiesResponse = {
+export type DataSourcePropertiesResponse = {
   properties: DataSourcePropertyResponse[];
+  dataSourceType: DataSourceType;
 };
 
 interface ChatProps {
@@ -127,7 +129,7 @@ export const ChatImpl = ({
   const [fakeLoading, setFakeLoading] = useState(false);
   const files = useStore(workbenchStore.files);
   const { contextOptimizationEnabled } = useSettings();
-  const [dataSourceProperties, setDataSourceProperties] = useState<DataSourcePropertyResponse[]>();
+  const [dataSourceProperties, setDataSourceProperties] = useState<DataSourcePropertiesResponse>();
   const [shouldUpdateUrl, setShouldUpdateUrl] = useState(false);
 
   useEffect(() => {
@@ -505,9 +507,8 @@ export const ChatImpl = ({
       return;
     }
 
-    const dataSourceUrlJson = await dataSourceUrlResponse.json<DataSourcePropertiesResponse>();
+    const dataSourceProperties = await dataSourceUrlResponse.json<DataSourcePropertiesResponse>();
 
-    const dataSourceProperties = dataSourceUrlJson.properties;
     setDataSourceProperties(dataSourceProperties);
 
     const starterTemplateMessages = await getStarterTemplateMessages(messageContent, dataSourceProperties).catch(
