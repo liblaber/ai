@@ -47,7 +47,7 @@ importers:
         version: 6.7.3
       '@casl/prisma':
         specifier: ^1.5.1
-        version: 1.5.2(@casl/ability@6.7.3)(@prisma/client@6.13.0(prisma@6.13.0(typescript@5.9.2))(typescript@5.9.2))
+        version: 1.5.2(@casl/ability@6.7.3)(@prisma/client@6.14.0(prisma@6.14.0(typescript@5.9.2))(typescript@5.9.2))
       '@casl/react':
         specifier: ^5.0.0
         version: 5.0.0(@casl/ability@6.7.3)(react@18.3.1)
