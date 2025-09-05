@@ -338,7 +338,10 @@ export const BaseChat = ({
   }, [sendAutofixMessage]);
 
   const baseChat = (
-    <div className={classNames('BaseChat relative flex h-full w-full overflow-hidden')} data-chat-visible={showChat}>
+    <div
+      className={classNames('BaseChat relative flex h-full w-full overflow-hidden')}
+      data-chat-visible={showChat.toString()}
+    >
       {session?.user && <Menu />}
       <div
         ref={scrollRef}

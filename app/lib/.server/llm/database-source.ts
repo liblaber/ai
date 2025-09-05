@@ -1,9 +1,10 @@
 import { logger } from '~/utils/logger';
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import { getLlm } from './get-llm';
 import { getConnectionProtocol } from '@liblab/data-access/utils/connection';
+import { isGoogleSheetsConnection } from '@liblab/data-access/accessors/google-sheets';
 
 const queryDecisionSchema = z.object({
   shouldUpdateSql: z.boolean(),
@@ -11,8 +12,8 @@ const queryDecisionSchema = z.object({
 });
 
 // Create dynamic database type detection schema based on available database types
-const getDatabaseTypeDetectionSchema = () => {
-  const availableTypes = DataAccessor.getAvailableDatabaseTypes();
+const getDatabaseTypeDetectionSchema = async () => {
+  const availableTypes = (await DataSourcePluginManager.getAvailableDatabaseTypes()).map((type) => type.value);
 
   // Ensure we have at least one type for the enum, and cast to the correct tuple type
   const typesArray = availableTypes.length > 0 ? availableTypes : ['postgres'];
@@ -56,6 +57,9 @@ export interface Column {
 export interface Table {
   tableName: string;
   columns: Column[];
+  metadata?: {
+    actualSheetName?: string;
+  };
 }
 
 export type GenerateSqlQueriesOptions = {
@@ -75,19 +79,23 @@ export async function generateSqlQueries({
   const dbSchema = formatDbSchemaForLLM(schema);
 
   // Get the appropriate accessor for this database type
-  const accessor = DataAccessor.getAccessor(connectionString);
+  const accessor = await DataSourcePluginManager.getAccessor(connectionString);
 
   if (!accessor) {
     const protocol = getConnectionProtocol(connectionString);
     throw new Error(`No accessor found for database type: ${protocol}`);
   }
 
+  // Determine if this is a Google Sheets connection - only for logging purposes
+  const isGoogleSheets = isGoogleSheetsConnection(connectionString);
+  const queryType = isGoogleSheets ? 'JSON operations' : 'SQL queries';
+
   const systemPrompt = accessor.generateSystemPrompt(accessor.label, dbSchema, existingQueries, userPrompt);
 
   try {
     const llm = await getLlm();
 
-    logger.info(`Generating SQL for prompt: ${userPrompt}, using model: ${llm.instance.modelId}`);
+    logger.info(`Generating ${queryType} for prompt: ${userPrompt}, using model: ${llm.instance.modelId}`);
 
     const result = await generateObject({
       schema: sqlQueriesSchema,
@@ -117,7 +125,7 @@ export async function generateSqlQueries({
           queries.push(validatedQuery);
         } catch (validationError) {
           logger.warn(
-            `Skipping invalid SQL query object: ${JSON.stringify(query)}\nValidation error: ${validationError}`,
+            `Skipping invalid ${queryType} query object: ${JSON.stringify(query)}\nValidation error: ${validationError}`,
           );
         }
       }
@@ -127,7 +135,7 @@ export async function generateSqlQueries({
         return undefined;
       }
 
-      logger.info(`Generated SQL queries: \n\n${JSON.stringify(queries, null, 2)}`);
+      logger.info(`Generated ${queryType}: \n\n${JSON.stringify(queries, null, 2)}`);
 
       return queries;
     } catch (parseError) {
@@ -148,6 +156,12 @@ export function formatDbSchemaForLLM(schema: Table[]): string {
 
   for (const table of schema) {
     result += `Table: ${table.tableName}\n`;
+
+    // Add actual sheet name for Google Sheets if available
+    if (table.metadata?.actualSheetName) {
+      result += `Actual Sheet Name: ${table.metadata.actualSheetName}\n`;
+    }
+
     result += 'Columns:\n';
 
     for (const column of table.columns) {
@@ -209,7 +223,7 @@ If the prompt doesn't contain enough information to make a confident determinati
 
   try {
     const result = await generateObject({
-      schema: getDatabaseTypeDetectionSchema(),
+      schema: await getDatabaseTypeDetectionSchema(),
       model: llm.instance,
       maxTokens: llm.maxOutputTokens,
       system: systemPrompt,
@@ -221,7 +235,11 @@ If the prompt doesn't contain enough information to make a confident determinati
       return null;
     }
 
-    const { detectedType, confidence, reasoning } = result.object;
+    const { detectedType, confidence, reasoning } = result.object as {
+      detectedType: string;
+      confidence: number;
+      reasoning: string;
+    };
 
     logger.info(`Database type detection for prompt: ${userPrompt}`);
     logger.info('Detection reasoning:', reasoning);

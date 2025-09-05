@@ -100,7 +100,7 @@ export async function createDataSource(data: {
   environmentId: string;
   connectionString: string;
 }): Promise<DataSource> {
-  validateDataSource(data.connectionString);
+  await validateDataSource(data.connectionString);
 
   // Get environment details for naming
   const environmentName = await getEnvironmentName(data.environmentId);
@@ -238,7 +238,7 @@ export function getDataSource(id: string) {
 }
 
 export async function updateDataSource(data: { id: string; name: string; connectionString: string; userId: string }) {
-  validateDataSource(data.connectionString);
+  await validateDataSource(data.connectionString);
 
   return prisma.dataSource.update({
     where: { id: data.id, createdById: data.userId },
@@ -298,7 +298,7 @@ export async function getConversationCount(dataSourceId: string, userId: string)
   });
 }
 
-function validateDataSource(connectionString: string) {
-  const accessor = DataSourcePluginManager.getAccessor(connectionString);
+async function validateDataSource(connectionString: string) {
+  const accessor = await DataSourcePluginManager.getAccessor(connectionString);
   accessor.validate(connectionString);
 }
