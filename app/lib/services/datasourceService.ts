@@ -261,7 +261,6 @@ export function getDataSource(id: string) {
   return prisma.dataSource.findUnique({ where: { id } });
 }
 
-// TODO: @skos update this and the routes and UI
 export async function updateDataSource(data: {
   id: string;
   name: string;
@@ -277,7 +276,6 @@ export async function updateDataSource(data: {
   });
 }
 
-// TODO: @skos update this with environmentId (routes and UI as well)
 export async function deleteDataSource(id: string, userId: string) {
   prisma.dataSourceProperty.deleteMany({ where: { dataSourceId: id } });
 

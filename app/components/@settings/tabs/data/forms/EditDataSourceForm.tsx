@@ -15,6 +15,7 @@ import {
 import type { EnvironmentDataSource } from '~/lib/stores/environmentDataSources';
 import { getDataSourceProperties } from '~/components/@settings/utils/data-sources';
 import type { DataSourcePropertyDescriptor } from '@liblab/data-access/utils/types';
+import ResourceAccessMembers from '~/components/@settings/shared/components/ResourceAccessMembers';
 
 interface DataSourceResponse {
   success: boolean;
@@ -40,13 +41,13 @@ interface EnvironmentsResponse {
   error?: string;
 }
 
-// TODO: @skos update the form to use EnvironmentDataSource
 interface EditDataSourceFormProps {
   selectedDataSource: EnvironmentDataSource | null;
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
   onDelete: () => void;
+  onInvite: () => void;
 }
 
 export default function EditDataSourceForm({
@@ -55,6 +56,7 @@ export default function EditDataSourceForm({
   setIsSubmitting,
   onSuccess,
   onDelete,
+  onInvite,
 }: EditDataSourceFormProps) {
   const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
@@ -481,6 +483,14 @@ export default function EditDataSourceForm({
           )}
         </div>
 
+        <div>
+          <ResourceAccessMembers
+            resourceScope="DATA_SOURCE"
+            resourceId={selectedDataSource.dataSource.id}
+            onInvite={onInvite}
+          />
+        </div>
+
         <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -531,17 +541,7 @@ export default function EditDataSourceForm({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={
-                  isSubmitting ||
-                  dbType.value === SAMPLE_DATABASE ||
-                  !selectedEnvironment ||
-                  !dbName ||
-                  (dbType.properties &&
-                    dbType.properties.length > 0 &&
-                    !dbType.properties.every(
-                      (prop) => propertyValues[prop.label] && propertyValues[prop.label].trim() !== '',
-                    ))
-                }
+                disabled={isFormDisabled}
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',
