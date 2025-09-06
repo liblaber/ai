@@ -47,23 +47,46 @@ export default function DataTab() {
     }
   }, [selectedTab]);
 
+  // Centralized data source loading function
+  const reloadDataSources = async () => {
+    try {
+      const response = await fetch('/api/data-sources');
+
+      if (!response.ok) {
+        console.error('Failed to fetch data sources:', response.status, response.statusText);
+        return;
+      }
+
+      const responseText = await response.text();
+
+      if (!responseText) {
+        console.error('Empty response when fetching data sources');
+        return;
+      }
+
+      let data: EnvironmentDataSourcesResponse;
+
+      try {
+        data = JSON.parse(responseText) as EnvironmentDataSourcesResponse;
+      } catch (parseError) {
+        console.error('Failed to parse data sources response:', parseError);
+        return;
+      }
+
+      if (data.success) {
+        setEnvironmentDataSources(data.environmentDataSources);
+      } else {
+        console.error('Data sources fetch was not successful:', data);
+      }
+    } catch (error) {
+      console.error('Error loading data sources:', error);
+    }
+  };
+
   // Load data sources on mount
   useEffect(() => {
-    const loadDataSources = async () => {
-      try {
-        const response = await fetch('/api/data-sources');
-        const data = (await response.json()) as EnvironmentDataSourcesResponse;
-
-        if (data.success) {
-          setEnvironmentDataSources(data.environmentDataSources);
-        }
-      } catch (error) {
-        console.error('Failed to load data sources:', error);
-      }
-    };
-
-    loadDataSources();
-  }, [setEnvironmentDataSources]);
+    reloadDataSources();
+  }, []);
 
   const handleDelete = async () => {
     if (!selectedEnvironmentDataSource) {
@@ -82,13 +105,8 @@ export default function DataTab() {
     if (data.success) {
       toast.success('Data source deleted successfully');
 
-      // Reload data sources
-      const reloadResponse = await fetch('/api/data-sources');
-      const reloadData = (await reloadResponse.json()) as EnvironmentDataSourcesResponse;
-
-      if (reloadData.success) {
-        setEnvironmentDataSources(reloadData.environmentDataSources);
-      }
+      // Reload data sources using centralized function
+      await reloadDataSources();
 
       setShowDeleteConfirm(false);
       setShowEditForm(false);
@@ -165,19 +183,9 @@ export default function DataTab() {
         <AddDataSourceForm
           isSubmitting={isSubmitting}
           setIsSubmitting={setIsSubmitting}
-          onSuccess={() => {
-            // Reload data sources
-            const reloadResponse = fetch('/api/data-sources');
-            reloadResponse
-              .then((response) => response.json())
-              .then((data: unknown) => {
-                const typedData = data as EnvironmentDataSourcesResponse;
-
-                if (typedData.success) {
-                  setEnvironmentDataSources(typedData.environmentDataSources);
-                }
-              })
-              .catch((error) => console.error('Failed to reload data sources after add:', error));
+          onSuccess={async () => {
+            // Reload data sources using centralized function
+            await reloadDataSources();
             handleBack();
           }}
         />
@@ -210,19 +218,9 @@ export default function DataTab() {
           selectedDataSource={selectedEnvironmentDataSource}
           isSubmitting={isSubmitting}
           setIsSubmitting={setIsSubmitting}
-          onSuccess={() => {
-            // Reload data sources
-            const reloadResponse = fetch('/api/data-sources');
-            reloadResponse
-              .then((response) => response.json())
-              .then((data: unknown) => {
-                const typedData = data as EnvironmentDataSourcesResponse;
-
-                if (typedData.success) {
-                  setEnvironmentDataSources(typedData.environmentDataSources);
-                }
-              })
-              .catch((error) => console.error('Failed to reload data sources after edit:', error));
+          onSuccess={async () => {
+            // Reload data sources using centralized function
+            await reloadDataSources();
             handleBack();
           }}
           onDelete={handleDeleteClick}

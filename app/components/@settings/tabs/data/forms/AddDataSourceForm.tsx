@@ -12,10 +12,9 @@ import {
   SAMPLE_DATABASE,
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
-import {
-  GoogleWorkspaceConnector,
-  type GoogleWorkspaceConnection,
-} from '~/components/google-workspace/GoogleWorkspaceConnector';
+import GoogleSheetsSetup from './GoogleSheetsSetup';
+
+const GOOGLE_SHEETS_PLUGIN_ID = 'google-sheets';
 
 interface DataSourceResponse {
   success: boolean;
@@ -260,57 +259,10 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     }
   };
 
-  const handleGoogleSheetsConnection = async (connection: GoogleWorkspaceConnection) => {
-    try {
-      setError(null);
-      setTestResult(null);
-      setIsSubmitting(true);
-
-      if (!selectedEnvironment) {
-        setError('Please select an environment');
-        return;
-      }
-
-      // Create connection string for Google Sheets
-      let connectionString = '';
-
-      if (connection.accessToken && connection.refreshToken) {
-        // OAuth connection
-        connectionString = `sheets://${connection.documentId}?access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}`;
-      } else {
-        // Public URL connection
-        connectionString = connection.url;
-      }
-
-      // Add Apps Script URL if provided
-      if (connection.appsScriptUrl) {
-        connectionString += `${connectionString.includes('?') ? '&' : '?'}apps_script_url=${encodeURIComponent(connection.appsScriptUrl)}`;
-      }
-
-      const formData = new FormData();
-      formData.append('name', connection.title);
-      formData.append('connectionString', connectionString);
-      formData.append('environmentId', selectedEnvironment.value);
-
-      const response = await fetch('/api/data-sources', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = (await response.json()) as DataSourceResponse;
-
-      if (result.success) {
-        toast.success('Google Sheets data source added successfully');
-        onSuccess();
-      } else {
-        setError(result.error || 'Failed to create Google Sheets data source');
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // If Google Sheets is selected, show the custom Google Sheets flow
+  if (dbType.value === GOOGLE_SHEETS_PLUGIN_ID) {
+    return <GoogleSheetsSetup onSuccess={onSuccess} />;
+  }
 
   return (
     <div className="space-y-6">
@@ -362,19 +314,6 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
               <div className="text-gray-400 text-sm mt-2">{selectedEnvironment.description}</div>
             )}
           </div>
-
-          {isGoogleSheetsSelected && (
-            <>
-              {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
-              <GoogleWorkspaceConnector
-                type="sheets"
-                onConnection={handleGoogleSheetsConnection}
-                onError={setError}
-                isConnecting={isSubmitting}
-                isSuccess={false}
-              />
-            </>
-          )}
 
           {dbType.value !== SAMPLE_DATABASE && !isGoogleSheetsSelected && (
             <>

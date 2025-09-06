@@ -4,15 +4,23 @@ import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, PermissionResource } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
-  const { userAbility } = await requireUserAbility(request);
+  try {
+    const { userAbility } = await requireUserAbility(request);
 
-  if (!userAbility.can(PermissionAction.read, PermissionResource.DataSource)) {
-    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    if (!userAbility.can(PermissionAction.read, PermissionResource.DataSource)) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
+    const environmentDataSources = await getEnvironmentDataSources(userAbility);
+
+    return NextResponse.json({ success: true, environmentDataSources });
+  } catch (error) {
+    console.error('Error in GET /api/data-sources:', error);
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 },
+    );
   }
-
-  const environmentDataSources = await getEnvironmentDataSources(userAbility);
-
-  return NextResponse.json({ success: true, environmentDataSources });
 }
 
 export async function POST(request: NextRequest) {

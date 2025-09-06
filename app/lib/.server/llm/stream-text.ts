@@ -16,6 +16,7 @@ import { requireUserId } from '~/auth/session';
 import type { StarterPluginId } from '~/lib/plugins/types';
 import { type Conversation } from '@prisma/client';
 import { getDatabaseUrl } from '~/lib/services/dataSourceService';
+import { GoogleSheetsAccessor } from '@liblab/data-access/accessors/google-sheets';
 
 export type Messages = Message[];
 
@@ -136,22 +137,25 @@ ${props.summary}
 
     const databaseUrl = await getDatabaseUrl(userId, currentDataSourceId, conversation.environmentId);
 
-    const sqlQueries = await generateSqlQueries({
-      schema,
-      userPrompt: lastUserMessage,
-      connectionString: databaseUrl!,
-      implementationPlan,
-      existingQueries,
-    });
-
-    if (sqlQueries?.length) {
-      logger.debug(`Adding SQL queries as the hidden user message`);
-      processedMessages.push({
-        id: generateId(),
-        role: 'user',
-        content: mapSqlQueriesToPrompt(sqlQueries),
-        annotations: ['hidden'],
+    // Skip query generation for Google Sheets since it doesn't use SQL
+    if (databaseUrl && !databaseUrl.startsWith(GoogleSheetsAccessor.pluginId)) {
+      const sqlQueries = await generateSqlQueries({
+        schema,
+        userPrompt: lastUserMessage,
+        connectionString: databaseUrl!,
+        implementationPlan,
+        existingQueries,
       });
+
+      if (sqlQueries?.length) {
+        logger.debug(`Adding SQL queries as the hidden user message`);
+        processedMessages.push({
+          id: generateId(),
+          role: 'user',
+          content: mapSqlQueriesToPrompt(sqlQueries),
+          annotations: ['hidden'],
+        });
+      }
     }
   }
 

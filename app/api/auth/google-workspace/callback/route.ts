@@ -1,19 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleWorkspaceAuthManager } from '@liblab/data-access/accessors/google-workspace/auth-manager';
+import { z } from 'zod';
 import { env } from '~/env/server';
 import { createScopedLogger } from '~/utils/logger';
 import { generateOAuthCallbackHTML } from '~/lib/oauth-templates';
 
 const logger = createScopedLogger('google-workspace-callback');
 
+// Zod schemas for OAuth responses
+const googleTokenResponseSchema = z.object({
+  access_token: z.string(),
+  refresh_token: z.string().optional(),
+  expires_in: z.number().optional(),
+  token_type: z.string().optional(),
+  scope: z.string().optional(),
+});
+
+const googleUserInfoSchema = z.object({
+  email: z.string(),
+  name: z.string(),
+  picture: z.string().optional(),
+  id: z.string().optional(),
+  verified_email: z.boolean().optional(),
+});
+
 export async function GET(request: NextRequest) {
   // Validate required environment variables
-  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GOOGLE_AUTH_ENCRYPTION_KEY) {
-    logger.error('Google Workspace auth is not configured. Missing required environment variables.');
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    logger.error('Google OAuth is not configured. Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET.');
     return new NextResponse(
       generateOAuthCallbackHTML({
         type: 'error',
-        error: 'Google Workspace authentication is not configured',
+        error: 'Google OAuth authentication is not configured',
       }),
       {
         status: 500,
@@ -29,6 +46,7 @@ export async function GET(request: NextRequest) {
 
   // Handle OAuth errors
   if (error) {
+    logger.error('OAuth error:', error);
     return new NextResponse(
       generateOAuthCallbackHTML({
         type: 'error',
@@ -55,33 +73,76 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Parse state to get user info
-    const stateData = JSON.parse(state);
-    const { userId, type } = stateData;
-
-    // Initialize auth manager
-    const authManager = new GoogleWorkspaceAuthManager(env.GOOGLE_AUTH_ENCRYPTION_KEY!);
-
-    await authManager.initialize({
-      type: 'oauth2',
-      clientId: env.GOOGLE_CLIENT_ID!,
-      clientSecret: env.GOOGLE_CLIENT_SECRET!,
-      redirectUri: `${request.nextUrl.origin}/api/auth/google-workspace/callback`,
-      scopes: [], // Will be populated from the auth flow
+    // Exchange authorization code for access token
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: env.GOOGLE_CLIENT_ID,
+        client_secret: env.GOOGLE_CLIENT_SECRET,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: `${request.nextUrl.origin}/api/auth/google-workspace/callback`,
+      }),
     });
 
-    // Exchange code for tokens
-    const credentials = await authManager.exchangeCodeForTokens(code);
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      logger.error('Token exchange failed:', errorText);
 
-    // Return success HTML page
+      return new NextResponse(
+        generateOAuthCallbackHTML({
+          type: 'error',
+          error: 'Failed to exchange authorization code',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'text/html' },
+        },
+      );
+    }
+
+    const tokensRaw = await tokenResponse.json();
+    const tokens = googleTokenResponseSchema.parse(tokensRaw);
+
+    // Get user info from Google
+    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: {
+        Authorization: `Bearer ${tokens.access_token}`,
+      },
+    });
+
+    if (!userInfoResponse.ok) {
+      logger.error('Failed to get user info');
+      return new NextResponse(
+        generateOAuthCallbackHTML({
+          type: 'error',
+          error: 'Failed to get user information',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'text/html' },
+        },
+      );
+    }
+
+    const userInfoRaw = await userInfoResponse.json();
+    const userInfo = googleUserInfoSchema.parse(userInfoRaw);
+
+    // Return success HTML page with tokens
     const successData = {
       tokens: {
-        access_token: credentials.access_token,
-        refresh_token: credentials.refresh_token,
-        expiry_date: credentials.expiry_date,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_in: tokens.expires_in,
       },
-      userId,
-      workspaceType: type,
+      user: {
+        email: userInfo.email,
+        name: userInfo.name,
+        picture: userInfo.picture,
+      },
     };
 
     const response = new NextResponse(
@@ -95,23 +156,36 @@ export async function GET(request: NextRequest) {
       },
     );
 
-    // Set secure cookies for the tokens with extended lifetime
-    // Google refresh tokens are long-lived, so we can set a longer cookie expiration
-    const cookieMaxAge = 30 * 24 * 60 * 60; // 30 days in seconds
-    const encryptedCredentials = authManager.encryptCredentials(credentials);
-
-    // Try multiple approaches to ensure the cookie is set
-    response.cookies.set('google_workspace_auth', encryptedCredentials, {
+    // Set secure cookies for the tokens
+    response.cookies.set('google_access_token', tokens.access_token, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: cookieMaxAge,
+      maxAge: tokens.expires_in || 3600,
+      path: '/',
+    });
+
+    if (tokens.refresh_token) {
+      response.cookies.set('google_refresh_token', tokens.refresh_token, {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        path: '/',
+      });
+    }
+
+    response.cookies.set('google_user_info', JSON.stringify(userInfo), {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
       path: '/',
     });
 
     return response;
   } catch (error) {
-    logger.error('Google Workspace callback error:', error);
+    logger.error('Google OAuth callback error:', error);
 
     return new NextResponse(
       generateOAuthCallbackHTML({

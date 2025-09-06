@@ -52,10 +52,24 @@ export async function getEnvironmentDataSources(userAbility: AppAbility): Promis
 
   return environmentDataSources.map((eds) => ({
     ...eds,
-    dataSourceProperties: eds.dataSourceProperties.map((dsp) => ({
-      ...dsp,
-      environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
-    })),
+    dataSourceProperties: eds.dataSourceProperties.map((dsp) => {
+      try {
+        return {
+          ...dsp,
+          environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
+        };
+      } catch (error) {
+        console.warn(`Failed to decrypt environment variable ${dsp.environmentVariable.key}:`, error);
+        // Return the environment variable with a placeholder value to avoid breaking the entire request
+        return {
+          ...dsp,
+          environmentVariable: {
+            ...dsp.environmentVariable,
+            value: '[DECRYPTION_FAILED]',
+          },
+        };
+      }
+    }),
   }));
 }
 
@@ -87,10 +101,23 @@ export async function getEnvironmentDataSource(dataSourceId: string, userId: str
 
   return {
     ...environmentDataSource,
-    dataSourceProperties: environmentDataSource.dataSourceProperties.map((dsp) => ({
-      ...dsp,
-      environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
-    })),
+    dataSourceProperties: environmentDataSource.dataSourceProperties.map((dsp) => {
+      try {
+        return {
+          ...dsp,
+          environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
+        };
+      } catch (error) {
+        console.warn(`Failed to decrypt environment variable ${dsp.environmentVariable.key}:`, error);
+        return {
+          ...dsp,
+          environmentVariable: {
+            ...dsp.environmentVariable,
+            value: '[DECRYPTION_FAILED]',
+          },
+        };
+      }
+    }),
   };
 }
 
@@ -134,7 +161,8 @@ export async function createDataSource(data: {
     });
 
     // Create environment variable for connection url (if provided)
-    const envVarKey = `${environmentName}_${data.name}_${DataSourcePropertyType.CONNECTION_URL}`
+    // Use dataSource.id to ensure uniqueness since data source names can be duplicated
+    const envVarKey = `${environmentName}_${data.name}_${dataSource.id}_${DataSourcePropertyType.CONNECTION_URL}`
       .toUpperCase()
       .replace(/\s+/g, '_');
 
@@ -200,7 +228,8 @@ export async function createSampleDataSource(data: {
     });
 
     // Create environment variable for sample db connection url
-    const envVarKey = `${environmentName}_SAMPLE_${DataSourcePropertyType.CONNECTION_URL}`
+    // Use dataSource.id to ensure uniqueness
+    const envVarKey = `${environmentName}_SAMPLE_${dataSource.id}_${DataSourcePropertyType.CONNECTION_URL}`
       .toUpperCase()
       .replace(/\s+/g, '_');
 
@@ -286,7 +315,12 @@ export async function getDatabaseUrl(
     return null;
   }
 
-  return decryptEnvironmentVariable(envVar).value;
+  try {
+    return decryptEnvironmentVariable(envVar).value;
+  } catch (error) {
+    console.error(`Failed to decrypt environment variable ${envVar.key}:`, error);
+    return null;
+  }
 }
 
 export async function getConversationCount(dataSourceId: string, userId: string): Promise<number> {
@@ -299,6 +333,11 @@ export async function getConversationCount(dataSourceId: string, userId: string)
 }
 
 async function validateDataSource(connectionString: string) {
+  // Skip validation for Google Sheets URLs since they don't use traditional database accessors
+  if (connectionString.startsWith('google-sheets://')) {
+    return;
+  }
+
   const accessor = await DataSourcePluginManager.getAccessor(connectionString);
   accessor.validate(connectionString);
 }

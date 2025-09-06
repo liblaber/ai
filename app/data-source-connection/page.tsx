@@ -16,10 +16,7 @@ import {
   SAMPLE_DATABASE,
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
-import {
-  GoogleWorkspaceConnector,
-  type GoogleWorkspaceConnection,
-} from '~/components/google-workspace/GoogleWorkspaceConnector';
+import GoogleSheetsSetup from '~/components/@settings/tabs/data/forms/GoogleSheetsSetup';
 
 interface ApiResponse {
   success: boolean;
@@ -176,59 +173,17 @@ export default function DataSourceConnectionPage() {
     }
   };
 
-  const handleGoogleSheetsConnection = async (connection: GoogleWorkspaceConnection) => {
-    try {
-      setError(null);
-      setIsConnecting(true);
-
-      if (!selectedEnvironment) {
-        setError('Please select an environment');
-        return;
-      }
-
-      // Create connection string for Google Sheets
-      let connectionString = '';
-
-      if (connection.accessToken && connection.refreshToken) {
-        // OAuth connection
-        connectionString = `sheets://${connection.documentId}?access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}`;
-      } else {
-        // Public URL connection
-        connectionString = connection.url;
-      }
-
-      // Add Apps Script URL if provided
-      if (connection.appsScriptUrl) {
-        connectionString += `${connectionString.includes('?') ? '&' : '?'}apps_script_url=${encodeURIComponent(connection.appsScriptUrl)}`;
-      }
-
-      const formData = new FormData();
-      formData.append('name', connection.title);
-      formData.append('connectionString', connectionString);
-      formData.append('environmentId', selectedEnvironment.value);
-
-      const response = await fetch('/api/data-sources', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = (await response.json()) as ApiResponse;
-
-      if (result.success && result.dataSource) {
-        setIsSuccess(true);
-        refetchEnvironmentDataSources();
-        setSelectedEnvironmentDataSource(result.dataSource.id, selectedEnvironment.value);
-        setTimeout(() => {
-          router.push('/');
-        }, 1000);
-      } else {
-        setError(result.error || 'Failed to create Google Sheets data source');
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
-    } finally {
-      setIsConnecting(false);
+  const handleGoogleSheetsSuccess = () => {
+    if (!selectedEnvironment) {
+      setError('Please select an environment');
+      return;
     }
+
+    setIsSuccess(true);
+    refetchEnvironmentDataSources();
+    setTimeout(() => {
+      router.push('/');
+    }, 1000);
   };
 
   const handleSampleDatabase = async () => {
@@ -391,13 +346,7 @@ export default function DataSourceConnectionPage() {
           {isGoogleSheetsSelected && (
             <>
               {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
-              <GoogleWorkspaceConnector
-                type="sheets"
-                onConnection={handleGoogleSheetsConnection}
-                onError={setError}
-                isConnecting={isConnecting}
-                isSuccess={isSuccess}
-              />
+              <GoogleSheetsSetup onSuccess={handleGoogleSheetsSuccess} environmentId={selectedEnvironment?.value} />
             </>
           )}
           {dbType.value === SAMPLE_DATABASE && (
