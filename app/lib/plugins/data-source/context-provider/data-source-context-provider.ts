@@ -3,6 +3,8 @@ import { logger } from '~/utils/logger';
 import { HubspotContextProvider } from '~/lib/plugins/data-source/context-provider/hubspot-context-provider';
 import type { LanguageModelUsage } from 'ai';
 import {
+  GoogleDocsContextProvider,
+  GoogleSheetsContextProvider,
   MongoDBContextProvider,
   MySQLContextProvider,
   PostgresContextProvider,
@@ -45,6 +47,10 @@ export function resolveDataSourceContextProvider(dataSourceType: DataSourceType)
       return new MongoDBContextProvider();
     case DataSourceType.HUBSPOT:
       return new HubspotContextProvider();
+    case DataSourceType.GOOGLE_SHEETS:
+      return new GoogleSheetsContextProvider();
+    case DataSourceType.GOOGLE_DOCS:
+      return new GoogleDocsContextProvider();
     default:
       logger.warn(`Context provider for ${dataSourceType} not found`);
       return null;

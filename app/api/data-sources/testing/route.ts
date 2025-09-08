@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // Get the appropriate accessor for the database URL
-      const accessor = DataSourcePluginManager.getAccessor(type);
+      const accessor = await DataSourcePluginManager.getAccessor(type);
 
       // Validate the connection string format
       accessor.validateProperties(properties);

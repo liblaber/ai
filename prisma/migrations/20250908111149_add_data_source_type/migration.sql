@@ -1,11 +1,5 @@
-/*
-  Warnings:
-
-  - Added the required column `type` to the `data_source` table without a default value. This is not possible if the table is not empty.
-
-*/
 -- CreateEnum
-CREATE TYPE "public"."DataSourceType" AS ENUM ('MYSQL', 'POSTGRES', 'SQLITE', 'MONGODB', 'HUBSPOT');
+CREATE TYPE "public"."DataSourceType" AS ENUM ('MYSQL', 'POSTGRES', 'SQLITE', 'MONGODB', 'HUBSPOT', 'GOOGLE_SHEETS', 'GOOGLE_DOCS');
 
 -- AlterTable: Add nullable type column first
 ALTER TABLE "public"."data_source" ADD COLUMN "type" "public"."DataSourceType";
@@ -17,6 +11,8 @@ SET "type" = CAST(CASE
                     WHEN ev.value ILIKE '%mysql%' THEN 'MYSQL'
                     WHEN ev.value ILIKE '%mongodb%' THEN 'MONGODB'
                     WHEN ev.value ILIKE '%hubspot%' THEN 'HUBSPOT'
+                    WHEN ev.value ILIKE '%sheets%' THEN 'GOOGLE_SHEETS'
+                    WHEN ev.value ILIKE '%docs%' THEN 'GOOGLE_DOCS'
                     ELSE 'SQLITE'
   END AS "public"."DataSourceType")
   FROM "public"."data_source" ds

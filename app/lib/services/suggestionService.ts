@@ -31,7 +31,7 @@ type GenerateSuggestionsProps = {
 
 /**
  * Generates contextual suggestions based on the database schema
- * @param dataSource - The ID of the data source
+ * TODO @Lane add Doc
  * @returns Promise<string[]> - Array of 3 suggestion prompts
  */
 export async function generateSchemaBasedSuggestions({
@@ -56,6 +56,10 @@ export async function generateSchemaBasedSuggestions({
 
     try {
       const schema = (await getSchemaCache(connectionString)) || (await accessor.getSchema());
+
+      if (!schema) {
+        throw new Error('Could not retrieve database schema');
+      }
 
       const llm = await getLlm();
 

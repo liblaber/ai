@@ -8,6 +8,12 @@ export function formatDbSchemaForPrompt(schema: Table[]) {
 
   for (const table of schema) {
     result += `Table: ${table.tableName}\n`;
+
+    // Add actual sheet name for Google Sheets if available
+    if (table.metadata?.actualSheetName) {
+      result += `Actual Sheet Name: ${table.metadata.actualSheetName}\n`;
+    }
+
     result += 'Columns:\n';
 
     for (const column of table.columns) {

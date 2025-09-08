@@ -23,7 +23,7 @@ export class DataAccessor {
     }
   }
 
-  static getAccessor(type: DataSourceType): BaseAccessor {
+  static async getAccessor(type: DataSourceType): Promise<BaseAccessor> {
     switch (type.toUpperCase()) {
       case DataSourceType.POSTGRES:
       case DataSourceType.MYSQL:

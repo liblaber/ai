@@ -1,9 +1,12 @@
 import { type Table } from '@liblab/types';
 import { prisma } from '~/lib/prisma';
 import crypto from 'crypto';
+import { createScopedLogger } from '~/utils/logger';
 
 // Cache duration in seconds (31 days)
 const SCHEMA_CACHE_TTL = 60 * 60 * 24 * 31;
+
+const logger = createScopedLogger('get-database-schema');
 
 export async function getSchemaCache(
   connectionUrl: string,
@@ -89,6 +92,20 @@ export async function setSuggestionsCache(
   });
 
   return result.id;
+}
+
+export async function clearSchemaCache(connectionUrl: string): Promise<void> {
+  const hash = hashConnectionUrl(connectionUrl);
+
+  await prisma.schemaCache
+    .delete({
+      where: { connectionHash: hash },
+    })
+    .catch(() => {
+      // Ignore if cache doesn't exist
+    });
+
+  logger.debug('Schema cache cleared for connection');
 }
 
 function hashConnectionUrl(url: string): string {

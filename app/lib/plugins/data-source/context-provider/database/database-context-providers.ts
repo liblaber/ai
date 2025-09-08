@@ -148,3 +148,7 @@ export class MySQLContextProvider extends DatabaseContextProvider {}
 export class PostgresContextProvider extends DatabaseContextProvider {}
 export class SQLiteContextProvider extends DatabaseContextProvider {}
 export class MongoDBContextProvider extends DatabaseContextProvider {}
+
+// TODO: https://linear.app/liblab/issue/ENG-966/adapt-google-sheets-docs-to-a-new-accessor-context-provider-style
+export class GoogleSheetsContextProvider extends DatabaseContextProvider {}
+export class GoogleDocsContextProvider extends DatabaseContextProvider {}

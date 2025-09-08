@@ -494,7 +494,7 @@ async function trackChatPrompt(
       user.id,
     );
 
-    const pluginId = DataSourcePluginManager.getAccessorPluginId(
+    const pluginId = await DataSourcePluginManager.getAccessorPluginId(
       environmentDataSource.dataSource.type as DataSourceType,
     );
 

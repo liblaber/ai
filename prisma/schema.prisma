@@ -18,7 +18,7 @@ datasource db {
 model DataSource {
   id               String                  @id @default(cuid())
   name             String
-  type             DataSourceType
+  type             DataSourceType          @default(SQLITE)
   createdAt        DateTime                @default(now()) @map("created_at")
   updatedAt        DateTime                @updatedAt @map("updated_at")
   createdBy        User                    @relation(fields: [createdById], references: [id], onDelete: Cascade)
@@ -283,6 +283,8 @@ enum DataSourceType {
   SQLITE
   MONGODB
   HUBSPOT
+  GOOGLE_SHEETS
+  GOOGLE_DOCS
 }
 
 model Permission {

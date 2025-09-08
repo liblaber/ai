@@ -32,6 +32,9 @@ export interface Column {
 export interface Table {
   tableName: string;
   columns: Column[];
+  metadata?: {
+    actualSheetName?: string;
+  };
 }
 
 export type GenerateSqlQueriesOptions = {

@@ -13,12 +13,12 @@ import {
   Prisma,
 } from '@prisma/client';
 import type { AppAbility } from '~/lib/casl/user-ability';
-import { createEnvironmentVariable, decryptEnvironmentVariable, encryptValue } from './environmentVariablesService';
+import { createEnvironmentVariable, decryptEnvironmentVariable } from './environmentVariablesService';
 import { getEnvironmentName } from './environmentService';
-import type {
-  DataSourceProperty as SimpleDataSourceProperty,
+import {
+  type DataSourceProperty as SimpleDataSourceProperty,
   DataSourcePropertyType as SharedDataSourcePropertyType,
-  DataSourceType as SharedDataSourceType,
+  type DataSourceType as SharedDataSourceType,
 } from '@liblab/data-access/utils/types';
 
 import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
@@ -122,7 +122,7 @@ export async function createDataSource(data: {
   properties: SimpleDataSourceProperty[];
   createdById: string;
 }): Promise<DataSource> {
-  validateDataSourceProperties(data.properties, data.type);
+  await validateDataSourceProperties(data.properties, data.type);
 
   // Get environment details for naming
   const environmentName = await getEnvironmentName(data.environmentId);
@@ -187,6 +187,16 @@ export async function createDataSource(data: {
       environmentName,
     };
   });
+}
+
+export async function getDataSourceConnectionUrl(
+  userId: string,
+  dataSourceId: string,
+  environmentId: string,
+): Promise<string | null> {
+  const dataSourceProperties = await getDataSourceProperties(userId, dataSourceId, environmentId);
+
+  return dataSourceProperties?.find((prop) => prop.type === SharedDataSourcePropertyType.CONNECTION_URL)?.value || null;
 }
 
 export async function createSampleDataSource(data: {
@@ -268,7 +278,7 @@ export async function updateDataSource(data: {
   properties: SimpleDataSourceProperty[];
   userId: string;
 }) {
-  validateDataSourceProperties(data.properties, data.type);
+  await validateDataSourceProperties(data.properties, data.type);
 
   return prisma.dataSource.update({
     where: { id: data.id, createdById: data.userId },
@@ -325,27 +335,6 @@ export async function getDataSourceProperties(
   });
 }
 
-export async function getDataSourceByConnectionString(connectionString: string) {
-  const encryptedConnectionString = encryptValue(encodeURIComponent(connectionString));
-
-  console.log(encryptedConnectionString);
-
-  return prisma.environmentDataSource
-    .findFirst({
-      where: {
-        dataSourceProperties: {
-          some: {
-            type: DataSourcePropertyType.CONNECTION_URL,
-            environmentVariable: {
-              value: encryptedConnectionString,
-            },
-          },
-        },
-      },
-    })
-    .dataSource();
-}
-
 export async function getConversationCount(dataSourceId: string, userId: string): Promise<number> {
   return prisma.conversation.count({
     where: {
@@ -355,7 +344,7 @@ export async function getConversationCount(dataSourceId: string, userId: string)
   });
 }
 
-function validateDataSourceProperties(dataSourceProperties: SimpleDataSourceProperty[], type: DataSourceType) {
-  const accessor = DataSourcePluginManager.getAccessor(type as SharedDataSourceType);
+async function validateDataSourceProperties(dataSourceProperties: SimpleDataSourceProperty[], type: DataSourceType) {
+  const accessor = await DataSourcePluginManager.getAccessor(type as SharedDataSourceType);
   accessor.validateProperties(dataSourceProperties);
 }

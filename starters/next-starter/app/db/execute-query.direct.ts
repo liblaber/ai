@@ -1,6 +1,7 @@
 import { DataAccessor } from '@/lib/data-access/dataAccessor';
+import { decodeUrlCompletely } from '@/utils/url-decoder';
 
-const databaseUrlDecoded = decodeURIComponent(process.env.CONNECTION_URL || '');
+let databaseUrlDecoded = decodeUrlCompletely(process.env.CONNECTION_URL || '');
 let accessor: ReturnType<typeof DataAccessor.getAccessor> | null = null;
 
 async function getAccessor() {

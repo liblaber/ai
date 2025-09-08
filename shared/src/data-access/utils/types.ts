@@ -2,7 +2,14 @@ export interface Plugin {
   pluginId: string;
 }
 
-export type DataAccessPluginId = 'postgres' | 'mysql' | 'sqlite' | 'mongodb' | 'hubspot';
+export type DataAccessPluginId =
+  | 'postgres'
+  | 'mysql'
+  | 'sqlite'
+  | 'mongodb'
+  | 'hubspot'
+  | 'google-sheets'
+  | 'google-docs';
 
 export enum DataSourcePropertyType {
   CONNECTION_URL = 'CONNECTION_URL',
@@ -18,6 +25,8 @@ export enum DataSourceType {
   SQLITE = 'SQLITE',
   HUBSPOT = 'HUBSPOT',
   MONGODB = 'MONGODB',
+  GOOGLE_SHEETS = 'GOOGLE_SHEETS',
+  GOOGLE_DOCS = 'GOOGLE_DOCS',
 }
 
 export type DataSourceProperty = {

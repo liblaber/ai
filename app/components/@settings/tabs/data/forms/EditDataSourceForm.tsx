@@ -406,7 +406,8 @@ export default function EditDataSourceForm({
                       <button
                         type="button"
                         onClick={() => setShowSensitiveInput((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group"
+                        disabled={false}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group disabled:opacity-50"
                         tabIndex={-1}
                       >
                         <span className="text-gray-400 group-hover:text-white transition-colors">

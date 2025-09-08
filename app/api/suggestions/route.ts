@@ -4,21 +4,30 @@ import { generateSchemaBasedSuggestions } from '~/lib/services/suggestionService
 import { SAMPLE_DATABASE_NAME } from '@liblab/data-access/accessors/sqlite';
 import { logger } from '~/utils/logger';
 import { requireUserId } from '~/auth/session';
-import type { DataSourceType } from '@liblab/data-access/utils/types';
+import { z } from 'zod';
 import { DataSourcePropertyType } from '@prisma/client';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
+
+const suggestionsRequestSchema = z.object({
+  dataSourceId: z.string().min(1, 'Data source ID is required'),
+  environmentId: z.string().min(1, 'Environment ID is required'),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireUserId(request);
-    const { dataSourceId, environmentId } = await request.json<{ dataSourceId: string; environmentId: string }>();
+    const body = await request.json();
 
-    if (!dataSourceId) {
-      return NextResponse.json({ success: false, error: 'Data source ID is required' }, { status: 400 });
+    const validationResult = suggestionsRequestSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { success: false, error: validationResult.error.errors[0]?.message || 'Invalid request data' },
+        { status: 400 },
+      );
     }
 
-    if (!environmentId) {
-      return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
-    }
+    const { dataSourceId, environmentId } = validationResult.data;
 
     // Fetch the environment data source using the service
     const environmentDataSource = await getEnvironmentDataSource(dataSourceId, userId, environmentId);
