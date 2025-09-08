@@ -195,37 +195,6 @@ export const userService = {
 
   async grantSystemAdminAccess(userId: string): Promise<void> {
     try {
-      // // Create a System Admin role if it doesn't exist
-      // let systemAdminRole = await prisma.role.findFirst({
-      //   where: {
-      //     name: 'System Admin',
-      //   },
-      // });
-
-      // if (!systemAdminRole) {
-      //   systemAdminRole = await prisma.role.create({
-      //     data: {
-      //       name: 'System Admin',
-      //       description: 'Full system administrator with all privileges across all organizations',
-      //     },
-      //   });
-      // }
-
-      // // Assign the role to the user
-      // await prisma.userRole.upsert({
-      //   where: {
-      //     userId_roleId: {
-      //       userId,
-      //       roleId: systemAdminRole.id,
-      //     },
-      //   },
-      //   update: {},
-      //   create: {
-      //     userId,
-      //     roleId: systemAdminRole.id,
-      //   },
-      // });
-
       // Create the UserRole Join
 
       const systemAdminRole = await prisma.role.findFirst({
@@ -238,12 +207,16 @@ export const userService = {
         throw new Error('System Admin role not found');
       }
 
-      await prisma.userRole.create({
-        data: {
-          userId,
-          roleId: systemAdminRole.id,
-        },
-      });
+      console.log('System Admin role found', systemAdminRole);
+
+      try {
+        await prisma.userRole.create({
+          data: {
+            userId,
+            roleId: systemAdminRole.id,
+          },
+        });
+      } catch {}
 
       logger.info(`Granted system admin access to user ${userId}`);
     } catch (error) {
