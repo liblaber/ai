@@ -6,6 +6,8 @@ import { MongoDBAccessor } from './accessors/mongodb';
 import { DataSourceType } from './utils/types';
 import type { BaseDatabaseAccessor } from './baseDatabaseAccessor';
 import { HubspotAccessor } from './accessors/hubspot';
+import { GoogleSheetsAccessor } from './accessors/google-sheets';
+import { GoogleDocsAccessor } from './accessors/google-docs';
 
 export class DataAccessor {
   static getDatabaseAccessor(type: DataSourceType): BaseDatabaseAccessor {
@@ -18,6 +20,10 @@ export class DataAccessor {
         return new SQLiteAccessor();
       case DataSourceType.MONGODB:
         return new MongoDBAccessor();
+      case DataSourceType.GOOGLE_SHEETS:
+        return new GoogleSheetsAccessor();
+      case DataSourceType.GOOGLE_DOCS:
+        return new GoogleDocsAccessor();
       default:
         throw new Error(`No database accessor found for type: ${type}`);
     }
@@ -29,6 +35,8 @@ export class DataAccessor {
       case DataSourceType.MYSQL:
       case DataSourceType.SQLITE:
       case DataSourceType.MONGODB:
+      case DataSourceType.GOOGLE_SHEETS:
+      case DataSourceType.GOOGLE_DOCS:
         return this.getDatabaseAccessor(type);
       case DataSourceType.HUBSPOT:
         return new HubspotAccessor();

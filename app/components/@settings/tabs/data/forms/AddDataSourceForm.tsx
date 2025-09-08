@@ -17,6 +17,7 @@ import {
   type GoogleWorkspaceConnection,
 } from '~/components/google-workspace/GoogleWorkspaceConnector';
 import type { DataSourcePropertyDescriptor } from '@liblab/data-access/utils/types';
+import { DataSourcePropertyType } from '@liblab/data-access/utils/types';
 
 interface DataSourceResponse {
   success: boolean;
@@ -330,8 +331,17 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
 
       const formData = new FormData();
       formData.append('name', connection.title);
-      formData.append('connectionString', connectionString);
       formData.append('environmentId', selectedEnvironment.value);
+      formData.append('type', dbType.type || dbType.value.toUpperCase());
+
+      const properties = [
+        {
+          type: DataSourcePropertyType.CONNECTION_URL,
+          value: connectionString,
+        },
+      ];
+      formData.append('properties', JSON.stringify(properties));
+      formData.append('type', dbType.type || dbType.value.toUpperCase());
 
       const response = await fetch('/api/data-sources', {
         method: 'POST',

@@ -1,8 +1,8 @@
 import type { Table } from '../../types';
 import { GoogleWorkspaceError } from './google-workspace/types';
 import { GoogleWorkspaceAuthManager } from './google-workspace/auth-manager';
-import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '@liblab/data-access/utils/types';
-import { BaseDatabaseAccessor } from '@liblab/data-access/baseDatabaseAccessor';
+import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '../utils/types';
+import { BaseDatabaseAccessor } from '../baseDatabaseAccessor';
 
 // Google Sheets URL constants
 export const GOOGLE_SHEETS_PROTOCOLS = {

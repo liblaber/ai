@@ -3,8 +3,8 @@ import { GoogleWorkspaceAuthManager } from './google-workspace/auth-manager';
 import { GoogleWorkspaceAPIClient } from './google-workspace/api-client';
 import { GoogleDocsService } from './google-workspace/docs-service';
 import { type GoogleConnectionInfo, type GoogleWorkspaceConfig, GoogleWorkspaceError } from './google-workspace/types';
-import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '@liblab/data-access/utils/types';
-import { BaseDatabaseAccessor } from '@liblab/data-access/baseDatabaseAccessor';
+import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '../utils/types';
+import { BaseDatabaseAccessor } from '../baseDatabaseAccessor';
 
 // TODO: https://linear.app/liblab/issue/ENG-966/adapt-google-sheets-docs-to-a-new-accessor-context-provider-style
 export class GoogleDocsAccessor extends BaseDatabaseAccessor {

@@ -130,6 +130,8 @@ export abstract class DatabaseContextProvider implements DataSourceContextProvid
   private async _getDataSourceSchema(accessor: BaseDatabaseAccessor, connectionString: string): Promise<string> {
     const schema: Table[] = (await getSchemaCache(connectionString)) || (await accessor.getSchema());
 
+    console.log('Fetched schema:', JSON.stringify(schema, null, 2));
+
     return formatDbSchemaForPrompt(schema);
   }
 

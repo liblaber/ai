@@ -9,12 +9,11 @@ import { HubspotAccessor } from '@liblab/data-access/accessors/hubspot';
 import type { DataSourceDescriptor, DataSourceType } from '@liblab/data-access/utils/types';
 import { DataAccessor } from '@liblab/data-access/dataAccessor';
 import { GoogleSheetsAccessor } from '@liblab/data-access/accessors/google-sheets';
-import { GoogleDocsAccessor } from '@liblab/data-access/accessors/google-docs';
 
 export class DataSourcePluginManager {
   static async isAvailable(type: string): Promise<boolean> {
     // Normalize type (e.g., 'postgresql' -> 'postgres')
-    const normalized = type.replace('postgresql', 'postgres');
+    const normalized = type.toLowerCase().replace('_', '-').replace('postgresql', 'postgres');
 
     const manager = PluginManager.getInstance();
     await manager.initialize();
@@ -23,8 +22,8 @@ export class DataSourcePluginManager {
   }
 
   static async getAccessor(dataSourceType: DataSourceType): Promise<BaseAccessor> {
-    const accessor = DataAccessor.getAccessor(dataSourceType);
-    const isAvailable = await this.isAvailable(dataSourceType);
+    const accessor = await DataAccessor.getAccessor(dataSourceType);
+    const isAvailable = await this.isAvailable(dataSourceType.toLowerCase());
 
     if (!accessor || !isAvailable) {
       throw new Error(`No accessor found for type: ${dataSourceType}`);
@@ -44,7 +43,6 @@ export class DataSourcePluginManager {
       SQLiteAccessor,
       MongoDBAccessor,
       HubspotAccessor,
-      GoogleDocsAccessor,
       GoogleSheetsAccessor,
     ];
 
