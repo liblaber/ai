@@ -238,6 +238,7 @@ model User {
   websites             Website[]
   environmentVariables EnvironmentVariable[]
   telemetryEnabled     Boolean?
+  ssoProviders         SsoProvider[]
 
   isAnonymous Boolean?
 
@@ -340,6 +341,21 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+model SsoProvider {
+  id             String  @id @default(cuid())
+  providerId     String  @unique
+  friendlyName   String? // Display name for the SSO button
+  issuer         String
+  domain         String
+  oidcConfig     String? // JSON string
+  samlConfig     String? // JSON string
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String?
+
+  @@map("sso_provider")
 }
 
 model UserInvite {
