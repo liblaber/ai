@@ -3,7 +3,7 @@ import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import WithTooltip from '~/components/ui/Tooltip';
 import { description as descriptionStore } from '~/lib/persistence';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { Dialog, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { toast } from 'sonner';
@@ -25,7 +25,7 @@ function SwitchEnvironmentModal({ isOpen, onClose, onConfirm, targetEnvironmentN
   return (
     <DialogRoot open={isOpen} onOpenChange={onClose}>
       <Dialog className="backdrop-blur-[1px]" onClose={onClose} onBackdrop={onClose}>
-        <div className="rounded-xl bg-gray-50 dark:bg-gray-900 w-[359px] overflow-hidden">
+        <div className="rounded-xl bg-gray-50 dark:bg-gray-900 overflow-hidden">
           <div className="p-4">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -65,11 +65,14 @@ function SwitchEnvironmentModal({ isOpen, onClose, onConfirm, targetEnvironmentN
 
 export function ConversationSettings() {
   const initialDescription = useStore(descriptionStore)!;
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSwitchModalOpen, setIsSwitchModalOpen] = useState(false);
   const [targetEnvironmentId, setTargetEnvironmentId] = useState<string>('');
   const [isUpdatingEnvironment, setIsUpdatingEnvironment] = useState(false);
   const [currentDescription, setCurrentDescription] = useState(initialDescription);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const { environmentDataSources, selectedEnvironmentDataSource, setSelectedEnvironmentDataSource } =
     useEnvironmentDataSourcesStore();
@@ -154,6 +157,55 @@ export function ConversationSettings() {
     };
   }, [debounceTimer]);
 
+  // Handle clicking outside the dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+
+    return undefined;
+  }, [isDropdownOpen]);
+
+  // Handle window resize to reposition dropdown
+  useEffect(() => {
+    const handleResize = () => {
+      if (isDropdownOpen && triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setDropdownPosition({
+          top: rect.bottom + 8,
+          left: rect.left,
+        });
+      }
+    };
+
+    if (isDropdownOpen) {
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('scroll', handleResize);
+      };
+    }
+
+    return undefined;
+  }, [isDropdownOpen]);
+
   const handleEnvironmentChange = (newEnvironmentId: string) => {
     if (newEnvironmentId === selectedEnvironmentDataSource.environmentId) {
       return;
@@ -201,7 +253,7 @@ export function ConversationSettings() {
     } finally {
       setIsUpdatingEnvironment(false);
       setIsSwitchModalOpen(false);
-      setIsModalOpen(false);
+      setIsDropdownOpen(false);
       setTargetEnvironmentId('');
     }
   };
@@ -212,15 +264,27 @@ export function ConversationSettings() {
 
   return (
     <>
-      <div className="flex items-center justify-center">
+      <div className="relative flex items-center justify-center">
         <TooltipProvider>
           <WithTooltip tooltip="Conversation settings">
             <button
+              ref={triggerRef}
               className="flex items-center gap-2 hover:bg-depth-1 rounded-md px-2 py-1 transition-colors cursor-pointer"
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                if (!isDropdownOpen && triggerRef.current) {
+                  const rect = triggerRef.current.getBoundingClientRect();
+                  const position = {
+                    top: rect.bottom + 8,
+                    left: rect.left,
+                  };
+                  setDropdownPosition(position);
+                }
+
+                setIsDropdownOpen(!isDropdownOpen);
+              }}
             >
               <span className="text-primary">{currentDescription}</span>
-              {isModalOpen ? (
+              {isDropdownOpen ? (
                 <ChevronUp className="h-4 w-4 opacity-50 hover:opacity-100" />
               ) : (
                 <ChevronDown className="h-4 w-4 opacity-50 hover:opacity-100" />
@@ -233,25 +297,19 @@ export function ConversationSettings() {
             {currentDataSource.environment.name}
           </span>
         )}
-      </div>
 
-      <DialogRoot open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <Dialog
-          className="backdrop-blur-[1px]"
-          onClose={() => setIsModalOpen(false)}
-          onBackdrop={() => setIsModalOpen(false)}
-        >
-          <div className="rounded-xl bg-gray-50 dark:bg-gray-800 overflow-hidden">
+        {/* Dropdown Content */}
+        {isDropdownOpen && (
+          <div
+            ref={dropdownRef}
+            className="fixed w-96 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden z-[999]"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+            }}
+          >
             <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <DialogTitle title="Conversation Settings" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
+              <div className="space-y-4 text-left">
                 {/* Conversation Name */}
                 <div>
                   <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Name</label>
@@ -259,7 +317,7 @@ export function ConversationSettings() {
                     type="text"
                     value={currentDescription}
                     onChange={handleDescriptionChange}
-                    className="w-full px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter conversation name"
                     maxLength={100}
                     autoFocus={false}
@@ -272,7 +330,7 @@ export function ConversationSettings() {
                     <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                       Data Source
                     </label>
-                    <div className="w-full px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-sm text-gray-400">
+                    <div className="w-full px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-400">
                       {currentDataSource.dataSource.name}
                     </div>
                   </div>
@@ -287,7 +345,7 @@ export function ConversationSettings() {
                     <select
                       value={selectedEnvironmentDataSource.environmentId || ''}
                       onChange={(e) => handleEnvironmentChange(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       disabled={isUpdatingEnvironment}
                     >
                       {availableEnvironments.map((env) => (
@@ -304,8 +362,8 @@ export function ConversationSettings() {
               </div>
             </div>
           </div>
-        </Dialog>
-      </DialogRoot>
+        )}
+      </div>
 
       <SwitchEnvironmentModal
         isOpen={isSwitchModalOpen}

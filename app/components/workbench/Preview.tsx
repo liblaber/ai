@@ -463,9 +463,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
                 src={iframeUrl}
                 sandbox="allow-scripts allow-forms allow-popups allow-modals allow-storage-access-by-user-activation allow-same-origin"
                 allow="cross-origin-isolated"
-                onLoad={(e) => {
-                  logger.debug('Handling iframe onLoad event', e);
-
+                onLoad={() => {
                   if (!initialLoadRef.current) {
                     workbenchStore.previewsStore.startErrorCollectionPeriod();
                   }
