@@ -1,6 +1,6 @@
 import { prisma } from '~/lib/prisma';
 import type { EnvironmentVariable, EnvironmentVariableType } from '@prisma/client';
-import { encryptData, decryptData } from '@liblab/encryption/encryption';
+import { decryptData, encryptData } from '@liblab/encryption/encryption';
 import { env } from '~/env';
 import { logger } from '~/utils/logger';
 
@@ -18,9 +18,8 @@ export async function getEnvironmentVariable(id: string): Promise<EnvironmentVar
   return envVar ? decryptEnvironmentVariable(envVar) : null;
 }
 
-export async function getEnvironmentVariables(environmentId: string): Promise<EnvironmentVariable[]> {
+export async function getEnvironmentVariables(): Promise<EnvironmentVariable[]> {
   const envVars = await prisma.environmentVariable.findMany({
-    where: { environmentId },
     include: {
       environment: true,
       createdBy: true,
@@ -29,6 +28,51 @@ export async function getEnvironmentVariables(environmentId: string): Promise<En
   });
 
   return envVars.map(decryptEnvironmentVariable);
+}
+
+export async function getEnvironmentVariablesWithEnvironmentDetails(
+  environmentId: string | 'all',
+  type?: EnvironmentVariableType | null,
+): Promise<
+  Array<
+    EnvironmentVariable & {
+      environment: { id: string; name: string };
+      createdBy: { id: string; name: string; email: string };
+    }
+  >
+> {
+  // Build the where clause
+  const whereClause: any = {};
+
+  if (environmentId !== 'all') {
+    whereClause.environmentId = environmentId;
+  }
+
+  if (type) {
+    whereClause.type = type;
+  }
+
+  const envVars = await prisma.environmentVariable.findMany({
+    where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
+    include: {
+      environment: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: [{ environment: { name: 'asc' } }, { key: 'asc' }],
+  });
+
+  return envVars.map(decryptEnvironmentVariableWithRelations);
 }
 
 export async function createEnvironmentVariable(
@@ -63,6 +107,7 @@ export async function updateEnvironmentVariable(
   key: string,
   value: string,
   type: EnvironmentVariableType,
+  environmentId: string,
   description?: string,
 ): Promise<EnvironmentVariable> {
   const valueToStore = encryptValue(value);
@@ -74,6 +119,7 @@ export async function updateEnvironmentVariable(
       value: valueToStore,
       description: description || null,
       type,
+      environmentId,
     },
   });
 
@@ -139,4 +185,25 @@ function decryptValue(encryptedValue: string): string {
   const decryptedBuffer = decryptData(encryptionKey, encryptedValue);
 
   return decryptedBuffer.toString();
+}
+
+function decryptEnvironmentVariableWithRelations(
+  envVar: EnvironmentVariable & {
+    environment: { id: string; name: string };
+    createdBy: { id: string; name: string; email: string };
+  },
+): EnvironmentVariable & {
+  environment: { id: string; name: string };
+  createdBy: { id: string; name: string; email: string };
+} {
+  try {
+    return {
+      ...envVar,
+      value: decryptValue(envVar.value),
+    };
+  } catch (error) {
+    logger.error('Failed to decrypt environment variable:', envVar.id, error);
+
+    throw new Error(`Failed to decrypt environment variable: ${envVar.key}`);
+  }
 }
