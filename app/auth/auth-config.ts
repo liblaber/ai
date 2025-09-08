@@ -65,14 +65,11 @@ export const auth = betterAuth({
       ? [
           sso({
             provisionUser: async ({ user }) => {
-              console.log('ProvisionUser');
               // Provision user when they sign in with SSO
-              console.log('Provisioning user via SSO:', user.email);
 
               const { email } = user;
 
               if (!email) {
-                console.log('⚠️  No email provided for SSO user - skipping permission grants');
                 return;
               }
 
@@ -90,13 +87,10 @@ export const auth = betterAuth({
 
                 if (pendingInvite) {
                   await inviteService.acceptInvite(pendingInvite.id, user.id);
-                  console.log(`✅ Auto-accepted invite for SSO user ${email}`);
                 }
-              } catch (error) {
-                console.error(`❌ Failed to auto-accept invite for SSO user ${email}:`, error);
+              } catch {
                 // Don't fail the auth flow if invite acceptance fails
               }
-              console.log('ProvisionUser done');
             },
           }),
         ]
@@ -172,10 +166,8 @@ export const auth = betterAuth({
 
         if (pendingInvite) {
           await inviteService.acceptInvite(pendingInvite.id, createdUser.id);
-          console.log(`✅ Auto-accepted invite for user ${email}`);
         }
-      } catch (error) {
-        console.error(`❌ Failed to auto-accept invite for user ${email}:`, error);
+      } catch {
         // Don't fail the auth flow if invite acceptance fails
       }
     }),

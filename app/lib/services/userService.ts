@@ -207,8 +207,6 @@ export const userService = {
         throw new Error('System Admin role not found');
       }
 
-      console.log('System Admin role found', systemAdminRole);
-
       try {
         await prisma.userRole.create({
           data: {
