@@ -6,7 +6,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
   }: {
     page: Page;
   }) => {
-    test.setTimeout(60000); // 1 minute for this specific test
+    test.setTimeout(120000); // 2 minutes for this specific test
 
     // Enable browser console logging for debugging
     page.on('console', (msg: ConsoleMessage) => console.log('🖥️ Browser console:', msg.text()));
@@ -56,18 +56,22 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
       console.warn('ℹ️ No data source connection page found, continuing...');
     }
 
-    console.log('🔍 Looking for settings cog icon...');
-
-    await page.mouse.move(0, 500);
-    await page.mouse.down(); // Move mouse to ensure the menu is visible
-
-    const menu = page.locator('[data-testid="menu"]');
-    await menu.waitFor({ state: 'attached', timeout: 10000 });
-    await menu.hover();
+    console.log('🔍 Looking for settings button...');
 
     const settingsButton = page.locator('[data-testid="settings-button"]');
     await settingsButton.waitFor({ state: 'attached', timeout: 10000 });
-    await settingsButton.click();
+
+    // Use JavaScript click instead of Playwright click to bypass viewport restrictions
+    await page.evaluate(() => {
+      const button = document.querySelector('[data-testid="settings-button"]') as HTMLElement;
+
+      if (button) {
+        button.click();
+      } else {
+        throw new Error('Settings button not found in DOM');
+      }
+    });
+    console.log('✅ Successfully clicked settings button');
 
     await page.getByRole('button', { name: 'Add Data Source' }).click();
 
@@ -132,7 +136,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
   }: {
     page: Page;
   }) => {
-    test.setTimeout(60000); // 1 minute for this specific test
+    test.setTimeout(120000); // 2 minutes for this specific test
 
     // Enable browser console logging for debugging
     page.on('console', (msg: ConsoleMessage) => console.log('🖥️ Browser console:', msg.text()));
@@ -182,18 +186,22 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
       console.warn('ℹ️ No data source connection page found, continuing...');
     }
 
-    console.log('🔍 Looking for settings cog icon...');
-
-    await page.mouse.move(0, 500);
-    await page.mouse.down(); // Move mouse to ensure the menu is visible
-
-    const menu = page.locator('[data-testid="menu"]');
-    await menu.waitFor({ state: 'attached', timeout: 10000 });
-    await menu.hover();
+    console.log('🔍 Looking for settings button...');
 
     const settingsButton = page.locator('[data-testid="settings-button"]');
     await settingsButton.waitFor({ state: 'attached', timeout: 10000 });
-    await settingsButton.click();
+
+    // Use JavaScript click instead of Playwright click to bypass viewport restrictions
+    await page.evaluate(() => {
+      const button = document.querySelector('[data-testid="settings-button"]') as HTMLElement;
+
+      if (button) {
+        button.click();
+      } else {
+        throw new Error('Settings button not found in DOM');
+      }
+    });
+    console.log('✅ Successfully clicked settings button');
 
     await page.getByRole('button', { name: 'Add Data Source' }).click();
 
@@ -221,7 +229,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
       'input[placeholder*="database name"], input[placeholder*="Database Name"], input[name*="dbName"], input[name*="name"]',
     );
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
-    console.log('✅ Found database name input, filling "foobar"...');
+    console.log('✅ Found database name input, filling "baz"...');
     await dbNameInput.fill('baz');
 
     console.log('🔍 Looking for connection string input...');

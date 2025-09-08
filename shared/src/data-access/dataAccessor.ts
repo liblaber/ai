@@ -3,11 +3,12 @@ import { PostgresAccessor } from './accessors/postgres';
 import { MySQLAccessor } from './accessors/mysql';
 import { SQLiteAccessor } from './accessors/sqlite';
 import { MongoDBAccessor } from './accessors/mongodb';
+import { GoogleSheetsAccessor } from './accessors/google-sheets';
 import type { Table } from '../types';
 
 export class DataAccessor {
   private static _getAllAccessors(): BaseAccessorConstructor[] {
-    return [PostgresAccessor, MySQLAccessor, SQLiteAccessor, MongoDBAccessor];
+    return [PostgresAccessor, MySQLAccessor, SQLiteAccessor, MongoDBAccessor, GoogleSheetsAccessor];
   }
 
   static getAccessor(databaseUrl: string): BaseAccessor {

@@ -12,6 +12,10 @@ import {
   SAMPLE_DATABASE,
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
+import {
+  GoogleWorkspaceConnector,
+  type GoogleWorkspaceConnection,
+} from '~/components/google-workspace/GoogleWorkspaceConnector';
 
 interface DataSourceResponse {
   success: boolean;
@@ -51,7 +55,6 @@ interface AddDataSourceFormProps {
   onSuccess: () => void;
 }
 
-// TODO: @skos update the form to use EnvironmentDataSource
 export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuccess }: AddDataSourceFormProps) {
   const [dbType, setDbType] = useState<DataSourceOption>(DEFAULT_DATA_SOURCES[0]);
   const [dbName, setDbName] = useState('');
@@ -63,6 +66,10 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { availableDataSourceOptions } = useDataSourceTypesPlugin();
+
+  // Helper to check if selected database type is Google Sheets
+  // Only relying on the value property for consistent behavior across the codebase
+  const isGoogleSheetsSelected = dbType.value === 'google-sheets';
 
   // Fetch environments on component mount
   useEffect(() => {
@@ -253,6 +260,58 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     }
   };
 
+  const handleGoogleSheetsConnection = async (connection: GoogleWorkspaceConnection) => {
+    try {
+      setError(null);
+      setTestResult(null);
+      setIsSubmitting(true);
+
+      if (!selectedEnvironment) {
+        setError('Please select an environment');
+        return;
+      }
+
+      // Create connection string for Google Sheets
+      let connectionString = '';
+
+      if (connection.accessToken && connection.refreshToken) {
+        // OAuth connection
+        connectionString = `sheets://${connection.documentId}?access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}`;
+      } else {
+        // Public URL connection
+        connectionString = connection.url;
+      }
+
+      // Add Apps Script URL if provided
+      if (connection.appsScriptUrl) {
+        connectionString += `${connectionString.includes('?') ? '&' : '?'}apps_script_url=${encodeURIComponent(connection.appsScriptUrl)}`;
+      }
+
+      const formData = new FormData();
+      formData.append('name', connection.title);
+      formData.append('connectionString', connectionString);
+      formData.append('environmentId', selectedEnvironment.value);
+
+      const response = await fetch('/api/data-sources', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = (await response.json()) as DataSourceResponse;
+
+      if (result.success) {
+        toast.success('Google Sheets data source added successfully');
+        onSuccess();
+      } else {
+        setError(result.error || 'Failed to create Google Sheets data source');
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -304,7 +363,20 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
             )}
           </div>
 
-          {dbType.value !== SAMPLE_DATABASE && (
+          {isGoogleSheetsSelected && (
+            <>
+              {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
+              <GoogleWorkspaceConnector
+                type="sheets"
+                onConnection={handleGoogleSheetsConnection}
+                onError={setError}
+                isConnecting={isSubmitting}
+                isSuccess={false}
+              />
+            </>
+          )}
+
+          {dbType.value !== SAMPLE_DATABASE && !isGoogleSheetsSelected && (
             <>
               <div>
                 <label className="mb-3 block text-sm font-medium text-secondary">Database Name</label>
@@ -381,65 +453,67 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
           )}
         </div>
 
-        <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {dbType.value !== SAMPLE_DATABASE && (
+        {!isGoogleSheetsSelected && (
+          <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {dbType.value !== SAMPLE_DATABASE && (
+                  <button
+                    type="button"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      await handleTestConnection();
+                    }}
+                    disabled={isTestingConnection || isSubmitting || !connStr || !selectedEnvironment}
+                    className={classNames(
+                      'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                      'bg-depth-1 bg-depth-1/50 ',
+                      'text-primary',
+                      'disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
+                    )}
+                  >
+                    {isTestingConnection ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Testing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plug className="w-4 h-4" />
+                        <span>Test Connection</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    await handleTestConnection();
-                  }}
-                  disabled={isTestingConnection || isSubmitting || !connStr || !selectedEnvironment}
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || !selectedEnvironment || (dbType.value !== SAMPLE_DATABASE && !connStr)}
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                    'bg-depth-1 bg-depth-1/50 ',
-                    'text-primary',
+                    'bg-accent-500 hover:bg-accent-600',
+                    'text-gray-950 dark:text-gray-950',
                     'disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
                   )}
                 >
-                  {isTestingConnection ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Testing...</span>
+                      <span>Creating...</span>
                     </>
                   ) : (
                     <>
-                      <Plug className="w-4 h-4" />
-                      <span>Test Connection</span>
+                      <Save className="w-4 h-4" />
+                      <span>Create</span>
                     </>
                   )}
                 </button>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting || !selectedEnvironment || (dbType.value !== SAMPLE_DATABASE && !connStr)}
-                className={classNames(
-                  'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                  'bg-accent-500 hover:bg-accent-600',
-                  'text-gray-950 dark:text-gray-950',
-                  'disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed',
-                )}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Creating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    <span>Create</span>
-                  </>
-                )}
-              </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

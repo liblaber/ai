@@ -16,6 +16,8 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
     mysql: true,
     sqlite: true,
     mongodb: true,
+    'google-docs': true,
+    'google-sheets': true,
   },
   [PluginType.AUTH]: {
     anonymous: true,
@@ -45,6 +47,8 @@ export const PREMIUM_PLUGIN_ACCESS = {
     mysql: true,
     sqlite: true,
     mongodb: true,
+    'google-docs': true,
+    'google-sheets': true,
   },
   [PluginType.AUTH]: {
     anonymous: false,

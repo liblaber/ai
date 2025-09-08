@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       id: conversation.id,
     });
   } catch (error) {
-    console.error('Error creating conversation:', error);
+    logger.error('Error creating conversation:', error);
 
     return NextResponse.json(
       {
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     const conversations = await conversationService.getAllConversations(userId);
     return NextResponse.json(conversations);
   } catch (error) {
-    console.error('Error fetching conversations:', error);
+    logger.error('Error fetching conversations:', error);
     return NextResponse.json(
       {
         error: 'Failed to fetch conversations',

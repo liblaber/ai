@@ -15,6 +15,7 @@ import {
 import type { EnvironmentDataSource } from '~/lib/stores/environmentDataSources';
 import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 import { getConnectionProtocol } from '@liblab/data-access/utils/connection';
+import ResourceAccessMembers from '~/components/@settings/shared/components/ResourceAccessMembers';
 
 interface DataSourceResponse {
   success: boolean;
@@ -40,13 +41,13 @@ interface EnvironmentsResponse {
   error?: string;
 }
 
-// TODO: @skos update the form to use EnvironmentDataSource
 interface EditDataSourceFormProps {
   selectedDataSource: EnvironmentDataSource | null;
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
   onDelete: () => void;
+  onInvite: () => void;
 }
 
 function getDataSourceType(databaseUrl: string) {
@@ -60,6 +61,7 @@ export default function EditDataSourceForm({
   setIsSubmitting,
   onSuccess,
   onDelete,
+  onInvite,
 }: EditDataSourceFormProps) {
   const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
@@ -357,7 +359,8 @@ export default function EditDataSourceForm({
                   <button
                     type="button"
                     onClick={() => setShowConnStr((prev) => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group"
+                    disabled={false}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group disabled:opacity-50"
                     tabIndex={-1}
                   >
                     <span className="text-gray-400 group-hover:text-white transition-colors">
@@ -415,6 +418,14 @@ export default function EditDataSourceForm({
               </div>
             </div>
           )}
+        </div>
+
+        <div>
+          <ResourceAccessMembers
+            resourceScope="DATA_SOURCE"
+            resourceId={selectedDataSource.dataSource.id}
+            onInvite={onInvite}
+          />
         </div>
 
         <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">

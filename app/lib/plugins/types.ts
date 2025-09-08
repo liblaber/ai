@@ -8,7 +8,7 @@ export enum PluginType {
   DEPLOYMENT = 'deployment',
 }
 
-export type DataAccessPluginId = 'postgres' | 'mysql' | 'sqlite' | 'mongodb';
+export type DataAccessPluginId = 'postgres' | 'mysql' | 'sqlite' | 'mongodb' | 'google-docs' | 'google-sheets';
 export type AuthPluginId = 'anonymous' | 'google' | 'twitch' | 'twitter';
 export type StarterPluginId = 'remix' | 'next';
 export type UserManagementPluginId = 'single-user' | 'multi-user';

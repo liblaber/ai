@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId } from '~/auth/session';
 import { userHasMeaningfulPermissions } from '~/lib/services/permissionService';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('permissions-check');
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +16,7 @@ export async function GET(request: NextRequest) {
       hasPermissions,
     });
   } catch (error) {
-    console.error('Error checking user permissions:', error);
+    logger.error('Error checking user permissions:', error);
     return NextResponse.json(
       {
         success: false,

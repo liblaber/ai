@@ -2,17 +2,27 @@ import { prisma } from '~/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId } from '~/auth/session';
 import { createSampleDataSource } from '~/lib/services/dataSourceService';
+import { z } from 'zod';
+
+const createExampleDataSourceSchema = z.object({
+  environmentId: z.string().min(1, 'Environment ID is required'),
+});
 
 export async function POST(request: NextRequest) {
   const userId = await requireUserId(request);
 
   try {
     const body = await request.json();
-    const { environmentId } = body as { environmentId: string };
+    const validationResult = createExampleDataSourceSchema.safeParse(body);
 
-    if (!environmentId) {
-      return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { success: false, error: validationResult.error.errors[0]?.message || 'Invalid request data' },
+        { status: 400 },
+      );
     }
+
+    const { environmentId } = validationResult.data;
 
     const existingSampleDatabase = await prisma.dataSource.findFirst({
       where: {
