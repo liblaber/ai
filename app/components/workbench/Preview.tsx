@@ -18,7 +18,6 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
 import { ScreenshotSelector } from './ScreenshotSelector';
 import { PreviewLoader } from '~/components/workbench/PreviewLoader';
-import { logger } from '~/utils/logger';
 import { FixIssuesDialog } from './FixIssuesDialog';
 import type { SendMessageFn } from '~/components/chat/Chat.client';
 
