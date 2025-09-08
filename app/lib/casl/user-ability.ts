@@ -8,7 +8,11 @@ import type { PrismaResources } from './prisma-helpers';
 import { getUserPermissions } from '~/lib/services/permissionService';
 import { logger } from '~/utils/logger';
 
-const ABILITY_CACHE: Record<string, AppAbility> = {};
+declare global {
+  var _abilityCache: Record<string, AppAbility> | undefined;
+}
+
+const ABILITY_CACHE = globalThis._abilityCache || (globalThis._abilityCache = {});
 
 type PrismaSubjects = Subjects<{
   Environment: Partial<Environment>;
