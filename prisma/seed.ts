@@ -3,6 +3,64 @@ import { PermissionAction, PermissionResource, PrismaClient } from '@prisma/clie
 
 const prisma = new PrismaClient();
 
+async function seedOIDCSSOProvider(): Promise<void> {
+  try {
+    // Check if OIDC environment variables are configured
+    const oidcIssuer = process.env.OIDC_ISSUER;
+    const oidcClientId = process.env.OIDC_CLIENT_ID;
+    const oidcClientSecret = process.env.OIDC_CLIENT_SECRET;
+    const oidcDomain = process.env.OIDC_DOMAIN;
+    const oidcProviderId = process.env.OIDC_PROVIDER_ID;
+
+    if (!oidcIssuer || !oidcClientId || !oidcClientSecret || !oidcDomain || !oidcProviderId) {
+      console.log('⚠️  OIDC SSO not configured - skipping SSO provider seeding');
+      return;
+    }
+
+    // Check if SSO provider already exists
+    const existingProvider = await prisma.ssoProvider.findFirst({
+      where: { providerId: oidcProviderId },
+    });
+
+    if (existingProvider) {
+      console.log('✅ OIDC SSO provider already exists');
+      return;
+    }
+
+    // Create the OIDC SSO provider with enhanced configuration
+    const formattedIssuer = oidcIssuer.endsWith('/') ? oidcIssuer : `${oidcIssuer}/`;
+    const formattedDomain = oidcDomain.endsWith('/') ? oidcDomain : `${oidcDomain}/`;
+
+    const oidcConfig = {
+      clientId: oidcClientId,
+      clientSecret: oidcClientSecret,
+      issuer: formattedIssuer,
+      scopes: ['openid', 'profile', 'email'],
+      discoveryEndpoint: `${formattedIssuer}.well-known/openid-configuration`,
+      authorizationEndpoint: `${formattedIssuer}authorize`,
+      tokenEndpoint: `${formattedIssuer}oauth/token`,
+      userInfoEndpoint: `${formattedIssuer}userinfo`,
+      jwksEndpoint: `${formattedIssuer}.well-known/jwks.json`,
+      pkce: true,
+    };
+
+    await prisma.ssoProvider.create({
+      data: {
+        providerId: oidcProviderId,
+        friendlyName: process.env.OIDC_FRIENDLY_NAME || 'Continue with SSO',
+        issuer: formattedIssuer,
+        domain: formattedDomain,
+        oidcConfig: JSON.stringify(oidcConfig),
+      },
+    });
+
+    console.log('✅ Created OIDC SSO provider');
+  } catch (error) {
+    console.error('❌ Error seeding OIDC SSO provider:', error);
+    // Don't throw error to avoid breaking the entire seed process
+  }
+}
+
 async function seed() {
   if (process.env.LICENSE_KEY !== 'premium') {
     const initialUser = await seedInitialUser();
@@ -15,6 +73,7 @@ async function seed() {
   await seedDefaultEnvironments();
   await seedBuilderRole();
   await seedOperatorRole();
+  await seedOIDCSSOProvider();
 
   console.log('🎉 Database seed completed successfully');
 }
