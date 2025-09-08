@@ -6,7 +6,7 @@ Securely connect your database, build an app, and deploy in seconds.
 
 **🚀 [Jump to Quick Start](#-quick-start)** - Get up and running in minutes!
 
-![Alt text](https://github.com/liblaber/ai/raw/main/assets/videos/revenue-dashboard-demo.gif)
+![Alt text](https://github.com/liblaber/ai/raw/main/assets/videos/liblab-ai-demo.gif)
 
 ## **✨ Key features**
 
