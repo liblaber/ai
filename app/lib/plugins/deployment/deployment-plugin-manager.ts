@@ -2,6 +2,7 @@ import type { DeploymentConfig, DeploymentPlugin, DeploymentProgress, Deployment
 
 import { NetlifyDeployPlugin } from './netlify-deploy-plugin';
 import { AwsDeployPlugin } from './aws-deploy-plugin';
+import { VercelDeployPlugin } from './vercel-deploy-plugin';
 
 export class DeploymentPluginManager {
   private static _instance: DeploymentPluginManager;
@@ -26,6 +27,7 @@ export class DeploymentPluginManager {
     // Register available deployment plugins
     this.registerPlugin(new NetlifyDeployPlugin());
     this.registerPlugin(new AwsDeployPlugin());
+    this.registerPlugin(new VercelDeployPlugin());
 
     this._initialized = true;
   }

@@ -5,13 +5,13 @@ import { PermissionAction, PermissionResource } from '@prisma/client';
 import { createDeploymentMethodSchema } from '~/lib/validation/deploymentMethods';
 
 export async function GET(request: NextRequest) {
-  const { userId, userAbility } = await requireUserAbility(request);
+  const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.read, PermissionResource.Environment)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const environmentDeploymentMethods = await getEnvironmentDeploymentMethods(userId);
+  const environmentDeploymentMethods = await getEnvironmentDeploymentMethods();
 
   return NextResponse.json({ success: true, environmentDeploymentMethods });
 }

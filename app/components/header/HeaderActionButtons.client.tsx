@@ -329,6 +329,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       formData.append('description', chatDescription || '');
       formData.append('deploymentType', selectedDeploymentType);
       formData.append('zipFile', zipBlob, 'project.zip');
+      formData.append('environmentId', selectedEnvironmentDataSource.environmentId || '');
 
       // Deploy using the API route with zip file
       const response = await fetch('/api/deploy', {

@@ -48,23 +48,8 @@ function decryptValue(encryptedValue: string): string {
   }
 }
 
-export async function getEnvironmentDeploymentMethods(userId: string): Promise<EnvironmentDeploymentMethod[]> {
+export async function getEnvironmentDeploymentMethods(): Promise<EnvironmentDeploymentMethod[]> {
   const deploymentMethods = await prisma.deploymentMethod.findMany({
-    where: {
-      environment: {
-        directPermissions: {
-          some: {
-            role: {
-              users: {
-                some: {
-                  userId,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
     include: {
       environment: true,
       credentials: true,
@@ -289,4 +274,107 @@ export function getCredentialTypeDisplayName(type: DeploymentMethodCredentialsTy
     default:
       return type;
   }
+}
+
+/**
+ * Retrieves a decrypted credential value for a specific deployment method
+ * @param provider - The deployment provider (e.g., 'VERCEL', 'NETLIFY', 'AWS')
+ * @param environmentId - The environment ID
+ * @param credentialType - The type of credential to retrieve
+ * @param userId - The user ID for permission checking
+ * @returns The decrypted credential value or null if not found
+ */
+export async function getDeploymentMethodCredential(
+  provider: string,
+  environmentId: string,
+  credentialType: DeploymentMethodCredentialsType,
+  userId: string,
+): Promise<string | null> {
+  const deploymentMethod = await prisma.deploymentMethod.findFirst({
+    where: {
+      provider,
+      environmentId,
+      environment: {
+        directPermissions: {
+          some: {
+            role: {
+              users: {
+                some: {
+                  userId,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    include: {
+      credentials: {
+        where: {
+          type: credentialType,
+        },
+      },
+    },
+  });
+
+  if (!deploymentMethod || deploymentMethod.credentials.length === 0) {
+    return null;
+  }
+
+  const credential = deploymentMethod.credentials[0];
+
+  return decryptValue(credential.value);
+}
+
+/**
+ * Retrieves all decrypted credentials for a specific deployment method
+ * @param provider - The deployment provider (e.g., 'VERCEL', 'NETLIFY', 'AWS')
+ * @param environmentId - The environment ID
+ * @param userId - The user ID for permission checking
+ * @returns Object with decrypted credentials keyed by credential type
+ */
+export async function getDeploymentMethodCredentials(
+  provider: string,
+  environmentId: string,
+  userId: string,
+): Promise<Record<string, string> | null> {
+  const deploymentMethod = await prisma.deploymentMethod.findFirst({
+    where: {
+      provider,
+      environmentId,
+      environment: {
+        directPermissions: {
+          some: {
+            role: {
+              users: {
+                some: {
+                  userId,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    include: {
+      credentials: true,
+    },
+  });
+
+  if (!deploymentMethod) {
+    return null;
+  }
+
+  const credentials: Record<string, string> = {};
+
+  for (const credential of deploymentMethod.credentials) {
+    try {
+      credentials[credential.type] = decryptValue(credential.value);
+    } catch (error) {
+      console.error(`Failed to decrypt credential ${credential.type}:`, error);
+      // Continue with other credentials even if one fails
+    }
+  }
+
+  return credentials;
 }

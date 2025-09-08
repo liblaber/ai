@@ -65,6 +65,7 @@ export interface DeploymentConfig {
   chatId: string;
   description?: string;
   userId: string;
+  environmentId?: string;
 }
 
 export interface DeploymentProgress {

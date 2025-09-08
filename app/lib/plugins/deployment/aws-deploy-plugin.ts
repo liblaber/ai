@@ -4,6 +4,8 @@ import fs, { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { BaseDeploymentPlugin, type SiteInfo } from './base-deployment-plugin';
 import rimraf from 'rimraf';
+import { getDeploymentMethodCredentials } from '~/lib/services/deploymentMethodService';
+import { DeploymentMethodCredentialsType } from '@prisma/client';
 
 const TOTAL_STEPS = 6;
 
@@ -18,13 +20,32 @@ export class AwsDeployPlugin extends BaseDeploymentPlugin {
     config: DeploymentConfig,
     onProgress: (progress: DeploymentProgress) => Promise<void>,
   ): Promise<DeploymentResult> {
-    const { websiteId, chatId, userId } = config;
+    const { websiteId, chatId, userId, environmentId } = config;
     let currentStepIndex = 1;
 
-    // Check if AWS credentials are configured
-    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    // Get AWS credentials from deployment method
+    let awsCredentials: Record<string, string> | null = null;
+
+    if (environmentId) {
+      try {
+        awsCredentials = await getDeploymentMethodCredentials('AWS', environmentId, userId);
+      } catch (error) {
+        logger.warn('Failed to get AWS credentials from deployment method, falling back to environment variables', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          chatId,
+        });
+      }
+    }
+
+    // Fallback to environment variables if deployment method credentials are not available
+    const accessKeyId = awsCredentials?.[DeploymentMethodCredentialsType.ACCESS_KEY] || process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey =
+      awsCredentials?.[DeploymentMethodCredentialsType.SECRET_KEY] || process.env.AWS_SECRET_ACCESS_KEY;
+    const region = awsCredentials?.[DeploymentMethodCredentialsType.REGION] || process.env.AWS_REGION || 'us-east-1';
+
+    if (!accessKeyId || !secretAccessKey) {
       throw new Error(
-        'AWS credentials not configured. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.',
+        'AWS credentials not configured. Please set up AWS deployment method in settings or set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables.',
       );
     }
 
@@ -94,9 +115,9 @@ export class AwsDeployPlugin extends BaseDeploymentPlugin {
         ['sst', 'deploy', '--stage', this._generateStageName(chatId)],
         tempDir,
         {
-          AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID!,
-          AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY!,
-          AWS_REGION: process.env.AWS_REGION || 'us-east-1',
+          AWS_ACCESS_KEY_ID: accessKeyId,
+          AWS_SECRET_ACCESS_KEY: secretAccessKey,
+          AWS_REGION: region,
         },
         5 * 60 * 1000, // 5 minutes timeout
       );

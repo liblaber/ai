@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
       const websiteId = formData.get('websiteId') as string;
       const chatId = formData.get('chatId') as string;
       const description = formData.get('description') as string;
+      const environmentId = formData.get('environmentId') as string | undefined;
       const zipFile = formData.get('zipFile') as File;
 
       const deploymentType = (formData.get('deploymentType') as string) || 'netlify';
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
         chatId,
         description,
         userId,
+        environmentId,
       };
 
       // Create progress handler

@@ -1,8 +1,9 @@
 import { logger } from '~/utils/logger';
-import { env as serverEnv } from '~/env/server';
 import { BaseDeploymentPlugin } from './base-deployment-plugin';
 import type { DeploymentConfig, DeploymentProgress, DeploymentResult } from '~/lib/plugins/types';
 import type { NetlifySiteInfo } from '~/types/netlify';
+import { getDeploymentMethodCredential } from '~/lib/services/deploymentMethodService';
+import { DeploymentMethodCredentialsType } from '@prisma/client';
 
 const TOTAL_STEPS = 6;
 
@@ -17,12 +18,35 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
     config: DeploymentConfig,
     onProgress: (progress: DeploymentProgress) => Promise<void>,
   ): Promise<DeploymentResult> {
-    const { siteId, websiteId, chatId, description, userId } = config;
-    const token = serverEnv.NETLIFY_AUTH_TOKEN;
+    const { siteId, websiteId, chatId, description, userId, environmentId } = config;
     let currentStepIndex = 1;
 
+    let token;
+
+    if (environmentId) {
+      try {
+        const deploymentToken = await getDeploymentMethodCredential(
+          'NETLIFY',
+          environmentId,
+          DeploymentMethodCredentialsType.API_KEY,
+          userId,
+        );
+
+        if (deploymentToken) {
+          token = deploymentToken;
+        }
+      } catch (error) {
+        logger.warn('Failed to get Netlify token from deployment method, falling back to environment variable', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          chatId,
+        });
+      }
+    }
+
     if (!token) {
-      throw new Error('Netlify token not configured');
+      throw new Error(
+        'Netlify token not configured. Please set up Netlify deployment method in settings or set NETLIFY_AUTH_TOKEN environment variable.',
+      );
     }
 
     if (!zipFile) {
