@@ -1,6 +1,7 @@
-import { GoogleAuth, JWT, OAuth2Client } from 'google-auth-library';
+import { OAuth2Client } from 'google-auth-library';
+import { GoogleAuth, JWT } from 'google-auth-library';
 import crypto from 'crypto';
-import { GOOGLE_WORKSPACE_SCOPES, GoogleAuthError, type GoogleCredentials, type GoogleWorkspaceConfig } from './types';
+import { type GoogleWorkspaceConfig, type GoogleCredentials, GoogleAuthError, GOOGLE_WORKSPACE_SCOPES } from './types';
 
 export class GoogleWorkspaceAuthManager {
   private _oauth2Client: OAuth2Client | null = null;

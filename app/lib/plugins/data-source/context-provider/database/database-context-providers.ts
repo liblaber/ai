@@ -1,5 +1,5 @@
 import { DataAccessor } from '@liblab/data-access/dataAccessor';
-import { getSchemaCache } from '~/lib/schema';
+import { getSchemaCache, setSchemaCache } from '~/lib/schema';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 import { logger } from '~/utils/logger';
 import { generateObject } from 'ai';
@@ -14,7 +14,6 @@ import {
   databaseQueriesSchema,
   type DatabaseQueryOutput,
   databaseQuerySchema,
-  type Table,
 } from '~/lib/plugins/data-source/context-provider/database/types';
 import type { DataSourceType } from '@liblab/data-access/utils/types';
 import { DataSourcePropertyType } from '@prisma/client';
@@ -128,9 +127,19 @@ export abstract class DatabaseContextProvider implements DataSourceContextProvid
   }
 
   private async _getDataSourceSchema(accessor: BaseDatabaseAccessor, connectionString: string): Promise<string> {
-    const schema: Table[] = (await getSchemaCache(connectionString)) || (await accessor.getSchema());
+    const cachedSchema = await getSchemaCache(connectionString);
 
-    console.log('Fetched schema:', JSON.stringify(schema, null, 2));
+    if (cachedSchema) {
+      logger.info('Using cached schema');
+      return formatDbSchemaForPrompt(cachedSchema);
+    }
+
+    logger.info('Retrieving schema for data source type:', accessor.dataSourceType);
+
+    const schema = await accessor.getSchema();
+
+    logger.info('Caching schema for future use');
+    await setSchemaCache(connectionString, schema);
 
     return formatDbSchemaForPrompt(schema);
   }

@@ -10,6 +10,7 @@ import { headers } from 'next/headers';
 import { auth } from '~/auth/auth-config';
 import type { Session } from '~/auth/session';
 import { getUserAbility } from '~/lib/casl/user-ability';
+import { getEnvironmentVariables } from '~/lib/services/environmentVariablesService';
 
 // Force dynamic rendering to prevent static generation issues with headers
 export const dynamic = 'force-dynamic';
@@ -39,6 +40,7 @@ async function getRootData() {
 
     let user = null;
     let environmentDataSources: any[] = [];
+    let environmentVariables: any[] = [];
     let dataSourceTypes: any[] = [];
 
     if (typedSession?.user) {
@@ -50,6 +52,8 @@ async function getRootData() {
 
       // Get data sources for the user
       environmentDataSources = await getEnvironmentDataSources(userAbility);
+
+      environmentVariables = await getEnvironmentVariables();
     }
 
     // Initialize plugin manager
@@ -63,6 +67,7 @@ async function getRootData() {
     return {
       user,
       environmentDataSources,
+      environmentVariables,
       pluginAccess,
       dataSourceTypes,
     };
@@ -71,6 +76,7 @@ async function getRootData() {
     return {
       user: null,
       environmentDataSources: [],
+      environmentVariables: [],
       pluginAccess: FREE_PLUGIN_ACCESS,
       dataSourceTypes: [],
     };

@@ -4,7 +4,7 @@ import { DataAccessor } from 'shared/src/data-access/dataAccessor';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 
 import { logger } from '~/utils/logger';
-import { getSchemaCache, getSuggestionsCache, setSuggestionsCache } from '~/lib/schema';
+import { getSuggestionsCache, setSuggestionsCache } from '~/lib/schema';
 import { formatDbSchemaForPrompt } from '~/lib/plugins/data-source/context-provider/database/utils';
 import type { DataSourceType } from '@liblab/data-access/utils/types';
 
@@ -31,7 +31,9 @@ type GenerateSuggestionsProps = {
 
 /**
  * Generates contextual suggestions based on the database schema
- * TODO @Lane add Doc
+ * @param connectionString - Database connection string
+ * @param dataSourceType - Type of the data source
+ * @param dataSourceId - ID of the data source
  * @returns Promise<string[]> - Array of 3 suggestion prompts
  */
 export async function generateSchemaBasedSuggestions({
@@ -55,7 +57,7 @@ export async function generateSchemaBasedSuggestions({
     await accessor.initialize(connectionString);
 
     try {
-      const schema = (await getSchemaCache(connectionString)) || (await accessor.getSchema());
+      const schema = await accessor?.getSchema?.();
 
       if (!schema) {
         throw new Error('Could not retrieve database schema');

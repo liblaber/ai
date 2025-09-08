@@ -68,7 +68,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ dataSourceId: selectedEnvironmentDataSource }),
+          body: JSON.stringify({ ...selectedEnvironmentDataSource }),
         });
 
         const data = await response.json<
