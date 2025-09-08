@@ -54,8 +54,6 @@ async function writeSensitiveDataToEnvFile(files: FileMap, databaseUrl: string):
 
 export const getStarterTemplateFiles = async (databaseUrl?: string): Promise<FileMap> => {
   try {
-    logger.info('fetching starter template files from API with databaseUrl:', databaseUrl);
-
     workbenchStore.previewsStore.loadingText.set('Fetching project assets...');
 
     const response = await fetch('/api/starter-template');

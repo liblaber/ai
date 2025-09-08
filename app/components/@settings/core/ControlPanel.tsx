@@ -24,6 +24,7 @@ import { AbilityContext } from '~/components/ability/AbilityProvider';
 import MembersTab from '~/components/@settings/tabs/users/UsersTab';
 import RolesTab from '~/components/@settings/tabs/roles/RolesTab';
 import EnvironmentsTab from '~/components/@settings/tabs/environments';
+import SecretsManagerTab from '~/components/@settings/tabs/secrets-manager';
 import DeploymentMethodsTab from '~/components/@settings/tabs/deployment-methods/DeploymentMethodsTab';
 
 const LAST_ACCESSED_TAB_KEY = 'control-panel-last-tab';
@@ -168,6 +169,8 @@ export const ControlPanel = () => {
         return <DataTab />;
       case 'environments':
         return <EnvironmentsTab />;
+      case 'secrets-manager':
+        return <SecretsManagerTab />;
       case 'deployment-methods':
         return <DeploymentMethodsTab />;
       case 'deployed-apps':
