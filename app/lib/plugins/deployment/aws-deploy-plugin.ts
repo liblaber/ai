@@ -231,7 +231,7 @@ CMD ["node", "server.js"]
     // Create package.json if it doesn't exist
     const packageJsonPath = join(tempDir, 'package.json');
 
-    if (!(await this._fileExists(packageJsonPath))) {
+    if (!(await this.fileExists(packageJsonPath))) {
       const packageJson = {
         name: `liblab-${chatId}`,
         version: '1.0.0',
@@ -257,7 +257,7 @@ CMD ["node", "server.js"]
 
     // add or replace the "output" field in next.config.ts
     const nextConfigPath = join(tempDir, 'next.config.ts');
-    const nextConfigExists = await this._fileExists(nextConfigPath);
+    const nextConfigExists = await this.fileExists(nextConfigPath);
     let nextConfigContent = nextConfigExists
       ? await fs.readFile(nextConfigPath, 'utf-8')
       : `
@@ -332,13 +332,5 @@ CMD ["node", "server.js"]
     }
 
     return { stackName, appUrl };
-  }
-  private async _fileExists(filePath: string): Promise<boolean> {
-    try {
-      await import('fs/promises').then((fs) => fs.access(filePath));
-      return true;
-    } catch {
-      return false;
-    }
   }
 }

@@ -5,7 +5,7 @@ import type { NetlifySiteInfo } from '~/types/netlify';
 import { getDeploymentMethodCredential } from '~/lib/services/deploymentMethodService';
 import { DeploymentMethodCredentialsType } from '@prisma/client';
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
   pluginId = 'netlify' as const;
@@ -169,6 +169,18 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
       );
       await this.extractZipFile(zipFile, tempDir, chatId);
 
+      // Create Netlify configuration
+      logger.info('Setting up Netlify configuration', JSON.stringify({ chatId }));
+      await this.sendProgress(
+        ++currentStepIndex,
+        this.totalSteps,
+        'Setting up Netlify configuration...',
+        'in_progress',
+        onProgress,
+      );
+
+      await this._createNetlifyConfig(tempDir);
+
       // Install dependencies
       logger.info('Installing dependencies', JSON.stringify({ chatId }));
       await this.sendProgress(
@@ -284,6 +296,81 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
     } finally {
       // Clean up temporary directory
       await this.cleanupTempDirectory(tempDir, chatId);
+    }
+  }
+
+  private async _createNetlifyConfig(tempDir: string): Promise<void> {
+    const { writeFile } = await import('fs/promises');
+    const { join } = await import('path');
+
+    // Create netlify.toml configuration
+    const netlifyConfig = `[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  command = "npm run dev"
+  port = 3000
+  publish = ".next"
+
+# Optional: Add environment variables that will be available during build
+# [build.environment]
+#   NODE_ENV = "production"
+`;
+
+    await writeFile(join(tempDir, 'netlify.toml'), netlifyConfig);
+
+    // Also create a next.config.js if it doesn't exist to ensure proper Next.js configuration
+    const nextConfigPath = join(tempDir, 'next.config.js');
+    const nextConfigExists = await this.fileExists(nextConfigPath);
+
+    if (!nextConfigExists) {
+      const nextConfig = `/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+};
+
+module.exports = nextConfig;
+`;
+
+      await writeFile(nextConfigPath, nextConfig);
+    } else {
+      // Update existing next.config.js to ensure it has the right settings for Netlify
+      const existingConfig = await import('fs/promises').then((fs) => fs.readFile(nextConfigPath, 'utf-8'));
+
+      if (!existingConfig.includes("output: 'export'")) {
+        const updatedConfig = existingConfig.replace(
+          'module.exports = nextConfig;',
+          `module.exports = {
+  ...nextConfig,
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
+};`,
+        );
+        await writeFile(nextConfigPath, updatedConfig);
+      }
     }
   }
 }
