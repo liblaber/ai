@@ -18,7 +18,6 @@ import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
 import { ScreenshotSelector } from './ScreenshotSelector';
 import { PreviewLoader } from '~/components/workbench/PreviewLoader';
-import { logger } from '~/utils/logger';
 import { FixIssuesDialog } from './FixIssuesDialog';
 import type { SendMessageFn } from '~/components/chat/Chat.client';
 
@@ -463,9 +462,7 @@ export const Preview = memo(({ sendMessage }: Props) => {
                 src={iframeUrl}
                 sandbox="allow-scripts allow-forms allow-popups allow-modals allow-storage-access-by-user-activation allow-same-origin"
                 allow="cross-origin-isolated"
-                onLoad={(e) => {
-                  logger.debug('Handling iframe onLoad event', e);
-
+                onLoad={() => {
                   if (!initialLoadRef.current) {
                     workbenchStore.previewsStore.startErrorCollectionPeriod();
                   }

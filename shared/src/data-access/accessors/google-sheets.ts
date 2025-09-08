@@ -1,7 +1,14 @@
-import type { BaseAccessor } from '../baseAccessor';
 import type { Table } from '../../types';
 import { GoogleWorkspaceError } from './google-workspace/types';
 import { GoogleWorkspaceAuthManager } from './google-workspace/auth-manager';
+import {
+  type DataAccessPluginId,
+  type DataSourceProperty,
+  type DataSourcePropertyDescriptor,
+  DataSourcePropertyType,
+  DataSourceType,
+} from '../utils/types';
+import type { BaseAccessor } from '../baseAccessor';
 
 // Google Sheets URL constants
 export const GOOGLE_SHEETS_PROTOCOLS = {
@@ -10,7 +17,7 @@ export const GOOGLE_SHEETS_PROTOCOLS = {
 } as const;
 
 // Helper function to check if a connection string is for Google Sheets
-export const isGoogleSheetsConnection = (connectionString: string): boolean => {
+export const isGoogleConnection = (connectionString: string): boolean => {
   return (
     connectionString.startsWith(GOOGLE_SHEETS_PROTOCOLS.SHEETS) ||
     connectionString.startsWith(GOOGLE_SHEETS_PROTOCOLS.DOCS_URL)
@@ -18,11 +25,83 @@ export const isGoogleSheetsConnection = (connectionString: string): boolean => {
 };
 
 export class GoogleSheetsAccessor implements BaseAccessor {
-  static pluginId = 'google-sheets';
+  readonly pluginId: DataAccessPluginId = 'google-sheets';
   readonly label = 'Google Sheets';
-  readonly preparedStatementPlaceholderExample = '{ range: $1, sheetName: $2, valueRenderOption: $3 }';
-  readonly connectionStringFormat =
-    'sheets://SPREADSHEET_ID/ or https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit';
+  readonly dataSourceType: DataSourceType = DataSourceType.GOOGLE_SHEETS;
+
+  getRequiredDataSourcePropertyDescriptors(): DataSourcePropertyDescriptor[] {
+    return [
+      {
+        type: DataSourcePropertyType.CONNECTION_URL,
+        label: 'Google Sheets URL or Spreadsheet ID',
+        format: 'https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit or just SPREADSHEET_ID',
+      },
+      // Optional properties for OAuth authentication
+      {
+        type: DataSourcePropertyType.ACCESS_TOKEN,
+        label: 'OAuth Access Token (Optional)',
+        format: 'OAuth 2.0 access token for authenticated access',
+      },
+      {
+        type: DataSourcePropertyType.REFRESH_TOKEN,
+        label: 'OAuth Refresh Token (Optional)',
+        format: 'OAuth 2.0 refresh token for token renewal',
+      },
+    ];
+  }
+
+  private _getConnectionStringFromProperties(dataSourceProperties: DataSourceProperty[]): string {
+    const connectionUrlProperty = dataSourceProperties.find(
+      (prop) => prop.type === DataSourcePropertyType.CONNECTION_URL,
+    );
+
+    if (!connectionUrlProperty || !connectionUrlProperty.value) {
+      throw new Error('Missing required property: Connection URL');
+    }
+
+    return connectionUrlProperty.value;
+  }
+
+  private _extractPropertiesFromDataSource(dataSourceProperties: DataSourceProperty[]): {
+    spreadsheetId: string;
+    accessToken?: string;
+    refreshToken?: string;
+  } {
+    const connectionUrl = this._getConnectionStringFromProperties(dataSourceProperties);
+    const accessToken = dataSourceProperties.find((prop) => prop.type === DataSourcePropertyType.ACCESS_TOKEN)?.value;
+    const refreshToken = dataSourceProperties.find((prop) => prop.type === DataSourcePropertyType.REFRESH_TOKEN)?.value;
+
+    // Extract spreadsheet ID from URL or use directly if it's just an ID
+    let spreadsheetId: string;
+
+    if (connectionUrl.includes('docs.google.com/spreadsheets')) {
+      // Extract from full URL
+      const match = connectionUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+
+      if (!match) {
+        throw new GoogleWorkspaceError('Invalid Google Sheets URL format');
+      }
+
+      spreadsheetId = match[1];
+    } else if (connectionUrl.startsWith('sheets://')) {
+      // Extract from sheets protocol
+      const url = new URL(connectionUrl);
+      spreadsheetId = url.hostname;
+    } else {
+      // Assume it's a direct spreadsheet ID
+      spreadsheetId = connectionUrl;
+    }
+
+    if (!spreadsheetId) {
+      throw new GoogleWorkspaceError('Could not extract spreadsheet ID from connection URL');
+    }
+
+    return {
+      spreadsheetId,
+      accessToken,
+      refreshToken,
+    };
+  }
 
   private _spreadsheetId: string | null = null;
   private _appsScriptUrl: string | null = null;
@@ -31,12 +110,12 @@ export class GoogleSheetsAccessor implements BaseAccessor {
   private _authManager: GoogleWorkspaceAuthManager | null = null;
 
   static isAccessor(databaseUrl: string): boolean {
-    return isGoogleSheetsConnection(databaseUrl);
+    return isGoogleConnection(databaseUrl);
   }
 
-  async testConnection(connectionString: string): Promise<boolean> {
+  async testConnection(dataSourceProperties: DataSourceProperty[]): Promise<boolean> {
     try {
-      const spreadsheetId = this._extractSpreadsheetId(connectionString);
+      const { spreadsheetId } = this._extractPropertiesFromDataSource(dataSourceProperties);
 
       // Check if this is an Apps Script Web App URL
       if (this._isAppsScriptUrl(spreadsheetId)) {
@@ -266,15 +345,24 @@ export class GoogleSheetsAccessor implements BaseAccessor {
     }
   }
 
-  validate(connectionString: string): void {
+  validateProperties(dataSourceProperties: DataSourceProperty[]): void {
     try {
-      const spreadsheetId = this._extractSpreadsheetId(connectionString);
+      const { spreadsheetId, accessToken, refreshToken } = this._extractPropertiesFromDataSource(dataSourceProperties);
 
       // Validate spreadsheet ID format
-      const spreadsheetIdPattern = /^[a-zA-Z0-9-_]{20,}$/;
+      const spreadsheetIdPattern = /^[a-zA-Z0-9-_]{10,}$/;
 
       if (!spreadsheetIdPattern.test(spreadsheetId)) {
         throw new GoogleWorkspaceError(`Invalid Google Sheets spreadsheet ID format: ${spreadsheetId}`);
+      }
+
+      // If access token is provided, refresh token should also be provided
+      if (accessToken && !refreshToken) {
+        throw new GoogleWorkspaceError('Refresh token is required when access token is provided');
+      }
+
+      if (refreshToken && !accessToken) {
+        throw new GoogleWorkspaceError('Access token is required when refresh token is provided');
       }
     } catch (error) {
       if (error instanceof GoogleWorkspaceError) {
@@ -411,7 +499,7 @@ ${dbSchema}
 </spreadsheetSchema>
 
 IMPORTANT: This spreadsheet may contain data in any pattern - data could be at the top, bottom, middle, or scattered throughout the sheet. Empty rows and columns are common and should not be ignored if they contain the actual data structure. Focus on identifying meaningful patterns such as:
-- Currency amounts (e.g., $31.51, €100, ¥1000) 
+- Currency amounts (e.g., $31.51, €100, ¥1000)
 - Dates in various formats (3/30, 2023-01-01, Jan 15)
 - Category or classification text (Food, Transport, Office supplies)
 - Numerical data that could represent quantities, totals, or measurements
@@ -756,7 +844,7 @@ Write operation '${parsedQuery.operation}' requires authentication or Apps Scrip
 
 For public sheets, you have these options:
 
-1. **Apps Script Web App (Recommended)**: 
+1. **Apps Script Web App (Recommended)**:
    - Set up a 5-minute Google Apps Script Web App
    - Add the Apps Script URL to your connection string
 
@@ -1706,14 +1794,14 @@ Last error: ${lastError?.message || 'Unknown error'}`;
     } catch (error) {
       throw new GoogleWorkspaceError(`
         Failed to submit data. To enable full editing capabilities:
-        
+
         📄 Basic editing (append rows only):
         - Make sure your Google Sheet has "Anyone with the link can edit" permissions
-        
+
         🚀 Full editing (all operations):
         - Set up a Google Apps Script Web App (5 minutes setup)
         - See GOOGLE_SHEETS_NO_API_KEY_SETUP.md for instructions
-        
+
         Error: ${error instanceof Error ? error.message : 'Unknown error'}
       `);
     }
@@ -1737,9 +1825,9 @@ Last error: ${lastError?.message || 'Unknown error'}`;
 
     throw new GoogleWorkspaceError(`
       Delete operations require Google Apps Script Web App setup.
-      
+
       To enable row deletion:
-      1. Create a Google Apps Script Web App for your sheet  
+      1. Create a Google Apps Script Web App for your sheet
       2. Use the Web App URL instead of the Google Sheets URL
       3. See GOOGLE_SHEETS_NO_API_KEY_SETUP.md for instructions
     `);
@@ -1768,9 +1856,9 @@ Last error: ${lastError?.message || 'Unknown error'}`;
 
       throw new GoogleWorkspaceError(`
         Clear operations require Google Apps Script Web App setup.
-        
+
         To enable value clearing:
-        1. Create a Google Apps Script Web App for your sheet  
+        1. Create a Google Apps Script Web App for your sheet
         2. Use the Web App URL instead of the Google Sheets URL
         3. See GOOGLE_SHEETS_NO_API_KEY_SETUP.md for instructions
       `);

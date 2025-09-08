@@ -4,8 +4,10 @@ import {
   getConversationCount,
   getEnvironmentDataSource,
   updateDataSource,
-} from '~/lib/services/dataSourceService';
+} from '~/lib/services/datasourceService';
 import { requireUserId } from '~/auth/session';
+import { DataSourceType } from '@prisma/client';
+import type { DataSourceProperty } from '@liblab/data-access/utils/types';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await requireUserId(request);
@@ -48,9 +50,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const formData = await request.formData();
   const name = formData.get('name') as string;
+  const type = formData.get('type') as DataSourceType;
+  const propertiesJson = formData.get('properties') as string;
+  const properties = JSON.parse(propertiesJson) as DataSourceProperty[];
 
   try {
-    const updatedDataSource = await updateDataSource({ id, userId, name, connectionString: '' });
+    const updatedDataSource = await updateDataSource({
+      id,
+      name,
+      type,
+      properties,
+      userId,
+    });
 
     return NextResponse.json({ success: true, dataSource: updatedDataSource });
   } catch (error) {

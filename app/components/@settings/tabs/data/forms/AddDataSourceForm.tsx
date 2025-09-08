@@ -12,9 +12,12 @@ import {
   SAMPLE_DATABASE,
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
-import GoogleSheetsSetup from './GoogleSheetsSetup';
-
-const GOOGLE_SHEETS_PLUGIN_ID = 'google-sheets';
+import {
+  GoogleWorkspaceConnector,
+  type GoogleWorkspaceConnection,
+} from '~/components/google-workspace/GoogleWorkspaceConnector';
+import type { DataSourcePropertyDescriptor } from '@liblab/data-access/utils/types';
+import { DataSourcePropertyType } from '@liblab/data-access/utils/types';
 
 interface DataSourceResponse {
   success: boolean;
@@ -57,7 +60,7 @@ interface AddDataSourceFormProps {
 export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuccess }: AddDataSourceFormProps) {
   const [dbType, setDbType] = useState<DataSourceOption>(DEFAULT_DATA_SOURCES[0]);
   const [dbName, setDbName] = useState('');
-  const [connStr, setConnStr] = useState('');
+  const [propertyValues, setPropertyValues] = useState<Record<string, string>>({});
   const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
   const [environmentOptions, setEnvironmentOptions] = useState<EnvironmentOption[]>([]);
   const [isLoadingEnvironments, setIsLoadingEnvironments] = useState(true);
@@ -104,6 +107,13 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     fetchEnvironments();
   }, []);
 
+  const handlePropertyChange = (propertyLabel: string, value: string) => {
+    setPropertyValues((prev) => ({
+      ...prev,
+      [propertyLabel]: value,
+    }));
+  };
+
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
     setTestResult(null);
@@ -111,8 +121,21 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
 
     try {
       if (dbType.value !== SAMPLE_DATABASE) {
-        if (!connStr) {
-          setError('Please enter a connection string');
+        if (!dbType.properties || dbType.properties.length === 0) {
+          setTestResult({
+            success: true,
+            message: 'No connection testing required for this data source type.',
+          });
+          return;
+        }
+
+        const hasAllRequiredProperties = dbType.properties.every((prop) => {
+          const value = propertyValues[prop.type];
+          return value && value.trim() !== '';
+        });
+
+        if (!hasAllRequiredProperties) {
+          setError('Please fill in all required fields');
           return;
         }
 
@@ -122,7 +145,13 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
         }
 
         const formData = new FormData();
-        formData.append('connectionString', connStr);
+        formData.append('type', dbType.type || dbType.value.toUpperCase());
+
+        const properties = dbType.properties.map((prop) => ({
+          type: prop.type,
+          value: propertyValues[prop.type] || '',
+        }));
+        formData.append('properties', JSON.stringify(properties));
 
         const response = await fetch('/api/data-sources/testing', {
           method: 'POST',
@@ -218,8 +247,16 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
       return;
     }
 
-    if (!connStr) {
-      setError('Please enter a connection string');
+    const hasAllRequiredProperties =
+      dbType.properties && dbType.properties.length > 0
+        ? dbType.properties.every((prop) => {
+            const value = propertyValues[prop.type];
+            return value && value.trim() !== '';
+          })
+        : true; // If no properties, consider it valid
+
+    if (!hasAllRequiredProperties) {
+      setError('Please fill in all required fields');
       setTestResult(null);
 
       return;
@@ -232,7 +269,13 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     try {
       const formData = new FormData();
       formData.append('name', dbName);
-      formData.append('connectionString', connStr);
+      formData.append('type', dbType.type || dbType.value.toUpperCase());
+
+      const properties = dbType.properties.map((prop) => ({
+        type: prop.type,
+        value: propertyValues[prop.type] || '',
+      }));
+      formData.append('properties', JSON.stringify(properties));
       formData.append('environmentId', selectedEnvironment.value);
 
       const response = await fetch('/api/data-sources', {
@@ -259,10 +302,80 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     }
   };
 
-  // If Google Sheets is selected, show the custom Google Sheets flow
-  if (dbType.value === GOOGLE_SHEETS_PLUGIN_ID) {
-    return <GoogleSheetsSetup onSuccess={onSuccess} />;
-  }
+  const handleGoogleSheetsConnection = async (connection: GoogleWorkspaceConnection) => {
+    try {
+      setError(null);
+      setTestResult(null);
+      setIsSubmitting(true);
+
+      if (!selectedEnvironment) {
+        setError('Please select an environment');
+        return;
+      }
+
+      // Create connection string for Google Sheets
+      let connectionString = '';
+
+      if (connection.accessToken && connection.refreshToken) {
+        // OAuth connection
+        connectionString = `sheets://${connection.documentId}?access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}`;
+      } else {
+        // Public URL connection
+        connectionString = connection.url;
+      }
+
+      // Add Apps Script URL if provided
+      if (connection.appsScriptUrl) {
+        connectionString += `${connectionString.includes('?') ? '&' : '?'}apps_script_url=${encodeURIComponent(connection.appsScriptUrl)}`;
+      }
+
+      const formData = new FormData();
+      formData.append('name', connection.title);
+      formData.append('environmentId', selectedEnvironment.value);
+      formData.append('type', dbType.type || dbType.value.toUpperCase());
+
+      const properties = [
+        {
+          type: DataSourcePropertyType.CONNECTION_URL,
+          value: connectionString,
+        },
+      ];
+      formData.append('properties', JSON.stringify(properties));
+      formData.append('type', dbType.type || dbType.value.toUpperCase());
+
+      const response = await fetch('/api/data-sources', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = (await response.json()) as DataSourceResponse;
+
+      if (result.success) {
+        toast.success('Google Sheets data source added successfully');
+        onSuccess();
+      } else {
+        setError(result.error || 'Failed to create Google Sheets data source');
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDatabaseTypeChange = (value: DataSourceOption) => {
+    setDbType(value);
+    setError(null);
+    setTestResult(null);
+    setDbName('');
+    setPropertyValues({});
+  };
+
+  const isFormDisabled =
+    isTestingConnection ||
+    !selectedEnvironment ||
+    isSubmitting ||
+    !dbType?.properties?.every((prop) => propertyValues?.[prop.type]);
 
   return (
     <div className="space-y-6">
@@ -274,13 +387,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
               <BaseSelect
                 dataTestId={'add-data-source-select'}
                 value={dbType}
-                onChange={(value) => {
-                  setDbType(value as DataSourceOption);
-                  setError(null);
-                  setTestResult(null);
-                  setDbName('');
-                  setConnStr('');
-                }}
+                onChange={(value) => handleDatabaseTypeChange(value as DataSourceOption)}
                 options={availableDataSourceOptions}
                 width="100%"
                 menuPlacement={'bottom'}
@@ -315,10 +422,23 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
             )}
           </div>
 
+          {isGoogleSheetsSelected && (
+            <>
+              {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
+              <GoogleWorkspaceConnector
+                type="sheets"
+                onConnection={handleGoogleSheetsConnection}
+                onError={setError}
+                isConnecting={isSubmitting}
+                isSuccess={false}
+              />
+            </>
+          )}
+
           {dbType.value !== SAMPLE_DATABASE && !isGoogleSheetsSelected && (
             <>
               <div>
-                <label className="mb-3 block text-sm font-medium text-secondary">Database Name</label>
+                <label className="mb-3 block text-sm font-medium text-secondary">Data Source Name</label>
                 <input
                   type="text"
                   value={dbName}
@@ -332,30 +452,42 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                     'transition-all duration-200',
                     'disabled:opacity-50 disabled:cursor-not-allowed',
                   )}
-                  placeholder="Enter database name"
+                  placeholder="Enter data source name"
                 />
               </div>
-              <div>
-                <label className="mb-3 block text-sm font-medium text-secondary">Connection String</label>
-                <input
-                  type="text"
-                  value={connStr}
-                  onChange={(e) => setConnStr(e.target.value)}
-                  disabled={isSubmitting}
-                  className={classNames(
-                    'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                    'text-primary placeholder-tertiary text-base',
-                    'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
-                    'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
-                    'transition-all duration-200',
-                    'disabled:opacity-50 disabled:cursor-not-allowed',
-                  )}
-                  placeholder={`${dbType.connectionStringFormat}`}
-                />
-                <label className="mb-3 block !text-[13px] text-secondary mt-2">
-                  e.g. {dbType.connectionStringFormat}
-                </label>
-              </div>
+
+              {/* Dynamic property fields */}
+              {dbType.properties && dbType.properties.length > 0 ? (
+                dbType.properties.map((property: DataSourcePropertyDescriptor) => (
+                  <div key={property.label}>
+                    <label className="mb-3 block text-sm font-medium text-secondary">{property.label}</label>
+                    <input
+                      type="text"
+                      value={propertyValues[property.type] || ''}
+                      onChange={(e) => handlePropertyChange(property.type, e.target.value)}
+                      disabled={isSubmitting}
+                      className={classNames(
+                        'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                        'text-primary placeholder-tertiary text-base',
+                        'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                        'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                        'transition-all duration-200',
+                        'disabled:opacity-50 disabled:cursor-not-allowed',
+                      )}
+                      placeholder={property.format}
+                    />
+                    <label className="mb-3 block !text-[13px] text-secondary mt-2">e.g. {property.format}</label>
+                  </div>
+                ))
+              ) : (
+                <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                      No configuration properties available for this data source type.
+                    </p>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -403,7 +535,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                       e.preventDefault();
                       await handleTestConnection();
                     }}
-                    disabled={isTestingConnection || isSubmitting || !connStr || !selectedEnvironment}
+                    disabled={isFormDisabled}
                     className={classNames(
                       'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                       'bg-depth-1 bg-depth-1/50 ',
@@ -429,7 +561,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={isSubmitting || !selectedEnvironment || (dbType.value !== SAMPLE_DATABASE && !connStr)}
+                  disabled={isFormDisabled}
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                     'bg-accent-500 hover:bg-accent-600',

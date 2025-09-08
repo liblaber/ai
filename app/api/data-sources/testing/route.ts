@@ -1,35 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
-import { z } from 'zod';
-
-const testConnectionSchema = z.object({
-  connectionString: z.string().min(1, 'Connection string is required'),
-});
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
+import type { DataSourceProperty, DataSourceType } from '@liblab/data-access/utils/types';
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const connectionString = formData.get('connectionString');
+    const type = formData.get('type') as DataSourceType;
 
-    const validationResult = testConnectionSchema.safeParse({ connectionString });
+    // array of datasource properties
+    const propertiesJson = formData.get('properties') as string;
+    const properties = JSON.parse(propertiesJson) as DataSourceProperty[];
 
-    if (!validationResult.success) {
-      return NextResponse.json(
-        { success: false, error: validationResult.error.errors[0]?.message || 'Invalid request data' },
-        { status: 400 },
-      );
+    if (!properties?.length) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
-
-    const { connectionString: databaseUrl } = validationResult.data;
 
     try {
       // Get the appropriate accessor for the database URL
-      const accessor = await DataSourcePluginManager.getAccessor(databaseUrl);
+      const accessor = await DataSourcePluginManager.getAccessor(type);
 
       // Validate the connection string format
-      accessor.validate(databaseUrl);
+      accessor.validateProperties(properties);
 
-      const isConnected = await accessor.testConnection(databaseUrl);
+      const isConnected = await accessor.testConnection(properties);
 
       if (isConnected) {
         return NextResponse.json({ success: true, message: 'Connection successful' });

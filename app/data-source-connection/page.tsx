@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckCircle, Lock } from 'lucide-react';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
@@ -10,13 +10,18 @@ import { SelectDatabaseTypeOptions, SingleValueWithTooltip } from '~/components/
 import { useDataSourceActions, useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { useRouter } from 'next/navigation';
 import { Header } from '~/components/header/Header';
+import type { DataSourcePropertyDescriptor } from '@liblab/data-access/utils/types';
+import { DataSourcePropertyType } from '@liblab/data-access/utils/types';
 import {
   type DataSourceOption,
   DEFAULT_DATA_SOURCES,
   SAMPLE_DATABASE,
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
-import GoogleSheetsSetup from '~/components/@settings/tabs/data/forms/GoogleSheetsSetup';
+import {
+  GoogleWorkspaceConnector,
+  type GoogleWorkspaceConnection,
+} from '~/components/google-workspace/GoogleWorkspaceConnector';
 
 interface ApiResponse {
   success: boolean;
@@ -48,7 +53,7 @@ interface EnvironmentsResponse {
 export default function DataSourceConnectionPage() {
   const [dbType, setDbType] = useState<DataSourceOption>(DEFAULT_DATA_SOURCES[0]);
   const [dbName, setDbName] = useState('');
-  const [connStr, setConnStr] = useState('');
+  const [propertyValues, setPropertyValues] = useState<Record<string, string>>({});
   const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
   const [environmentOptions, setEnvironmentOptions] = useState<EnvironmentOption[]>([]);
   const [isLoadingEnvironments, setIsLoadingEnvironments] = useState(true);
@@ -113,15 +118,28 @@ export default function DataSourceConnectionPage() {
       return;
     }
 
-    if (!connStr) {
-      setError('Please enter a connection string');
+    const hasAllRequiredProperties =
+      dbType.properties && dbType.properties.length > 0
+        ? dbType.properties.every((prop) => {
+            const value = propertyValues[prop.type];
+            return value && value.trim() !== '';
+          })
+        : true;
+
+    if (!hasAllRequiredProperties) {
+      setError('Please fill in all required fields');
       return;
     }
 
     try {
       const formData = new FormData();
-      formData.append('name', dbName);
-      formData.append('connectionString', connStr);
+      formData.append('type', dbType.type || dbType.value.toUpperCase());
+
+      const properties = (dbType.properties || []).map((prop) => ({
+        type: prop.type,
+        value: propertyValues[prop.type] || '',
+      }));
+      formData.append('properties', JSON.stringify(properties));
 
       const response = await fetch('/api/data-sources/testing', {
         method: 'POST',
@@ -133,7 +151,7 @@ export default function DataSourceConnectionPage() {
       if (result.success) {
         await handleAddDataSource();
       } else {
-        setError(result.message || result.error || 'Failed to connect to database');
+        setError(result.message || result.error || 'Failed to connect to data source');
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An unexpected error occurred');
@@ -148,7 +166,13 @@ export default function DataSourceConnectionPage() {
 
       const formData = new FormData();
       formData.append('name', dbName);
-      formData.append('connectionString', connStr);
+      formData.append('type', dbType.type || dbType.value.toUpperCase());
+
+      const properties = (dbType.properties || []).map((prop) => ({
+        type: prop.type,
+        value: propertyValues[prop.type] || '',
+      }));
+      formData.append('properties', JSON.stringify(properties));
       formData.append('environmentId', selectedEnvironment!.value);
 
       const response = await fetch('/api/data-sources', {
@@ -173,17 +197,67 @@ export default function DataSourceConnectionPage() {
     }
   };
 
-  const handleGoogleSheetsSuccess = () => {
-    if (!selectedEnvironment) {
-      setError('Please select an environment');
-      return;
-    }
+  const handleGoogleSheetsConnection = async (connection: GoogleWorkspaceConnection) => {
+    try {
+      setError(null);
+      setIsConnecting(true);
 
-    setIsSuccess(true);
-    refetchEnvironmentDataSources();
-    setTimeout(() => {
-      router.push('/');
-    }, 1000);
+      if (!selectedEnvironment) {
+        setError('Please select an environment');
+        return;
+      }
+
+      // Create connection string for Google Sheets
+      let connectionString = '';
+
+      if (connection.accessToken && connection.refreshToken) {
+        // OAuth connection
+        connectionString = `sheets://${connection.documentId}?access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}`;
+      } else {
+        // Public URL connection
+        connectionString = connection.url;
+      }
+
+      // Add Apps Script URL if provided
+      if (connection.appsScriptUrl) {
+        connectionString += `${connectionString.includes('?') ? '&' : '?'}apps_script_url=${encodeURIComponent(connection.appsScriptUrl)}`;
+      }
+
+      const formData = new FormData();
+      formData.append('name', connection.title);
+      formData.append('environmentId', selectedEnvironment.value);
+      formData.append('type', dbType.type || dbType.value.toUpperCase());
+
+      const properties = [
+        {
+          type: DataSourcePropertyType.CONNECTION_URL,
+          value: connectionString,
+        },
+      ];
+      formData.append('properties', JSON.stringify(properties));
+
+      const response = await fetch('/api/data-sources', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = (await response.json()) as ApiResponse;
+
+      if (result.success && result.dataSource) {
+        setIsSuccess(true);
+        refetchEnvironmentDataSources();
+        setSelectedEnvironmentDataSource(result.dataSource.id, selectedEnvironment.value);
+        setTimeout(() => {
+          router.push('/');
+        }, 1000);
+      } else {
+        setError(result.error || 'Failed to create Google Sheets data source');
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   const handleSampleDatabase = async () => {
@@ -251,7 +325,7 @@ export default function DataSourceConnectionPage() {
 
                   setDbType(value);
                   setDbName('');
-                  setConnStr('');
+                  setPropertyValues({});
                   setError(null);
                 }}
                 options={availableDataSourceOptions}
@@ -288,7 +362,7 @@ export default function DataSourceConnectionPage() {
             <form onSubmit={handleFormSubmit} className="flex flex-col gap-6">
               <div>
                 <Label htmlFor="db-name" className="mb-3 block text-gray-300">
-                  Database Name
+                  {dbType.label}
                 </Label>
                 <Input
                   id="db-name"
@@ -297,26 +371,40 @@ export default function DataSourceConnectionPage() {
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDbName(e.target.value)}
                 />
               </div>
-              <div>
-                <Label htmlFor="conn-str" className="mb-3 block text-gray-300">
-                  Connection String
-                </Label>
-                <Input
-                  id="conn-str"
-                  type="text"
-                  value={connStr}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConnStr(e.target.value)}
-                />
-                <Label className="mb-3 block !text-[13px] text-gray-300 mt-2">
-                  e.g. {dbType.value}://username:password@host:port/database
-                </Label>
-              </div>
+              {/* Dynamic property fields */}
+              {dbType.properties && dbType.properties.length > 0 ? (
+                dbType.properties.map((property: DataSourcePropertyDescriptor) => (
+                  <div key={property.label}>
+                    <Label className="mb-3 block text-gray-300">{property.label}</Label>
+                    <Input
+                      type="text"
+                      value={propertyValues[property.type] || ''}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setPropertyValues((prev) => ({ ...prev, [property.type]: e.target.value }))
+                      }
+                    />
+                    <Label className="mb-3 block !text-[13px] text-gray-300 mt-2">e.g. {property.format}</Label>
+                  </div>
+                ))
+              ) : (
+                <div className="text-gray-400 text-sm">
+                  No configuration properties available for this data source type.
+                </div>
+              )}
               {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
               <Button
                 type="submit"
                 variant="primary"
                 className={`min-w-[150px] max-w-[220px] transition-all duration-300 ${isSuccess ? 'bg-green-500 hover:bg-green-500 !disabled:opacity-100' : ''}`}
-                disabled={!selectedEnvironment || !dbName || !connStr || isTesting || isSuccess}
+                disabled={
+                  !selectedEnvironment ||
+                  !dbName ||
+                  (dbType.properties && dbType.properties.length > 0
+                    ? !dbType.properties.every((prop) => !!propertyValues[prop.type])
+                    : false) ||
+                  isTesting ||
+                  isSuccess
+                }
               >
                 {isSuccess ? (
                   <div className="flex items-center gap-2">
@@ -346,7 +434,13 @@ export default function DataSourceConnectionPage() {
           {isGoogleSheetsSelected && (
             <>
               {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
-              <GoogleSheetsSetup onSuccess={handleGoogleSheetsSuccess} environmentId={selectedEnvironment?.value} />
+              <GoogleWorkspaceConnector
+                type="sheets"
+                onConnection={handleGoogleSheetsConnection}
+                onError={setError}
+                isConnecting={isConnecting}
+                isSuccess={isSuccess}
+              />
             </>
           )}
           {dbType.value === SAMPLE_DATABASE && (

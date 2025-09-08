@@ -1,15 +1,22 @@
 import { logger } from '~/utils/logger';
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
-import { isGoogleSheetsConnection } from '@liblab/data-access/accessors/google-sheets';
+import { isGoogleConnection } from '@liblab/data-access/accessors/google-sheets';
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
+import type { BaseDatabaseAccessor } from '@liblab/data-access/baseDatabaseAccessor';
+import { DataSourceType } from '@liblab/data-access/utils/types';
 
-export async function executeQuery(connectionUrl: string, query: string, params?: string[]): Promise<any[]> {
-  const dataAccessor = await DataSourcePluginManager.getAccessor(connectionUrl);
+export async function executeQuery(
+  connectionUrl: string,
+  dataSourceType: DataSourceType,
+  query: string,
+  params?: string[],
+): Promise<any[]> {
+  const dataAccessor = (await DataSourcePluginManager.getAccessor(dataSourceType)) as BaseDatabaseAccessor;
 
   try {
     await dataAccessor.initialize(connectionUrl);
 
     // Enhanced logging for Google Sheets JSON parsing issues
-    const isSheetsError = isGoogleSheetsConnection(connectionUrl);
+    const isSheetsError = isGoogleConnection(connectionUrl);
 
     if (isSheetsError) {
       console.log('[Database] Google Sheets query execution:', {
@@ -27,7 +34,7 @@ export async function executeQuery(connectionUrl: string, query: string, params?
   } catch (e) {
     // Enhanced error logging for MongoDB and Google Sheets JSON parsing issues
     const isMongoError = connectionUrl.startsWith('mongodb');
-    const isSheetsError = isGoogleSheetsConnection(connectionUrl);
+    const isSheetsError = isGoogleConnection(connectionUrl);
     const isJsonError = e instanceof Error && e.message.includes('Invalid JSON format');
 
     if ((isMongoError || isSheetsError) && isJsonError) {

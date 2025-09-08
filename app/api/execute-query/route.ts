@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '~/lib/database';
 import { env } from '~/env';
 import { createScopedLogger } from '~/utils/logger';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 const logger = createScopedLogger('execute-query');
 import { z } from 'zod';
@@ -14,6 +15,7 @@ const encryptedRequestSchema = z.object({
 const decryptedQuerySchema = z.object({
   query: z.string().min(1, 'Query is required'),
   databaseUrl: z.string().min(1, 'Database URL is required'),
+  dataSourceType: z.string().min(1, 'Data source type'),
   params: z.array(z.any()).optional(),
 });
 
@@ -53,9 +55,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { query, databaseUrl, params } = decryptedValidation.data;
+    const { query, databaseUrl, dataSourceType, params } = decryptedValidation.data;
 
-    const resultData = await executeQuery(databaseUrl, query, params);
+    const resultData = await executeQuery(databaseUrl, dataSourceType as DataSourceType, query, params);
+
     const dataBuffer = Buffer.from(JSON.stringify(resultData));
 
     const encryptedResponse = encryptData(env.server.ENCRYPTION_KEY, dataBuffer);
