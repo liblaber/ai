@@ -56,6 +56,9 @@ export default function EditDeploymentMethodForm({
 
           if (currentProvider) {
             setSelectedProvider(currentProvider);
+          } else if (providersResult.length === 1) {
+            // If current provider is not available but only one provider is available, use that one
+            setSelectedProvider(providersResult[0]);
           }
         } else {
           setError('Failed to fetch providers');
@@ -238,7 +241,7 @@ export default function EditDeploymentMethodForm({
                 description: provider.description,
               }))}
               placeholder={isLoadingProviders ? 'Loading providers...' : 'Select provider'}
-              isDisabled={isLoadingProviders}
+              isDisabled={isLoadingProviders || providers.length === 1}
               width="100%"
               minWidth="100%"
               isSearchable={false}

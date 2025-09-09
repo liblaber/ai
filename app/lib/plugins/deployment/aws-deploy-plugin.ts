@@ -10,8 +10,8 @@ import { DeploymentMethodCredentialsType } from '@prisma/client';
 const TOTAL_STEPS = 6;
 
 export class AwsDeployPlugin extends BaseDeploymentPlugin {
-  pluginId = 'aws' as const;
-  name = 'AWS (SST)';
+  pluginId = 'AWS' as const;
+  name = 'AWS';
   description = 'Deploy your application to AWS using Serverless Stack (SST)';
   protected totalSteps = TOTAL_STEPS;
 

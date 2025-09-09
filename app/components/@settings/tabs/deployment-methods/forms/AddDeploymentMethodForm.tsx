@@ -85,6 +85,11 @@ export default function AddDeploymentMethodForm({
 
         if (providersResult) {
           setProviders(providersResult);
+
+          // Auto-select provider if only one is available
+          if (providersResult.length === 1) {
+            setSelectedProvider(providersResult[0]);
+          }
         } else {
           setError('Failed to fetch providers');
         }
@@ -268,7 +273,7 @@ export default function AddDeploymentMethodForm({
                 description: provider.description,
               }))}
               placeholder={isLoadingProviders ? 'Loading providers...' : 'Select provider'}
-              isDisabled={isLoadingProviders}
+              isDisabled={isLoadingProviders || providers.length === 1}
               width="100%"
               minWidth="100%"
               isSearchable={false}

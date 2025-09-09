@@ -2,12 +2,12 @@ import { env } from '~/env';
 import {
   type AuthPluginId,
   type DataAccessPluginId,
+  type DeploymentPluginId,
   type PluginAccessMap,
   type PluginId,
   PluginType,
   type StarterPluginId,
   type UserManagementPluginId,
-  type DeploymentPluginId,
 } from '~/lib/plugins/types';
 
 export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
@@ -34,10 +34,10 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
     'multi-user': false,
   },
   [PluginType.DEPLOYMENT]: {
-    netlify: true,
-    vercel: false,
-    railway: false,
-    aws: false,
+    NETLIFY: true,
+    VERCEL: false,
+    RAILWAY: false,
+    AWS: false,
   },
 };
 
@@ -65,10 +65,10 @@ export const PREMIUM_PLUGIN_ACCESS = {
     'multi-user': true,
   },
   [PluginType.DEPLOYMENT]: {
-    netlify: true,
-    vercel: true,
-    railway: true,
-    aws: true,
+    NETLIFY: true,
+    VERCEL: true,
+    RAILWAY: true,
+    AWS: true,
   },
 };
 

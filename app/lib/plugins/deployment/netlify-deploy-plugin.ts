@@ -8,7 +8,7 @@ import { DeploymentMethodCredentialsType } from '@prisma/client';
 const TOTAL_STEPS = 7;
 
 export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
-  pluginId = 'netlify' as const;
+  pluginId = 'NETLIFY' as const;
   name = 'Netlify';
   description = 'Deploy your application to Netlify';
   protected totalSteps = TOTAL_STEPS;
