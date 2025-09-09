@@ -6,7 +6,7 @@ import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('api.invites');
 
-export async function DELETE(request: NextRequest, { params }: { params: { inviteId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ inviteId: string }> }) {
   try {
     const { userAbility } = await requireUserAbility(request);
 
@@ -14,7 +14,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { invit
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const { inviteId } = params;
+    const { inviteId } = await params;
 
     await inviteService.deleteInvite(inviteId);
 

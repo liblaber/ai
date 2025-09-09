@@ -26,6 +26,7 @@ import JSZip from 'jszip';
 import type { NetlifySiteInfo } from '~/types/netlify';
 import { AlertTriangle, Check, ChevronDown, CodeXml, MessageCircle, Rocket, Settings } from 'lucide-react';
 import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
+import { useDeploymentMethodsStore } from '~/lib/stores/deploymentMethods';
 
 interface ProgressData {
   step: number;
@@ -54,37 +55,22 @@ interface WebsitesConfigResponse {
   };
 }
 
-interface HeaderActionButtonsProps {}
+interface DeploymentProviderInfo {
+  id: string;
+  name: string;
+  description: string;
+  requiredCredentials: string[];
+  enabled: boolean;
+}
 
-// Available deployment types
-const DEPLOYMENT_TYPES = [
-  {
-    id: 'netlify',
-    name: 'Netlify',
-    description: 'Deploy to Netlify',
-    enabled: true, // Will be updated based on config
-  },
-  {
-    id: 'aws',
-    name: 'AWS',
-    description: 'Deploy to AWS',
-    enabled: true, // Will be updated based on config
-  },
-  {
-    id: 'vercel',
-    name: 'Vercel',
-    description: 'Deploy to Vercel',
-    enabled: false, // Placeholder for future
-  },
-] as const;
+type DeploymentTypeId = 'netlify' | 'aws' | 'vercel';
 
-type DeploymentTypeId = (typeof DEPLOYMENT_TYPES)[number]['id'];
-
-export function HeaderActionButtons({}: HeaderActionButtonsProps) {
+export function HeaderActionButtons() {
   const devMode = useStore(workbenchStore.devMode);
   const { showChat } = useStore(chatStore);
   const { website } = useStore(websiteStore);
   const { environmentDataSources, selectedEnvironmentDataSource } = useEnvironmentDataSourcesStore();
+  const { providers, environmentDeploymentMethods } = useDeploymentMethodsStore();
   const isSmallViewport = useViewport(1024);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -97,7 +83,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   const [modalMode, setModalMode] = useState<'publish' | 'settings' | 'initializing'>('publish');
   const [hasNetlifyToken, setHasNetlifyToken] = useState(false);
   const [isPublishingDisabled, setIsPublishingDisabled] = useState(false);
-  const [deploymentTypesConfig, setDeploymentTypesConfig] = useState(DEPLOYMENT_TYPES);
+  const [deploymentTypesConfig, setDeploymentTypesConfig] = useState<DeploymentProviderInfo[]>([]);
 
   // we want to disable sqlite deployments since we do not support remote sqlite nor do we copy the source file yet
   const currentDataSource = environmentDataSources.find(
@@ -107,44 +93,23 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   );
 
   useEffect(() => {
-    async function checkDeploymentConfig() {
+    async function loadDeploymentData() {
       try {
+        // Load providers only (deployment methods are loaded via DataLoader)
+
+        // Check legacy Netlify token for backward compatibility
         const response = await fetch('/api/websites/config');
 
         if (response.ok) {
           const data = (await response.json()) as WebsitesConfigResponse;
           setHasNetlifyToken(data.netlify.enabled);
-
-          // Update deployment types based on configuration
-          // Note: AWS availability would need to be checked via backend API
-          // TODO: Add types
-          setDeploymentTypesConfig((prev: any) => {
-            const updatedConfig = prev.map((type: any) => ({
-              ...type,
-              enabled:
-                type.id === 'netlify'
-                  ? data.netlify.enabled
-                  : type.id === 'aws'
-                    ? true // Assume AWS is available for now
-                    : type.enabled,
-            }));
-
-            // If the currently selected deployment type is not enabled, switch to the first enabled one
-            const firstEnabled = updatedConfig.find((type: any) => type.enabled);
-
-            if (firstEnabled && !updatedConfig.find((t: any) => t.id === selectedDeploymentType)?.enabled) {
-              setSelectedDeploymentType(firstEnabled.id);
-            }
-
-            return updatedConfig;
-          });
         }
       } catch (error) {
-        console.error('Failed to check deployment configuration:', error);
+        console.error('Failed to load deployment data:', error);
       }
     }
 
-    checkDeploymentConfig();
+    loadDeploymentData();
 
     async function checkPublishingCapability() {
       if (!currentDataSource || !currentDataSource.dataSourceId || !currentDataSource.environmentId) {
@@ -162,6 +127,45 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
       fetchWebsite(currentChatId);
     }
   }, [currentChatId]);
+
+  // Update deployment types configuration based on available providers and deployment methods
+  useEffect(() => {
+    if (providers.length === 0) {
+      return;
+    }
+
+    const currentEnvironmentId = selectedEnvironmentDataSource.environmentId;
+    const availableDeploymentMethods = environmentDeploymentMethods.filter(
+      (method) => method.environmentId === currentEnvironmentId,
+    );
+
+    const updatedConfig = providers.map((provider) => {
+      const isEnabled = availableDeploymentMethods.some((method) => method.provider === provider.id);
+
+      return {
+        id: provider.id,
+        name: provider.name,
+        description: provider.description,
+        requiredCredentials: provider.requiredCredentials,
+        enabled: isEnabled,
+      };
+    });
+
+    setDeploymentTypesConfig(updatedConfig);
+
+    // If the currently selected deployment type is not enabled, switch to the first enabled one
+    const firstEnabled = updatedConfig.find((type) => type.enabled);
+
+    if (firstEnabled && !updatedConfig.find((type) => type.id === selectedDeploymentType)?.enabled) {
+      setSelectedDeploymentType(firstEnabled.id as DeploymentTypeId);
+    }
+  }, [
+    providers,
+    environmentDeploymentMethods,
+    selectedEnvironmentDataSource.environmentId,
+    hasNetlifyToken,
+    selectedDeploymentType,
+  ]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -378,9 +382,8 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
                   setWebsite(data.data.website);
                 }
 
-                localStorage.setItem(`netlify-site-${currentChatId}`, data.data.site.id);
-
-                const deploymentTypeName = deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name;
+                const deploymentTypeName =
+                  deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name || selectedDeploymentType;
                 toast.success(
                   <div>
                     Deployed successfully to {deploymentTypeName}!{' '}
@@ -432,16 +435,28 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
   };
 
   const renderDropdownContent = () => {
-    if (!hasNetlifyToken && !deploymentTypesConfig.some((type) => type.enabled)) {
+    if (deploymentTypesConfig.length === 0) {
+      return (
+        <div className="w-64 p-4 text-sm text-gray-700 dark:text-gray-300">
+          <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-500">
+            <Settings className="w-4 h-4" />
+            Loading...
+          </div>
+          <p className="text-xs text-gray-500">Loading deployment options...</p>
+        </div>
+      );
+    }
+
+    if (!deploymentTypesConfig.length) {
       return (
         <div className="w-64 p-4 text-sm text-gray-700 dark:text-gray-300">
           <div className="flex items-center gap-2 mb-2 text-yellow-600 dark:text-yellow-500">
             <AlertTriangle className="w-4 h-4" />
             Setup Required
           </div>
-          <p className="mb-2">To publish your site, you need to set up deployment authentication first.</p>
+          <p className="mb-2">To publish your site, you need to set up deployment methods first.</p>
           <p className="text-xs text-gray-500">
-            Configure NETLIFY_AUTH_TOKEN or AWS credentials in your environment variables.
+            Go to Settings → Deployment Methods to configure your deployment credentials.
           </p>
         </div>
       );
@@ -456,7 +471,9 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
             className="w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-between"
           >
             <div className="flex items-center gap-2">
-              <span>{deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name}</span>
+              <span>
+                {deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name || 'Select Provider'}
+              </span>
             </div>
             <ChevronDown className="w-4 h-4" />
           </button>
@@ -467,7 +484,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
                 <button
                   key={type.id}
                   onClick={() => {
-                    setSelectedDeploymentType(type.id);
+                    setSelectedDeploymentType(type.id as DeploymentTypeId);
                     setIsDeploymentTypeOpen(false);
                   }}
                   disabled={!type.enabled}
@@ -486,14 +503,7 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
                       )}
                     </div>
                   </div>
-                  {selectedDeploymentType === type.id && type.enabled && (
-                    <Check className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  )}
-                  {!type.enabled && (
-                    <div className="text-xs text-gray-400 dark:text-gray-500 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded">
-                      Coming Soon
-                    </div>
-                  )}
+                  {selectedDeploymentType === type.id && <Check className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
                 </button>
               ))}
             </div>
@@ -504,16 +514,12 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
 
         <button
           onClick={handlePublishClick}
-          disabled={
-            isPublishingDisabled || !deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled
-          }
+          disabled={isPublishingDisabled}
           className={classNames(
             'w-full px-4 py-2 text-left text-sm bg-white dark:bg-[#111111] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2',
             {
-              'opacity-50 cursor-not-allowed':
-                isPublishingDisabled || !deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled,
-              'hover:bg-gray-100 dark:hover:bg-gray-800':
-                !isPublishingDisabled && !!deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.enabled,
+              'opacity-50 cursor-not-allowed': isPublishingDisabled,
+              'hover:bg-gray-100 dark:hover:bg-gray-800': !isPublishingDisabled,
             },
           )}
           title={
@@ -557,11 +563,6 @@ export function HeaderActionButtons({}: HeaderActionButtonsProps) {
                 },
               )}
             >
-              {selectedDeploymentType !== 'netlify' && !isPublishingDisabled && (
-                <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                  ({deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name})
-                </span>
-              )}
               Publish
             </Button>
           </div>

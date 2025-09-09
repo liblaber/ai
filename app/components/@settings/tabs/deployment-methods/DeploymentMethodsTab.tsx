@@ -6,14 +6,13 @@ import AddDeploymentMethodForm from './forms/AddDeploymentMethodForm';
 import EditDeploymentMethodForm from './forms/EditDeploymentMethodForm';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
-import { type EnvironmentDeploymentMethod, useDeploymentMethodsStore } from '~/lib/stores/deploymentMethods';
+import {
+  type EnvironmentDeploymentMethod,
+  useDeploymentMethodActions,
+  useDeploymentMethodsStore,
+} from '~/lib/stores/deploymentMethods';
 import { settingsPanelStore, useSettingsStore } from '~/lib/stores/settings';
 import { useStore } from '@nanostores/react';
-
-interface EnvironmentDeploymentMethodsResponse {
-  success: boolean;
-  environmentDeploymentMethods: EnvironmentDeploymentMethod[];
-}
 
 export default function DeploymentMethodsTab() {
   const { showAddForm } = useStore(settingsPanelStore);
@@ -23,7 +22,8 @@ export default function DeploymentMethodsTab() {
   const [selectedEnvironmentDeploymentMethod, setSelectedEnvironmentDeploymentMethod] =
     useState<EnvironmentDeploymentMethod | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { environmentDeploymentMethods, setEnvironmentDeploymentMethods } = useDeploymentMethodsStore();
+  const { environmentDeploymentMethods } = useDeploymentMethodsStore();
+  const { loadDeploymentMethods } = useDeploymentMethodActions();
   const { selectedTab } = useSettingsStore();
 
   // Update local state when store changes
@@ -38,23 +38,7 @@ export default function DeploymentMethodsTab() {
     }
   }, [selectedTab]);
 
-  // Load deployment methods on mount
-  useEffect(() => {
-    const loadDeploymentMethods = async () => {
-      try {
-        const response = await fetch('/api/deployment-methods');
-        const data = (await response.json()) as EnvironmentDeploymentMethodsResponse;
-
-        if (data.success) {
-          setEnvironmentDeploymentMethods(data.environmentDeploymentMethods);
-        }
-      } catch (error) {
-        console.error('Failed to load deployment methods:', error);
-      }
-    };
-
-    loadDeploymentMethods();
-  }, [setEnvironmentDeploymentMethods]);
+  // Deployment methods are loaded via DataLoader, no need to load them here
 
   const handleDelete = async () => {
     if (!selectedEnvironmentDeploymentMethod) {
@@ -74,12 +58,7 @@ export default function DeploymentMethodsTab() {
       toast.success('Deployment method deleted successfully');
 
       // Reload deployment methods
-      const reloadResponse = await fetch('/api/deployment-methods');
-      const reloadData = (await reloadResponse.json()) as EnvironmentDeploymentMethodsResponse;
-
-      if (reloadData.success) {
-        setEnvironmentDeploymentMethods(reloadData.environmentDeploymentMethods);
-      }
+      await loadDeploymentMethods();
 
       setShowDeleteConfirm(false);
       setShowEditForm(false);
@@ -160,19 +139,9 @@ export default function DeploymentMethodsTab() {
           <AddDeploymentMethodForm
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
-            onSuccess={() => {
+            onSuccess={async () => {
               // Reload deployment methods
-              const reloadResponse = fetch('/api/deployment-methods');
-              reloadResponse
-                .then((response) => response.json())
-                .then((data: unknown) => {
-                  const typedData = data as EnvironmentDeploymentMethodsResponse;
-
-                  if (typedData.success) {
-                    setEnvironmentDeploymentMethods(typedData.environmentDeploymentMethods);
-                  }
-                })
-                .catch((error) => console.error('Failed to reload deployment methods after add:', error));
+              await loadDeploymentMethods();
               handleBack();
             }}
           />
@@ -199,23 +168,14 @@ export default function DeploymentMethodsTab() {
               </div>
             </div>
           </div>
+
           <EditDeploymentMethodForm
             selectedDeploymentMethod={selectedEnvironmentDeploymentMethod}
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
-            onSuccess={() => {
+            onSuccess={async () => {
               // Reload deployment methods
-              const reloadResponse = fetch('/api/deployment-methods');
-              reloadResponse
-                .then((response) => response.json())
-                .then((data: unknown) => {
-                  const typedData = data as EnvironmentDeploymentMethodsResponse;
-
-                  if (typedData.success) {
-                    setEnvironmentDeploymentMethods(typedData.environmentDeploymentMethods);
-                  }
-                })
-                .catch((error) => console.error('Failed to reload deployment methods after edit:', error));
+              await loadDeploymentMethods();
               handleBack();
             }}
             onDelete={handleDeleteClick}

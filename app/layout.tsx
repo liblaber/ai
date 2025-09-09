@@ -11,6 +11,7 @@ import { auth } from '~/auth/auth-config';
 import type { Session } from '~/auth/session';
 import { getUserAbility } from '~/lib/casl/user-ability';
 import { getEnvironmentVariables } from '~/lib/services/environmentVariablesService';
+import { getEnvironmentDeploymentMethods } from '~/lib/services/deploymentMethodService';
 
 // Force dynamic rendering to prevent static generation issues with headers
 export const dynamic = 'force-dynamic';
@@ -41,6 +42,7 @@ async function getRootData() {
     let user = null;
     let environmentDataSources: any[] = [];
     let environmentVariables: any[] = [];
+    let environmentDeploymentMethods: any[] = [];
     let dataSourceTypes: any[] = [];
 
     if (typedSession?.user) {
@@ -54,6 +56,8 @@ async function getRootData() {
       environmentDataSources = await getEnvironmentDataSources(userAbility);
 
       environmentVariables = await getEnvironmentVariables();
+
+      environmentDeploymentMethods = await getEnvironmentDeploymentMethods();
     }
 
     // Initialize plugin manager
@@ -68,6 +72,7 @@ async function getRootData() {
       user,
       environmentDataSources,
       environmentVariables,
+      environmentDeploymentMethods,
       pluginAccess,
       dataSourceTypes,
     };
@@ -77,6 +82,7 @@ async function getRootData() {
       user: null,
       environmentDataSources: [],
       environmentVariables: [],
+      environmentDeploymentMethods: [],
       pluginAccess: FREE_PLUGIN_ACCESS,
       dataSourceTypes: [],
     };
