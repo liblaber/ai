@@ -1,6 +1,7 @@
 import { prisma } from '~/lib/prisma';
-import { type Conversation, type EnvironmentDataSource, type Prisma } from '@prisma/client';
+import { type Conversation, type Prisma } from '@prisma/client';
 import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
+import { getEnvironmentDataSource } from '~/lib/services/datasourceService';
 
 export const conversationService = {
   async getConversation(conversationId: string): Promise<Conversation | null> {
@@ -9,12 +10,22 @@ export const conversationService = {
     });
   },
 
-  async getConversationEnvironmentDataSource(conversationId: string): Promise<EnvironmentDataSource> {
-    return await prisma.conversation
-      .findUniqueOrThrow({
-        where: { id: conversationId },
-      })
-      .environmentDataSource();
+  async getConversationEnvironmentDataSource(conversationId: string, userId: string) {
+    const conversation = await prisma.conversation.findUniqueOrThrow({
+      where: { id: conversationId },
+    });
+
+    const environmentDataSource = await getEnvironmentDataSource(
+      conversation.dataSourceId,
+      userId,
+      conversation.environmentId,
+    );
+
+    if (!environmentDataSource) {
+      throw new Error('Environment data source not found or access denied');
+    }
+
+    return environmentDataSource;
   },
 
   async createConversation(

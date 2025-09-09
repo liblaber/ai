@@ -1,18 +1,11 @@
+import type { DataSourceDescriptor } from '@liblab/data-access/utils/types';
 import { create } from 'zustand';
-import type { Plugin } from '~/lib/plugins/types';
-
-export interface DataSourceType extends Plugin {
-  value: string;
-  label: string;
-  connectionStringFormat: string;
-  available: boolean;
-}
 
 interface DataSourceTypesState {
-  dataSourceTypes: DataSourceType[];
+  dataSourceTypes: DataSourceDescriptor[];
   isLoading: boolean;
   error: string | null;
-  setDataSourceTypes: (types: DataSourceType[]) => void;
+  setDataSourceTypes: (types: DataSourceDescriptor[]) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
 }

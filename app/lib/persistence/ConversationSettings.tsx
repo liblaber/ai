@@ -3,16 +3,16 @@ import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import WithTooltip from '~/components/ui/Tooltip';
 import { description as descriptionStore } from '~/lib/persistence';
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Dialog, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { toast } from 'sonner';
 import { chatId } from '~/lib/persistence/useConversationHistory';
 import { updateConversation } from '~/lib/persistence/conversations';
-import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 import { ActionRunner } from '~/lib/runtime/action-runner';
 import { updateLatestSnapshot } from '~/lib/persistence/snapshots';
 import { logger } from '~/utils/logger';
+import { getDataSourceProperties } from '~/components/@settings/utils/data-sources';
 
 interface SwitchEnvironmentModalProps {
   isOpen: boolean;
@@ -224,9 +224,17 @@ export function ConversationSettings() {
     setIsUpdatingEnvironment(true);
 
     try {
-      const url = await getDataSourceUrl(selectedEnvironmentDataSource.dataSourceId, targetEnvironmentId);
-      const encodedConnectionString = encodeURIComponent(url);
-      const updatedEnvContent = await ActionRunner.updateEnvironmentVariable('DATABASE_URL', encodedConnectionString);
+      const dataSourceProperties = await getDataSourceProperties(
+        selectedEnvironmentDataSource.dataSourceId,
+        targetEnvironmentId,
+      );
+
+      let updatedEnvContent: string = '';
+
+      for (const dataSourceProperty of dataSourceProperties) {
+        const encodedPropertyValue = encodeURIComponent(dataSourceProperty.value);
+        updatedEnvContent = await ActionRunner.updateEnvironmentVariable(dataSourceProperty.type, encodedPropertyValue);
+      }
 
       setSelectedEnvironmentDataSource(selectedEnvironmentDataSource.dataSourceId, targetEnvironmentId);
 

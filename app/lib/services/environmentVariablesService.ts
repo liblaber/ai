@@ -163,7 +163,7 @@ export function decryptEnvironmentVariable(envVar: EnvironmentVariable): Environ
   }
 }
 
-function encryptValue(value: string): string {
+export function encryptValue(value: string): string {
   const encryptionKey = env.server.ENCRYPTION_KEY;
 
   if (!encryptionKey) {

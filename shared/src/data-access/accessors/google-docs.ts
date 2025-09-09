@@ -1,13 +1,17 @@
-import type { BaseAccessor } from '../baseAccessor';
 import type { Table } from '../../types';
 import { GoogleWorkspaceAuthManager } from './google-workspace/auth-manager';
 import { GoogleWorkspaceAPIClient } from './google-workspace/api-client';
 import { GoogleDocsService } from './google-workspace/docs-service';
-import { type GoogleWorkspaceConfig, type GoogleConnectionInfo, GoogleWorkspaceError } from './google-workspace/types';
+import { type GoogleConnectionInfo, type GoogleWorkspaceConfig, GoogleWorkspaceError } from './google-workspace/types';
+import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '../utils/types';
+import { BaseDatabaseAccessor } from '../baseDatabaseAccessor';
 
-export class GoogleDocsAccessor implements BaseAccessor {
-  static pluginId = 'google-docs';
+// TODO: https://linear.app/liblab/issue/ENG-966/adapt-google-sheets-docs-to-a-new-accessor-context-provider-style
+export class GoogleDocsAccessor extends BaseDatabaseAccessor {
+  readonly pluginId: DataAccessPluginId = 'google-docs';
   readonly label = 'Google Docs';
+  readonly dataSourceType: DataSourceType = DataSourceType.GOOGLE_DOCS;
+
   readonly preparedStatementPlaceholderExample = '{ searchTerm: $1, includeHeaders: $2 }';
   readonly connectionStringFormat = 'docs://DOCUMENT_ID/?auth=oauth2&client_id=xxx&scope=documents.readonly';
 
@@ -21,8 +25,9 @@ export class GoogleDocsAccessor implements BaseAccessor {
     return databaseUrl.startsWith('docs://');
   }
 
-  async testConnection(connectionString: string): Promise<boolean> {
+  async testConnection(dataSourceProperties: DataSourceProperty[]): Promise<boolean> {
     try {
+      const connectionString = this.getConnectionStringFromProperties(dataSourceProperties);
       // Parse connection string to extract document ID and auth info
       const connectionInfo = this._parseConnectionString(connectionString);
 
@@ -167,8 +172,9 @@ export class GoogleDocsAccessor implements BaseAccessor {
     }
   }
 
-  validate(connectionString: string): void {
+  validateProperties(dataSourceProperties: DataSourceProperty[]): void {
     try {
+      const connectionString = this.getConnectionStringFromProperties(dataSourceProperties);
       const connectionInfo = this._parseConnectionString(connectionString);
 
       // Validate document ID format

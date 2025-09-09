@@ -1,7 +1,7 @@
 import { decryptData, encryptData } from '@/lib/encryption/encryption';
 
 export async function executeQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
-  let databaseUrl = process.env.DATABASE_URL || '';
+  let databaseUrl = process.env.CONNECTION_URL || '';
 
   // Handle double URL encoding - decode until we get a valid URL format
   while (databaseUrl.includes('%')) {

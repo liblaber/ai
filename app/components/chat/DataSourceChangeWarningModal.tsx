@@ -52,7 +52,7 @@ export const DataSourceChangeWarningModal: React.FC<DataSourceChangeWarningModal
             </p>
             <p>This will:</p>
             <ul className="list-disc list-inside ml-2 space-y-1">
-              <li>Update the DATABASE_URL in your .env file</li>
+              <li>Update the data source variables in your .env file</li>
               <li>Potentially cause runtime errors if schemas are incompatible</li>
               <li>Require you to restart your application</li>
             </ul>
