@@ -1,5 +1,5 @@
 import { classNames } from '~/utils/classNames';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle, Eye, EyeOff, Info, Loader2, Plug, Save, Trash2, XCircle } from 'lucide-react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { toast } from 'sonner';
@@ -15,6 +15,8 @@ import type { EnvironmentDataSource } from '~/lib/stores/environmentDataSources'
 import { getDataSourceProperties } from '~/components/@settings/utils/data-sources';
 import type { DataSourcePropertyDescriptor } from '@liblab/data-access/utils/types';
 import ResourceAccessMembers from '~/components/@settings/shared/components/ResourceAccessMembers';
+import { Can } from '@casl/react';
+import { AbilityContext } from '~/components/ability/AbilityProvider';
 
 interface DataSourceResponse {
   success: boolean;
@@ -478,13 +480,15 @@ export default function EditDataSourceForm({
           )}
         </div>
 
-        <div>
-          <ResourceAccessMembers
-            resourceScope="DATA_SOURCE"
-            resourceId={selectedDataSource.dataSource.id}
-            onAddMembers={onAddMembers}
-          />
-        </div>
+        <Can I="manage" a={selectedDataSource.dataSource} ability={React.useContext(AbilityContext)}>
+          <div>
+            <ResourceAccessMembers
+              resourceScope="DATA_SOURCE"
+              resourceId={selectedDataSource.dataSource.id}
+              onAddMembers={onAddMembers}
+            />
+          </div>
+        </Can>
 
         <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
           <div className="flex items-center justify-between">

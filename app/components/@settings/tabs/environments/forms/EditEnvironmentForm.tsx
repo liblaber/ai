@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, Database, Key, Monitor } from 'lucide-react';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
 import type { EnvironmentWithRelations } from '~/lib/services/environmentService';
 import ResourceAccessMembers from '~/components/@settings/shared/components/ResourceAccessMembers';
+import { Can } from '@casl/react';
+import { AbilityContext } from '~/components/ability/AbilityProvider';
 
 interface EditEnvironmentFormProps {
   environment: EnvironmentWithRelations;
@@ -209,9 +211,11 @@ export default function EditEnvironmentForm({
         </div>
       </div>
 
-      <div>
-        <ResourceAccessMembers resourceScope="ENVIRONMENT" resourceId={environment.id} onAddMembers={onAddMembers} />
-      </div>
+      <Can I="manage" a={environment} ability={React.useContext(AbilityContext)}>
+        <div>
+          <ResourceAccessMembers resourceScope="ENVIRONMENT" resourceId={environment.id} onAddMembers={onAddMembers} />
+        </div>
+      </Can>
 
       <div className="flex items-center justify-between pt-4">
         <button

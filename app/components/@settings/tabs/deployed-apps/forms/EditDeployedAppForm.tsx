@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
 import type { Website } from '~/lib/services/websiteService';
 import ResourceAccessMembers from '~/components/@settings/shared/components/ResourceAccessMembers';
+import { Can } from '@casl/react';
+import { AbilityContext } from '~/components/ability/AbilityProvider';
 import { logger } from '~/utils/logger';
 
 interface EditDeployedAppFormProps {
@@ -97,9 +99,11 @@ export default function EditDeployedAppForm({
         </div>
       </div>
 
-      <div>
-        <ResourceAccessMembers resourceScope="WEBSITE" resourceId={website.id} onAddMembers={onAddMembers} />
-      </div>
+      <Can I="manage" a={website} ability={React.useContext(AbilityContext)}>
+        <div>
+          <ResourceAccessMembers resourceScope="WEBSITE" resourceId={website.id} onAddMembers={onAddMembers} />
+        </div>
+      </Can>
 
       <div className="flex items-center justify-between pt-4">
         <button
