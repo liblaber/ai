@@ -20,10 +20,10 @@ export const permissionOptions: SelectOption[] = [
 type ResourceAccessMembersProps = {
   resourceScope: ResourceRoleScope;
   resourceId: string;
-  onInvite: () => void;
+  onAddMembers: () => void;
 };
 
-export default function ResourceAccessMembers({ resourceScope, resourceId, onInvite }: ResourceAccessMembersProps) {
+export default function ResourceAccessMembers({ resourceScope, resourceId, onAddMembers }: ResourceAccessMembersProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [resourceMembers, setResourceMembers] = useState<ResourceMember[]>([]);
@@ -165,7 +165,7 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onInv
           />
         </div>
         <button
-          onClick={onInvite}
+          onClick={onAddMembers}
           className={classNames(
             'inline-flex items-center gap-1 pl-2 pr-3 py-1.75 text-sm rounded-lg transition-colors',
             'border border-gray-600',
@@ -176,7 +176,7 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onInv
           )}
         >
           <Plus className="w-3 h-3 text-white" />
-          Invite
+          Add Members
         </button>
       </div>
 

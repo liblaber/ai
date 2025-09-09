@@ -226,7 +226,7 @@ export default function DataTab() {
             handleBack();
           }}
           onDelete={handleDeleteClick}
-          onInvite={() => {
+          onAddMembers={() => {
             setShowEditForm(false);
             setShowAddAccessForm(true);
           }}

@@ -46,7 +46,7 @@ interface EditDataSourceFormProps {
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: () => void;
   onDelete: () => void;
-  onInvite: () => void;
+  onAddMembers: () => void;
 }
 
 export default function EditDataSourceForm({
@@ -55,7 +55,7 @@ export default function EditDataSourceForm({
   setIsSubmitting,
   onSuccess,
   onDelete,
-  onInvite,
+  onAddMembers,
 }: EditDataSourceFormProps) {
   const { availableDataSourceOptions } = useDataSourceTypesPlugin();
 
@@ -482,7 +482,7 @@ export default function EditDataSourceForm({
           <ResourceAccessMembers
             resourceScope="DATA_SOURCE"
             resourceId={selectedDataSource.dataSource.id}
-            onInvite={onInvite}
+            onAddMembers={onAddMembers}
           />
         </div>
 

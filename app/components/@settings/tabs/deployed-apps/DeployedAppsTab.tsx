@@ -132,7 +132,7 @@ export default function DeployedAppsTab() {
             handleBack();
           }}
           onDelete={() => handleDeleteClick(selectedWebsite)}
-          onInvite={() => {
+          onAddMembers={() => {
             setShowEditForm(false);
             setShowAddAccessForm(true);
           }}

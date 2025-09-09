@@ -202,7 +202,7 @@ export default function EnvironmentsTab() {
             handleBack();
           }}
           onDelete={() => handleDeleteClick(selectedEnvironment)}
-          onInvite={() => {
+          onAddMembers={() => {
             setShowEditForm(false);
             setShowAddAccessForm(true);
           }}
