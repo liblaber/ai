@@ -73,30 +73,38 @@ export function getHighestRoleType(role: Role, permissions: Pick<Permission, 'ac
   return 'viewer';
 }
 
+const getUserRoleAccessWhereClause = (
+  roleScope: RoleScope,
+  permissionResource: PermissionResource,
+  resourceId: string,
+) => {
+  const resourceIdField = `${permissionResource.charAt(0).toLowerCase() + permissionResource.slice(1)}Id`;
+
+  return {
+    role: {
+      scope: { in: [roleScope, RoleScope.GENERAL] },
+      permissions: {
+        some: {
+          // The permission action must be 'manage' or 'read'.
+          action: { in: [PermissionAction.manage, PermissionAction.read] },
+          // The permission must be for this specific resource type OR for 'all' resources.
+          resource: { in: [permissionResource, PermissionResource.all] },
+          // The permission must be linked to this specific resource ID OR be a general permission
+          OR: [{ [resourceIdField]: resourceId }, { [resourceIdField]: null }],
+        },
+      },
+    },
+  };
+};
+
 export async function getMembersForResource(
   resourceId: string,
   roleScope: RoleScope,
   permissionResource: PermissionResource,
 ): Promise<ResourceMember[]> {
-  const resourceIdField = `${permissionResource.charAt(0).toLowerCase() + permissionResource.slice(1)}Id`;
-
   // Find all UserRole entries that link to a role with the required permissions.
-  const userRoles = await prisma.userRole.findMany({
-    where: {
-      role: {
-        scope: { in: [roleScope, RoleScope.GENERAL] },
-        permissions: {
-          some: {
-            // The permission action must be 'manage' or 'read'.
-            action: { in: [PermissionAction.manage, PermissionAction.read] },
-            // The permission must be for this specific resource type OR for 'all' resources.
-            resource: { in: [permissionResource, PermissionResource.all] },
-            // The permission must be linked to this specific resource ID OR be a general permission
-            OR: [{ [resourceIdField]: resourceId }, { [resourceIdField]: null }],
-          },
-        },
-      },
-    },
+  const userRolesWithAccess = await prisma.userRole.findMany({
+    where: getUserRoleAccessWhereClause(roleScope, permissionResource, resourceId),
     include: {
       user: {
         select: {
@@ -122,7 +130,7 @@ export async function getMembersForResource(
   // A user might have multiple roles that grant access. We want to return each user only once with their highest level role.
   const memberMap = new Map<string, ResourceMember>();
 
-  for (const { user, role } of userRoles) {
+  for (const { user, role } of userRolesWithAccess) {
     if (user) {
       const currentRoleType = getHighestRoleType(role, role.permissions);
       const existingMember = memberMap.get(user.id);
@@ -144,4 +152,45 @@ export async function getMembersForResource(
   }
 
   return Array.from(memberMap.values());
+}
+
+export interface EligibleMember {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+}
+
+export async function getEligibleMembersForResource(
+  resourceId: string,
+  roleScope: RoleScope,
+  permissionResource: PermissionResource,
+): Promise<EligibleMember[]> {
+  // Find all UserRole entries that link to a role with the required permissions.
+  const userRolesWithAccess = await prisma.userRole.findMany({
+    where: getUserRoleAccessWhereClause(roleScope, permissionResource, resourceId),
+    include: {
+      user: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  // Find all users who are not in the userRolesWithAccess list.
+  return await prisma.user.findMany({
+    where: {
+      id: { not: { in: userRolesWithAccess.map(({ user }) => user.id) } },
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  });
 }
