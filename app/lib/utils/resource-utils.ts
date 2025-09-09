@@ -169,19 +169,12 @@ export async function getEligibleMembersForResource(
   // Find all UserRole entries that link to a role with the required permissions.
   const userRolesWithAccess = await prisma.userRole.findMany({
     where: getUserRoleAccessWhereClause(roleScope, permissionResource, resourceId),
-    include: {
-      user: {
-        select: {
-          id: true,
-        },
-      },
-    },
   });
 
   // Find all users who are not in the userRolesWithAccess list.
   return await prisma.user.findMany({
     where: {
-      id: { not: { in: userRolesWithAccess.map(({ user }) => user.id) } },
+      id: { not: { in: userRolesWithAccess.map((userRole) => userRole.userId) } },
     },
     select: {
       id: true,
