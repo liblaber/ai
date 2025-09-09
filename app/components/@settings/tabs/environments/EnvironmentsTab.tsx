@@ -4,7 +4,7 @@ import { AlertTriangle, ArrowLeft, Edit, Globe, Plus, Trash2 } from 'lucide-reac
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import AddEnvironmentForm from './forms/AddEnvironmentForm';
 import EditEnvironmentForm from './forms/EditEnvironmentForm';
-import ResourceAccessInvite from '~/components/@settings/shared/components/ResourceAccessInvite';
+import AddResourceAccess from '~/components/@settings/shared/components/AddResourceAccess';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
 import { useEnvironmentsStore } from '~/lib/stores/environments';
@@ -22,7 +22,7 @@ export default function EnvironmentsTab() {
   const { showAddForm } = useStore(settingsPanelStore);
   const [showAddFormLocal, setShowAddFormLocal] = useState(showAddForm);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [showAddAccessForm, setShowAddAccessForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentWithRelations | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -204,21 +204,21 @@ export default function EnvironmentsTab() {
           onDelete={() => handleDeleteClick(selectedEnvironment)}
           onInvite={() => {
             setShowEditForm(false);
-            setShowInviteForm(true);
+            setShowAddAccessForm(true);
           }}
         />
       </div>
     );
   }
 
-  if (showInviteForm && selectedEnvironment) {
+  if (showAddAccessForm && selectedEnvironment) {
     return (
-      <ResourceAccessInvite
+      <AddResourceAccess
         resourceScope="ENVIRONMENT"
         resource={selectedEnvironment}
         onBack={() => {
           setShowEditForm(true);
-          setShowInviteForm(false);
+          setShowAddAccessForm(false);
         }}
       />
     );
