@@ -1,4 +1,4 @@
-import type { SqlQueryOutput } from '~/lib/.server/llm/database-source';
+import type { DatabaseQueryOutput } from '~/lib/plugins/data-source/context-provider/database/types';
 
 export const SQL_QUERY_CONSTRAINTS = `
 <sql_query_constraints>
@@ -14,7 +14,7 @@ export const SQL_QUERY_CONSTRAINTS = `
 </sql_query_constraints>
 `;
 
-export const mapSqlQueriesToPrompt = (sqlQueries: SqlQueryOutput): string => `<sql_queries>
+export const mapSqlQueriesToPrompt = (sqlQueries: DatabaseQueryOutput): string => `<sql_queries>
 Use these SQL queries to create components:
 
 ${sqlQueries

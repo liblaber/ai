@@ -12,8 +12,8 @@ import {
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
 import type { EnvironmentDataSource } from '~/lib/stores/environmentDataSources';
-import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
-import { getConnectionProtocol } from '@liblab/data-access/utils/connection';
+import { getDataSourceProperties } from '~/components/@settings/utils/data-sources';
+import type { DataSourcePropertyDescriptor } from '@liblab/data-access/utils/types';
 import ResourceAccessMembers from '~/components/@settings/shared/components/ResourceAccessMembers';
 
 interface DataSourceResponse {
@@ -49,11 +49,6 @@ interface EditDataSourceFormProps {
   onInvite: () => void;
 }
 
-function getDataSourceType(databaseUrl: string) {
-  const protocol = getConnectionProtocol(databaseUrl);
-  return protocol === 'postgresql' ? 'postgres' : protocol;
-}
-
 export default function EditDataSourceForm({
   selectedDataSource,
   isSubmitting,
@@ -66,7 +61,7 @@ export default function EditDataSourceForm({
 
   const [dbType, setDbType] = useState<DataSourceOption>({} as DataSourceOption);
   const [dbName, setDbName] = useState('');
-  const [connStr, setConnStr] = useState('');
+  const [propertyValues, setPropertyValues] = useState<Record<string, string>>({});
   const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
   const [environmentOptions, setEnvironmentOptions] = useState<EnvironmentOption[]>([]);
   const [isLoadingEnvironments, setIsLoadingEnvironments] = useState(true);
@@ -74,7 +69,7 @@ export default function EditDataSourceForm({
   const [testResult, setTestResult] = useState<DataSourceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
-  const [showConnStr, setShowConnStr] = useState(false);
+  const [showSensitiveInput, setShowSensitiveInput] = useState(false);
 
   // Fetch environments on component mount
   useEffect(() => {
@@ -127,7 +122,7 @@ export default function EditDataSourceForm({
     if (selectedDataSource.dataSource.name === 'Sample Database') {
       setDbType(DEFAULT_DATA_SOURCES[0]);
       setDbName('');
-      setConnStr('');
+      setPropertyValues({});
     } else {
       // For non-sample databases, we need to get the connection string from the API
       // since it's not stored in the EnvironmentDataSource object
@@ -135,19 +130,28 @@ export default function EditDataSourceForm({
 
       setDbName(selectedDataSource.dataSource.name);
 
-      getDataSourceUrl(selectedDataSource.dataSource.id, currentEnvironment.value).then((databaseUrl) => {
-        setConnStr(databaseUrl);
-
-        const type = getDataSourceType(databaseUrl);
-        const matchingOption = availableDataSourceOptions.find((opt) => opt.value === type);
+      getDataSourceProperties(selectedDataSource.dataSource.id, currentEnvironment.value).then((properties) => {
+        const matchingOption = availableDataSourceOptions.find(
+          (opt) => opt.value === selectedDataSource.dataSource.type.toLowerCase(),
+        );
 
         setDbType(matchingOption || DEFAULT_DATA_SOURCES[0]);
+        setDbName(selectedDataSource.dataSource.name);
+
+        setPropertyValues(properties.reduce((acc, prop) => ({ ...acc, [prop.type]: prop.value }), {}));
       });
     }
 
     setError(null);
     setTestResult(null);
   }, [selectedDataSource?.dataSourceId, selectedDataSource?.dataSource.name, selectedDataSource?.environment]);
+
+  const handlePropertyChange = (propertyLabel: string, value: string) => {
+    setPropertyValues((prev) => ({
+      ...prev,
+      [propertyLabel]: value,
+    }));
+  };
 
   const handleTestConnection = async () => {
     setIsTestingConnection(true);
@@ -156,8 +160,21 @@ export default function EditDataSourceForm({
 
     try {
       if (dbType.value !== SAMPLE_DATABASE) {
-        if (!connStr) {
-          setError('Please enter a connection string');
+        if (!dbType.properties || dbType.properties.length === 0) {
+          setTestResult({
+            success: true,
+            message: 'No connection testing required for this data source type.',
+          });
+          return;
+        }
+
+        const hasAllRequiredProperties = dbType.properties.every((prop) => {
+          const value = propertyValues[prop.label];
+          return value && value.trim() !== '';
+        });
+
+        if (!hasAllRequiredProperties) {
+          setError('Please fill in all required fields');
           return;
         }
 
@@ -167,8 +184,13 @@ export default function EditDataSourceForm({
         }
 
         const formData = new FormData();
-        formData.append('name', dbName);
-        formData.append('connectionString', connStr);
+        formData.append('type', dbType.type || dbType.value.toUpperCase());
+
+        const properties = dbType.properties.map((prop) => ({
+          type: prop.type,
+          value: propertyValues[prop.label] || '',
+        }));
+        formData.append('properties', JSON.stringify(properties));
 
         const response = await fetch('/api/data-sources/testing', {
           method: 'POST',
@@ -204,11 +226,18 @@ export default function EditDataSourceForm({
       return;
     }
 
-    if (!connStr) {
-      setError('Please enter a connection string');
-      setTestResult(null);
+    if (dbType.properties && dbType.properties.length > 0) {
+      const hasAllRequiredProperties = dbType.properties.every((prop) => {
+        const value = propertyValues[prop.label];
+        return value && value.trim() !== '';
+      });
 
-      return;
+      if (!hasAllRequiredProperties) {
+        setError('Please fill in all required fields');
+        setTestResult(null);
+
+        return;
+      }
     }
 
     if (!selectedEnvironment) {
@@ -226,7 +255,13 @@ export default function EditDataSourceForm({
     try {
       const formData = new FormData();
       formData.append('name', dbName);
-      formData.append('connectionString', connStr);
+      formData.append('type', dbType.type || dbType.value.toUpperCase());
+
+      const properties = dbType.properties.map((prop) => ({
+        type: prop.type,
+        value: propertyValues[prop.label] || '',
+      }));
+      formData.append('properties', JSON.stringify(properties));
 
       const response = await fetch(
         `/api/data-sources/${selectedDataSource?.dataSourceId}?environmentId=${selectedEnvironment.value}`,
@@ -260,6 +295,12 @@ export default function EditDataSourceForm({
     setShowSaveConfirmation(true);
   };
 
+  const isFormDisabled =
+    isTestingConnection ||
+    !selectedEnvironment ||
+    isSubmitting ||
+    !dbType?.properties?.every((prop) => propertyValues?.[prop.type]);
+
   if (!selectedDataSource) {
     return null;
   }
@@ -282,6 +323,7 @@ export default function EditDataSourceForm({
                   setDbType(newDbType);
                   setError(null);
                   setTestResult(null);
+                  setPropertyValues({});
                 }}
                 options={availableDataSourceOptions}
                 width="100%"
@@ -320,7 +362,7 @@ export default function EditDataSourceForm({
           {dbType.value !== SAMPLE_DATABASE && (
             <>
               <div>
-                <label className="mb-3 block text-sm font-medium text-secondary">Database Name</label>
+                <label className="mb-3 block text-sm font-medium text-secondary">Data Source Name</label>
                 <input
                   type="text"
                   value={dbName}
@@ -334,47 +376,60 @@ export default function EditDataSourceForm({
                     'transition-all duration-200',
                     'disabled:opacity-50 disabled:cursor-not-allowed',
                   )}
-                  placeholder="Enter database name"
+                  placeholder="Enter data source name"
                 />
               </div>
-              <div>
-                <label className="mb-3 block text-sm font-medium text-secondary">Connection String</label>
-                <div className="relative">
-                  <input
-                    type={showConnStr ? 'text' : 'password'}
-                    value={connStr}
-                    onChange={(e) => setConnStr(e.target.value)}
-                    disabled={isSubmitting}
-                    className={classNames(
-                      'w-full px-4 py-2.5 pr-12 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                      'text-primary placeholder-tertiary text-base',
-                      'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
-                      'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
-                      'transition-all duration-200',
-                      'disabled:opacity-50 disabled:cursor-not-allowed',
-                    )}
-                    placeholder={`${dbType.connectionStringFormat}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConnStr((prev) => !prev)}
-                    disabled={false}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group disabled:opacity-50"
-                    tabIndex={-1}
-                  >
-                    <span className="text-gray-400 group-hover:text-white transition-colors">
-                      {showConnStr ? (
-                        <EyeOff className="w-4 h-4 text-gray-400" />
-                      ) : (
-                        <Eye className="w-4 h-4 text-gray-400" />
-                      )}
-                    </span>
-                  </button>
+
+              {/* Dynamic property fields */}
+              {dbType.properties && dbType.properties.length > 0 ? (
+                dbType.properties.map((property: DataSourcePropertyDescriptor) => (
+                  <div key={property.label}>
+                    <label className="mb-3 block text-sm font-medium text-secondary">{property.label}</label>
+                    <div className="relative">
+                      <input
+                        type={showSensitiveInput ? 'text' : 'password'}
+                        value={propertyValues[property.type] || ''}
+                        onChange={(e) => handlePropertyChange(property.type, e.target.value)}
+                        disabled={isSubmitting}
+                        className={classNames(
+                          'w-full px-4 py-2.5 pr-12 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                          'text-primary placeholder-tertiary text-base',
+                          'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                          'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                          'transition-all duration-200',
+                          'disabled:opacity-50 disabled:cursor-not-allowed',
+                        )}
+                        placeholder={property.format}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => setShowSensitiveInput((prev) => !prev)}
+                        disabled={false}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group disabled:opacity-50"
+                        tabIndex={-1}
+                      >
+                        <span className="text-gray-400 group-hover:text-white transition-colors">
+                          {showSensitiveInput ? (
+                            <EyeOff className="w-4 h-4 text-gray-400" />
+                          ) : (
+                            <Eye className="w-4 h-4 text-gray-400" />
+                          )}
+                        </span>
+                      </button>
+                    </div>
+                    <label className="mb-3 block !text-[13px] text-secondary mt-2">e.g. {property.format}</label>
+                  </div>
+                ))
+              ) : (
+                <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                      No configuration properties available for this data source type.
+                    </p>
+                  </div>
                 </div>
-                <label className="mb-3 block !text-[13px] text-secondary mt-2">
-                  e.g. {dbType.connectionStringFormat}
-                </label>
-              </div>
+              )}
             </>
           )}
 
@@ -441,7 +496,7 @@ export default function EditDataSourceForm({
                     e.preventDefault();
                     await handleTestConnection();
                   }}
-                  disabled={isTestingConnection || isSubmitting || !connStr || !selectedEnvironment}
+                  disabled={isFormDisabled}
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                     'bg-blue-500 hover:bg-blue-600',
@@ -481,9 +536,7 @@ export default function EditDataSourceForm({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={
-                  isSubmitting || dbType.value === SAMPLE_DATABASE || !dbName || !connStr || !selectedEnvironment
-                }
+                disabled={isFormDisabled}
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',

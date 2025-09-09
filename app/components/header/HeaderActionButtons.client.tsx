@@ -25,7 +25,6 @@ import { PublishProgressModal } from '~/components/publish/PublishProgressModal.
 import JSZip from 'jszip';
 import type { NetlifySiteInfo } from '~/types/netlify';
 import { AlertTriangle, Check, ChevronDown, CodeXml, MessageCircle, Rocket, Settings } from 'lucide-react';
-import { getDataSourceUrl } from '~/components/@settings/utils/data-sources';
 import { useDeploymentMethodsStore } from '~/lib/stores/deploymentMethods';
 
 interface ProgressData {
@@ -63,7 +62,7 @@ interface DeploymentProviderInfo {
   enabled: boolean;
 }
 
-type DeploymentTypeId = 'netlify' | 'aws' | 'vercel';
+type DeploymentTypeId = 'NETLIFY' | 'AWS' | 'VERCEL';
 
 export function HeaderActionButtons() {
   const devMode = useStore(workbenchStore.devMode);
@@ -76,7 +75,7 @@ export function HeaderActionButtons() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDeploymentTypeOpen, setIsDeploymentTypeOpen] = useState(false);
-  const [selectedDeploymentType, setSelectedDeploymentType] = useState<DeploymentTypeId>('netlify');
+  const [selectedDeploymentType, setSelectedDeploymentType] = useState<DeploymentTypeId>('NETLIFY');
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentChatId = useStore(chatId);
   const chatDescription = useStore(description);
@@ -115,8 +114,7 @@ export function HeaderActionButtons() {
       if (!currentDataSource || !currentDataSource.dataSourceId || !currentDataSource.environmentId) {
         setIsPublishingDisabled(true);
       } else {
-        const url = await getDataSourceUrl(currentDataSource.dataSourceId, currentDataSource.environmentId);
-        setIsPublishingDisabled(url.startsWith('sqlite'));
+        setIsPublishingDisabled(currentDataSource.dataSource.type === 'SQLITE');
       }
     }
     checkPublishingCapability();

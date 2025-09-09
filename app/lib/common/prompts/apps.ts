@@ -1,13 +1,13 @@
 import { WORK_DIR } from '~/utils/constants';
 import { allowedHTMLElements } from '~/utils/markdown';
 
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
 import type { StarterPluginId } from '~/lib/plugins/types';
 
 export const getAppsPrompt = async (cwd: string = WORK_DIR, starterId?: StarterPluginId) => `
 You are an expert AI assistant and exceptional senior software developer with vast knowledge of web development, and best practices. Particularly, you are proficient in the following technologies: ${StarterPluginManager.getTechnologies(starterId)}, ${(
-  await DataSourcePluginManager.getAvailableDatabaseTypes()
+  await DataSourcePluginManager.getAvailableDataSourceTypes()
 )
   .map(({ value }) => value)
   .join(', ')}

@@ -1,9 +1,12 @@
 import { prisma } from '~/lib/prisma';
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
 import { buildResourceWhereClause } from '@/lib/casl/prisma-helpers';
 import {
+  type DataSource as PrismaDataSource,
+  type DataSourceProperty,
   DataSourcePropertyType,
+  DataSourceType,
   type EnvironmentDataSource,
+  type EnvironmentVariable,
   EnvironmentVariableType,
   PermissionAction,
   PermissionResource,
@@ -12,18 +15,25 @@ import {
 import type { AppAbility } from '~/lib/casl/user-ability';
 import { createEnvironmentVariable, decryptEnvironmentVariable } from './environmentVariablesService';
 import { getEnvironmentName } from './environmentService';
+import {
+  type DataSourceProperty as SimpleDataSourceProperty,
+  DataSourcePropertyType as SharedDataSourcePropertyType,
+  type DataSourceType as SharedDataSourceType,
+} from '@liblab/data-access/utils/types';
+
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 
 export interface DataSource {
   id: string;
   name: string;
-  connectionString: string;
+  type: DataSourceType;
   environmentId: string;
   environmentName: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const SAMPLE_DATABASE_CONNECTION_STRING = 'sqlite://sample.db';
+export const SAMPLE_DATABASE_CONNECTION_STRING = 'sqlite://sample.db';
 
 export async function getEnvironmentDataSources(userAbility: AppAbility): Promise<EnvironmentDataSource[]> {
   // TODO: @skos Update specific permissions
@@ -59,7 +69,17 @@ export async function getEnvironmentDataSources(userAbility: AppAbility): Promis
   }));
 }
 
-export async function getEnvironmentDataSource(dataSourceId: string, userId: string, environmentId: string) {
+export type ComplexEnvironmentDataSource = EnvironmentDataSource & { dataSource: PrismaDataSource } & {
+  dataSourceProperties: (DataSourceProperty & {
+    environmentVariable: EnvironmentVariable;
+  })[];
+};
+
+export async function getEnvironmentDataSource(
+  dataSourceId: string,
+  userId: string,
+  environmentId: string,
+): Promise<ComplexEnvironmentDataSource | null> {
   const environmentDataSource = await prisma.environmentDataSource.findUnique({
     where: {
       environmentId_dataSourceId: {
@@ -87,6 +107,7 @@ export async function getEnvironmentDataSource(dataSourceId: string, userId: str
 
   return {
     ...environmentDataSource,
+    environmentId: environmentDataSource.environmentId,
     dataSourceProperties: environmentDataSource.dataSourceProperties.map((dsp) => ({
       ...dsp,
       environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
@@ -96,11 +117,12 @@ export async function getEnvironmentDataSource(dataSourceId: string, userId: str
 
 export async function createDataSource(data: {
   name: string;
-  createdById: string;
+  type: DataSourceType;
   environmentId: string;
-  connectionString: string;
+  properties: SimpleDataSourceProperty[];
+  createdById: string;
 }): Promise<DataSource> {
-  await validateDataSource(data.connectionString);
+  await validateDataSourceProperties(data.properties, data.type);
 
   // Get environment details for naming
   const environmentName = await getEnvironmentName(data.environmentId);
@@ -116,12 +138,14 @@ export async function createDataSource(data: {
       data: {
         name: data.name,
         createdById: data.createdById,
+        type: data.type,
       },
       select: {
         id: true,
         name: true,
         createdAt: true,
         updatedAt: true,
+        type: true,
       },
     });
 
@@ -133,38 +157,46 @@ export async function createDataSource(data: {
       },
     });
 
-    // Create environment variable for connection url (if provided)
-    const envVarKey = `${environmentName}_${data.name}_${DataSourcePropertyType.CONNECTION_URL}`
-      .toUpperCase()
-      .replace(/\s+/g, '_');
+    for (const property of data.properties) {
+      const envVarKey = `${environmentName}_${data.name}_${property.type}`.toUpperCase().replace(/\s+/g, '_');
 
-    const environmentVariable = await createEnvironmentVariable(
-      envVarKey,
-      data.connectionString!,
-      EnvironmentVariableType.DATA_SOURCE,
-      data.environmentId,
-      data.createdById,
-      `Database connection URL for ${data.name} in ${environmentName}`,
-      dataSource.id,
-      tx, // Pass transaction for atomicity
-    );
+      const environmentVariable = await createEnvironmentVariable(
+        envVarKey,
+        property.value,
+        EnvironmentVariableType.DATA_SOURCE,
+        data.environmentId,
+        data.createdById,
+        `Data source ${property.type} property for ${data.name} in ${environmentName}`,
+        dataSource.id,
+        tx, // Pass transaction for atomicity
+      );
 
-    await tx.dataSourceProperty.create({
-      data: {
-        type: DataSourcePropertyType.CONNECTION_URL,
-        environmentId: data.environmentId,
-        dataSourceId: dataSource.id,
-        environmentVariableId: environmentVariable.id,
-      },
-    });
+      await tx.dataSourceProperty.create({
+        data: {
+          type: property.type,
+          environmentId: data.environmentId,
+          dataSourceId: dataSource.id,
+          environmentVariableId: environmentVariable.id,
+        },
+      });
+    }
 
     return {
       ...dataSource,
-      connectionString: data.connectionString!,
       environmentId: data.environmentId,
       environmentName,
     };
   });
+}
+
+export async function getDataSourceConnectionUrl(
+  userId: string,
+  dataSourceId: string,
+  environmentId: string,
+): Promise<string | null> {
+  const dataSourceProperties = await getDataSourceProperties(userId, dataSourceId, environmentId);
+
+  return dataSourceProperties?.find((prop) => prop.type === SharedDataSourcePropertyType.CONNECTION_URL)?.value || null;
 }
 
 export async function createSampleDataSource(data: {
@@ -183,12 +215,14 @@ export async function createSampleDataSource(data: {
       data: {
         name: 'Sample Database',
         createdById: data.createdById,
+        type: DataSourceType.SQLITE,
       },
       select: {
         id: true,
         name: true,
         createdAt: true,
         updatedAt: true,
+        type: true,
       },
     });
 
@@ -237,8 +271,14 @@ export function getDataSource(id: string) {
   return prisma.dataSource.findUnique({ where: { id } });
 }
 
-export async function updateDataSource(data: { id: string; name: string; connectionString: string; userId: string }) {
-  await validateDataSource(data.connectionString);
+export async function updateDataSource(data: {
+  id: string;
+  name: string;
+  type: DataSourceType;
+  properties: SimpleDataSourceProperty[];
+  userId: string;
+}) {
+  await validateDataSourceProperties(data.properties, data.type);
 
   return prisma.dataSource.update({
     where: { id: data.id, createdById: data.userId },
@@ -247,14 +287,25 @@ export async function updateDataSource(data: { id: string; name: string; connect
 }
 
 export async function deleteDataSource(id: string, userId: string) {
+  prisma.dataSourceProperty.deleteMany({ where: { dataSourceId: id } });
+
   return prisma.dataSource.delete({ where: { id, createdById: userId } });
 }
 
-export async function getDatabaseUrl(
+export async function getDataSourceType(dataSourceId: string) {
+  const dataSource = await prisma.dataSource.findUnique({
+    where: { id: dataSourceId },
+    select: { type: true },
+  });
+
+  return dataSource?.type || null;
+}
+
+export async function getDataSourceProperties(
   userId: string,
   dataSourceId: string,
   environmentId: string,
-): Promise<string | null> {
+): Promise<SimpleDataSourceProperty[] | null> {
   const eds = await prisma.environmentDataSource.findFirst({
     where: {
       environmentId,
@@ -265,9 +316,6 @@ export async function getDatabaseUrl(
     },
     include: {
       dataSourceProperties: {
-        where: {
-          type: DataSourcePropertyType.CONNECTION_URL, // only connection URL property
-        },
         include: {
           environmentVariable: true, // pull the encrypted env var
         },
@@ -279,14 +327,12 @@ export async function getDatabaseUrl(
     return null;
   }
 
-  const connectionProperty = eds.dataSourceProperties[0];
-  const envVar = connectionProperty.environmentVariable;
-
-  if (!envVar) {
-    return null;
-  }
-
-  return decryptEnvironmentVariable(envVar).value;
+  return eds.dataSourceProperties.map((property) => {
+    return {
+      type: property.type as SharedDataSourcePropertyType,
+      value: decryptEnvironmentVariable(property.environmentVariable).value, // still encrypted
+    };
+  });
 }
 
 export async function getConversationCount(dataSourceId: string, userId: string): Promise<number> {
@@ -298,7 +344,7 @@ export async function getConversationCount(dataSourceId: string, userId: string)
   });
 }
 
-async function validateDataSource(connectionString: string) {
-  const accessor = await DataSourcePluginManager.getAccessor(connectionString);
-  accessor.validate(connectionString);
+async function validateDataSourceProperties(dataSourceProperties: SimpleDataSourceProperty[], type: DataSourceType) {
+  const accessor = await DataSourcePluginManager.getAccessor(type as SharedDataSourceType);
+  accessor.validateProperties(dataSourceProperties);
 }

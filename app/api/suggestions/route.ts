@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEnvironmentDataSource } from '~/lib/services/dataSourceService';
+import { getEnvironmentDataSource } from '~/lib/services/datasourceService';
 import { generateSchemaBasedSuggestions } from '~/lib/services/suggestionService';
+import { SAMPLE_DATABASE_NAME } from '@liblab/data-access/accessors/sqlite';
 import { logger } from '~/utils/logger';
 import { requireUserId } from '~/auth/session';
 import { z } from 'zod';
+import { DataSourcePropertyType } from '@prisma/client';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 const suggestionsRequestSchema = z.object({
   dataSourceId: z.string().min(1, 'Data source ID is required'),
@@ -33,15 +36,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
     }
 
+    const dataSourceProperty = environmentDataSource.dataSourceProperties.find(
+      (dsp) => dsp.type === DataSourcePropertyType.CONNECTION_URL,
+    );
+
+    if (!dataSourceProperty) {
+      return NextResponse.json({ success: false, error: 'Data source property not found' }, { status: 404 });
+    }
+
+    const connectionUrl = dataSourceProperty.environmentVariable.value;
+
+    const isSampleDatabase = connectionUrl === `sqlite://${SAMPLE_DATABASE_NAME}`;
+
     let suggestions: string[];
 
-    try {
-      // Generate schema-based suggestions using the new service signature
-      suggestions = await generateSchemaBasedSuggestions(dataSourceId, userId, environmentId);
-    } catch (error) {
-      // Fallback to sample suggestions if there's an error
-      logger.warn('Failed to generate schema-based suggestions, using fallback:', error);
-      suggestions = ['create a revenue dashboard', 'make user management app', 'build a sales overview page'];
+    if (isSampleDatabase) {
+      suggestions = suggestions = [
+        'create a revenue dashboard',
+        'make user management app',
+        'build a sales overview page',
+      ];
+    } else {
+      // Generate schema-based suggestions for non-sample databases
+      // Create a compatible dataSource object for the suggestion service
+      const dataSourceForSuggestions = {
+        dataSourceId: environmentDataSource.dataSource.id,
+        connectionString: connectionUrl || '',
+        dataSourceType: environmentDataSource.dataSource.type as DataSourceType,
+      };
+      suggestions = await generateSchemaBasedSuggestions(dataSourceForSuggestions);
     }
 
     return NextResponse.json({

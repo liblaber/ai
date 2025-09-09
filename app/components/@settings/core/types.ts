@@ -3,7 +3,6 @@ export type TabType =
   | 'github'
   | 'deployed-apps'
   | 'members'
-  | 'roles'
   | 'environments'
   | 'secrets-manager'
   | 'deployment-methods';
@@ -37,7 +36,6 @@ export const TAB_LABELS: Record<TabType, string> = {
   github: 'GitHub',
   'deployed-apps': 'Deployed Apps',
   members: 'Members',
-  roles: 'Roles',
   environments: 'Environments',
   'secrets-manager': 'Secrets Manager',
   'deployment-methods': 'Deployment Methods',

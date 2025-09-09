@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clearSchemaCache } from '~/lib/schema';
-import { getDatabaseUrl } from '~/lib/services/dataSourceService';
 import { requireUserId } from '~/auth/session';
 import { createScopedLogger } from '~/utils/logger';
 import { z } from 'zod';
+import { getDataSourceConnectionUrl } from '~/lib/services/datasourceService';
 
 const logger = createScopedLogger('clear-schema-cache');
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const { dataSourceId, environmentId } = validationResult.data;
 
-    const connectionUrl = await getDatabaseUrl(userId, dataSourceId, environmentId);
+    const connectionUrl = await getDataSourceConnectionUrl(userId, dataSourceId, environmentId);
 
     if (!connectionUrl) {
       return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
