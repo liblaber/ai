@@ -8,13 +8,14 @@ import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useRouter } from 'next/navigation';
 import type { PluginAccessMap } from '~/lib/plugins/types';
 import { useUserStore } from '~/lib/stores/user';
+import type { EnvironmentVariableWithDetails } from '~/lib/stores/environmentVariables';
 import { useEnvironmentVariablesStore } from '~/lib/stores/environmentVariables';
 import { DATA_SOURCE_CONNECTION_ROUTE, TELEMETRY_CONSENT_ROUTE } from '~/lib/constants/routes';
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
 import type { UserProfile } from '~/lib/services/userService';
 import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
 import { type DataSourceDescriptor } from '@liblab/data-access/utils/types';
-import type { EnvironmentVariableWithDetails } from '~/lib/stores/environmentVariables';
+import { EnvironmentVariableType } from '@prisma/client';
 
 export interface RootData {
   user: UserProfile | null;
@@ -243,7 +244,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       // Fetch environment variables for the first environment (could be enhanced to fetch for all)
       const firstEnvironmentId = environmentsData.environments[0].id;
       const environmentVariablesResponse = await fetch(
-        `/api/environment-variables?environmentId=${firstEnvironmentId}`,
+        `/api/environment-variables?environmentId=${firstEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
       );
 
       if (!environmentVariablesResponse.ok) {

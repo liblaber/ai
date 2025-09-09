@@ -1,11 +1,15 @@
 import { prisma } from '~/lib/prisma';
-import type { Environment } from '@prisma/client';
+import { type Environment, EnvironmentVariableType } from '@prisma/client';
 
 export interface EnvironmentWithRelations extends Environment {
   dataSources: any[];
   websites: any[];
   environmentVariables: any[];
 }
+
+type GetEnvironmentsFilter = {
+  environmentVariableType?: EnvironmentVariableType;
+};
 
 export async function getEnvironment(id: string): Promise<EnvironmentWithRelations | null> {
   return prisma.environment.findUnique({
@@ -29,7 +33,9 @@ export async function getEnvironmentName(id: string): Promise<string | null> {
   return env?.name ?? null;
 }
 
-export async function getEnvironments(): Promise<EnvironmentWithRelations[]> {
+export async function getEnvironments({ environmentVariableType }: GetEnvironmentsFilter = {}): Promise<
+  EnvironmentWithRelations[]
+> {
   const environments = await prisma.environment.findMany({
     include: {
       dataSources: {
@@ -38,7 +44,9 @@ export async function getEnvironments(): Promise<EnvironmentWithRelations[]> {
         },
       },
       websites: true,
-      environmentVariables: true,
+      environmentVariables: {
+        where: environmentVariableType ? { type: environmentVariableType } : undefined,
+      },
     },
     orderBy: { name: 'asc' },
   });

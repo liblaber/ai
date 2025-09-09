@@ -18,13 +18,16 @@ export async function getEnvironmentVariable(id: string): Promise<EnvironmentVar
   return envVar ? decryptEnvironmentVariable(envVar) : null;
 }
 
-export async function getEnvironmentVariables(): Promise<EnvironmentVariable[]> {
+export async function getEnvironmentVariables(
+  environmentVariableType?: EnvironmentVariableType,
+): Promise<EnvironmentVariable[]> {
   const envVars = await prisma.environmentVariable.findMany({
     include: {
       environment: true,
       createdBy: true,
     },
     orderBy: { key: 'asc' },
+    where: environmentVariableType ? { type: environmentVariableType } : undefined,
   });
 
   return envVars.map(decryptEnvironmentVariable);

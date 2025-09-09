@@ -11,6 +11,7 @@ import { auth } from '~/auth/auth-config';
 import type { Session } from '~/auth/session';
 import { getUserAbility } from '~/lib/casl/user-ability';
 import { getEnvironmentVariables } from '~/lib/services/environmentVariablesService';
+import { EnvironmentVariableType } from '@prisma/client';
 
 // Force dynamic rendering to prevent static generation issues with headers
 export const dynamic = 'force-dynamic';
@@ -53,7 +54,7 @@ async function getRootData() {
       // Get data sources for the user
       environmentDataSources = await getEnvironmentDataSources(userAbility);
 
-      environmentVariables = await getEnvironmentVariables();
+      environmentVariables = await getEnvironmentVariables(EnvironmentVariableType.GLOBAL);
     }
 
     // Initialize plugin manager
