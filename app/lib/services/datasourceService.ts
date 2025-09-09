@@ -36,7 +36,6 @@ export interface DataSource {
 export const SAMPLE_DATABASE_CONNECTION_STRING = 'sqlite://sample.db';
 
 export async function getEnvironmentDataSources(userAbility: AppAbility): Promise<EnvironmentDataSource[]> {
-  // TODO: @skos Update specific permissions
   const whereClause = buildResourceWhereClause(
     userAbility,
     PermissionAction.read,
