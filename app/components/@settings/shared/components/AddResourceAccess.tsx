@@ -96,8 +96,8 @@ export default function AddResourceAccess({ resourceScope, resource, onBack }: R
             body: JSON.stringify({ userId: member.value, permissionLevel: permissionOption.value }),
           }).then(async (res) => {
             if (!res.ok) {
-              logger.error(`Failed to add "${member.email}"`);
-              toast.error(`Failed to add "${member.email}"`);
+              logger.error(`Failed to add "${member.label}"`);
+              toast.error(`Failed to add "${member.label}"`);
             }
           }),
         ),
