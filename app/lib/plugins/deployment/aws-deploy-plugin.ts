@@ -28,7 +28,7 @@ export class AwsDeployPlugin extends BaseDeploymentPlugin {
 
     if (environmentId) {
       try {
-        awsCredentials = await getDeploymentMethodCredentials('AWS', environmentId, userId);
+        awsCredentials = await getDeploymentMethodCredentials('AWS', environmentId);
       } catch (error) {
         logger.warn('Failed to get AWS credentials from deployment method, falling back to environment variables', {
           error: error instanceof Error ? error.message : 'Unknown error',

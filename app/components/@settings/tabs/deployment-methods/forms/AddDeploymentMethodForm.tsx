@@ -13,6 +13,24 @@ interface DeploymentMethodResponse {
   deploymentMethod?: {
     id: string;
   };
+  environmentDeploymentMethods?: Array<{
+    id: string;
+    name: string;
+    provider: string;
+    environmentId: string;
+    environment: {
+      id: string;
+      name: string;
+      description: string | null;
+    };
+    credentials: Array<{
+      id: string;
+      type: string;
+      value: string;
+    }>;
+    createdAt: string;
+    updatedAt: string;
+  }>;
 }
 
 interface Environment {
@@ -36,7 +54,7 @@ interface EnvironmentsResponse {
 interface AddDeploymentMethodFormProps {
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
-  onSuccess: () => void;
+  onSuccess: (responseData?: any) => void;
 }
 
 export default function AddDeploymentMethodForm({
@@ -192,7 +210,9 @@ export default function AddDeploymentMethodForm({
 
       if (data.success) {
         toast.success('Deployment method added successfully');
-        onSuccess();
+
+        // Pass the response data to the parent component
+        onSuccess(data);
       } else {
         const message = data.error || 'Failed to add deployment method';
         setError(message);

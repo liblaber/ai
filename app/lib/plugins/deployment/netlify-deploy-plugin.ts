@@ -29,7 +29,6 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
           'NETLIFY',
           environmentId,
           DeploymentMethodCredentialsType.API_KEY,
-          userId,
         );
 
         if (deploymentToken) {

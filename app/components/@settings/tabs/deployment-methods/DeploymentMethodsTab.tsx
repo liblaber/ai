@@ -22,7 +22,7 @@ export default function DeploymentMethodsTab() {
   const [selectedEnvironmentDeploymentMethod, setSelectedEnvironmentDeploymentMethod] =
     useState<EnvironmentDeploymentMethod | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { environmentDeploymentMethods } = useDeploymentMethodsStore();
+  const { environmentDeploymentMethods, setEnvironmentDeploymentMethods } = useDeploymentMethodsStore();
   const { loadDeploymentMethods } = useDeploymentMethodActions();
   const { selectedTab } = useSettingsStore();
 
@@ -139,9 +139,15 @@ export default function DeploymentMethodsTab() {
           <AddDeploymentMethodForm
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
-            onSuccess={async () => {
-              // Reload deployment methods
-              await loadDeploymentMethods();
+            onSuccess={async (responseData?: any) => {
+              // If the API returned all deployment methods, use them directly
+              if (responseData?.environmentDeploymentMethods) {
+                setEnvironmentDeploymentMethods(responseData.environmentDeploymentMethods);
+              } else {
+                // Fallback: reload deployment methods
+                await loadDeploymentMethods();
+              }
+
               handleBack();
             }}
           />

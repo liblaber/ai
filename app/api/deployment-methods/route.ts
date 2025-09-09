@@ -45,7 +45,14 @@ export async function POST(request: NextRequest) {
       credentials,
     });
 
-    return NextResponse.json({ success: true, deploymentMethod });
+    // Return all deployment methods after creating a new one
+    const environmentDeploymentMethods = await getEnvironmentDeploymentMethods();
+
+    return NextResponse.json({
+      success: true,
+      deploymentMethod,
+      environmentDeploymentMethods,
+    });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Failed to create deployment method' },

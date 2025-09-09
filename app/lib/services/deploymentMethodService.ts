@@ -288,25 +288,11 @@ export async function getDeploymentMethodCredential(
   provider: string,
   environmentId: string,
   credentialType: DeploymentMethodCredentialsType,
-  userId: string,
 ): Promise<string | null> {
   const deploymentMethod = await prisma.deploymentMethod.findFirst({
     where: {
       provider,
       environmentId,
-      environment: {
-        directPermissions: {
-          some: {
-            role: {
-              users: {
-                some: {
-                  userId,
-                },
-              },
-            },
-          },
-        },
-      },
     },
     include: {
       credentials: {
@@ -336,25 +322,11 @@ export async function getDeploymentMethodCredential(
 export async function getDeploymentMethodCredentials(
   provider: string,
   environmentId: string,
-  userId: string,
 ): Promise<Record<string, string> | null> {
   const deploymentMethod = await prisma.deploymentMethod.findFirst({
     where: {
       provider,
       environmentId,
-      environment: {
-        directPermissions: {
-          some: {
-            role: {
-              users: {
-                some: {
-                  userId,
-                },
-              },
-            },
-          },
-        },
-      },
     },
     include: {
       credentials: true,
