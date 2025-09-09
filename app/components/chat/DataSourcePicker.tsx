@@ -118,9 +118,6 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({
       <components.SingleValue {...props}>
         <div className="flex items-center gap-2">
           <span>{data.label}</span>
-          {data.environmentName && (
-            <span className="text-xs bg-gray-600 text-gray-200 px-2 py-1 rounded-full">{data.environmentName}</span>
-          )}
         </div>
       </components.SingleValue>
     );
@@ -140,7 +137,7 @@ export const DataSourcePicker: React.FC<DataSourcePickerProps> = ({
       },
       paddingLeft: '4px',
       gap: '8px',
-      minWidth: '200px',
+      minWidth: '100px',
       maxWidth: '400px',
       width: 'auto',
     }),

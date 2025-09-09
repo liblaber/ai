@@ -1,12 +1,12 @@
 import { WORK_DIR } from '~/utils/constants';
 import { allowedHTMLElements } from '~/utils/markdown';
 
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
 
 export const getDashboardsPrompt = async (cwd: string = WORK_DIR) => `
 You an expert AI assistant and exceptional senior software developer with vast knowledge of web development frameworks, and best practices. Particularly, you are proficient in the following technologies: React, TypeScript, Vite, Remix, ${(
-  await DataSourcePluginManager.getAvailableDatabaseTypes()
+  await DataSourcePluginManager.getAvailableDataSourceTypes()
 )
   .map(({ value }) => value)
   .join(', ')}, Tailwind CSS and shadcn/ui.

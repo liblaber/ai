@@ -1,26 +1,25 @@
-import type { BaseAccessor } from '../baseAccessor';
 import { type MySqlColumn, type MySqlTable, type Table } from '../../types';
 import type { Connection } from 'mysql2/promise';
 import mysql from 'mysql2/promise';
 import { format } from 'sql-formatter';
+import { BaseDatabaseAccessor } from '../baseDatabaseAccessor';
+import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '../utils/types';
 
 // Configure type casting for numeric values
 const typesToParse = ['INT', 'BIGINT', 'DECIMAL', 'NUMERIC', 'FLOAT', 'DOUBLE', 'NEWDECIMAL'];
 
-export class MySQLAccessor implements BaseAccessor {
-  static pluginId: string = 'mysql';
+export class MySQLAccessor extends BaseDatabaseAccessor {
+  readonly dataSourceType: DataSourceType = DataSourceType.MYSQL;
+  readonly pluginId: DataAccessPluginId = 'mysql';
   readonly label = 'MySQL';
   readonly connectionStringFormat = 'mysql://username:password@host:port/database';
   readonly preparedStatementPlaceholderExample = '?';
   private _connection: Connection | null = null;
 
-  static isAccessor(databaseUrl: string): boolean {
-    return databaseUrl.startsWith('mysql://');
-  }
-
-  async testConnection(databaseUrl: string): Promise<boolean> {
+  async testConnection(dataSourceProperties: DataSourceProperty[]): Promise<boolean> {
     try {
-      const connection = await mysql.createConnection(databaseUrl);
+      const connectionString = this.getConnectionStringFromProperties(dataSourceProperties);
+      const connection = await mysql.createConnection(connectionString);
       await connection.query('SELECT 1');
       await connection.end();
 
@@ -44,7 +43,8 @@ export class MySQLAccessor implements BaseAccessor {
     }
   }
 
-  validate(connectionString: string): void {
+  validateProperties(dataSourceProperties: DataSourceProperty[]): void {
+    const connectionString = this.getConnectionStringFromProperties(dataSourceProperties);
     const regex = /^mysql:\/\/([a-zA-Z0-9_-]+):(.+)@([a-zA-Z0-9.-]+):([0-9]{1,5})\/([a-zA-Z0-9_-]+)$/;
     const match = connectionString.match(regex);
 

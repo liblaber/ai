@@ -167,7 +167,7 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
             {environmentDataSources.length > 0 ? (
               <DataSourcePicker
                 onAddNew={handleConnectDataSource}
-                disabled={false}
+                disabled={true}
                 onDataSourceChange={onDataSourceChange}
                 placement={'top'}
               />

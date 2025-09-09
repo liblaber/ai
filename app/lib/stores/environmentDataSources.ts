@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { useRouter } from 'next/navigation';
 import { persist } from 'zustand/middleware';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 export interface EnvironmentVariable {
   id: string;
@@ -31,6 +32,7 @@ export interface EnvironmentDataSource {
     id: string;
     name: string;
     createdAt: Date;
+    type: DataSourceType;
     updatedAt: Date;
   };
   dataSourceProperties: [

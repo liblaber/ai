@@ -1,7 +1,7 @@
 import { prisma } from '~/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId } from '~/auth/session';
-import { createSampleDataSource } from '~/lib/services/dataSourceService';
+import { createSampleDataSource } from '~/lib/services/datasourceService';
 import { z } from 'zod';
 
 const createExampleDataSourceSchema = z.object({

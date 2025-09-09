@@ -1,6 +1,6 @@
 import { DataAccessor } from '@/lib/data-access/dataAccessor';
 
-let databaseUrlDecoded = process.env.DATABASE_URL || '';
+let databaseUrlDecoded = process.env.CONNECTION_URL || '';
 
 // Handle double URL encoding - decode until we get a valid URL format
 while (databaseUrlDecoded.includes('%')) {

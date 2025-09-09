@@ -1,5 +1,14 @@
-import type { Account, Role, User } from '@prisma/client';
-import { PermissionAction, PermissionResource, PrismaClient } from '@prisma/client';
+import {
+  type Account,
+  DataSourcePropertyType,
+  DataSourceType,
+  PermissionAction,
+  PermissionResource,
+  PrismaClient,
+  type Role,
+  type User,
+} from '@prisma/client';
+import { decryptEnvironmentVariable } from '~/lib/services/environmentVariablesService';
 
 const prisma = new PrismaClient();
 
@@ -74,6 +83,7 @@ async function seed() {
   await seedBuilderRole();
   await seedOperatorRole();
   await seedOIDCSSOProvider();
+  await inferDataSourceTypes();
 
   console.log('🎉 Database seed completed successfully');
 }
@@ -291,6 +301,52 @@ async function seedPermissions(
     }
   } catch (error) {
     console.error('❌ Error creating permissions:', error);
+    throw error;
+  }
+}
+
+async function inferDataSourceTypes(): Promise<void> {
+  try {
+    const connectionProps = await prisma.dataSourceProperty.findMany({
+      where: { type: DataSourcePropertyType.CONNECTION_URL },
+      select: {
+        dataSourceId: true,
+        environmentVariable: true,
+      },
+    });
+
+    const dataSourceIdToType = new Map<string, DataSourceType>();
+
+    for (const property of connectionProps) {
+      const { value: connectionUrl } = decryptEnvironmentVariable(property.environmentVariable);
+
+      let inferredType: DataSourceType = DataSourceType.SQLITE;
+
+      if (connectionUrl.includes('postgres')) {
+        inferredType = DataSourceType.POSTGRES;
+      } else if (connectionUrl.includes('mysql')) {
+        inferredType = DataSourceType.MYSQL;
+      } else if (connectionUrl.includes('mongodb')) {
+        inferredType = DataSourceType.MONGODB;
+      } else if (connectionUrl.includes('hubspot')) {
+        inferredType = DataSourceType.HUBSPOT;
+      } else if (connectionUrl.includes('sheets')) {
+        inferredType = DataSourceType.GOOGLE_SHEETS;
+      } else if (connectionUrl.includes('docs')) {
+        inferredType = DataSourceType.GOOGLE_DOCS;
+      }
+
+      dataSourceIdToType.set(property.dataSourceId, inferredType);
+    }
+
+    for (const [dataSourceId, inferredType] of dataSourceIdToType.entries()) {
+      await prisma.dataSource.update({
+        where: { id: dataSourceId },
+        data: { type: inferredType },
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error inferring data source types:', error);
     throw error;
   }
 }

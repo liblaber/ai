@@ -1,4 +1,4 @@
-export type TabType = 'data' | 'github' | 'deployed-apps' | 'members' | 'roles' | 'environments';
+export type TabType = 'data' | 'github' | 'deployed-apps' | 'members' | 'environments' | 'secrets-manager';
 
 export type WindowType = 'user' | 'admin';
 
@@ -29,6 +29,6 @@ export const TAB_LABELS: Record<TabType, string> = {
   github: 'GitHub',
   'deployed-apps': 'Deployed Apps',
   members: 'Members',
-  roles: 'Roles',
   environments: 'Environments',
+  'secrets-manager': 'Secrets Manager',
 };
