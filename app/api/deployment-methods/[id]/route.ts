@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   deleteDeploymentMethod,
   getEnvironmentDeploymentMethod,
+  getEnvironmentDeploymentMethods,
   updateDeploymentMethod,
 } from '~/lib/services/deploymentMethodService';
 import { requireUserId } from '~/auth/session';
 import { updateDeploymentMethodSchema } from '~/lib/validation/deploymentMethods';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const userId = await requireUserId(request);
+  await requireUserId(request);
 
   const { id } = await params;
   const { searchParams } = new URL(request.url);
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
   }
 
-  const environmentDeploymentMethod = await getEnvironmentDeploymentMethod(id, userId, environmentId);
+  const environmentDeploymentMethod = await getEnvironmentDeploymentMethod(id, environmentId);
 
   if (!environmentDeploymentMethod) {
     return NextResponse.json({ success: false, error: 'Deployment method not found' }, { status: 404 });
@@ -53,7 +54,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       credentials,
     });
 
-    return NextResponse.json({ success: true, deploymentMethod });
+    // Return all deployment methods after updating
+    const environmentDeploymentMethods = await getEnvironmentDeploymentMethods();
+
+    return NextResponse.json({
+      success: true,
+      deploymentMethod,
+      environmentDeploymentMethods,
+    });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Failed to update deployment method' },
@@ -63,14 +71,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const userId = await requireUserId(request);
+  await requireUserId(request);
 
   const { id } = await params;
 
   try {
-    await deleteDeploymentMethod(id, userId);
+    await deleteDeploymentMethod(id);
 
-    return NextResponse.json({ success: true });
+    // Return all deployment methods after deleting
+    const environmentDeploymentMethods = await getEnvironmentDeploymentMethods();
+
+    return NextResponse.json({
+      success: true,
+      environmentDeploymentMethods,
+    });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Failed to delete deployment method' },

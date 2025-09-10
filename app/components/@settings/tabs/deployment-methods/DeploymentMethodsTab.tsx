@@ -45,20 +45,26 @@ export default function DeploymentMethodsTab() {
       return;
     }
 
-    const response = await fetch(
-      `/api/deployment-methods/${selectedEnvironmentDeploymentMethod.id}?environmentId=${selectedEnvironmentDeploymentMethod.environmentId}`,
-      {
-        method: 'DELETE',
-      },
-    );
+    const response = await fetch(`/api/deployment-methods/${selectedEnvironmentDeploymentMethod.id}`, {
+      method: 'DELETE',
+    });
 
-    const data = (await response.json()) as { success: boolean; error?: string };
+    const data = (await response.json()) as {
+      success: boolean;
+      error?: string;
+      environmentDeploymentMethods?: Array<EnvironmentDeploymentMethod>;
+    };
 
     if (data.success) {
       toast.success('Deployment method deleted successfully');
 
-      // Reload deployment methods
-      await loadDeploymentMethods();
+      // If the API returned all deployment methods, use them directly
+      if (data.environmentDeploymentMethods) {
+        setEnvironmentDeploymentMethods(data.environmentDeploymentMethods);
+      } else {
+        // Fallback: reload deployment methods
+        await loadDeploymentMethods();
+      }
 
       setShowDeleteConfirm(false);
       setShowEditForm(false);
@@ -72,14 +78,6 @@ export default function DeploymentMethodsTab() {
     setSelectedEnvironmentDeploymentMethod(environmentDeploymentMethod);
     setShowEditForm(true);
     setShowAddFormLocal(false);
-  };
-
-  const handleDeleteClick = async () => {
-    if (!selectedEnvironmentDeploymentMethod) {
-      return;
-    }
-
-    setShowDeleteConfirm(true);
   };
 
   const handleBack = () => {
@@ -179,12 +177,29 @@ export default function DeploymentMethodsTab() {
             selectedDeploymentMethod={selectedEnvironmentDeploymentMethod}
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
-            onSuccess={async () => {
-              // Reload deployment methods
-              await loadDeploymentMethods();
+            onSuccess={async (responseData?: any) => {
+              // If the API returned all deployment methods, use them directly
+              if (responseData?.environmentDeploymentMethods) {
+                setEnvironmentDeploymentMethods(responseData.environmentDeploymentMethods);
+              } else {
+                // Fallback: reload deployment methods
+                await loadDeploymentMethods();
+              }
+
               handleBack();
             }}
-            onDelete={handleDeleteClick}
+            onDelete={async (responseData?: any) => {
+              // If the API returned all deployment methods, use them directly
+              if (responseData?.environmentDeploymentMethods) {
+                setEnvironmentDeploymentMethods(responseData.environmentDeploymentMethods);
+              } else {
+                // Fallback: reload deployment methods
+                await loadDeploymentMethods();
+              }
+
+              setShowEditForm(false);
+              setSelectedEnvironmentDeploymentMethod(null);
+            }}
           />
         </div>
       )}

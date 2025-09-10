@@ -14,14 +14,32 @@ interface DeploymentMethodResponse {
   deploymentMethod?: {
     id: string;
   };
+  environmentDeploymentMethods?: Array<{
+    id: string;
+    name: string;
+    provider: string;
+    environmentId: string;
+    environment: {
+      id: string;
+      name: string;
+      description: string | null;
+    };
+    credentials: Array<{
+      id: string;
+      type: string;
+      value: string;
+    }>;
+    createdAt: string;
+    updatedAt: string;
+  }>;
 }
 
 interface EditDeploymentMethodFormProps {
   selectedDeploymentMethod: EnvironmentDeploymentMethod;
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
-  onSuccess: () => void;
-  onDelete: () => void;
+  onSuccess: (responseData?: any) => void;
+  onDelete: (responseData?: any) => void;
 }
 
 export default function EditDeploymentMethodForm({
@@ -168,7 +186,7 @@ export default function EditDeploymentMethodForm({
 
       if (data.success) {
         toast.success('Deployment method updated successfully');
-        onSuccess();
+        onSuccess(data);
       } else {
         const message = data.error || 'Failed to update deployment method';
         setError(message);
@@ -179,6 +197,36 @@ export default function EditDeploymentMethodForm({
         error instanceof Error
           ? error.message
           : String(error) || 'Failed to update deployment method. Please try again.';
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/deployment-methods/${selectedDeploymentMethod.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json<DeploymentMethodResponse>();
+
+      if (data.success) {
+        toast.success('Deployment method deleted successfully');
+        onDelete(data);
+      } else {
+        const message = data.error || 'Failed to delete deployment method';
+        setError(message);
+        toast.error(message);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : String(error) || 'Failed to delete deployment method. Please try again.';
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -293,7 +341,7 @@ export default function EditDeploymentMethodForm({
           <div className="flex items-center justify-between">
             <button
               type="button"
-              onClick={onDelete}
+              onClick={handleDelete}
               className={classNames(
                 'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                 'bg-red-500 hover:bg-red-600',

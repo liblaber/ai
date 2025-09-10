@@ -68,26 +68,12 @@ export async function getEnvironmentDeploymentMethods(): Promise<EnvironmentDepl
 
 export async function getEnvironmentDeploymentMethod(
   deploymentMethodId: string,
-  userId: string,
   environmentId: string,
 ): Promise<EnvironmentDeploymentMethod | null> {
   const deploymentMethod = await prisma.deploymentMethod.findFirst({
     where: {
       id: deploymentMethodId,
       environmentId,
-      environment: {
-        directPermissions: {
-          some: {
-            role: {
-              users: {
-                some: {
-                  userId,
-                },
-              },
-            },
-          },
-        },
-      },
     },
     include: {
       environment: true,
@@ -193,24 +179,11 @@ export async function updateDeploymentMethod(id: string, data: UpdateDeploymentM
   });
 }
 
-export async function deleteDeploymentMethod(id: string, userId: string): Promise<void> {
+export async function deleteDeploymentMethod(id: string): Promise<void> {
   // Check if user has permission to delete this deployment method
   const deploymentMethod = await prisma.deploymentMethod.findFirst({
     where: {
       id,
-      environment: {
-        directPermissions: {
-          some: {
-            role: {
-              users: {
-                some: {
-                  userId,
-                },
-              },
-            },
-          },
-        },
-      },
     },
   });
 
