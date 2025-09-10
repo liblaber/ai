@@ -22,6 +22,7 @@ import {
 } from '@liblab/data-access/utils/types';
 
 import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
+import { DataAccessor } from '@liblab/data-access/dataAccessor';
 
 export interface DataSource {
   id: string;
@@ -33,9 +34,30 @@ export interface DataSource {
   updatedAt: Date;
 }
 
+export type ComplexEnvironmentDataSource = EnvironmentDataSource & {
+  dataSource: PrismaDataSource & {
+    typeLabel: string;
+  };
+} & {
+  dataSourceProperties: (DataSourceProperty & {
+    environmentVariable: EnvironmentVariable;
+  })[];
+};
+
+export interface CreateDataSourceEnvironmentResponse {
+  dataSourceId: string;
+  environmentId: string;
+}
+
+export interface CreateDataSourceResponse {
+  name: string;
+  type: DataSourceType;
+  createdById: string;
+}
+
 export const SAMPLE_DATABASE_CONNECTION_STRING = 'sqlite://sample.db';
 
-export async function getEnvironmentDataSources(userAbility: AppAbility): Promise<EnvironmentDataSource[]> {
+export async function getEnvironmentDataSources(userAbility: AppAbility): Promise<ComplexEnvironmentDataSource[]> {
   // TODO: @skos Update specific permissions
   const whereClause = buildResourceWhereClause(
     userAbility,
@@ -60,20 +82,20 @@ export async function getEnvironmentDataSources(userAbility: AppAbility): Promis
     orderBy: [{ environment: { name: 'asc' } }, { dataSource: { name: 'asc' } }],
   });
 
-  return environmentDataSources.map((eds) => ({
-    ...eds,
-    dataSourceProperties: eds.dataSourceProperties.map((dsp) => ({
-      ...dsp,
-      environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
+  return Promise.all(
+    environmentDataSources.map(async (eds) => ({
+      ...eds,
+      dataSource: {
+        ...eds.dataSource,
+        typeLabel: await DataAccessor.getDataSourceLabel(eds.dataSource.type as SharedDataSourceType),
+      },
+      dataSourceProperties: eds.dataSourceProperties.map((dsp) => ({
+        ...dsp,
+        environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
+      })),
     })),
-  }));
+  );
 }
-
-export type ComplexEnvironmentDataSource = EnvironmentDataSource & { dataSource: PrismaDataSource } & {
-  dataSourceProperties: (DataSourceProperty & {
-    environmentVariable: EnvironmentVariable;
-  })[];
-};
 
 export async function getEnvironmentDataSource(
   dataSourceId: string,
@@ -107,6 +129,10 @@ export async function getEnvironmentDataSource(
 
   return {
     ...environmentDataSource,
+    dataSource: {
+      ...environmentDataSource.dataSource,
+      typeLabel: await DataAccessor.getDataSourceLabel(environmentDataSource.dataSource.type as SharedDataSourceType),
+    },
     environmentId: environmentDataSource.environmentId,
     dataSourceProperties: environmentDataSource.dataSourceProperties.map((dsp) => ({
       ...dsp,
@@ -118,11 +144,33 @@ export async function getEnvironmentDataSource(
 export async function createDataSource(data: {
   name: string;
   type: DataSourceType;
+  createdById: string;
+}): Promise<CreateDataSourceResponse> {
+  return prisma.dataSource.create({
+    data: {
+      name: data.name,
+      createdById: data.createdById,
+      type: data.type,
+    },
+  });
+}
+
+export async function createEnvironmentDataSource(data: {
+  dataSourceId: string;
   environmentId: string;
   properties: SimpleDataSourceProperty[];
   createdById: string;
-}): Promise<DataSource> {
-  await validateDataSourceProperties(data.properties, data.type);
+}): Promise<CreateDataSourceEnvironmentResponse> {
+  const dataSource = await prisma.dataSource.findUnique({
+    where: { id: data.dataSourceId, createdById: data.createdById },
+    select: { id: true, name: true, type: true },
+  });
+
+  if (!dataSource) {
+    throw new Error('Data source does not exist');
+  }
+
+  await validateDataSourceProperties(data.properties, dataSource.type);
 
   // Get environment details for naming
   const environmentName = await getEnvironmentName(data.environmentId);
@@ -133,22 +181,6 @@ export async function createDataSource(data: {
 
   // Use Prisma transaction to ensure full atomicity
   return prisma.$transaction(async (tx) => {
-    // Create data source
-    const dataSource = await tx.dataSource.create({
-      data: {
-        name: data.name,
-        createdById: data.createdById,
-        type: data.type,
-      },
-      select: {
-        id: true,
-        name: true,
-        createdAt: true,
-        updatedAt: true,
-        type: true,
-      },
-    });
-
     // Create EnvironmentDataSource relationship
     await tx.environmentDataSource.create({
       data: {
@@ -158,7 +190,7 @@ export async function createDataSource(data: {
     });
 
     for (const property of data.properties) {
-      const envVarKey = `${environmentName}_${data.name}_${property.type}`.toUpperCase().replace(/\s+/g, '_');
+      const envVarKey = `${environmentName}_${dataSource.name}_${property.type}`.toUpperCase().replace(/\s+/g, '_');
 
       const environmentVariable = await createEnvironmentVariable(
         envVarKey,
@@ -166,7 +198,7 @@ export async function createDataSource(data: {
         EnvironmentVariableType.DATA_SOURCE,
         data.environmentId,
         data.createdById,
-        `Data source ${property.type} property for ${data.name} in ${environmentName}`,
+        `Data source ${property.type} property for ${dataSource.name} in ${environmentName}`,
         dataSource.id,
         tx, // Pass transaction for atomicity
       );
@@ -182,9 +214,8 @@ export async function createDataSource(data: {
     }
 
     return {
-      ...dataSource,
+      dataSourceId: dataSource.id,
       environmentId: data.environmentId,
-      environmentName,
     };
   });
 }
