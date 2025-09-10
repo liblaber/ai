@@ -6,33 +6,7 @@ import { BaseSelect } from '~/components/ui/Select';
 import { DeploymentMethodCredentialsType } from '@prisma/client';
 import { type EnvironmentDeploymentMethod } from '~/lib/stores/deploymentMethods';
 import { type CredentialField, type DeploymentProviderInfo } from '~/lib/validation/deploymentMethods';
-
-interface DeploymentMethodResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-  deploymentMethod?: {
-    id: string;
-  };
-  environmentDeploymentMethods?: Array<{
-    id: string;
-    name: string;
-    provider: string;
-    environmentId: string;
-    environment: {
-      id: string;
-      name: string;
-      description: string | null;
-    };
-    credentials: Array<{
-      id: string;
-      type: string;
-      value: string;
-    }>;
-    createdAt: string;
-    updatedAt: string;
-  }>;
-}
+import { type DeploymentMethodResponse } from '~/types/deployment-methods';
 
 interface EditDeploymentMethodFormProps {
   selectedDeploymentMethod: EnvironmentDeploymentMethod;
@@ -63,8 +37,7 @@ export default function EditDeploymentMethodForm({
     const fetchProviders = async () => {
       try {
         const providersResponse = await fetch('/api/deployment-methods/providers');
-        // TODO: types
-        const providersResult = await providersResponse.json<any>();
+        const providersResult = await providersResponse.json<DeploymentProviderInfo[]>();
 
         if (providersResult) {
           setProviders(providersResult);

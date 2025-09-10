@@ -5,51 +5,11 @@ import { Loader2, Save, XCircle } from 'lucide-react';
 import { BaseSelect } from '~/components/ui/Select';
 import { DeploymentMethodCredentialsType } from '@prisma/client';
 import { type CredentialField, type DeploymentProviderInfo } from '~/lib/validation/deploymentMethods';
-
-interface DeploymentMethodResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-  deploymentMethod?: {
-    id: string;
-  };
-  environmentDeploymentMethods?: Array<{
-    id: string;
-    name: string;
-    provider: string;
-    environmentId: string;
-    environment: {
-      id: string;
-      name: string;
-      description: string | null;
-    };
-    credentials: Array<{
-      id: string;
-      type: string;
-      value: string;
-    }>;
-    createdAt: string;
-    updatedAt: string;
-  }>;
-}
-
-interface Environment {
-  id: string;
-  name: string;
-  description?: string;
-}
-
-interface EnvironmentOption {
-  label: string;
-  value: string;
-  description?: string;
-}
-
-interface EnvironmentsResponse {
-  success: boolean;
-  environments: Environment[];
-  error?: string;
-}
+import {
+  type DeploymentMethodResponse,
+  type EnvironmentOption,
+  type EnvironmentsResponse,
+} from '~/types/deployment-methods';
 
 interface AddDeploymentMethodFormProps {
   isSubmitting: boolean;
@@ -99,8 +59,7 @@ export default function AddDeploymentMethodForm({
 
         // Fetch providers
         const providersResponse = await fetch('/api/deployment-methods/providers');
-        // TODO: type
-        const providersResult = await providersResponse.json<any>();
+        const providersResult = await providersResponse.json<DeploymentProviderInfo[]>();
 
         if (providersResult) {
           setProviders(providersResult);
