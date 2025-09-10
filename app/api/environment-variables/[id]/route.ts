@@ -12,10 +12,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const { id } = await params;
 
-    if (userAbility.cannot(PermissionAction.update, PermissionResource.EnvironmentVariable)) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
     const body = (await request.json()) as {
       key: string;
       environmentId: string;
@@ -30,7 +26,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: 'Missing required fields: key, value, type' }, { status: 400 });
     }
 
-    // Check if user has access to this environment variable
     const envVar = await prisma.environmentVariable.findUnique({
       where: { id },
       include: {
@@ -45,6 +40,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const updatedEnvironmentId = environmentId || envVar.environmentId;
 
     if (
+      userAbility.cannot(PermissionAction.update, PermissionResource.EnvironmentVariable) ||
+      userAbility.cannot(
+        PermissionAction.read,
+        subject(PermissionResource.Environment, { environmentId: envVar.environmentId }),
+      ) ||
       userAbility.cannot(
         PermissionAction.read,
         subject(PermissionResource.Environment, { environmentId: updatedEnvironmentId }),
