@@ -106,13 +106,17 @@ const DocumentsResponseSchema = z.object({
   error: z.string().optional(),
 });
 
-const GoogleSheetsMetadataSchema = z.object({
-  properties: z
-    .object({
-      title: z.string().optional(),
-    })
-    .optional(),
-});
+interface ParsedDocument {
+  id: string;
+  title: string;
+  url: string;
+}
+
+interface ParsedAppsScript {
+  id: string;
+  title: string;
+  url: string;
+}
 
 interface GoogleSheetDocument {
   id: string;
@@ -252,67 +256,95 @@ export default function GoogleSheetsSetup({ onSuccess, environmentId }: GoogleSh
     }
   };
 
-  const fetchGoogleSheetsMetadata = async (url: string) => {
+  // Extract document info from Google Sheets URL (from working GoogleWorkspaceConnector)
+  const extractDocumentInfo = (url: string): ParsedDocument => {
     try {
-      const docIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      const patterns = [/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/];
 
-      if (!docIdMatch) {
-        throw new Error('Invalid Google Sheets URL');
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+
+        if (match) {
+          const documentId = match[1];
+          const isSheetUrl = url.includes('/spreadsheets/');
+
+          if (!isSheetUrl) {
+            throw new Error('URL must be a Google Sheets URL');
+          }
+
+          // Generate a simple title like the old working code
+          const title = `Spreadsheet (${documentId.substring(0, 8)}...)`;
+
+          return {
+            id: documentId,
+            title,
+            url: url.split('?')[0], // Clean URL
+          };
+        }
       }
 
-      const documentId = docIdMatch[1];
+      throw new Error('Invalid Google Sheets URL format');
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Invalid URL format');
+    }
+  };
 
-      // Try to fetch metadata from Google Sheets API
-      const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${documentId}?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}`,
-      );
+  // Extract Apps Script info from URL (from working GoogleWorkspaceConnector)
+  const extractAppsScriptInfo = (url: string): ParsedAppsScript => {
+    try {
+      const match = url.match(/\/macros\/s\/([a-zA-Z0-9-_]+)/);
 
-      if (response.ok) {
-        const rawData = await response.json();
-        const data = GoogleSheetsMetadataSchema.parse(rawData);
-
+      if (match) {
+        const scriptId = match[1];
         return {
-          title: data.properties?.title || 'Untitled Spreadsheet',
-          documentId,
-          modified: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-          owner: 'Unknown Owner', // This would require OAuth to get actual owner
-          url,
-        };
-      } else {
-        // Fallback to extracting what we can from the URL
-        return {
-          title: 'Google Spreadsheet',
-          documentId,
-          modified: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-          owner: 'Unknown Owner',
-          url,
+          id: scriptId,
+          title: `Apps Script Web App (${scriptId.substring(0, 8)}...)`,
+          url: url.split('?')[0], // Clean URL
         };
       }
-    } catch {
-      // Fallback for any errors
-      const docIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-      const documentId = docIdMatch ? docIdMatch[1] : 'Unknown';
 
-      return {
-        title: 'Google Spreadsheet',
-        documentId,
-        modified: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        owner: 'Unknown Owner',
-        url,
-      };
+      throw new Error('Invalid Google Apps Script Web App URL format');
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Invalid Apps Script URL format');
     }
   };
 
   // Auto-generate preview when URL changes
   useEffect(() => {
     if (googleSheetsUrl.trim()) {
-      fetchGoogleSheetsMetadata(googleSheetsUrl).then((metadata) => {
-        setSheetsPreviewData(metadata);
-      });
+      try {
+        const docInfo = extractDocumentInfo(googleSheetsUrl.trim());
+        setSheetsPreviewData({
+          title: docInfo.title,
+          documentId: docInfo.id,
+          modified: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          owner: 'Unknown Owner',
+          url: docInfo.url,
+        });
+      } catch {
+        setSheetsPreviewData(null);
+      }
     } else {
       setSheetsPreviewData(null);
     }
   }, [googleSheetsUrl]);
+
+  // Auto-generate Apps Script preview when URL changes
+  useEffect(() => {
+    if (appsScriptUrl.trim()) {
+      try {
+        const scriptInfo = extractAppsScriptInfo(appsScriptUrl.trim());
+        setAppsScriptPreviewData({
+          scriptId: scriptInfo.id,
+          url: scriptInfo.url,
+        });
+      } catch {
+        setAppsScriptPreviewData(null);
+      }
+    } else {
+      setAppsScriptPreviewData(null);
+    }
+  }, [appsScriptUrl]);
 
   const handleAppsScriptSubmit = () => {
     handleComplete('sharable-url');
@@ -518,26 +550,39 @@ export default function GoogleSheetsSetup({ onSuccess, environmentId }: GoogleSh
         return;
       }
 
-      // Create a simple connection string that won't trigger the database accessor
+      // Create connection string in the format the old working UI used
       let connectionString = '';
 
       if (method === 'oauth') {
         if (selectedDocument) {
-          connectionString = `google-sheets://oauth/${selectedDocument.id}`;
+          // OAuth connection: use sheets:// protocol with document ID
+          connectionString = `sheets://${selectedDocument.id}`;
         } else {
-          connectionString = `google-sheets://oauth/${encodeURIComponent(dataSourceName)}`;
+          // Fallback for OAuth without document
+          connectionString = `sheets://oauth_${encodeURIComponent(dataSourceName)}`;
         }
       } else {
-        // Extract document ID from URL for cleaner connection string
-        const docIdMatch = googleSheetsUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
-        const documentId = docIdMatch ? docIdMatch[1] : googleSheetsUrl;
-        connectionString = `google-sheets://doc/${documentId}${appsScriptUrl ? `?script=${encodeURIComponent(appsScriptUrl)}` : ''}`;
+        // Public URL connection: use the raw Google Sheets URL (like old UI)
+        connectionString = googleSheetsUrl;
+
+        // Add Apps Script URL if provided (use correct parameter name)
+        if (appsScriptUrl) {
+          connectionString += `${connectionString.includes('?') ? '&' : '?'}appsScript=${encodeURIComponent(appsScriptUrl)}`;
+        }
       }
 
       const formData = new FormData();
       formData.append('name', dataSourceName);
-      formData.append('connectionString', connectionString);
+      formData.append('type', 'GOOGLE_SHEETS');
       formData.append('environmentId', environmentId || selectedEnvironment.value);
+
+      const properties = [
+        {
+          type: 'CONNECTION_URL',
+          value: connectionString,
+        },
+      ];
+      formData.append('properties', JSON.stringify(properties));
 
       const response = await fetch('/api/data-sources', {
         method: 'POST',

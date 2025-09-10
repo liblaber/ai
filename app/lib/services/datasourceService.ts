@@ -68,8 +68,7 @@ export async function getEnvironmentDataSources(userAbility: AppAbility): Promis
           ...dsp,
           environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
         };
-      } catch (error) {
-        console.warn(`Failed to decrypt environment variable ${dsp.environmentVariable.key}:`, error);
+      } catch {
         // Return the environment variable with a placeholder value to avoid breaking the entire request
         return {
           ...dsp,
@@ -127,8 +126,7 @@ export async function getEnvironmentDataSource(
           ...dsp,
           environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
         };
-      } catch (error) {
-        console.warn(`Failed to decrypt environment variable ${dsp.environmentVariable.key}:`, error);
+      } catch {
         return {
           ...dsp,
           environmentVariable: {
@@ -222,7 +220,61 @@ export async function getDataSourceConnectionUrl(
 ): Promise<string | null> {
   const dataSourceProperties = await getDataSourceProperties(userId, dataSourceId, environmentId);
 
-  return dataSourceProperties?.find((prop) => prop.type === SharedDataSourcePropertyType.CONNECTION_URL)?.value || null;
+  if (!dataSourceProperties) {
+    return null;
+  }
+
+  const connectionUrl = dataSourceProperties.find(
+    (prop) => prop.type === SharedDataSourcePropertyType.CONNECTION_URL,
+  )?.value;
+
+  if (!connectionUrl) {
+    return null;
+  }
+
+  // Special handling for Google Sheets to include OAuth tokens and Apps Script URL
+  // Check if this is a Google Sheets URL and if we have additional properties
+  if (connectionUrl.includes('docs.google.com/spreadsheets/')) {
+    const accessToken = dataSourceProperties.find(
+      (prop) => prop.type === SharedDataSourcePropertyType.ACCESS_TOKEN,
+    )?.value;
+    const refreshToken = dataSourceProperties.find(
+      (prop) => prop.type === SharedDataSourcePropertyType.REFRESH_TOKEN,
+    )?.value;
+
+    // Look for Apps Script URL in client_id field (commonly used for additional URLs)
+    const appsScriptUrl = dataSourceProperties.find(
+      (prop) => prop.type === SharedDataSourcePropertyType.CLIENT_ID,
+    )?.value;
+
+    if (accessToken && refreshToken) {
+      // Create sheets:// URL with tokens for the accessor
+      const urlMatch = connectionUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+
+      if (urlMatch) {
+        const spreadsheetId = urlMatch[1];
+        let url = `sheets://${spreadsheetId}/?access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}`;
+
+        // Add Apps Script URL if present
+        if (appsScriptUrl) {
+          url += `&appsScript=${encodeURIComponent(appsScriptUrl)}`;
+        }
+
+        return url;
+      }
+    }
+
+    // For public access, add Apps Script URL as parameter if present
+    if (appsScriptUrl) {
+      const separator = connectionUrl.includes('?') ? '&' : '?';
+      return `${connectionUrl}${separator}appsScript=${encodeURIComponent(appsScriptUrl)}`;
+    }
+
+    // Return the original URL for public access
+    return connectionUrl;
+  }
+
+  return connectionUrl;
 }
 
 export async function createSampleDataSource(data: {

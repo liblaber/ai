@@ -18,13 +18,14 @@ import {
 import type { DataSourceType } from '@liblab/data-access/utils/types';
 import { DataSourcePropertyType } from '@prisma/client';
 import type { ComplexEnvironmentDataSource } from '~/lib/services/datasourceService';
+import { getDataSourceConnectionUrl } from '~/lib/services/datasourceService';
 import type { BaseDatabaseAccessor } from '@liblab/data-access/baseDatabaseAccessor';
 
 export abstract class DatabaseContextProvider implements DataSourceContextProvider {
   async getContext({ environmentDataSource, userPrompt }: AdditionalContextInput): Promise<AdditionalContextOutput> {
     const accessor = this._resolveAccessor(environmentDataSource.dataSource.type as DataSourceType);
 
-    const connectionString = this._getConnectionString(environmentDataSource);
+    const connectionString = await this._getConnectionString(environmentDataSource);
 
     await accessor.initialize(connectionString);
 
@@ -103,7 +104,7 @@ export abstract class DatabaseContextProvider implements DataSourceContextProvid
   async getSchema(environmentDataSource: ComplexEnvironmentDataSource): Promise<string> {
     const accessor = this._resolveAccessor(environmentDataSource.dataSource.type as DataSourceType);
 
-    const connectionString = this._getConnectionString(environmentDataSource);
+    const connectionString = await this._getConnectionString(environmentDataSource);
 
     await accessor.initialize(connectionString);
 
@@ -114,13 +115,25 @@ export abstract class DatabaseContextProvider implements DataSourceContextProvid
     return schema;
   }
 
-  private _getConnectionString(environmentDataSource: ComplexEnvironmentDataSource): string {
-    const connectionString = environmentDataSource.dataSourceProperties.find(
-      (dsp) => dsp.type === DataSourcePropertyType.CONNECTION_URL,
-    )?.environmentVariable?.value;
+  private async _getConnectionString(environmentDataSource: ComplexEnvironmentDataSource): Promise<string> {
+    // Use getDataSourceConnectionUrl which properly handles Google Sheets Apps Script URLs
+    const connectionString = await getDataSourceConnectionUrl(
+      environmentDataSource.dataSource.createdById,
+      environmentDataSource.dataSourceId,
+      environmentDataSource.environmentId,
+    );
 
     if (!connectionString) {
-      throw new Error('Connection string not found for data source');
+      // Fallback to direct property access if getDataSourceConnectionUrl fails
+      const fallbackConnectionString = environmentDataSource.dataSourceProperties.find(
+        (dsp) => dsp.type === DataSourcePropertyType.CONNECTION_URL,
+      )?.environmentVariable?.value;
+
+      if (!fallbackConnectionString) {
+        throw new Error('Connection string not found for data source');
+      }
+
+      return fallbackConnectionString;
     }
 
     return connectionString;

@@ -15,19 +15,6 @@ export async function executeQuery(
   try {
     await dataAccessor.initialize(connectionUrl);
 
-    // Enhanced logging for Google Sheets JSON parsing issues
-    const isSheetsError = isGoogleConnection(connectionUrl);
-
-    if (isSheetsError) {
-      console.log('[Database] Google Sheets query execution:', {
-        queryType: typeof query,
-        queryLength: query.length,
-        firstChars: query.substring(0, 100),
-        queryPreview: query.length > 200 ? query.substring(0, 200) + '...' : query,
-        connectionUrl: connectionUrl.substring(0, 50) + '...',
-      });
-    }
-
     dataAccessor.guardAgainstMaliciousQuery(query);
 
     return await dataAccessor.executeQuery(query, params);
