@@ -209,9 +209,12 @@ export default function EditEnvironmentForm({
         </div>
       </div>
 
-      <div>
-        <ResourceAccessMembers resourceScope="ENVIRONMENT" resourceId={environment.id} onAddMembers={onAddMembers} />
-      </div>
+      <ResourceAccessMembers
+        resourceScope="ENVIRONMENT"
+        resourceId={environment.id}
+        resource={environment}
+        onAddMembers={onAddMembers}
+      />
 
       <div className="flex items-center justify-between pt-4">
         <button

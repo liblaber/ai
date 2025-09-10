@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useContext, useState, useEffect, useMemo } from 'react';
 import { Plus, Search, Trash2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { RoleScope } from '@prisma/client';
+import { Can } from '@casl/react';
+import { AbilityContext } from '~/components/ability/AbilityProvider';
 import { classNames } from '~/utils/classNames';
 import type { ResourceRoleScope } from '~/lib/services/roleService';
 import type { PermissionLevel } from '~/lib/services/permissionService';
@@ -20,10 +22,16 @@ export const permissionOptions: SelectOption[] = [
 type ResourceAccessMembersProps = {
   resourceScope: ResourceRoleScope;
   resourceId: string;
+  resource: any;
   onAddMembers: () => void;
 };
 
-export default function ResourceAccessMembers({ resourceScope, resourceId, onAddMembers }: ResourceAccessMembersProps) {
+export default function ResourceAccessMembers({
+  resourceScope,
+  resourceId,
+  resource,
+  onAddMembers,
+}: ResourceAccessMembersProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [resourceMembers, setResourceMembers] = useState<ResourceMember[]>([]);
@@ -52,7 +60,7 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onAdd
 
         const response = await fetch(`/api/${resourceType}/${resourceId}/members`);
         const data: { members: ResourceMember[] } = await response.json();
-        setResourceMembers(data.members);
+        setResourceMembers(data.members || []);
       } catch (error) {
         logger.error(`Error fetching ${resourceType} members:`, error);
         toast.error(`Failed to fetch ${resourceType} members`);
@@ -140,161 +148,163 @@ export default function ResourceAccessMembers({ resourceScope, resourceId, onAdd
   }
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center gap-2 p-2">
-        <Users className="w-4 h-4 text-gray-500" />
-        Members with access
-        <span className="text-sm text-gray-500 dark:text-gray-400">{resourceMembers.length}</span>
-      </div>
-      <div className="flex mb-3 items-center gap-3">
-        <div className="relative flex-1">
-          <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
-            <Search className="w-4 h-4 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={classNames(
-              'w-full h-9 pl-7 pr-2.5 py-2 rounded-lg',
-              'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
-              'focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent',
-              'placeholder-gray-500 dark:placeholder-gray-400',
-            )}
-            placeholder="Search members..."
-          />
+    <Can I="manage" a={resource} ability={useContext(AbilityContext)}>
+      <div className="mb-6">
+        <div className="flex items-center gap-2 p-2">
+          <Users className="w-4 h-4 text-gray-500" />
+          Members with access
+          <span className="text-sm text-gray-500 dark:text-gray-400">{resourceMembers.length}</span>
         </div>
-        <button
-          onClick={onAddMembers}
-          className={classNames(
-            'inline-flex items-center gap-1 pl-2 pr-3 py-1.75 text-sm rounded-lg transition-colors',
-            'border border-gray-600',
-            'bg-gray-100 hover:bg-gray-200',
-            'dark:bg-gray-900 dark:hover:bg-gray-800',
-            'text-gray-800 dark:text-gray-200',
-            'cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
-          )}
-        >
-          <Plus className="w-3 h-3 text-white" />
-          Add Members
-        </button>
-      </div>
+        <div className="flex mb-3 items-center gap-3">
+          <div className="relative flex-1">
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+              <Search className="w-4 h-4 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={classNames(
+                'w-full h-9 pl-7 pr-2.5 py-2 rounded-lg',
+                'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
+                'focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent',
+                'placeholder-gray-500 dark:placeholder-gray-400',
+              )}
+              placeholder="Search members..."
+            />
+          </div>
+          <button
+            onClick={onAddMembers}
+            className={classNames(
+              'inline-flex items-center gap-1 pl-2 pr-3 py-1.75 text-sm rounded-lg transition-colors',
+              'border border-gray-600',
+              'bg-gray-100 hover:bg-gray-200',
+              'dark:bg-gray-900 dark:hover:bg-gray-800',
+              'text-gray-800 dark:text-gray-200',
+              'cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
+            )}
+          >
+            <Plus className="w-3 h-3 text-white" />
+            Add Members
+          </button>
+        </div>
 
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="text-gray-400 border-b border-gray-700/50">
-            <th className="px-4 py-2 font-normal">Member</th>
-            <th className="px-4 py-2 font-normal">Permission</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredMembers.map((member) => {
-            let inheritedPermission = false;
-            let selectedOption: SelectOption | undefined = undefined;
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="text-gray-400 border-b border-gray-700/50">
+              <th className="px-4 py-2 font-normal">Member</th>
+              <th className="px-4 py-2 font-normal">Permission</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredMembers.map((member) => {
+              let inheritedPermission = false;
+              let selectedOption: SelectOption | undefined = undefined;
 
-            if (member.role.type === 'general') {
-              inheritedPermission = true;
-            } else {
-              selectedOption = permissionOptions.find((option) => option.value === member.role.type);
-            }
+              if (member.role.type === 'general') {
+                inheritedPermission = true;
+              } else {
+                selectedOption = permissionOptions.find((option) => option.value === member.role.type);
+              }
 
-            return (
-              <tr key={member.id} className="border-b border-gray-700/50">
-                <td className="px-4 py-2">
-                  <div className="space-y-1">
-                    <div className="text-sm">{member.name}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{member.email}</div>
-                  </div>
-                </td>
-                <td className="w-[50px] px-4 py-2">
-                  {inheritedPermission ? (
-                    <WithTooltip tooltip={`This user has permissions inherited from the "${member.role.name}" role`}>
-                      <span className="text-gray-500 dark:text-gray-400 cursor-default">Inherited</span>
-                    </WithTooltip>
-                  ) : (
-                    <BaseSelect
-                      value={selectedOption}
-                      onChange={(option) => {
-                        if (option?.value && option.value !== member.role.type) {
-                          if (option.value === 'remove') {
-                            setRemoveMember(member);
-                          } else {
-                            handlePermissionChange(member.id, option.value as PermissionLevel);
+              return (
+                <tr key={member.id} className="border-b border-gray-700/50">
+                  <td className="px-4 py-2">
+                    <div className="space-y-1">
+                      <div className="text-sm">{member.name}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{member.email}</div>
+                    </div>
+                  </td>
+                  <td className="w-[50px] px-4 py-2">
+                    {inheritedPermission ? (
+                      <WithTooltip tooltip={`This user has permissions inherited from the "${member.role.name}" role`}>
+                        <span className="text-gray-500 dark:text-gray-400 cursor-default">Inherited</span>
+                      </WithTooltip>
+                    ) : (
+                      <BaseSelect
+                        value={selectedOption}
+                        onChange={(option) => {
+                          if (option?.value && option.value !== member.role.type) {
+                            if (option.value === 'remove') {
+                              setRemoveMember(member);
+                            } else {
+                              handlePermissionChange(member.id, option.value as PermissionLevel);
+                            }
                           }
-                        }
-                      }}
-                      options={permissionOptions}
-                      width="150px"
-                      minWidth="150px"
-                      isSearchable={false}
-                      menuPlacement="bottom"
-                    />
-                  )}
+                        }}
+                        options={permissionOptions}
+                        width="150px"
+                        minWidth="150px"
+                        isSearchable={false}
+                        menuPlacement="bottom"
+                      />
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {filteredMembers.length === 0 && (
+              <tr>
+                <td colSpan={2} className="px-4 py-2 text-gray-400">
+                  No members found
                 </td>
               </tr>
-            );
-          })}
-          {filteredMembers.length === 0 && (
-            <tr>
-              <td colSpan={2} className="px-4 py-2 text-gray-400">
-                No members found
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
 
-      <DialogRoot open={Boolean(removeMember)} onOpenChange={(open) => !open && setRemoveMember(null)}>
-        <Dialog>
-          <div className="rounded-xl bg-white dark:bg-[#0A0A0A] border border-[#E5E5E5] dark:border-[#1A1A1A] overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-[#F5F5F5] dark:bg-[#1A1A1A] border border-[#E5E5E5] dark:border-[#1A1A1A]">
-                    <Trash2 className="w-5 h-5 text-tertiary" />
-                  </div>
-                  <div>
-                    <DialogTitle title="Remove Access" />
-                    <p className="text-sm text-secondary">This action cannot be undone</p>
+        <DialogRoot open={Boolean(removeMember)} onOpenChange={(open) => !open && setRemoveMember(null)}>
+          <Dialog>
+            <div className="rounded-xl bg-white dark:bg-[#0A0A0A] border border-[#E5E5E5] dark:border-[#1A1A1A] overflow-hidden">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-[#F5F5F5] dark:bg-[#1A1A1A] border border-[#E5E5E5] dark:border-[#1A1A1A]">
+                      <Trash2 className="w-5 h-5 text-tertiary" />
+                    </div>
+                    <div>
+                      <DialogTitle title="Remove Access" />
+                      <p className="text-sm text-secondary">This action cannot be undone</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-4">
-                <p className="text-sm text-secondary">
-                  Are you sure you want to remove access for {removeMember?.email}?
-                </p>
-              </div>
+                <div className="space-y-4">
+                  <p className="text-sm text-secondary">
+                    Are you sure you want to remove access for {removeMember?.email}?
+                  </p>
+                </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
-                <DialogClose asChild>
+                <div className="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
+                  <DialogClose asChild>
+                    <button
+                      className={classNames(
+                        'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                        'bg-[#F5F5F5] hover:bg-[#E5E5E5]',
+                        'dark:bg-[#1A1A1A] dark:hover:bg-[#2A2A2A]',
+                        'text-primary',
+                      )}
+                    >
+                      Cancel
+                    </button>
+                  </DialogClose>
                   <button
+                    onClick={handleRemoveMember}
                     className={classNames(
                       'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                      'bg-[#F5F5F5] hover:bg-[#E5E5E5]',
-                      'dark:bg-[#1A1A1A] dark:hover:bg-[#2A2A2A]',
-                      'text-primary',
+                      'bg-red-500 hover:bg-red-600',
+                      'text-white',
                     )}
                   >
-                    Cancel
+                    <Trash2 className="w-4 h-4" />
+                    <span>Remove</span>
                   </button>
-                </DialogClose>
-                <button
-                  onClick={handleRemoveMember}
-                  className={classNames(
-                    'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                    'bg-red-500 hover:bg-red-600',
-                    'text-white',
-                  )}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Remove</span>
-                </button>
+                </div>
               </div>
             </div>
-          </div>
-        </Dialog>
-      </DialogRoot>
-    </div>
+          </Dialog>
+        </DialogRoot>
+      </div>
+    </Can>
   );
 }

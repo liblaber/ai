@@ -6,7 +6,7 @@ import { createDataSource, getEnvironmentDataSources } from '~/lib/services/data
 export async function GET(request: NextRequest) {
   const { userAbility } = await requireUserAbility(request);
 
-  if (!userAbility.can(PermissionAction.read, PermissionResource.DataSource)) {
+  if (userAbility.cannot(PermissionAction.read, PermissionResource.DataSource)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 

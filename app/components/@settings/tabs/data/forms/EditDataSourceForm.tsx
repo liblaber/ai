@@ -478,13 +478,12 @@ export default function EditDataSourceForm({
           )}
         </div>
 
-        <div>
-          <ResourceAccessMembers
-            resourceScope="DATA_SOURCE"
-            resourceId={selectedDataSource.dataSource.id}
-            onAddMembers={onAddMembers}
-          />
-        </div>
+        <ResourceAccessMembers
+          resourceScope="DATA_SOURCE"
+          resourceId={selectedDataSource.dataSource.id}
+          resource={selectedDataSource.dataSource}
+          onAddMembers={onAddMembers}
+        />
 
         <div className="pt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
           <div className="flex items-center justify-between">

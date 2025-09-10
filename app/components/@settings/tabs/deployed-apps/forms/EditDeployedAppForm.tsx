@@ -97,9 +97,12 @@ export default function EditDeployedAppForm({
         </div>
       </div>
 
-      <div>
-        <ResourceAccessMembers resourceScope="WEBSITE" resourceId={website.id} onAddMembers={onAddMembers} />
-      </div>
+      <ResourceAccessMembers
+        resourceScope="WEBSITE"
+        resourceId={website.id}
+        resource={website}
+        onAddMembers={onAddMembers}
+      />
 
       <div className="flex items-center justify-between pt-4">
         <button
