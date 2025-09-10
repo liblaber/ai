@@ -97,11 +97,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const { id } = await params;
 
-    if (userAbility.cannot(PermissionAction.delete, PermissionResource.EnvironmentVariable)) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Check if user has access to this environment variable
     const envVar = await prisma.environmentVariable.findUnique({
       where: { id },
       include: {
@@ -117,7 +112,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       userAbility.cannot(
         PermissionAction.read,
         subject(PermissionResource.Environment, { environmentId: envVar.environmentId }),
-      )
+      ) ||
+      userAbility.cannot(PermissionAction.delete, PermissionResource.EnvironmentVariable)
     ) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions to delete environment variable in this environment' },
