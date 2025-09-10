@@ -20,7 +20,6 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
     const { websiteId, chatId, userId, environmentId } = config;
     let currentStepIndex = 1;
 
-    // Get Vercel token from deployment method
     let token: string | undefined;
 
     if (environmentId) {
@@ -42,7 +41,6 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
       }
     }
 
-    // Fallback to environment variable
     if (!token) {
       token = process.env.VERCEL_TOKEN;
     }
@@ -61,11 +59,9 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
     logger.info('Initializing Vercel deployment', JSON.stringify({ chatId }));
     await this.sendProgress(currentStepIndex, this.totalSteps, 'Initializing deployment...', 'in_progress', onProgress);
 
-    // Create a temporary directory for the deployment
     const tempDir = await this.createTempDirectory(chatId, 'vercel-deploy');
 
     try {
-      // Extract the zip file
       await this.sendProgress(
         ++currentStepIndex,
         this.totalSteps,
@@ -75,7 +71,6 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
       );
       await this.extractZipFile(zipFile, tempDir, chatId);
 
-      // Create Vercel configuration
       logger.info('Setting up Vercel configuration', JSON.stringify({ chatId }));
       await this.sendProgress(
         ++currentStepIndex,
@@ -87,7 +82,6 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
 
       await this._createVercelConfig(tempDir, chatId);
 
-      // Install dependencies
       logger.info('Installing dependencies', JSON.stringify({ chatId }));
 
       await this.sendProgress(
@@ -105,13 +99,11 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
       });
       logger.info('Dependencies installed successfully', JSON.stringify({ chatId }));
 
-      // Deploy to Vercel
       logger.info('Starting Vercel deployment', JSON.stringify({ chatId }));
       await this.sendProgress(++currentStepIndex, this.totalSteps, 'Deploying to Vercel...', 'in_progress', onProgress);
 
       const projectName = `liblab-${chatId.slice(0, 8)}`;
 
-      // Deploy using Vercel CLI
       const deployResult = await this.runCommand(
         'npx',
         ['vercel', 'deploy', '--prod', '--token', token, '--yes'],
@@ -119,7 +111,6 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
         { VERCEL_TOKEN: token },
         5 * 60 * 1000, // 5 minutes timeout
         async (message) => {
-          // Extract deployment URL from Vercel output
           if (message.includes('https://') && message.includes('.vercel.app')) {
             const urlMatch = message.match(/(https:\/\/[^\s]+\.vercel\.app)/);
 
@@ -132,10 +123,8 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
 
       logger.info('Vercel deployment completed', JSON.stringify({ chatId, output: deployResult.output }));
 
-      // Extract deployment information from Vercel output
       const deploymentInfo = this._parseVercelOutput(deployResult.output);
 
-      // Create site info for consistency with other plugins
       const siteInfo = {
         id: deploymentInfo.projectId || `vercel-${chatId}`,
         name: projectName,
@@ -143,10 +132,8 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
         chatId,
       };
 
-      // Track telemetry
       await this.trackDeploymentTelemetry(siteInfo, userId, 'vercel');
 
-      // Update database
       const website = await this.updateWebsiteDatabase(
         websiteId,
         siteInfo.id,
@@ -274,31 +261,26 @@ module.exports = nextConfig;
   }
 
   private _parseVercelOutput(output: string): { projectId?: string; deploymentId?: string; url?: string } {
-    // Parse Vercel deployment output to extract relevant information
     const lines = output.split('\n');
     let projectId: string | undefined;
     let deploymentId: string | undefined;
     let url: string | undefined;
 
     for (const line of lines) {
-      // Look for deployment URL
       const urlMatch = line.match(/(https:\/\/[^\s]+\.vercel\.app)/);
 
       if (urlMatch && !url) {
         url = urlMatch[1];
       }
 
-      // Look for project ID in various formats
       if (line.includes('Project:') && !projectId) {
         projectId = line.split('Project:')[1]?.trim();
       }
 
-      // Look for deployment ID
       if (line.includes('Deployment:') && !deploymentId) {
         deploymentId = line.split('Deployment:')[1]?.trim();
       }
 
-      // Alternative patterns for Vercel CLI output
       if (line.includes('Ready!') && line.includes('https://')) {
         const readyUrlMatch = line.match(/(https:\/\/[^\s]+\.vercel\.app)/);
 
