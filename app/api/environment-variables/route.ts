@@ -23,17 +23,20 @@ export async function GET(request: NextRequest) {
     const environmentId = searchParams.get('environmentId');
     const type = searchParams.get('type') as EnvironmentVariableType | null;
 
+    if (!environmentId) {
+      return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
+    }
+
     const { userAbility } = await requireUserAbility(request);
 
-    if (userAbility.cannot(PermissionAction.read, subject(PermissionResource.Environment, { environmentId }))) {
+    if (
+      userAbility.cannot(PermissionAction.read, PermissionResource.EnvironmentVariable) &&
+      userAbility.cannot(PermissionAction.read, subject(PermissionResource.Environment, { id: environmentId }))
+    ) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions to read environment variables' },
         { status: 403 },
       );
-    }
-
-    if (!environmentId) {
-      return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
     }
 
     const environmentVariables = await getEnvironmentVariablesWithEnvironmentDetails(environmentId, type);
@@ -52,16 +55,14 @@ export async function POST(request: NextRequest) {
   try {
     const { userId, userAbility } = await requireUserAbility(request);
 
-    if (userAbility.cannot(PermissionAction.create, PermissionResource.EnvironmentVariable)) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
     const body = postBodySchema.parse(await request.json());
 
     const { key, value, type, environmentId, description } = body;
 
-    // Check if user has access to this environment
-    if (userAbility.cannot(PermissionAction.read, subject(PermissionResource.Environment, { environmentId }))) {
+    if (
+      userAbility.cannot(PermissionAction.create, PermissionResource.EnvironmentVariable) &&
+      userAbility.cannot(PermissionAction.create, subject(PermissionResource.Environment, { id: environmentId }))
+    ) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions to create environment variables in this environment' },
         { status: 403 },
