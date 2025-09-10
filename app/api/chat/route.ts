@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createDataStream } from 'ai';
+import { PermissionAction, PermissionResource } from '@prisma/client';
 import { type Messages, type StreamingOptions, streamText } from '~/lib/.server/llm/stream-text';
 import { createScopedLogger } from '~/utils/logger';
 import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
@@ -17,7 +18,8 @@ import { LLMManager } from '~/lib/modules/llm/manager';
 import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import { type UserProfile, userService } from '~/lib/services/userService';
 import { createImplementationPlan } from '~/lib/.server/llm/create-implementation-plan';
-import { requireUserId } from '~/auth/session';
+import { subject } from '@casl/ability';
+import { requireUserAbility } from '~/auth/session';
 import { AI_SDK_INVALID_KEY_ERROR } from '~/utils/constants';
 import { resolveDataSourceContextProvider } from '~/lib/plugins/data-source/context-provider/data-source-context-provider';
 import type { DataSourceType } from '@liblab/data-access/utils/types';
@@ -31,7 +33,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function chatAction(request: NextRequest) {
-  const userId = await requireUserId(request);
+  const { userAbility, userId } = await requireUserAbility(request);
 
   const body = await request.json<{
     messages: Messages;
@@ -53,8 +55,21 @@ async function chatAction(request: NextRequest) {
   }
 
   const conversation = await conversationService.getConversation(conversationId);
-  const environmentDataSource = await conversationService.getConversationEnvironmentDataSource(conversationId, userId);
+  const environmentDataSource = await conversationService.getConversationEnvironmentDataSource(conversationId);
   const dataSource = environmentDataSource.dataSource;
+
+  if (
+    userAbility.cannot(PermissionAction.read, subject(PermissionResource.DataSource, dataSource)) &&
+    userAbility.cannot(
+      PermissionAction.read,
+      subject(PermissionResource.Environment, { id: environmentDataSource.environmentId }),
+    )
+  ) {
+    throw new Response('Forbidden', {
+      status: 403,
+      statusText: 'Forbidden',
+    });
+  }
 
   const dataSourceContextProvider = resolveDataSourceContextProvider(dataSource.type);
 
@@ -335,7 +350,6 @@ async function chatAction(request: NextRequest) {
 
                 logger.debug('Prompt saved');
 
-                const userId = await requireUserId(request);
                 const user = await userService.getUser(userId);
 
                 await trackChatPrompt(conversationId, currentModel, user, userMessageProperties.content);
@@ -489,10 +503,7 @@ async function trackChatPrompt(
   userMessage: string,
 ): Promise<void> {
   try {
-    const environmentDataSource = await conversationService.getConversationEnvironmentDataSource(
-      conversationId,
-      user.id,
-    );
+    const environmentDataSource = await conversationService.getConversationEnvironmentDataSource(conversationId);
 
     const pluginId = await DataSourcePluginManager.getAccessorPluginId(
       environmentDataSource.dataSource.type as DataSourceType,
