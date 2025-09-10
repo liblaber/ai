@@ -37,10 +37,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
     }
 
-    console.log(environmentDataSource);
-
-    console.log(JSON.stringify(userAbility));
-
     if (
       userAbility.cannot(
         PermissionAction.read,
