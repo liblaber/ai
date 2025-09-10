@@ -55,6 +55,7 @@ export default function EditDeploymentMethodForm({
   const [isLoadingProviders, setIsLoadingProviders] = useState(true);
   const [credentials, setCredentials] = useState<CredentialField[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [applyToAllEnvironments, setApplyToAllEnvironments] = useState(false);
   const [showSensitiveInput, setShowSensitiveInput] = useState(false);
 
   // Fetch providers on component mount
@@ -180,6 +181,7 @@ export default function EditDeploymentMethodForm({
         body: JSON.stringify({
           name: name.trim(),
           provider: selectedProvider.id,
+          applyToAllEnvironments,
           credentials: credentials.map((cred) => ({
             type: cred.type,
             value: cred.value.trim(),
@@ -190,7 +192,10 @@ export default function EditDeploymentMethodForm({
       const data = await response.json<DeploymentMethodResponse>();
 
       if (data.success) {
-        toast.success('Deployment method updated successfully');
+        const successMessage = applyToAllEnvironments
+          ? `Deployment method updated successfully across all environments`
+          : 'Deployment method updated successfully';
+        toast.success(successMessage);
         onSuccess(data);
       } else {
         const message = data.error || 'Failed to update deployment method';
@@ -242,14 +247,35 @@ export default function EditDeploymentMethodForm({
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-4">
-          <div className="mb-6">
-            <label className="mb-3 block text-sm font-medium text-secondary">Environment</label>
-            <div className="px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg text-primary">
-              {selectedDeploymentMethod.environment.name}
+          {!applyToAllEnvironments && (
+            <div className="mb-6">
+              <label className="mb-3 block text-sm font-medium text-secondary">Environment</label>
+              <div className="px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg text-primary">
+                {selectedDeploymentMethod.environment.name}
+              </div>
+              {selectedDeploymentMethod.environment.description && (
+                <div className="text-gray-400 text-sm mt-2">{selectedDeploymentMethod.environment.description}</div>
+              )}
             </div>
-            {selectedDeploymentMethod.environment.description && (
-              <div className="text-gray-400 text-sm mt-2">{selectedDeploymentMethod.environment.description}</div>
-            )}
+          )}
+
+          <div className="mb-6">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={applyToAllEnvironments}
+                onChange={(e) => {
+                  setApplyToAllEnvironments(e.target.checked);
+                  setError(null);
+                }}
+                disabled={isSubmitting}
+                className="w-4 h-4 text-accent-500 bg-gray-100 border-gray-300 rounded focus:ring-accent-500 focus:ring-2"
+              />
+              <span className="text-sm font-medium text-secondary">Apply to all environments</span>
+            </label>
+            <p className="text-xs text-gray-500 mt-1 ml-7">
+              This will update the deployment method with the same credentials across all environments
+            </p>
           </div>
 
           <div className="mb-6">

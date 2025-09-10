@@ -16,14 +16,14 @@ datasource db {
 }
 
 model DataSource {
-  id               String                  @id @default(cuid())
-  name             String
-  type             DataSourceType          @default(SQLITE)
-  createdAt        DateTime                @default(now()) @map("created_at")
-  updatedAt        DateTime                @updatedAt @map("updated_at")
-  createdBy        User                    @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  createdById      String                  @map("created_by_id")
-  environments     EnvironmentDataSource[]
+  id           String                  @id @default(cuid())
+  name         String
+  type         DataSourceType          @default(SQLITE)
+  createdAt    DateTime                @default(now()) @map("created_at")
+  updatedAt    DateTime                @updatedAt @map("updated_at")
+  createdBy    User                    @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdById  String                  @map("created_by_id")
+  environments EnvironmentDataSource[]
 
   directPermissions Permission[]
 
@@ -382,7 +382,7 @@ enum InviteStatus {
 
 model DeploymentMethod {
   id            String                        @id @default(cuid())
-  name          String                        @unique
+  name          String
   provider      String
   credentials   DeploymentMethodCredentials[]
   environmentId String                        @map("environment_id")
@@ -391,6 +391,7 @@ model DeploymentMethod {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@unique([environmentId, name])
   @@map("deployment_method")
 }
 

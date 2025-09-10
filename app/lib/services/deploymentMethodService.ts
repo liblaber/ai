@@ -95,7 +95,7 @@ export async function getEnvironmentDeploymentMethod(
 }
 
 export async function createDeploymentMethod(data: CreateDeploymentMethodInput) {
-  const { name, provider, environmentId, credentials } = data;
+  const { name, provider, environmentId, credentials, applyToAllEnvironments } = data;
 
   // Validate that all required credentials are provided
   const requiredCredentials = getRequiredCredentialsForProvider(provider);
@@ -113,69 +113,167 @@ export async function createDeploymentMethod(data: CreateDeploymentMethodInput) 
   }));
 
   return await prisma.$transaction(async (tx) => {
-    const deploymentMethod = await tx.deploymentMethod.create({
-      data: {
-        name,
-        provider,
-        environmentId,
-        credentials: {
-          create: encryptedCredentials,
-        },
-      },
-    });
+    if (applyToAllEnvironments) {
+      // Get all environments
+      const environments = await tx.environment.findMany();
 
-    return deploymentMethod;
+      // Create deployment method for each environment
+      const deploymentMethods = await Promise.all(
+        environments.map((env) =>
+          tx.deploymentMethod.create({
+            data: {
+              name,
+              provider,
+              environmentId: env.id,
+              credentials: {
+                create: encryptedCredentials,
+              },
+            },
+          }),
+        ),
+      );
+
+      return deploymentMethods[0]; // Return the first one for consistency
+    } else {
+      // Create deployment method for specific environment
+      if (!environmentId) {
+        throw new Error('Environment ID is required when not applying to all environments');
+      }
+
+      const deploymentMethod = await tx.deploymentMethod.create({
+        data: {
+          name,
+          provider,
+          environmentId,
+          credentials: {
+            create: encryptedCredentials,
+          },
+        },
+      });
+
+      return deploymentMethod;
+    }
   });
 }
 
 export async function updateDeploymentMethod(id: string, data: UpdateDeploymentMethodInput) {
-  const { name, provider, credentials } = data;
+  const { name, provider, credentials, applyToAllEnvironments } = data;
 
   return await prisma.$transaction(async (tx) => {
-    // Update the deployment method
-    const updatedDeploymentMethod = await tx.deploymentMethod.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(provider && { provider }),
-      },
-    });
+    if (applyToAllEnvironments) {
+      // Get the current deployment method to find all deployment methods with the same name and provider
+      const currentDeploymentMethod = await tx.deploymentMethod.findUnique({
+        where: { id },
+        include: { environment: true },
+      });
 
-    // If credentials are provided, update them
-    if (credentials) {
-      // Validate that all required credentials are provided
-      // TODO: type
-      const requiredCredentials = getRequiredCredentialsForProvider(
-        (provider || updatedDeploymentMethod.provider) as any,
-      );
-      const providedTypes = credentials.map((c) => c.type);
-      const missingCredentials = requiredCredentials.filter((type) => !providedTypes.includes(type));
-
-      if (missingCredentials.length > 0) {
-        throw new Error(`Missing required credentials: ${missingCredentials.join(', ')}`);
+      if (!currentDeploymentMethod) {
+        throw new Error('Deployment method not found');
       }
 
-      // Delete existing credentials
-      await tx.deploymentMethodCredentials.deleteMany({
-        where: { deploymentMethodId: id },
+      // Find all deployment methods with the same name and provider across all environments
+      const allDeploymentMethods = await tx.deploymentMethod.findMany({
+        where: {
+          name: currentDeploymentMethod.name,
+          provider: currentDeploymentMethod.provider,
+        },
       });
 
-      // Create new encrypted credentials
-      const encryptedCredentials = credentials.map((cred) => ({
-        type: cred.type,
-        value: encryptValue(cred.value),
-      }));
+      // Update all matching deployment methods
+      const updatedDeploymentMethods = await Promise.all(
+        allDeploymentMethods.map(async (dm) => {
+          // Update the deployment method
+          const updatedDeploymentMethod = await tx.deploymentMethod.update({
+            where: { id: dm.id },
+            data: {
+              ...(name && { name }),
+              ...(provider && { provider }),
+            },
+          });
 
-      await tx.deploymentMethodCredentials.createMany({
-        data: encryptedCredentials.map((cred) => ({
-          deploymentMethodId: id,
+          // If credentials are provided, update them
+          if (credentials) {
+            // Validate that all required credentials are provided
+            const requiredCredentials = getRequiredCredentialsForProvider(
+              (provider || updatedDeploymentMethod.provider) as any,
+            );
+            const providedTypes = credentials.map((c) => c.type);
+            const missingCredentials = requiredCredentials.filter((type) => !providedTypes.includes(type));
+
+            if (missingCredentials.length > 0) {
+              throw new Error(`Missing required credentials: ${missingCredentials.join(', ')}`);
+            }
+
+            // Delete existing credentials
+            await tx.deploymentMethodCredentials.deleteMany({
+              where: { deploymentMethodId: dm.id },
+            });
+
+            // Create new encrypted credentials
+            const encryptedCredentials = credentials.map((cred) => ({
+              type: cred.type,
+              value: encryptValue(cred.value),
+            }));
+
+            await tx.deploymentMethodCredentials.createMany({
+              data: encryptedCredentials.map((cred) => ({
+                deploymentMethodId: dm.id,
+                type: cred.type,
+                value: cred.value,
+              })),
+            });
+          }
+
+          return updatedDeploymentMethod;
+        }),
+      );
+
+      return updatedDeploymentMethods[0]; // Return the first one for consistency
+    } else {
+      // Update only the specific deployment method
+      const updatedDeploymentMethod = await tx.deploymentMethod.update({
+        where: { id },
+        data: {
+          ...(name && { name }),
+          ...(provider && { provider }),
+        },
+      });
+
+      // If credentials are provided, update them
+      if (credentials) {
+        // Validate that all required credentials are provided
+        const requiredCredentials = getRequiredCredentialsForProvider(
+          (provider || updatedDeploymentMethod.provider) as any,
+        );
+        const providedTypes = credentials.map((c) => c.type);
+        const missingCredentials = requiredCredentials.filter((type) => !providedTypes.includes(type));
+
+        if (missingCredentials.length > 0) {
+          throw new Error(`Missing required credentials: ${missingCredentials.join(', ')}`);
+        }
+
+        // Delete existing credentials
+        await tx.deploymentMethodCredentials.deleteMany({
+          where: { deploymentMethodId: id },
+        });
+
+        // Create new encrypted credentials
+        const encryptedCredentials = credentials.map((cred) => ({
           type: cred.type,
-          value: cred.value,
-        })),
-      });
-    }
+          value: encryptValue(cred.value),
+        }));
 
-    return updatedDeploymentMethod;
+        await tx.deploymentMethodCredentials.createMany({
+          data: encryptedCredentials.map((cred) => ({
+            deploymentMethodId: id,
+            type: cred.type,
+            value: cred.value,
+          })),
+        });
+      }
+
+      return updatedDeploymentMethod;
+    }
   });
 }
 
