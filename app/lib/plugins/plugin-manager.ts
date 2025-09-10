@@ -36,8 +36,7 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
   },
   [PluginType.DEPLOYMENT]: {
     NETLIFY: true,
-    VERCEL: true,
-    RAILWAY: false,
+    VERCEL: false,
     AWS: false,
   },
 };
@@ -69,7 +68,6 @@ export const PREMIUM_PLUGIN_ACCESS = {
   [PluginType.DEPLOYMENT]: {
     NETLIFY: true,
     VERCEL: true,
-    RAILWAY: true,
     AWS: true,
   },
 };
