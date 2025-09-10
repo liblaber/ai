@@ -348,7 +348,7 @@ export function ConversationSettings() {
                 {availableEnvironments.length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
-                      Environment
+                      Data Source Environment
                     </label>
                     <select
                       value={selectedEnvironmentDataSource.environmentId || ''}
