@@ -9,16 +9,34 @@ export const credentialFieldSchema = z.object({
   value: z.string().min(1, 'Credential value is required'),
 });
 
-export const createDeploymentMethodSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(255, 'Name must be less than 255 characters'),
-  provider: deploymentProviderSchema,
-  environmentId: z.string().min(1, 'Environment ID is required'),
-  credentials: z.array(credentialFieldSchema).min(1, 'At least one credential is required'),
-});
+export const createDeploymentMethodSchema = z
+  .object({
+    name: z.string().min(1, 'Name is required').max(255, 'Name must be less than 255 characters'),
+    provider: deploymentProviderSchema,
+    environmentId: z.string().min(1, 'Environment ID is required').optional(),
+    applyToAllEnvironments: z.boolean().optional().default(false),
+    credentials: z.array(credentialFieldSchema).min(1, 'At least one credential is required'),
+  })
+  .refine(
+    (data) => {
+      // If applyToAllEnvironments is true, environmentId is not required
+      // If applyToAllEnvironments is false or undefined, environmentId is required
+      if (data.applyToAllEnvironments) {
+        return true; // environmentId not required when applying to all environments
+      }
+
+      return data.environmentId !== undefined && data.environmentId !== null; // environmentId required when not applying to all environments
+    },
+    {
+      message: 'Environment ID is required when not applying to all environments',
+      path: ['environmentId'],
+    },
+  );
 
 export const updateDeploymentMethodSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255, 'Name must be less than 255 characters').optional(),
   provider: deploymentProviderSchema.optional(),
+  applyToAllEnvironments: z.boolean().optional().default(false),
   credentials: z.array(credentialFieldSchema).min(1, 'At least one credential is required').optional(),
 });
 

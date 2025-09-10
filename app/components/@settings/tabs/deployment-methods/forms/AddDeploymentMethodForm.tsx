@@ -5,51 +5,11 @@ import { Loader2, Save, XCircle } from 'lucide-react';
 import { BaseSelect } from '~/components/ui/Select';
 import { DeploymentMethodCredentialsType } from '@prisma/client';
 import { type CredentialField, type DeploymentProviderInfo } from '~/lib/validation/deploymentMethods';
-
-interface DeploymentMethodResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-  deploymentMethod?: {
-    id: string;
-  };
-  environmentDeploymentMethods?: Array<{
-    id: string;
-    name: string;
-    provider: string;
-    environmentId: string;
-    environment: {
-      id: string;
-      name: string;
-      description: string | null;
-    };
-    credentials: Array<{
-      id: string;
-      type: string;
-      value: string;
-    }>;
-    createdAt: string;
-    updatedAt: string;
-  }>;
-}
-
-interface Environment {
-  id: string;
-  name: string;
-  description?: string;
-}
-
-interface EnvironmentOption {
-  label: string;
-  value: string;
-  description?: string;
-}
-
-interface EnvironmentsResponse {
-  success: boolean;
-  environments: Environment[];
-  error?: string;
-}
+import {
+  type DeploymentMethodResponse,
+  type EnvironmentOption,
+  type EnvironmentsResponse,
+} from '~/types/deployment-methods';
 
 interface AddDeploymentMethodFormProps {
   isSubmitting: boolean;
@@ -71,6 +31,7 @@ export default function AddDeploymentMethodForm({
   const [isLoadingProviders, setIsLoadingProviders] = useState(true);
   const [credentials, setCredentials] = useState<CredentialField[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [applyToAllEnvironments, setApplyToAllEnvironments] = useState(false);
 
   // Fetch environments and providers on component mount
   useEffect(() => {
@@ -98,8 +59,7 @@ export default function AddDeploymentMethodForm({
 
         // Fetch providers
         const providersResponse = await fetch('/api/deployment-methods/providers');
-        // TODO: type
-        const providersResult = await providersResponse.json<any>();
+        const providersResult = await providersResponse.json<DeploymentProviderInfo[]>();
 
         if (providersResult) {
           setProviders(providersResult);
@@ -163,7 +123,7 @@ export default function AddDeploymentMethodForm({
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
-    if (!selectedEnvironment) {
+    if (!selectedEnvironment && !applyToAllEnvironments) {
       setError('Please select an environment');
       return;
     }
@@ -198,7 +158,8 @@ export default function AddDeploymentMethodForm({
         body: JSON.stringify({
           name: name.trim(),
           provider: selectedProvider.id,
-          environmentId: selectedEnvironment.value,
+          ...(applyToAllEnvironments ? {} : { environmentId: selectedEnvironment?.value }),
+          applyToAllEnvironments,
           credentials: credentials.map((cred) => ({
             type: cred.type,
             value: cred.value.trim(),
@@ -209,7 +170,10 @@ export default function AddDeploymentMethodForm({
       const data = await response.json<DeploymentMethodResponse>();
 
       if (data.success) {
-        toast.success('Deployment method added successfully');
+        const successMessage = applyToAllEnvironments
+          ? `Deployment method added successfully to all environments`
+          : 'Deployment method added successfully';
+        toast.success(successMessage);
 
         // Pass the response data to the parent component
         onSuccess(data);
@@ -231,24 +195,50 @@ export default function AddDeploymentMethodForm({
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-4">
+          {!applyToAllEnvironments && (
+            <div className="mb-6">
+              <label className="mb-3 block text-sm font-medium text-secondary">Environment</label>
+              <BaseSelect
+                value={selectedEnvironment}
+                onChange={(value: EnvironmentOption | null) => {
+                  setSelectedEnvironment(value);
+                  setError(null);
+                }}
+                options={environmentOptions}
+                placeholder={isLoadingEnvironments ? 'Loading environments...' : 'Select environment'}
+                isDisabled={isLoadingEnvironments}
+                width="100%"
+                minWidth="100%"
+                isSearchable={false}
+              />
+              {selectedEnvironment?.description && (
+                <div className="text-gray-400 text-sm mt-2">{selectedEnvironment.description}</div>
+              )}
+            </div>
+          )}
+
           <div className="mb-6">
-            <label className="mb-3 block text-sm font-medium text-secondary">Environment</label>
-            <BaseSelect
-              value={selectedEnvironment}
-              onChange={(value: EnvironmentOption | null) => {
-                setSelectedEnvironment(value);
-                setError(null);
-              }}
-              options={environmentOptions}
-              placeholder={isLoadingEnvironments ? 'Loading environments...' : 'Select environment'}
-              isDisabled={isLoadingEnvironments}
-              width="100%"
-              minWidth="100%"
-              isSearchable={false}
-            />
-            {selectedEnvironment?.description && (
-              <div className="text-gray-400 text-sm mt-2">{selectedEnvironment.description}</div>
-            )}
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={applyToAllEnvironments}
+                onChange={(e) => {
+                  setApplyToAllEnvironments(e.target.checked);
+
+                  if (e.target.checked) {
+                    setSelectedEnvironment(null);
+                  }
+
+                  setError(null);
+                }}
+                disabled={isSubmitting}
+                className="w-4 h-4 text-accent-500 bg-gray-100 border-gray-300 rounded focus:ring-accent-500 focus:ring-2"
+              />
+              <span className="text-sm font-medium text-secondary">Apply to all environments</span>
+            </label>
+            <p className="text-xs text-gray-500 mt-1 ml-7">
+              This will create the deployment method with the same credentials across all environments
+            </p>
           </div>
 
           <div className="mb-6">
@@ -349,7 +339,7 @@ export default function AddDeploymentMethodForm({
                 onClick={handleSubmit}
                 disabled={
                   isSubmitting ||
-                  !selectedEnvironment ||
+                  (!selectedEnvironment && !applyToAllEnvironments) ||
                   !name.trim() ||
                   !selectedProvider ||
                   credentials.some((cred) => !cred.value.trim())

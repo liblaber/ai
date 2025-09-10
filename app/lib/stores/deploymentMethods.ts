@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { deploymentProviderInfoSchema, environmentDeploymentMethodSchema } from '~/lib/validation/deploymentMethods';
+import { type DeploymentProviderInfo } from '~/types/deployment-methods';
 
 export interface DeploymentMethodCredential {
   id: string;
@@ -23,20 +24,13 @@ export interface EnvironmentDeploymentMethod {
   updatedAt: Date;
 }
 
-export interface DeploymentProvider {
-  id: string;
-  name: string;
-  description: string;
-  requiredCredentials: string[];
-}
-
 interface DeploymentMethodsStore {
   environmentDeploymentMethods: EnvironmentDeploymentMethod[];
   selectedEnvironmentDeploymentMethod: { deploymentMethodId: string | null; environmentId: string | null };
-  providers: DeploymentProvider[];
+  providers: DeploymentProviderInfo[];
   setEnvironmentDeploymentMethods: (environmentDeploymentMethods: EnvironmentDeploymentMethod[]) => void;
   setSelectedEnvironmentDeploymentMethod: (deploymentMethodId: string | null, environmentId: string | null) => void;
-  setProviders: (providers: DeploymentProvider[]) => void;
+  setProviders: (providers: DeploymentProviderInfo[]) => void;
   clearEnvironmentDeploymentMethods: () => void;
 }
 
@@ -95,8 +89,10 @@ export const useDeploymentMethodActions = () => {
   const loadDeploymentMethods = async () => {
     try {
       const response = await fetch('/api/deployment-methods');
-      // TODO: types
-      const data = await response.json<any>();
+      const data = await response.json<{
+        success: boolean;
+        environmentDeploymentMethods?: EnvironmentDeploymentMethod[];
+      }>();
 
       if (data.success) {
         // Validate the response data with Zod

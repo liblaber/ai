@@ -36,13 +36,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: `Validation failed: ${errorMessages}` }, { status: 400 });
     }
 
-    const { name, provider, environmentId, credentials } = validationResult.data;
+    const { name, provider, environmentId, credentials, applyToAllEnvironments } = validationResult.data;
 
     const deploymentMethod = await createDeploymentMethod({
       name,
       provider,
       environmentId,
       credentials,
+      applyToAllEnvironments,
     });
 
     // Return all deployment methods after creating a new one

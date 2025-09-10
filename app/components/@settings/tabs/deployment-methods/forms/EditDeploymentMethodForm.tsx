@@ -1,38 +1,12 @@
 import { classNames } from '~/utils/classNames';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Loader2, Save, Trash2, XCircle } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Save, Trash2, XCircle } from 'lucide-react';
 import { BaseSelect } from '~/components/ui/Select';
 import { DeploymentMethodCredentialsType } from '@prisma/client';
 import { type EnvironmentDeploymentMethod } from '~/lib/stores/deploymentMethods';
 import { type CredentialField, type DeploymentProviderInfo } from '~/lib/validation/deploymentMethods';
-
-interface DeploymentMethodResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-  deploymentMethod?: {
-    id: string;
-  };
-  environmentDeploymentMethods?: Array<{
-    id: string;
-    name: string;
-    provider: string;
-    environmentId: string;
-    environment: {
-      id: string;
-      name: string;
-      description: string | null;
-    };
-    credentials: Array<{
-      id: string;
-      type: string;
-      value: string;
-    }>;
-    createdAt: string;
-    updatedAt: string;
-  }>;
-}
+import { type DeploymentMethodResponse } from '~/types/deployment-methods';
 
 interface EditDeploymentMethodFormProps {
   selectedDeploymentMethod: EnvironmentDeploymentMethod;
@@ -55,14 +29,15 @@ export default function EditDeploymentMethodForm({
   const [isLoadingProviders, setIsLoadingProviders] = useState(true);
   const [credentials, setCredentials] = useState<CredentialField[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [applyToAllEnvironments, setApplyToAllEnvironments] = useState(false);
+  const [showSensitiveInput, setShowSensitiveInput] = useState(false);
 
   // Fetch providers on component mount
   useEffect(() => {
     const fetchProviders = async () => {
       try {
         const providersResponse = await fetch('/api/deployment-methods/providers');
-        // TODO: types
-        const providersResult = await providersResponse.json<any>();
+        const providersResult = await providersResponse.json<DeploymentProviderInfo[]>();
 
         if (providersResult) {
           setProviders(providersResult);
@@ -142,6 +117,10 @@ export default function EditDeploymentMethodForm({
     }
   };
 
+  const isSensitiveCredential = (type: string): boolean => {
+    return type !== DeploymentMethodCredentialsType.REGION;
+  };
+
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
@@ -175,6 +154,7 @@ export default function EditDeploymentMethodForm({
         body: JSON.stringify({
           name: name.trim(),
           provider: selectedProvider.id,
+          applyToAllEnvironments,
           credentials: credentials.map((cred) => ({
             type: cred.type,
             value: cred.value.trim(),
@@ -185,7 +165,10 @@ export default function EditDeploymentMethodForm({
       const data = await response.json<DeploymentMethodResponse>();
 
       if (data.success) {
-        toast.success('Deployment method updated successfully');
+        const successMessage = applyToAllEnvironments
+          ? `Deployment method updated successfully across all environments`
+          : 'Deployment method updated successfully';
+        toast.success(successMessage);
         onSuccess(data);
       } else {
         const message = data.error || 'Failed to update deployment method';
@@ -237,14 +220,35 @@ export default function EditDeploymentMethodForm({
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-4">
-          <div className="mb-6">
-            <label className="mb-3 block text-sm font-medium text-secondary">Environment</label>
-            <div className="px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg text-primary">
-              {selectedDeploymentMethod.environment.name}
+          {!applyToAllEnvironments && (
+            <div className="mb-6">
+              <label className="mb-3 block text-sm font-medium text-secondary">Environment</label>
+              <div className="px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg text-primary">
+                {selectedDeploymentMethod.environment.name}
+              </div>
+              {selectedDeploymentMethod.environment.description && (
+                <div className="text-gray-400 text-sm mt-2">{selectedDeploymentMethod.environment.description}</div>
+              )}
             </div>
-            {selectedDeploymentMethod.environment.description && (
-              <div className="text-gray-400 text-sm mt-2">{selectedDeploymentMethod.environment.description}</div>
-            )}
+          )}
+
+          <div className="mb-6">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={applyToAllEnvironments}
+                onChange={(e) => {
+                  setApplyToAllEnvironments(e.target.checked);
+                  setError(null);
+                }}
+                disabled={isSubmitting}
+                className="w-4 h-4 text-accent-500 bg-gray-100 border-gray-300 rounded focus:ring-accent-500 focus:ring-2"
+              />
+              <span className="text-sm font-medium text-secondary">Apply to all environments</span>
+            </label>
+            <p className="text-xs text-gray-500 mt-1 ml-7">
+              This will update the deployment method with the same credentials across all environments
+            </p>
           </div>
 
           <div className="mb-6">
@@ -307,21 +311,41 @@ export default function EditDeploymentMethodForm({
                   <label className="mb-3 block text-sm font-medium text-secondary">
                     {getCredentialDisplayName(cred.type)}
                   </label>
-                  <input
-                    type={cred.type === DeploymentMethodCredentialsType.SECRET_KEY ? 'password' : 'text'}
-                    value={cred.value}
-                    onChange={(e) => handleCredentialChange(index, e.target.value)}
-                    disabled={isSubmitting}
-                    className={classNames(
-                      'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                      'text-primary placeholder-tertiary text-base',
-                      'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
-                      'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
-                      'transition-all duration-200',
-                      'disabled:opacity-50 disabled:cursor-not-allowed',
+                  <div className="relative">
+                    <input
+                      type={isSensitiveCredential(cred.type) && !showSensitiveInput ? 'password' : 'text'}
+                      value={cred.value}
+                      onChange={(e) => handleCredentialChange(index, e.target.value)}
+                      disabled={isSubmitting}
+                      className={classNames(
+                        'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                        'text-primary placeholder-tertiary text-base',
+                        'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                        'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                        'transition-all duration-200',
+                        'disabled:opacity-50 disabled:cursor-not-allowed',
+                        isSensitiveCredential(cred.type) ? 'pr-12' : '',
+                      )}
+                      placeholder={`Enter ${getCredentialDisplayName(cred.type).toLowerCase()}`}
+                    />
+                    {isSensitiveCredential(cred.type) && (
+                      <button
+                        type="button"
+                        onClick={() => setShowSensitiveInput((prev) => !prev)}
+                        disabled={isSubmitting}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group disabled:opacity-50"
+                        tabIndex={-1}
+                      >
+                        <span className="text-gray-400 group-hover:text-white transition-colors">
+                          {showSensitiveInput ? (
+                            <EyeOff className="w-4 h-4 text-gray-400" />
+                          ) : (
+                            <Eye className="w-4 h-4 text-gray-400" />
+                          )}
+                        </span>
+                      </button>
                     )}
-                    placeholder={`Enter ${getCredentialDisplayName(cred.type).toLowerCase()}`}
-                  />
+                  </div>
                 </div>
               ))}
             </div>

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { requireUserId } from '~/auth/session';
-import { DeploymentPluginManager } from '~/lib/plugins/deployment';
+import { DeploymentPluginManager } from '~/lib/plugins/deployment/deployment-plugin-manager';
 import type { DeploymentConfig, DeploymentProgress } from '~/lib/plugins/types';
 import { logger } from '~/utils/logger';
 
