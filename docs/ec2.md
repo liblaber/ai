@@ -24,7 +24,7 @@ sudo apt install -y docker.io docker-compose curl nginx certbot python3-certbot-
 sudo systemctl enable --now docker nginx
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
-npm install -g pnpm
+npm sudo install -g pnpm
 ```
 
 ---
