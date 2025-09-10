@@ -106,7 +106,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
 
       const deployResult = await this.runCommand(
         'npx',
-        ['vercel', 'deploy', '--prod', '--token', token, '--yes', '--json'],
+        ['vercel', 'deploy', '--prod', '--token', token, '--yes'],
         tempDir,
         undefined,
         5 * 60 * 1000, // 5 minutes timeout
