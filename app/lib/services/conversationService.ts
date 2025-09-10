@@ -10,19 +10,15 @@ export const conversationService = {
     });
   },
 
-  async getConversationEnvironmentDataSource(conversationId: string, userId: string) {
+  async getConversationEnvironmentDataSource(conversationId: string) {
     const conversation = await prisma.conversation.findUniqueOrThrow({
       where: { id: conversationId },
     });
 
-    const environmentDataSource = await getEnvironmentDataSource(
-      conversation.dataSourceId,
-      userId,
-      conversation.environmentId,
-    );
+    const environmentDataSource = await getEnvironmentDataSource(conversation.dataSourceId, conversation.environmentId);
 
     if (!environmentDataSource) {
-      throw new Error('Environment data source not found or access denied');
+      throw new Error('Environment data source not found');
     }
 
     return environmentDataSource;

@@ -3,9 +3,10 @@ import { getEnvironmentDataSource } from '~/lib/services/datasourceService';
 import { generateSchemaBasedSuggestions } from '~/lib/services/suggestionService';
 import { SAMPLE_DATABASE_NAME } from '@liblab/data-access/accessors/sqlite';
 import { logger } from '~/utils/logger';
-import { requireUserId } from '~/auth/session';
+import { subject } from '@casl/ability';
+import { requireUserAbility } from '~/auth/session';
 import { z } from 'zod';
-import { DataSourcePropertyType } from '@prisma/client';
+import { DataSourcePropertyType, PermissionAction, PermissionResource } from '@prisma/client';
 import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 const suggestionsRequestSchema = z.object({
@@ -15,7 +16,7 @@ const suggestionsRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireUserId(request);
+    const { userAbility } = await requireUserAbility(request);
     const body = await request.json();
 
     const validationResult = suggestionsRequestSchema.safeParse(body);
@@ -30,10 +31,27 @@ export async function POST(request: NextRequest) {
     const { dataSourceId, environmentId } = validationResult.data;
 
     // Fetch the environment data source using the service
-    const environmentDataSource = await getEnvironmentDataSource(dataSourceId, userId, environmentId);
+    const environmentDataSource = await getEnvironmentDataSource(dataSourceId, environmentId);
 
     if (!environmentDataSource) {
       return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
+    }
+
+    console.log(environmentDataSource);
+
+    console.log(JSON.stringify(userAbility));
+
+    if (
+      userAbility.cannot(
+        PermissionAction.read,
+        subject(PermissionResource.DataSource, environmentDataSource.dataSource),
+      ) &&
+      userAbility.cannot(
+        PermissionAction.read,
+        subject(PermissionResource.Environment, { id: environmentDataSource.environmentId }),
+      )
+    ) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     const dataSourceProperty = environmentDataSource.dataSourceProperties.find(
