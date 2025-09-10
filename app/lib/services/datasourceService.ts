@@ -1,4 +1,4 @@
-import { prisma } from '~/lib/prisma';
+import { prisma, type PrismaTransaction } from '~/lib/prisma';
 import { buildResourceWhereClause } from '@/lib/casl/prisma-helpers';
 import {
   type DataSource as PrismaDataSource,
@@ -13,7 +13,11 @@ import {
   Prisma,
 } from '@prisma/client';
 import type { AppAbility } from '~/lib/casl/user-ability';
-import { createEnvironmentVariable, decryptEnvironmentVariable } from './environmentVariablesService';
+import {
+  createEnvironmentVariable,
+  decryptEnvironmentVariable,
+  updateEnvironmentVariable,
+} from './environmentVariablesService';
 import { getEnvironmentName } from './environmentService';
 import {
   type DataSourceProperty as SimpleDataSourceProperty,
@@ -23,6 +27,7 @@ import {
 
 import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import { DataAccessor } from '@liblab/data-access/dataAccessor';
+import { logger } from '~/utils/logger';
 
 export interface DataSource {
   id: string;
@@ -141,6 +146,18 @@ export async function getEnvironmentDataSource(
   };
 }
 
+export async function getDataSource({
+  id,
+  createdById,
+}: {
+  id: string;
+  createdById: string;
+}): Promise<PrismaDataSource | null> {
+  return prisma.dataSource.findUnique({
+    where: { id, createdById },
+  });
+}
+
 export async function createDataSource(data: {
   name: string;
   type: DataSourceType;
@@ -151,6 +168,41 @@ export async function createDataSource(data: {
       name: data.name,
       createdById: data.createdById,
       type: data.type,
+    },
+  });
+}
+
+async function createDataSourceProperty(
+  data: {
+    property: SimpleDataSourceProperty;
+    dataSourceId: string;
+    dataSourceName: string;
+    environmentId: string;
+    environmentName: string;
+    createdById: string;
+  },
+  tx: PrismaTransaction,
+) {
+  const { property, dataSourceId, dataSourceName, environmentId, createdById, environmentName } = data;
+  const envVarKey = `${environmentName}_${dataSourceName}_${property.type}`.toUpperCase().replace(/\s+/g, '_');
+
+  const environmentVariable = await createEnvironmentVariable(
+    envVarKey,
+    property.value,
+    EnvironmentVariableType.DATA_SOURCE,
+    environmentId,
+    createdById,
+    `Data source ${property.type} property for ${dataSourceName} in ${environmentName}`,
+    dataSourceId,
+    tx, // Pass transaction for atomicity
+  );
+
+  await tx.dataSourceProperty.create({
+    data: {
+      type: property.type,
+      environmentId,
+      dataSourceId,
+      environmentVariableId: environmentVariable.id,
     },
   });
 }
@@ -190,27 +242,17 @@ export async function createEnvironmentDataSource(data: {
     });
 
     for (const property of data.properties) {
-      const envVarKey = `${environmentName}_${dataSource.name}_${property.type}`.toUpperCase().replace(/\s+/g, '_');
-
-      const environmentVariable = await createEnvironmentVariable(
-        envVarKey,
-        property.value,
-        EnvironmentVariableType.DATA_SOURCE,
-        data.environmentId,
-        data.createdById,
-        `Data source ${property.type} property for ${dataSource.name} in ${environmentName}`,
-        dataSource.id,
-        tx, // Pass transaction for atomicity
-      );
-
-      await tx.dataSourceProperty.create({
-        data: {
-          type: property.type,
-          environmentId: data.environmentId,
+      await createDataSourceProperty(
+        {
+          property,
           dataSourceId: dataSource.id,
-          environmentVariableId: environmentVariable.id,
+          dataSourceName: dataSource.name,
+          environmentId: data.environmentId,
+          environmentName,
+          createdById: data.createdById,
         },
-      });
+        tx,
+      );
     }
 
     return {
@@ -298,22 +340,121 @@ export async function createSampleDataSource(data: {
   });
 }
 
-export function getDataSource(id: string) {
-  return prisma.dataSource.findUnique({ where: { id } });
+export async function updateDataSource(
+  id: string,
+  data: {
+    name: string;
+    type?: DataSourceType;
+  },
+): Promise<PrismaDataSource> {
+  return prisma.dataSource.update({
+    where: { id },
+    data: { name: data.name, ...(data.type ? { type: data.type } : {}) },
+  });
 }
 
-export async function updateDataSource(data: {
-  id: string;
-  name: string;
-  type: DataSourceType;
+export async function updateEnvironmentDataSourceProperties(data: {
+  dataSourceId: string;
+  environmentId: string;
   properties: SimpleDataSourceProperty[];
   userId: string;
 }) {
-  await validateDataSourceProperties(data.properties, data.type);
+  const environmentDataSource = await prisma.environmentDataSource.findUnique({
+    where: {
+      environmentId_dataSourceId: {
+        environmentId: data.environmentId,
+        dataSourceId: data.dataSourceId,
+      },
+    },
+    include: {
+      dataSource: true,
+      environment: true,
+    },
+  });
 
-  return prisma.dataSource.update({
-    where: { id: data.id, createdById: data.userId },
-    data: { name: data.name },
+  if (!environmentDataSource) {
+    throw new Error('Data source does not exist');
+  }
+
+  const { dataSource } = environmentDataSource;
+
+  await validateDataSourceProperties(data.properties, dataSource.type);
+
+  const existingProperties = await prisma.dataSourceProperty.findMany({
+    where: { dataSourceId: data.dataSourceId, environmentId: data.environmentId },
+    include: { environmentVariable: true },
+  });
+
+  const propertyMap = new Map(existingProperties.map((prop) => [prop.type, prop]));
+
+  return prisma.$transaction(async (tx) => {
+    const upsertedPropertyTypes = new Set<DataSourcePropertyType>();
+
+    for (const property of data.properties) {
+      const existingProperty = propertyMap.get(property.type);
+
+      if (existingProperty) {
+        logger.debug(
+          `Updating existing property of type ${property.type} for environment data source [${data.environmentId}, ${data.dataSourceId}]`,
+        );
+
+        await updateEnvironmentVariable(
+          {
+            id: existingProperty.environmentVariableId,
+            key: existingProperty.environmentVariable.key,
+            type: existingProperty.environmentVariable.type,
+            environmentId: data.environmentId,
+            description: existingProperty.environmentVariable.description,
+            value: property.value,
+          },
+          tx,
+        );
+      } else {
+        logger.debug(
+          `Creating new property of type ${property.type} for environment data source [${data.environmentId}, ${data.dataSourceId}]`,
+        );
+
+        await createDataSourceProperty(
+          {
+            property,
+            dataSourceId: dataSource.id,
+            dataSourceName: dataSource.name,
+            environmentId: data.environmentId,
+            environmentName: environmentDataSource.environment.name,
+            createdById: data.userId,
+          },
+          tx,
+        );
+      }
+
+      upsertedPropertyTypes.add(property.type);
+    }
+
+    // Delete any properties that were not included in the update
+    for (const existingProperty of existingProperties) {
+      if (!upsertedPropertyTypes.has(existingProperty.type)) {
+        logger.debug(
+          `Deleting property of type ${existingProperty.type} for environment data source [${data.environmentId}, ${data.dataSourceId}]`,
+        );
+
+        await tx.dataSourceProperty.delete({
+          where: { id: existingProperty.id },
+        });
+      }
+    }
+  });
+}
+
+export async function deleteDataSourceEnvironment(dataSourceId: string, environmentId: string): Promise<void> {
+  logger.debug(`Deleting environment data source [${environmentId}, ${dataSourceId}]`);
+
+  await prisma.environmentDataSource.delete({
+    where: {
+      environmentId_dataSourceId: {
+        environmentId,
+        dataSourceId,
+      },
+    },
   });
 }
 

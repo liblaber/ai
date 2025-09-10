@@ -25,21 +25,11 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const name = formData.get('name') as string;
   const type = formData.get('type') as DataSourceType;
-  const environmentId = formData.get('environmentId') as string;
-
-  if (!environmentId) {
-    return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
-  }
-
-  const propertiesJson = formData.get('properties') as string;
-  const properties = JSON.parse(propertiesJson);
 
   try {
     const dataSource = await createDataSource({
       name,
       type,
-      properties,
-      environmentId,
       createdById: userId,
     });
 

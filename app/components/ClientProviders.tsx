@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import { AuthProvider } from './auth/AuthContext';
 import { DataLoader, type RootData } from './DataLoader';
 import { AbilityProvider } from './ability/AbilityProvider';
+import { TooltipProvider } from '@radix-ui/react-tooltip';
 
 interface ClientProvidersProps {
   children: React.ReactNode;
@@ -17,10 +18,12 @@ export function ClientProviders({ children, rootData }: ClientProvidersProps) {
     <AuthProvider>
       <DndProvider backend={HTML5Backend}>
         <DataLoader rootData={rootData}>
-          <AbilityProvider>
-            {children}
-            <Toaster richColors />
-          </AbilityProvider>
+          <TooltipProvider>
+            <AbilityProvider>
+              {children}
+              <Toaster richColors />
+            </AbilityProvider>
+          </TooltipProvider>
         </DataLoader>
       </DndProvider>
     </AuthProvider>

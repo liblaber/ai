@@ -64,14 +64,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       );
     }
 
-    const updatedEnvironmentVariable = await updateEnvironmentVariable(
+    const updatedEnvironmentVariable = await updateEnvironmentVariable({
       id,
       key,
       value,
-      type as any, // Type will be validated by the service
-      environmentId || envVar.environmentId,
+      type: type as any, // Type will be validated by the service
+      environmentId: environmentId || envVar.environmentId,
       description,
-    );
+    });
 
     return NextResponse.json({
       success: true,

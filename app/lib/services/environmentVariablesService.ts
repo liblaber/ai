@@ -1,10 +1,8 @@
-import { prisma } from '~/lib/prisma';
+import { prisma, type PrismaTransaction } from '~/lib/prisma';
 import type { EnvironmentVariable, EnvironmentVariableType } from '@prisma/client';
 import { decryptData, encryptData } from '@liblab/encryption/encryption';
 import { env } from '~/env';
 import { logger } from '~/utils/logger';
-
-type PrismaTransaction = Omit<typeof prisma, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 
 export async function getEnvironmentVariable(id: string): Promise<EnvironmentVariable | null> {
   const envVar = await prisma.environmentVariable.findUnique({
@@ -106,16 +104,20 @@ export async function createEnvironmentVariable(
 }
 
 export async function updateEnvironmentVariable(
-  id: string,
-  key: string,
-  value: string,
-  type: EnvironmentVariableType,
-  environmentId: string,
-  description?: string,
+  data: {
+    id: string;
+    key: string;
+    value: string;
+    type: EnvironmentVariableType;
+    environmentId: string;
+    description?: string | null;
+  },
+  tx?: PrismaTransaction,
 ): Promise<EnvironmentVariable> {
+  const { id, key, value, type, environmentId, description } = data;
   const valueToStore = encryptValue(value);
 
-  const envVar = await prisma.environmentVariable.update({
+  const envVar = await (tx || prisma).environmentVariable.update({
     where: { id },
     data: {
       key,

@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, ArrowLeft, ChevronRight, Database, Plus, Search, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Database, Plus, Search, Trash2 } from 'lucide-react';
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import AddDataSourceForm from './forms/AddDataSourceForm';
-import EditDataSourceForm from './forms/EditDataSourceForm';
 import ResourceAccessInvite from '~/components/@settings/shared/components/ResourceAccessInvite';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
-import { type EnvironmentDataSource, useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
+import {
+  type DataSourceWithEnvironments,
+  type EnvironmentDataSource,
+  useEnvironmentDataSourcesStore,
+} from '~/lib/stores/environmentDataSources';
 import { settingsPanelStore, useSettingsStore } from '~/lib/stores/settings';
 import { useStore } from '@nanostores/react';
 import { FilterButton } from '~/components/@settings/shared/components/FilterButton';
 import ActiveFilters from '~/components/@settings/shared/components/ActiveFilters';
+import { DataSourceDetails } from '~/components/@settings/tabs/data/forms/DataSourceDetails';
 
 interface EnvironmentDataSourcesResponse {
   success: boolean;
@@ -26,18 +30,20 @@ export interface TestConnectionResponse {
 export default function DataTab() {
   const { showAddForm } = useStore(settingsPanelStore);
   const [showAddFormLocal, setShowAddFormLocal] = useState(showAddForm);
-  const [showEditForm, setShowEditForm] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedEnvironmentDataSource, setSelectedEnvironmentDataSource] = useState<EnvironmentDataSource | null>(
     null,
   );
+  const [selectedDataSource, setSelectedDataSource] = useState<DataSourceWithEnvironments | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [conversationCount, setConversationCount] = useState<number>(0);
-  const { environmentDataSources, setEnvironmentDataSources, dataSources } = useEnvironmentDataSourcesStore();
+  const { setEnvironmentDataSources, dataSources } = useEnvironmentDataSourcesStore();
   const [searchQuery, setSearchQuery] = useState('');
   const { selectedTab } = useSettingsStore();
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [headerTitle, setHeaderTitle] = useState<string>('Edit Data Source');
+  const [headerBackHandler, setHeaderBackHandler] = useState<(() => void) | null>(null);
 
   const filterOptions = useMemo(
     () => Array.from(new Set(dataSources.map((dataSources) => dataSources.typeLabel))),
@@ -100,53 +106,29 @@ export default function DataTab() {
       }
 
       setShowDeleteConfirm(false);
-      setShowEditForm(false);
+      setShowDetails(false);
       setSelectedEnvironmentDataSource(null);
     } else {
       toast.error(data.error || 'Failed to delete data source');
     }
   };
 
-  const handleEdit = (environmentDataSource: EnvironmentDataSource) => {
-    setSelectedEnvironmentDataSource(environmentDataSource);
-    setShowEditForm(true);
+  const handleShowDetails = (dataSource: DataSourceWithEnvironments) => {
+    setShowDetails(true);
+    setSelectedDataSource(dataSource);
     setShowAddFormLocal(false);
-  };
-
-  const handleDeleteClick = async () => {
-    if (!selectedEnvironmentDataSource) {
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `/api/data-sources/${selectedEnvironmentDataSource.dataSourceId}?environmentId=${selectedEnvironmentDataSource.environmentId}`,
-      );
-      const data = await response.json<{ success: boolean; conversationCount?: number }>();
-
-      if (data.success) {
-        setConversationCount(data.conversationCount || 0);
-        setShowDeleteConfirm(true);
-      } else {
-        setConversationCount(0);
-        setShowDeleteConfirm(true);
-      }
-    } catch (error) {
-      console.error('Failed to fetch conversation count:', error);
-      setConversationCount(0);
-      setShowDeleteConfirm(true);
-    }
+    setHeaderTitle('Data Source');
+    setHeaderBackHandler(() => handleBack);
   };
 
   const handleBack = () => {
-    setShowEditForm(false);
+    setShowDetails(false);
     setShowAddFormLocal(false);
     setSelectedEnvironmentDataSource(null);
   };
 
   const handleAdd = () => {
     setShowAddFormLocal(true);
-    setShowEditForm(false);
     setSelectedEnvironmentDataSource(null);
   };
 
@@ -208,13 +190,13 @@ export default function DataTab() {
     );
   }
 
-  if (showEditForm && selectedEnvironmentDataSource) {
+  if (showDetails && selectedDataSource) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
-              onClick={handleBack}
+              onClick={() => (headerBackHandler ? headerBackHandler() : handleBack())}
               className={classNames(
                 'inline-flex items-center gap-2 p-2 text-sm font-medium rounded-lg transition-colors',
                 'dark:bg-gray-900 dark:text-gray-300',
@@ -224,36 +206,18 @@ export default function DataTab() {
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div>
-              <h2 className="text-lg font-medium text-primary">Edit Data Source</h2>
-              <p className="text-sm text-secondary">Modify your database connection settings</p>
+              <h2 className="text-lg font-medium text-primary">{headerTitle}</h2>
             </div>
           </div>
         </div>
-        <EditDataSourceForm
-          selectedDataSource={selectedEnvironmentDataSource}
-          isSubmitting={isSubmitting}
-          setIsSubmitting={setIsSubmitting}
-          onSuccess={() => {
-            // Reload data sources
-            const reloadResponse = fetch('/api/data-sources');
-            reloadResponse
-              .then((response) => response.json())
-              .then((data: unknown) => {
-                const typedData = data as EnvironmentDataSourcesResponse;
-
-                if (typedData.success) {
-                  setEnvironmentDataSources(typedData.environmentDataSources);
-                }
-              })
-              .catch((error) => console.error('Failed to reload data sources after edit:', error));
-            handleBack();
-          }}
-          onDelete={handleDeleteClick}
-          onInvite={() => {
-            setShowEditForm(false);
-            setShowInviteForm(true);
-          }}
-        />
+        {showDetails && selectedDataSource && (
+          <DataSourceDetails
+            dataSource={selectedDataSource}
+            setHeaderTitle={setHeaderTitle}
+            setHeaderBackHandler={setHeaderBackHandler}
+            onExit={handleBack}
+          />
+        )}
       </div>
     );
   }
@@ -264,7 +228,7 @@ export default function DataTab() {
         resourceScope="DATA_SOURCE"
         resource={selectedEnvironmentDataSource.dataSource}
         onBack={() => {
-          setShowEditForm(true);
+          setShowDetails(true);
           setShowInviteForm(false);
         }}
       />
@@ -339,18 +303,11 @@ export default function DataTab() {
           </div>
         ) : (
           <div className="rounded-xl overflow-hidden">
-            <div className="grid grid-cols-12 px-4 py-3 text-sm text-secondary border-b border-depth-3">
-              <div className="col-span-9">Data Source</div>
-              <div className="col-span-3">Environments</div>
+            <div className="grid grid-cols-12 py-3 text-sm text-secondary border-b border-depth-3">
+              <div className="col-span-6">Data Source</div>
+              <div className="col-span-6">Environments</div>
             </div>
             {filteredDataSources.map((ds) => {
-              const firstEds = environmentDataSources.find((eds) => eds.dataSourceId === ds.id);
-              const onOpen = () => {
-                if (firstEds) {
-                  handleEdit(firstEds);
-                }
-              };
-
               return (
                 <motion.div
                   key={ds.id}
@@ -361,21 +318,21 @@ export default function DataTab() {
                   <div
                     role="button"
                     tabIndex={0}
-                    onClick={onOpen}
+                    onClick={() => handleShowDetails(ds)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
-                        onOpen();
+                        handleShowDetails(ds);
                       }
                     }}
-                    className="grid grid-cols-12 items-center px-4 py-4 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer"
+                    className="grid grid-cols-12 items-center py-4 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer"
                   >
-                    <div className="col-span-9 flex items-center gap-3">
+                    <div className="col-span-6 flex items-center gap-3">
                       <div>
                         <div className="font-medium text-primary">{ds.name}</div>
                         <div className="text-xs text-secondary">{ds.typeLabel}</div>
                       </div>
                     </div>
-                    <div className="col-span-3 flex items-center justify-between">
+                    <div className="col-span-6 flex items-center justify-between">
                       <div className="text-sm text-primary">{ds.environments.length}</div>
                       <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                     </div>
@@ -408,24 +365,6 @@ export default function DataTab() {
                   Are you sure you want to delete the data source "{selectedEnvironmentDataSource?.dataSource.name}"?
                   This will This will remove all associated data and cannot be undone.
                 </p>
-
-                {conversationCount > 0 && (
-                  <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-amber-500" />
-                      <div className="text-sm">
-                        <p className="text-amber-600 dark:text-amber-400 font-medium">
-                          Warning: This will also delete {conversationCount} conversation
-                          {conversationCount === 1 ? '' : 's'}!
-                        </p>
-                        <p className="text-amber-600 dark:text-amber-400 mt-1">
-                          All conversations associated with this data source will be permanently deleted and cannot be
-                          recovered.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
