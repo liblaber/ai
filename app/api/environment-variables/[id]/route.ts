@@ -40,15 +40,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const updatedEnvironmentId = environmentId || envVar.environmentId;
 
     if (
-      userAbility.cannot(PermissionAction.update, PermissionResource.EnvironmentVariable) &&
-      (userAbility.cannot(
+      userAbility.cannot(
         PermissionAction.update,
         subject(PermissionResource.Environment, { id: envVar.environmentId }),
       ) ||
-        userAbility.cannot(
-          PermissionAction.update,
-          subject(PermissionResource.Environment, { id: updatedEnvironmentId }),
-        ))
+      userAbility.cannot(PermissionAction.update, subject(PermissionResource.Environment, { id: updatedEnvironmentId }))
     ) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions to update environment variable for this environment' },
@@ -109,11 +105,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     if (
-      userAbility.cannot(
-        PermissionAction.delete,
-        subject(PermissionResource.Environment, { id: envVar.environmentId }),
-      ) &&
-      userAbility.cannot(PermissionAction.delete, PermissionResource.EnvironmentVariable)
+      userAbility.cannot(PermissionAction.delete, subject(PermissionResource.Environment, { id: envVar.environmentId }))
     ) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions to delete environment variable in this environment' },

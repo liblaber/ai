@@ -29,10 +29,7 @@ export async function GET(request: NextRequest) {
 
     const { userAbility } = await requireUserAbility(request);
 
-    if (
-      userAbility.cannot(PermissionAction.read, PermissionResource.EnvironmentVariable) &&
-      userAbility.cannot(PermissionAction.read, subject(PermissionResource.Environment, { id: environmentId }))
-    ) {
+    if (userAbility.cannot(PermissionAction.read, subject(PermissionResource.Environment, { id: environmentId }))) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions to read environment variables' },
         { status: 403 },
@@ -59,10 +56,7 @@ export async function POST(request: NextRequest) {
 
     const { key, value, type, environmentId, description } = body;
 
-    if (
-      userAbility.cannot(PermissionAction.create, PermissionResource.EnvironmentVariable) &&
-      userAbility.cannot(PermissionAction.create, subject(PermissionResource.Environment, { id: environmentId }))
-    ) {
+    if (userAbility.cannot(PermissionAction.create, subject(PermissionResource.Environment, { id: environmentId }))) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions to create environment variables in this environment' },
         { status: 403 },
