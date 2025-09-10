@@ -1,10 +1,119 @@
 # Deployment Plugins Guide
 
-This document explains how to create and add new deployment plugins to the LibLab AI platform.
+This document explains how to create and add new deployment plugins to the LibLab AI platform, and how to configure deployment methods for different environments.
 
 ## Overview
 
 The deployment system uses a plugin architecture that allows you to deploy applications to various hosting providers. The system is built around a base class that provides common functionality, making it easy to add new deployment targets.
+
+## Deployment Methods Configuration
+
+Before deploying applications, you need to configure deployment methods for your environments. Deployment methods store encrypted credentials for different hosting providers and can be applied to specific environments or across all environments.
+
+### Managing Deployment Methods
+
+Deployment methods are managed through the Settings panel:
+
+1. **Navigate to Settings**: Go to the Settings panel in the application
+2. **Select Deployment Methods**: Click on the "Deployment Methods" tab
+3. **Add New Method**: Click the "Add" button to create a new deployment method
+4. **Configure Credentials**: Fill in the required credentials for your chosen provider
+
+### Supported Providers
+
+The following deployment providers are currently supported:
+
+- **Vercel**: Requires API Key
+- **Netlify**: Requires API Key
+- **AWS**: Requires Access Key, Secret Key, and Region
+
+### Creating Deployment Methods
+
+#### Single Environment
+
+1. Select the target environment from the dropdown
+2. Choose a deployment provider
+3. Enter the deployment method name
+4. Fill in the required credentials
+5. Click "Create"
+
+#### All Environments
+
+1. Check "Apply to all environments" checkbox
+2. Choose a deployment provider
+3. Enter the deployment method name
+4. Fill in the required credentials
+5. Click "Create"
+
+This will create identical deployment methods across all available environments.
+
+### Editing Deployment Methods
+
+1. Click on an existing deployment method to edit it
+2. Modify the name, provider, or credentials as needed
+3. Use "Apply to all environments" to update matching methods across all environments
+4. Click "Update" to save changes
+
+### Security Features
+
+- **Credential Encryption**: All sensitive credentials are encrypted using AES encryption
+- **Masked Input**: Sensitive fields (API keys, secrets) are masked by default with reveal/hide toggle
+- **Environment Isolation**: Credentials are stored per environment for security
+- **Access Control**: Only authorized users can manage deployment methods
+
+### Credential Types
+
+Different providers require different types of credentials:
+
+- **API_KEY**: Used by Vercel and Netlify
+- **ACCESS_KEY**: Used by AWS for access key ID
+- **SECRET_KEY**: Used by AWS for secret access key
+- **REGION**: Used by AWS for region specification
+
+### Environment-Specific Configuration
+
+Deployment methods can be configured for:
+
+- **Individual Environments**: Specific to one environment
+- **All Environments**: Applied across all available environments
+
+When editing a deployment method, you can choose to update only the current environment or apply changes to all environments with the same name and provider.
+
+### Using Deployment Methods in Plugins
+
+Deployment plugins automatically retrieve credentials from the configured deployment methods. The system provides helper functions to access encrypted credentials:
+
+```typescript
+import { getDeploymentMethodCredential } from '~/lib/services/deploymentMethodService';
+import { DeploymentMethodCredentialsType } from '@prisma/client';
+
+// Get a specific credential for a provider and environment
+const apiKey = await getDeploymentMethodCredential(
+  'VERCEL', // Provider
+  environmentId, // Environment ID
+  DeploymentMethodCredentialsType.API_KEY, // Credential type
+  userId, // User ID
+);
+
+// Fallback to environment variables if deployment method not found
+const token = apiKey || process.env.VERCEL_API_KEY;
+```
+
+### Credential Retrieval Flow
+
+1. **Plugin requests credential**: Calls `getDeploymentMethodCredential()` with provider, environment, and credential type
+2. **System looks up method**: Finds deployment method for the specified provider and environment
+3. **Decrypts credential**: Automatically decrypts the stored credential value
+4. **Returns credential**: Returns the decrypted value for use in deployment
+5. **Fallback handling**: If no deployment method found, falls back to environment variables
+
+### Environment Variables Fallback
+
+If no deployment method is configured, plugins will fall back to environment variables:
+
+- **Vercel**: `VERCEL_TOKEN` or `VERCEL_API_KEY`
+- **Netlify**: `NETLIFY_AUTH_TOKEN`
+- **AWS**: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`
 
 ## Architecture
 
@@ -60,6 +169,8 @@ For example: `vercel-deploy-plugin.ts`, `railway-deploy-plugin.ts`
 ```typescript
 import { BaseDeploymentPlugin } from './base-deployment-plugin';
 import type { DeploymentConfig, DeploymentProgress, DeploymentResult } from '~/lib/plugins/types';
+import { getDeploymentMethodCredential } from '~/lib/services/deploymentMethodService';
+import { DeploymentMethodCredentialsType } from '@prisma/client';
 
 export class YourProviderDeployPlugin extends BaseDeploymentPlugin {
   pluginId = 'your-provider' as const;
@@ -72,17 +183,46 @@ export class YourProviderDeployPlugin extends BaseDeploymentPlugin {
     config: DeploymentConfig,
     onProgress: (progress: DeploymentProgress) => Promise<void>,
   ): Promise<DeploymentResult> {
-    const { websiteId, chatId, userId } = config;
+    const { websiteId, chatId, userId, environmentId } = config;
     let currentStepIndex = 1;
 
-    // Step 1: Initialize deployment
+    // Step 1: Get credentials from deployment methods
+    let apiKey;
+    if (environmentId) {
+      try {
+        apiKey = await getDeploymentMethodCredential(
+          'YOUR_PROVIDER',
+          environmentId,
+          DeploymentMethodCredentialsType.API_KEY,
+          userId,
+        );
+      } catch (error) {
+        logger.warn('Failed to get API key from deployment method, falling back to environment variable', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          chatId,
+        });
+      }
+    }
+
+    // Fallback to environment variable if deployment method not found
+    if (!apiKey) {
+      apiKey = process.env.YOUR_PROVIDER_API_KEY;
+    }
+
+    if (!apiKey) {
+      throw new Error(
+        'Your Provider API key not configured. Please set up deployment method in settings or set YOUR_PROVIDER_API_KEY environment variable.',
+      );
+    }
+
+    // Step 2: Initialize deployment
     await this.sendProgress(currentStepIndex, this.totalSteps, 'Initializing deployment...', 'in_progress', onProgress);
 
-    // Step 2: Create temporary directory
+    // Step 3: Create temporary directory
     const tempDir = await this.createTempDirectory(chatId, 'your-provider-deploy');
 
     try {
-      // Step 3: Extract files
+      // Step 4: Extract files
       await this.sendProgress(
         ++currentStepIndex,
         this.totalSteps,
@@ -92,7 +232,7 @@ export class YourProviderDeployPlugin extends BaseDeploymentPlugin {
       );
       await this.extractZipFile(zipFile, tempDir, chatId);
 
-      // Step 4: Install dependencies
+      // Step 5: Install dependencies
       await this.sendProgress(
         ++currentStepIndex,
         this.totalSteps,
@@ -100,9 +240,9 @@ export class YourProviderDeployPlugin extends BaseDeploymentPlugin {
         'in_progress',
         onProgress,
       );
-      await this.runCommand('pnpm', ['install'], tempDir);
+      await this.runCommand('pnpm', ['install'], tempDir, { YOUR_PROVIDER_API_KEY: apiKey });
 
-      // Step 5: Deploy to your provider
+      // Step 6: Deploy to your provider
       await this.sendProgress(
         ++currentStepIndex,
         this.totalSteps,
@@ -112,9 +252,9 @@ export class YourProviderDeployPlugin extends BaseDeploymentPlugin {
       );
 
       // Your provider-specific deployment logic here
-      const deployResult = await this.deployToYourProvider(tempDir, chatId);
+      const deployResult = await this.deployToYourProvider(tempDir, chatId, apiKey);
 
-      // Step 6: Create site info and update database
+      // Step 7: Create site info and update database
       const siteInfo = {
         id: deployResult.siteId,
         name: `your-provider-${chatId}`,
@@ -153,9 +293,10 @@ export class YourProviderDeployPlugin extends BaseDeploymentPlugin {
   }
 
   // Add your provider-specific methods here
-  private async deployToYourProvider(tempDir: string, chatId: string) {
+  private async deployToYourProvider(tempDir: string, chatId: string, apiKey: string) {
     // Implementation specific to your provider
     // This might involve API calls, CLI commands, etc.
+    // Use the apiKey parameter for authentication
   }
 }
 ```
@@ -248,8 +389,60 @@ interface DeploymentConfig {
   chatId: string; // Chat session ID
   description?: string; // Deployment description
   userId: string; // User ID
+  environmentId?: string; // Environment ID for credential retrieval
 }
 ```
+
+The `environmentId` is used by deployment plugins to retrieve the appropriate deployment method credentials for the current environment.
+
+### Database Schema
+
+Deployment methods are stored in the database using the following schema:
+
+```prisma
+model DeploymentMethod {
+  id            String   @id @default(cuid())
+  name          String
+  provider      DeploymentProvider
+  environmentId String
+  environment   Environment @relation(fields: [environmentId], references: [id])
+  credentials   DeploymentMethodCredentials[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([name, provider, environmentId])
+}
+
+model DeploymentMethodCredentials {
+  id                String   @id @default(cuid())
+  deploymentMethodId String
+  deploymentMethod   DeploymentMethod @relation(fields: [deploymentMethodId], references: [id], onDelete: Cascade)
+  type              DeploymentMethodCredentialsType
+  value             String // Encrypted value
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+enum DeploymentProvider {
+  VERCEL
+  NETLIFY
+  AWS
+}
+
+enum DeploymentMethodCredentialsType {
+  API_KEY
+  ACCESS_KEY
+  SECRET_KEY
+  REGION
+}
+```
+
+### Security Considerations
+
+- **Encryption**: All credential values are encrypted using AES encryption before storage
+- **Environment Isolation**: Credentials are tied to specific environments for security
+- **Access Control**: Only authorized users can access deployment methods
+- **Audit Trail**: All changes are tracked with timestamps
 
 ## Best Practices
 
