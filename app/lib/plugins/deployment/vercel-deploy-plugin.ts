@@ -102,13 +102,13 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
       logger.info('Starting Vercel deployment', JSON.stringify({ chatId }));
       await this.sendProgress(++currentStepIndex, this.totalSteps, 'Deploying to Vercel...', 'in_progress', onProgress);
 
-      const projectName = `liblab-${chatId.slice(0, 8)}`;
+      const projectName = this.generateSiteName(chatId, 'liblab', 8);
 
       const deployResult = await this.runCommand(
         'npx',
-        ['vercel', 'deploy', '--prod', '--token', token, '--yes'],
+        ['vercel', 'deploy', '--prod', '--token', token, '--yes', '--json'],
         tempDir,
-        { VERCEL_TOKEN: token },
+        undefined,
         5 * 60 * 1000, // 5 minutes timeout
         async (message) => {
           if (message.includes('https://') && message.includes('.vercel.app')) {
