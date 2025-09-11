@@ -400,6 +400,7 @@ pnpm run dev
 - [Configuration](docs/configuration.md)
 - [Getting Started](docs/getting-started.md)
 - [Features](docs/features.md)
+- [Team Roles and Permissions](docs/team-roles-and-permissions.md)
 - [Tips](docs/tips.md)
 - [Governance](docs/governance.md)
 - [License](LICENSE)
