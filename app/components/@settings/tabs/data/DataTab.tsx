@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronRight, Database, Plus, Search, Trash2 } from 'lucide-react';
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
@@ -44,6 +44,7 @@ export default function DataTab() {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [headerTitle, setHeaderTitle] = useState<string>('Edit Data Source');
   const [headerBackHandler, setHeaderBackHandler] = useState<(() => void) | null>(null);
+  const [activeDetailsTab, setActiveDetailsTab] = useState<string>('details');
 
   const filterOptions = useMemo(
     () => Array.from(new Set(dataSources.map((dataSources) => dataSources.typeLabel))),
@@ -62,23 +63,29 @@ export default function DataTab() {
     }
   }, [selectedTab]);
 
+  const loadDataSources = useCallback(async () => {
+    try {
+      const response = await fetch('/api/data-sources');
+      const data = (await response.json()) as EnvironmentDataSourcesResponse;
+
+      if (data.success) {
+        setEnvironmentDataSources(data.environmentDataSources);
+      }
+    } catch (error) {
+      console.error('Failed to load data sources:', error);
+    }
+  }, [setEnvironmentDataSources]);
+
   // Load data sources on mount
   useEffect(() => {
-    const loadDataSources = async () => {
-      try {
-        const response = await fetch('/api/data-sources');
-        const data = (await response.json()) as EnvironmentDataSourcesResponse;
-
-        if (data.success) {
-          setEnvironmentDataSources(data.environmentDataSources);
-        }
-      } catch (error) {
-        console.error('Failed to load data sources:', error);
-      }
-    };
-
     loadDataSources();
-  }, [setEnvironmentDataSources]);
+  }, [loadDataSources]);
+
+  useEffect(() => {
+    const selectedDataSourceToRefresh = dataSources.find((ds) => ds.id === selectedDataSource?.id);
+
+    setSelectedDataSource(selectedDataSourceToRefresh || null);
+  }, [dataSources]);
 
   const handleDelete = async () => {
     if (!selectedEnvironmentDataSource) {
@@ -163,7 +170,7 @@ export default function DataTab() {
             </button>
             <div>
               <h2 className="text-lg font-medium text-primary">Create Data Source</h2>
-              <p className="text-sm text-secondary">Add a new database connection</p>
+              <p className="text-sm text-secondary">Add a new data source connection</p>
             </div>
           </div>
         </div>
@@ -216,17 +223,25 @@ export default function DataTab() {
             setHeaderTitle={setHeaderTitle}
             setHeaderBackHandler={setHeaderBackHandler}
             onExit={handleBack}
+            activeTab={activeDetailsTab}
+            setActiveTab={setActiveDetailsTab}
+            reloadDataSources={loadDataSources}
+            onInvite={() => {
+              setShowInviteForm(true);
+              setShowDetails(false);
+              setActiveDetailsTab('members');
+            }}
           />
         )}
       </div>
     );
   }
 
-  if (showInviteForm && selectedEnvironmentDataSource?.dataSource) {
+  if (showInviteForm && selectedDataSource) {
     return (
       <ResourceAccessInvite
         resourceScope="DATA_SOURCE"
-        resource={selectedEnvironmentDataSource.dataSource}
+        resource={selectedDataSource}
         onBack={() => {
           setShowDetails(true);
           setShowInviteForm(false);

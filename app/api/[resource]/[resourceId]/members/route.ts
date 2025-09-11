@@ -3,10 +3,11 @@ import { z } from 'zod';
 import { userService } from '~/lib/services/userService';
 import { PERMISSION_LEVELS } from '~/lib/services/permissionService';
 import { addUserToResourceRole } from '~/lib/services/roleService';
-import { getResourceConfig, getMembersForResource } from '~/lib/utils/resource-utils';
+import { getMembersForResource, getResourceConfig } from '~/lib/utils/resource-utils';
 import { requireUserAbility } from '~/auth/session';
 import { PermissionAction, Prisma } from '@prisma/client';
 import { subject } from '@casl/ability';
+import { logger } from '~/utils/logger';
 
 export async function GET(
   request: NextRequest,
@@ -97,6 +98,8 @@ export async function POST(
         );
       }
     }
+
+    logger.error('Failed to assign user to role:', error);
 
     return NextResponse.json({ success: false, error: 'Failed to assign user to role' }, { status: 500 });
   }

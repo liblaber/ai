@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
-import { createEnvironmentDataSource } from '~/lib/services/datasourceService';
-import { type DataSourceProperty, DataSourcePropertyType } from '@liblab/data-access/utils/types';
-import { z } from 'zod';
 import { PermissionAction, PermissionResource } from '@prisma/client';
-
-// zod schema for the request body
-const dataSourcePropertiesSchema = z.array(
-  z.object({
-    type: z.nativeEnum(DataSourcePropertyType),
-    value: z.string().nullable(),
-  }),
-);
+import { createEnvironmentDataSource, getDataSource } from '~/lib/services/datasourceService';
+import type { DataSourceProperty as SimpleDataSourceProperty } from '@liblab/data-access/utils/types';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userId, userAbility } = await requireUserAbility(request);
@@ -22,35 +13,42 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { id: dataSourceId } = await params;
 
-  const formData = await request.formData();
-  const environmentId = formData.get('environmentId') as string;
-  const propertiesJson = formData.get('properties') as string;
-
-  if (!environmentId) {
-    return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
-  }
-
-  let properties: DataSourceProperty[];
-
   try {
-    properties = propertiesJson ? JSON.parse(propertiesJson) : [];
-    dataSourcePropertiesSchema.parse(properties);
-  } catch {
-    return NextResponse.json({ success: false, error: 'Invalid properties payload' }, { status: 400 });
-  }
+    const formData = await request.formData();
 
-  try {
-    const result = await createEnvironmentDataSource({
+    const environmentId = formData.get('environmentId') as string;
+    const propertiesJson = formData.get('properties') as string;
+    const properties = JSON.parse(propertiesJson) as SimpleDataSourceProperty[];
+
+    if (!environmentId) {
+      return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
+    }
+
+    if (!properties?.length) {
+      return NextResponse.json({ success: false, error: 'Properties are required' }, { status: 400 });
+    }
+
+    // Verify the data source exists and user has access
+    const dataSource = await getDataSource({ id: dataSourceId });
+
+    if (!dataSource) {
+      return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
+    }
+
+    const environmentDataSource = await createEnvironmentDataSource({
       dataSourceId,
       environmentId,
       properties,
       createdById: userId,
     });
 
-    return NextResponse.json({ success: true, ...result }, { status: 201 });
+    return NextResponse.json({ success: true, environmentDataSource });
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Failed to create environment data source' },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create data source environment',
+      },
       { status: 400 },
     );
   }

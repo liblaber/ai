@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { userId, userAbility } = await requireUserAbility(request);
+  const { userAbility } = await requireUserAbility(request);
 
   if (!userAbility.can(PermissionAction.update, PermissionResource.DataSource)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
@@ -40,7 +40,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params;
 
-  const dataSource = await getDataSource({ id, createdById: userId });
+  const dataSource = await getDataSource({ id });
 
   if (!dataSource) {
     return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });

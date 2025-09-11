@@ -9,14 +9,17 @@ import { z } from 'zod';
 import { Button } from '~/components/ui/Button';
 import WithTooltip from '~/components/ui/Tooltip';
 import { logger } from '~/utils/logger';
+import { useEnvironmentsStore } from '~/lib/stores/environments';
+import type { EnvironmentWithRelations } from '~/lib/services/environmentService';
 
 type Props = {
   dataSource: DataSourceWithEnvironments;
-  environmentId: string;
   onBack: () => void;
   setHeaderTitle?: (title: string) => void;
   setHeaderBackHandler?: (handler: () => void) => void;
   onSuccess?: () => void;
+  environmentId?: string; // Optional for create mode
+  isCreateMode?: boolean; // New prop to indicate create mode
 };
 
 type SimpleProperty = { type: string; value: string };
@@ -28,6 +31,7 @@ export default function DataSourceEnvironmentsForm({
   setHeaderTitle,
   setHeaderBackHandler,
   onSuccess,
+  isCreateMode = false,
 }: Props) {
   const { availableDataSourceOptions } = useDataSourceTypesPlugin();
   const [showSensitiveInput, setShowSensitiveInput] = useState(false);
@@ -39,16 +43,27 @@ export default function DataSourceEnvironmentsForm({
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [editedProperties, setEditedProperties] = useState<SimpleProperty[]>([]);
+  const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string>('');
+  const { environments, setEnvironments } = useEnvironmentsStore();
 
-  const selectedEnv = useMemo(
-    () => dataSource.environments.find((e) => e.id === environmentId) || null,
-    [dataSource.environments, environmentId],
-  );
+  console.log('environments', environments);
+
+  const selectedEnv = useMemo(() => {
+    if (isCreateMode) {
+      return null; // No environment selected in create mode
+    }
+
+    return dataSource.environments.find((e) => e.id === environmentId) || null;
+  }, [dataSource.environments, environmentId, isCreateMode]);
 
   const dsOption: DataSourceOption | undefined = useMemo(
     () => availableDataSourceOptions.find((o) => (o.type || o.value.toUpperCase()) === dataSource.type),
     [availableDataSourceOptions, dataSource.type],
   );
+
+  const propertyDescriptors: DataSourcePropertyDescriptor[] = useMemo(() => {
+    return (dsOption?.properties as DataSourcePropertyDescriptor[]) || [];
+  }, [dsOption?.properties]);
 
   useEffect(() => {
     let mounted = true;
@@ -58,20 +73,27 @@ export default function DataSourceEnvironmentsForm({
       setError(null);
 
       try {
-        const result = await getDataSourceProperties(dataSource.id, environmentId);
-
-        if (!mounted) {
-          return;
-        }
-
-        if (result) {
-          setProperties(result);
-          setEditedProperties(result);
+        if (isCreateMode) {
+          // In create mode, initialize with empty properties based on data source type
+          const expectedProps = (propertyDescriptors || []).map((p) => ({ type: p.type, value: '' }));
+          setProperties(expectedProps);
+          setEditedProperties(expectedProps);
         } else {
-          // fallback to values we already have on the details object
-          const fallbackProperties = (selectedEnv?.dataSourceProperties as any) || [];
-          setProperties(fallbackProperties);
-          setEditedProperties(fallbackProperties);
+          const result = await getDataSourceProperties(dataSource.id, environmentId!);
+
+          if (!mounted) {
+            return;
+          }
+
+          if (result) {
+            setProperties(result);
+            setEditedProperties(result);
+          } else {
+            // fallback to values we already have on the details object
+            const fallbackProperties = (selectedEnv?.dataSourceProperties as any) || [];
+            setProperties(fallbackProperties);
+            setEditedProperties(fallbackProperties);
+          }
         }
       } catch (e) {
         logger.error('Failed to load data source properties:', e);
@@ -90,18 +112,34 @@ export default function DataSourceEnvironmentsForm({
     return () => {
       mounted = false;
     };
-  }, [dataSource.id, environmentId, selectedEnv?.dataSourceProperties]);
+  }, [dataSource.id, environmentId, selectedEnv?.dataSourceProperties, isCreateMode, propertyDescriptors]);
 
   useEffect(() => {
-    if (selectedEnv) {
+    if (isCreateMode) {
+      setHeaderTitle?.(`Create New Environment for "${dataSource.name}"`);
+      setHeaderBackHandler?.(() => onBack);
+    } else if (selectedEnv) {
       setHeaderTitle?.(`Edit "${selectedEnv.name}" Environment for "${dataSource.name}"`);
       setHeaderBackHandler?.(() => onBack);
     }
-  }, []);
+  }, [isCreateMode]);
 
-  const propertyDescriptors: DataSourcePropertyDescriptor[] = useMemo(() => {
-    return (dsOption?.properties as DataSourcePropertyDescriptor[]) || [];
-  }, [dsOption?.properties]);
+  useEffect(() => {
+    const loadEnvironments = async () => {
+      try {
+        const response = await fetch('/api/environments');
+        const data = (await response.json()) as { success: boolean; environments: EnvironmentWithRelations[] };
+
+        if (data.success) {
+          setEnvironments(data.environments);
+        }
+      } catch (error) {
+        logger.error('Failed to load environments:', error);
+      }
+    };
+
+    loadEnvironments();
+  }, [setEnvironments]);
 
   const getLabelForType = (type: string) => propertyDescriptors.find((d) => d.type === (type as any))?.label || type;
   const getFormatForType = (type: string) => propertyDescriptors.find((d) => d.type === (type as any))?.format || '';
@@ -202,8 +240,13 @@ export default function DataSourceEnvironmentsForm({
   };
 
   const handleSaveConfirm = async () => {
-    if (!hasChanges) {
+    if (!isCreateMode && !hasChanges) {
       setError('No changes to save');
+      return;
+    }
+
+    if (isCreateMode && !selectedEnvironmentId) {
+      setError('Please select an environment');
       return;
     }
 
@@ -265,34 +308,62 @@ export default function DataSourceEnvironmentsForm({
       const formData = new FormData();
       formData.append('properties', JSON.stringify(editedProperties));
 
-      const response = await fetch(`/api/data-sources/${dataSource.id}/environments/${environmentId}`, {
-        method: 'PUT',
-        body: formData,
-      });
+      if (isCreateMode) {
+        formData.append('environmentId', selectedEnvironmentId);
 
-      const data = (await response.json()) as { success: boolean; error?: string };
-
-      if (data.success) {
-        setTestResult({
-          success: true,
-          message: 'Data source properties updated successfully',
+        const response = await fetch(`/api/data-sources/${dataSource.id}/environments`, {
+          method: 'POST',
+          body: formData,
         });
-        setError(null);
-        setProperties(editedProperties);
-        onSuccess?.();
+
+        const data = (await response.json()) as { success: boolean; error?: string };
+
+        if (data.success) {
+          setTestResult({
+            success: true,
+            message: 'Data source environment created successfully',
+          });
+          setError(null);
+          setProperties(editedProperties);
+          onSuccess?.();
+        } else {
+          const message = data.error || 'Failed to create data source environment';
+          setTestResult({
+            success: false,
+            message,
+          });
+          setError(null);
+        }
       } else {
-        const message = data.error || 'Failed to update data source properties';
-        setTestResult({
-          success: false,
-          message,
+        const response = await fetch(`/api/data-sources/${dataSource.id}/environments/${environmentId}`, {
+          method: 'PUT',
+          body: formData,
         });
-        setError(null);
+
+        const data = (await response.json()) as { success: boolean; error?: string };
+
+        if (data.success) {
+          setTestResult({
+            success: true,
+            message: 'Data source properties updated successfully',
+          });
+          setError(null);
+          setProperties(editedProperties);
+          onSuccess?.();
+        } else {
+          const message = data.error || 'Failed to update data source properties';
+          setTestResult({
+            success: false,
+            message,
+          });
+          setError(null);
+        }
       }
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : String(error) || 'Failed to update data source properties. Please try again.';
+          : String(error) || 'Failed to save data source properties. Please try again.';
       setTestResult({
         success: false,
         message,
@@ -351,7 +422,7 @@ export default function DataSourceEnvironmentsForm({
     }
   };
 
-  if (!selectedEnv) {
+  if (!isCreateMode && !selectedEnv) {
     return (
       <div className="space-y-4">
         <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20 text-sm text-red-600 dark:text-red-400">
@@ -374,6 +445,31 @@ export default function DataSourceEnvironmentsForm({
         </div>
       ) : (
         <div className="space-y-4 mb-10">
+          {isCreateMode && (
+            <div>
+              <label className="mb-3 block text-sm font-medium text-secondary">Select Environment</label>
+              <select
+                value={selectedEnvironmentId}
+                onChange={(e) => setSelectedEnvironmentId(e.target.value)}
+                disabled={isSaving}
+                className={classNames(
+                  'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                  'text-primary text-base',
+                  'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                  'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                  'transition-all duration-200',
+                  'disabled:opacity-50 disabled:cursor-not-allowed',
+                )}
+              >
+                <option value="">Choose an environment...</option>
+                {environments.map((env) => (
+                  <option key={env.id} value={env.id}>
+                    {env.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           {editedProperties.map((prop) => (
             <div key={prop.type}>
               <label className="mb-3 block text-sm font-medium text-secondary">{getLabelForType(prop.type)}</label>
@@ -460,37 +556,44 @@ export default function DataSourceEnvironmentsForm({
       <div className="pt-5 border-t border-depth-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <WithTooltip
-              tooltip="It is not possible to delete the only environment for the data source"
-              hidden={!isOnlyEnvironment}
-            >
-              <div>
-                <Button
-                  onClick={handleDeleteEnvironment}
-                  variant="destructive"
-                  disabled={isOnlyEnvironment || isSaving}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  <span>Delete Environment</span>
-                </Button>
-              </div>
-            </WithTooltip>
+            {!isCreateMode && (
+              <WithTooltip
+                tooltip="It is not possible to delete the only environment for the data source"
+                hidden={!isOnlyEnvironment}
+              >
+                <div>
+                  <Button
+                    onClick={handleDeleteEnvironment}
+                    variant="destructive"
+                    disabled={isOnlyEnvironment || isSaving}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    <span>Delete Environment</span>
+                  </Button>
+                </div>
+              </WithTooltip>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <Button
               onClick={handleSave}
-              disabled={isSaving || !hasChanges || editedProperties.length === 0}
+              disabled={
+                isSaving ||
+                (!isCreateMode && !hasChanges) ||
+                editedProperties.length === 0 ||
+                (isCreateMode && !selectedEnvironmentId)
+              }
               variant="primary"
             >
               {isSaving ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  <span>Saving...</span>
+                  <span>{isCreateMode ? 'Creating...' : 'Saving...'}</span>
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  <span>Save Changes</span>
+                  <span>{isCreateMode ? 'Add Environment' : 'Save Changes'}</span>
                 </>
               )}
             </Button>

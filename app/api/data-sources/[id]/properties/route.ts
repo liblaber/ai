@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireUserId } from '~/auth/session';
+import { requireUserAbility } from '~/auth/session';
 import { getDataSourceProperties, getDataSourceType } from '~/lib/services/datasourceService';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const userId = await requireUserId(request);
+  const { userAbility } = await requireUserAbility(request);
 
   const { id } = await params;
   const { searchParams } = new URL(request.url);
+
+  if (!userAbility.can('read', 'DataSource')) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
 
   const environmentId = searchParams.get('environmentId');
 
@@ -20,7 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ success: false, error: 'Data source type not found' }, { status: 404 });
   }
 
-  const dataSourceProperties = await getDataSourceProperties(userId, id, environmentId);
+  const dataSourceProperties = await getDataSourceProperties(id, environmentId);
 
   if (!dataSourceProperties) {
     return NextResponse.json({ success: false, error: 'Data source properties not found' }, { status: 404 });

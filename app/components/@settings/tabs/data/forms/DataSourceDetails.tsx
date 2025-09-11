@@ -3,24 +3,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/Tabs';
 import { classNames } from '~/utils/classNames';
 import DataSourceDetailsForm from '~/components/@settings/tabs/data/forms/DataSourceDetailsForm';
 import { motion } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DataSourceEnvironmentsForm from '~/components/@settings/tabs/data/forms/DataSourceEnvironmentsForm';
+import ResourceAccessMembers from '~/components/@settings/shared/components/ResourceAccessMembers';
+import { Button } from '~/components/ui/Button';
 
 type Props = {
   dataSource: DataSourceWithEnvironments;
-  membersCount?: number;
   setHeaderTitle?: (title: string) => void;
   setHeaderBackHandler?: (handler: () => void) => void;
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
   onExit: () => void;
+  onInvite: () => void;
+  reloadDataSources: () => Promise<void>;
 };
 
 export const DataSourceDetails = ({
   dataSource,
-  membersCount = 0,
   setHeaderTitle,
   setHeaderBackHandler,
+  reloadDataSources,
   onExit,
+  onInvite,
+  activeTab,
+  setActiveTab,
 }: Props) => {
   const environmentsCount = dataSource.environments?.length || 0;
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string | null>(null);
@@ -39,7 +47,7 @@ export const DataSourceDetails = ({
 
   return (
     <div>
-      <Tabs defaultValue="details">
+      <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className={classNames('rounded-[20px] bg-[#0D0D0D] p-1 h-10', 'text-secondary')}>
           <TabsTrigger
             value="details"
@@ -69,7 +77,7 @@ export const DataSourceDetails = ({
               'data-[state=active]:bg-gray-700 data-[state=active]:text-white',
             )}
           >
-            Members {membersCount}
+            Members
           </TabsTrigger>
         </TabsList>
 
@@ -77,7 +85,7 @@ export const DataSourceDetails = ({
           <DataSourceDetailsForm dataSource={dataSource} />
         </TabsContent>
         <TabsContent value="environments" className="mt-4">
-          {selectedEnvironmentId ? (
+          {selectedEnvironmentId && selectedEnvironmentId !== 'create' ? (
             <DataSourceEnvironmentsForm
               dataSource={dataSource}
               environmentId={selectedEnvironmentId}
@@ -88,6 +96,30 @@ export const DataSourceDetails = ({
               }}
               setHeaderTitle={setHeaderTitle}
               setHeaderBackHandler={setHeaderBackHandler}
+              onSuccess={() => {
+                void reloadDataSources();
+                setSelectedEnvironmentId(null);
+                setHeaderTitle?.(headerTitle);
+                setHeaderBackHandler?.(() => onExit);
+              }}
+            />
+          ) : selectedEnvironmentId === 'create' ? (
+            <DataSourceEnvironmentsForm
+              dataSource={dataSource}
+              isCreateMode={true}
+              onBack={() => {
+                setSelectedEnvironmentId(null);
+                setHeaderTitle?.(headerTitle);
+                setHeaderBackHandler?.(() => onExit);
+              }}
+              setHeaderTitle={setHeaderTitle}
+              setHeaderBackHandler={setHeaderBackHandler}
+              onSuccess={() => {
+                void reloadDataSources();
+                setSelectedEnvironmentId(null);
+                setHeaderTitle?.(headerTitle);
+                setHeaderBackHandler?.(() => onExit);
+              }}
             />
           ) : (
             <div className="space-y-4">
@@ -118,11 +150,18 @@ export const DataSourceDetails = ({
                   </motion.div>
                 ))}
               </div>
+              <div className="pt-4">
+                <Button variant="primary" onClick={() => setSelectedEnvironmentId('create')}>
+                  <Plus className="w-4 h-4 mr-2" />
+
+                  <span>Add Environment</span>
+                </Button>
+              </div>
             </div>
           )}
         </TabsContent>
         <TabsContent value="members" className="mt-4">
-          {/* Members content goes here */}
+          <ResourceAccessMembers resourceScope="DATA_SOURCE" resourceId={dataSource.id} onInvite={onInvite} />
         </TabsContent>
       </Tabs>
     </div>

@@ -55,6 +55,7 @@ export interface CreateDataSourceEnvironmentResponse {
 }
 
 export interface CreateDataSourceResponse {
+  id: string;
   name: string;
   type: DataSourceType;
   createdById: string;
@@ -146,15 +147,9 @@ export async function getEnvironmentDataSource(
   };
 }
 
-export async function getDataSource({
-  id,
-  createdById,
-}: {
-  id: string;
-  createdById: string;
-}): Promise<PrismaDataSource | null> {
+export async function getDataSource({ id }: { id: string }): Promise<PrismaDataSource | null> {
   return prisma.dataSource.findUnique({
-    where: { id, createdById },
+    where: { id },
   });
 }
 
@@ -214,7 +209,7 @@ export async function createEnvironmentDataSource(data: {
   createdById: string;
 }): Promise<CreateDataSourceEnvironmentResponse> {
   const dataSource = await prisma.dataSource.findUnique({
-    where: { id: data.dataSourceId, createdById: data.createdById },
+    where: { id: data.dataSourceId },
     select: { id: true, name: true, type: true },
   });
 
@@ -267,7 +262,7 @@ export async function getDataSourceConnectionUrl(
   dataSourceId: string,
   environmentId: string,
 ): Promise<string | null> {
-  const dataSourceProperties = await getDataSourceProperties(userId, dataSourceId, environmentId);
+  const dataSourceProperties = await getDataSourceProperties(dataSourceId, environmentId);
 
   return dataSourceProperties?.find((prop) => prop.type === SharedDataSourcePropertyType.CONNECTION_URL)?.value || null;
 }
@@ -373,7 +368,7 @@ export async function updateEnvironmentDataSourceProperties(data: {
   });
 
   if (!environmentDataSource) {
-    throw new Error('Data source does not exist');
+    throw new Error('Data source environment does not exist');
   }
 
   const { dataSource } = environmentDataSource;
@@ -448,13 +443,27 @@ export async function updateEnvironmentDataSourceProperties(data: {
 export async function deleteDataSourceEnvironment(dataSourceId: string, environmentId: string): Promise<void> {
   logger.debug(`Deleting environment data source [${environmentId}, ${dataSourceId}]`);
 
-  await prisma.environmentDataSource.delete({
-    where: {
-      environmentId_dataSourceId: {
-        environmentId,
-        dataSourceId,
+  prisma.$transaction(async (tx) => {
+    const dataSourceProperties = await tx.dataSourceProperty.findMany({
+      where: { dataSourceId, environmentId },
+    });
+
+    for (const property of dataSourceProperties) {
+      await tx.environmentVariable.delete({
+        where: { id: property.environmentVariableId },
+      });
+    }
+
+    await tx.dataSourceProperty.deleteMany({ where: { dataSourceId, environmentId } });
+
+    await tx.environmentDataSource.delete({
+      where: {
+        environmentId_dataSourceId: {
+          environmentId,
+          dataSourceId,
+        },
       },
-    },
+    });
   });
 }
 
@@ -474,7 +483,6 @@ export async function getDataSourceType(dataSourceId: string) {
 }
 
 export async function getDataSourceProperties(
-  userId: string,
   dataSourceId: string,
   environmentId: string,
 ): Promise<SimpleDataSourceProperty[] | null> {
@@ -482,9 +490,6 @@ export async function getDataSourceProperties(
     where: {
       environmentId,
       dataSourceId,
-      dataSource: {
-        createdById: userId, // ownership check
-      },
     },
     include: {
       dataSourceProperties: {
