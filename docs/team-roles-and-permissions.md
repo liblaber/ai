@@ -39,6 +39,6 @@ When sharing a specific **Environment**, **Data Source**, or **App**, you can gr
 
 ## A Note on Environment Permissions
 
-Granting access to an **Environment** has a special cascading effect. When you give a member access to an environment, they automatically gain the **same level of permission** for all Data Sources and Apps contained within that environment.
+Granting access to an **Environment** has a special cascading effect. When you give a member access to an environment, they automatically gain the **same level of permission** for all Data Sources, Apps, and environment secrets contained within that environment. You can learn more about Environments [here](docs/environments.md).
 
 For example, if you give a member **Viewer** access to your "Production" Environment, they will be able to view all the apps and data sources that belong to that environment.
