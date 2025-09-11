@@ -96,7 +96,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
     console.log('🔍 Looking for database name input...');
 
     const dbNameInput = page.locator(
-      'input[placeholder*="database name"], input[placeholder*="Database Name"], input[name*="dbName"], input[name*="name"]',
+      'input[placeholder*="data source name"], input[placeholder*="Data Source Name"], input[name*="dbName"], input[name*="name"]',
     );
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
     console.log('✅ Found database name input, filling "foobar"...');
@@ -226,7 +226,7 @@ test.describe('Add PostgreSQL Data Source Flow', () => {
     console.log('🔍 Looking for database name input...');
 
     const dbNameInput = page.locator(
-      'input[placeholder*="database name"], input[placeholder*="Database Name"], input[name*="dbName"], input[name*="name"]',
+      'input[placeholder*="data source name"], input[placeholder*="Data Source Name"], input[name*="dbName"], input[name*="name"]',
     );
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
     console.log('✅ Found database name input, filling "baz"...');

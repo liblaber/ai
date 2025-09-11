@@ -1,10 +1,10 @@
 import { DataSourceType } from '@prisma/client';
 import { logger } from '~/utils/logger';
 import { HubspotContextProvider } from '~/lib/plugins/data-source/context-provider/hubspot-context-provider';
-import { GoogleSheetsContextProvider } from '~/lib/plugins/data-source/context-provider/google-sheets-context-provider';
 import type { LanguageModelUsage } from 'ai';
 import {
   GoogleDocsContextProvider,
+  GoogleSheetsContextProvider,
   MongoDBContextProvider,
   MySQLContextProvider,
   PostgresContextProvider,

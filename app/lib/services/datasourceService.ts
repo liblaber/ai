@@ -36,7 +36,6 @@ export interface DataSource {
 export const SAMPLE_DATABASE_CONNECTION_STRING = 'sqlite://sample.db';
 
 export async function getEnvironmentDataSources(userAbility: AppAbility): Promise<EnvironmentDataSource[]> {
-  // TODO: @skos Update specific permissions
   const whereClause = buildResourceWhereClause(
     userAbility,
     PermissionAction.read,
@@ -62,23 +61,10 @@ export async function getEnvironmentDataSources(userAbility: AppAbility): Promis
 
   return environmentDataSources.map((eds) => ({
     ...eds,
-    dataSourceProperties: eds.dataSourceProperties.map((dsp) => {
-      try {
-        return {
-          ...dsp,
-          environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
-        };
-      } catch {
-        // Return the environment variable with a placeholder value to avoid breaking the entire request
-        return {
-          ...dsp,
-          environmentVariable: {
-            ...dsp.environmentVariable,
-            value: '[DECRYPTION_FAILED]',
-          },
-        };
-      }
-    }),
+    dataSourceProperties: eds.dataSourceProperties.map((dsp) => ({
+      ...dsp,
+      environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
+    })),
   }));
 }
 
@@ -90,7 +76,6 @@ export type ComplexEnvironmentDataSource = EnvironmentDataSource & { dataSource:
 
 export async function getEnvironmentDataSource(
   dataSourceId: string,
-  userId: string,
   environmentId: string,
 ): Promise<ComplexEnvironmentDataSource | null> {
   const environmentDataSource = await prisma.environmentDataSource.findUnique({
@@ -112,30 +97,17 @@ export async function getEnvironmentDataSource(
     },
   });
 
-  // TODO: @skos Update specific permissions
-  // Verify user has access to this data source
-  if (!environmentDataSource || environmentDataSource.dataSource.createdById !== userId) {
+  if (!environmentDataSource) {
     return null;
   }
 
   return {
     ...environmentDataSource,
-    dataSourceProperties: environmentDataSource.dataSourceProperties.map((dsp) => {
-      try {
-        return {
-          ...dsp,
-          environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
-        };
-      } catch {
-        return {
-          ...dsp,
-          environmentVariable: {
-            ...dsp.environmentVariable,
-            value: '[DECRYPTION_FAILED]',
-          },
-        };
-      }
-    }),
+    environmentId: environmentDataSource.environmentId,
+    dataSourceProperties: environmentDataSource.dataSourceProperties.map((dsp) => ({
+      ...dsp,
+      environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
+    })),
   };
 }
 
@@ -218,63 +190,9 @@ export async function getDataSourceConnectionUrl(
   dataSourceId: string,
   environmentId: string,
 ): Promise<string | null> {
-  const dataSourceProperties = await getDataSourceProperties(userId, dataSourceId, environmentId);
+  const dataSourceProperties = await getDataSourceProperties(dataSourceId, environmentId);
 
-  if (!dataSourceProperties) {
-    return null;
-  }
-
-  const connectionUrl = dataSourceProperties.find(
-    (prop) => prop.type === SharedDataSourcePropertyType.CONNECTION_URL,
-  )?.value;
-
-  if (!connectionUrl) {
-    return null;
-  }
-
-  // Special handling for Google Sheets to include OAuth tokens and Apps Script URL
-  // Check if this is a Google Sheets URL and if we have additional properties
-  if (connectionUrl.includes('docs.google.com/spreadsheets/')) {
-    const accessToken = dataSourceProperties.find(
-      (prop) => prop.type === SharedDataSourcePropertyType.ACCESS_TOKEN,
-    )?.value;
-    const refreshToken = dataSourceProperties.find(
-      (prop) => prop.type === SharedDataSourcePropertyType.REFRESH_TOKEN,
-    )?.value;
-
-    // Look for Apps Script URL in client_id field (commonly used for additional URLs)
-    const appsScriptUrl = dataSourceProperties.find(
-      (prop) => prop.type === SharedDataSourcePropertyType.CLIENT_ID,
-    )?.value;
-
-    if (accessToken && refreshToken) {
-      // Create sheets:// URL with tokens for the accessor
-      const urlMatch = connectionUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-
-      if (urlMatch) {
-        const spreadsheetId = urlMatch[1];
-        let url = `sheets://${spreadsheetId}/?access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}`;
-
-        // Add Apps Script URL if present
-        if (appsScriptUrl) {
-          url += `&appsScript=${encodeURIComponent(appsScriptUrl)}`;
-        }
-
-        return url;
-      }
-    }
-
-    // For public access, add Apps Script URL as parameter if present
-    if (appsScriptUrl) {
-      const separator = connectionUrl.includes('?') ? '&' : '?';
-      return `${connectionUrl}${separator}appsScript=${encodeURIComponent(appsScriptUrl)}`;
-    }
-
-    // Return the original URL for public access
-    return connectionUrl;
-  }
-
-  return connectionUrl;
+  return dataSourceProperties?.find((prop) => prop.type === SharedDataSourcePropertyType.CONNECTION_URL)?.value || null;
 }
 
 export async function createSampleDataSource(data: {
@@ -312,8 +230,7 @@ export async function createSampleDataSource(data: {
     });
 
     // Create environment variable for sample db connection url
-    // Use dataSource.id to ensure uniqueness
-    const envVarKey = `${environmentName}_SAMPLE_${dataSource.id}_${DataSourcePropertyType.CONNECTION_URL}`
+    const envVarKey = `${environmentName}_SAMPLE_${DataSourcePropertyType.CONNECTION_URL}`
       .toUpperCase()
       .replace(/\s+/g, '_');
 
@@ -365,10 +282,10 @@ export async function updateDataSource(data: {
   });
 }
 
-export async function deleteDataSource(id: string, userId: string) {
+export async function deleteDataSource(id: string) {
   prisma.dataSourceProperty.deleteMany({ where: { dataSourceId: id } });
 
-  return prisma.dataSource.delete({ where: { id, createdById: userId } });
+  return prisma.dataSource.delete({ where: { id } });
 }
 
 export async function getDataSourceType(dataSourceId: string) {
@@ -381,7 +298,6 @@ export async function getDataSourceType(dataSourceId: string) {
 }
 
 export async function getDataSourceProperties(
-  userId: string,
   dataSourceId: string,
   environmentId: string,
 ): Promise<SimpleDataSourceProperty[] | null> {
@@ -389,9 +305,6 @@ export async function getDataSourceProperties(
     where: {
       environmentId,
       dataSourceId,
-      dataSource: {
-        createdById: userId, // ownership check
-      },
     },
     include: {
       dataSourceProperties: {
@@ -409,7 +322,7 @@ export async function getDataSourceProperties(
   return eds.dataSourceProperties.map((property) => {
     return {
       type: property.type as SharedDataSourcePropertyType,
-      value: decryptEnvironmentVariable(property.environmentVariable).value,
+      value: decryptEnvironmentVariable(property.environmentVariable).value, // still encrypted
     };
   });
 }

@@ -35,12 +35,17 @@ async function deleteNetlifySite(siteId: string) {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userAbility } = await requireUserAbility(request);
-
     const { id } = await params;
 
     const website = await getWebsite(id);
 
-    if (userAbility.cannot(PermissionAction.read, subject(PermissionResource.Website, website!))) {
+    if (
+      userAbility.cannot(PermissionAction.read, subject(PermissionResource.Website, website)) &&
+      userAbility.cannot(
+        PermissionAction.read,
+        subject(PermissionResource.Environment, { id: website.environmentId ?? undefined }),
+      )
+    ) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
@@ -72,7 +77,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const website = await getWebsite(id);
 
-    if (userAbility.cannot(PermissionAction.update, subject(PermissionResource.Website, website!))) {
+    if (
+      userAbility.cannot(PermissionAction.update, subject(PermissionResource.Website, website)) &&
+      userAbility.cannot(
+        PermissionAction.update,
+        subject(PermissionResource.Environment, { id: website.environmentId ?? undefined }),
+      )
+    ) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
@@ -95,7 +106,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const website = await getWebsite(id);
 
-    if (userAbility.cannot(PermissionAction.delete, subject(PermissionResource.Website, website!))) {
+    if (
+      userAbility.cannot(PermissionAction.delete, subject(PermissionResource.Website, website)) &&
+      userAbility.cannot(
+        PermissionAction.delete,
+        subject(PermissionResource.Environment, { id: website.environmentId ?? undefined }),
+      )
+    ) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 

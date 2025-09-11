@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { z } from 'zod';
 import { CheckCircle, Lock } from 'lucide-react';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
@@ -18,36 +17,33 @@ import {
   SAMPLE_DATABASE,
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
-import GoogleSheetsSetup from '~/components/@settings/tabs/data/forms/GoogleSheetsSetup';
 
-const ApiResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string().optional(),
-  error: z.string().optional(),
-  dataSource: z
-    .object({
-      id: z.string(),
-    })
-    .optional(),
-});
+interface ApiResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  dataSource?: {
+    id: string;
+  };
+}
 
-const EnvironmentSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-});
+interface Environment {
+  id: string;
+  name: string;
+  description?: string;
+}
 
-const EnvironmentsResponseSchema = z.object({
-  success: z.boolean(),
-  environments: z.array(EnvironmentSchema),
-  error: z.string().optional(),
-});
-
-type EnvironmentOption = {
+interface EnvironmentOption {
   label: string;
   value: string;
   description?: string;
-};
+}
+
+interface EnvironmentsResponse {
+  success: boolean;
+  environments: Environment[];
+  error?: string;
+}
 
 export default function DataSourceConnectionPage() {
   const [dbType, setDbType] = useState<DataSourceOption>(DEFAULT_DATA_SOURCES[0]);
@@ -73,7 +69,7 @@ export default function DataSourceConnectionPage() {
     const fetchEnvironments = async () => {
       try {
         const response = await fetch('/api/environments');
-        const result = EnvironmentsResponseSchema.parse(await response.json());
+        const result: EnvironmentsResponse = await response.json();
 
         if (result.success) {
           // Transform environments to options
@@ -145,7 +141,7 @@ export default function DataSourceConnectionPage() {
         body: formData,
       });
 
-      const result = ApiResponseSchema.parse(await response.json());
+      const result = (await response.json()) as ApiResponse;
 
       if (result.success) {
         await handleAddDataSource();
@@ -179,7 +175,7 @@ export default function DataSourceConnectionPage() {
         body: formData,
       });
 
-      const result = ApiResponseSchema.parse(await response.json());
+      const result = (await response.json()) as ApiResponse;
 
       if (result.success && result.dataSource) {
         setIsSuccess(true);
@@ -218,7 +214,7 @@ export default function DataSourceConnectionPage() {
         }),
       });
 
-      const result = ApiResponseSchema.parse(await response.json());
+      const result = (await response.json()) as ApiResponse;
 
       if (result.success && result.dataSource) {
         setIsSuccess(true);
@@ -368,15 +364,13 @@ export default function DataSourceConnectionPage() {
           )}
 
           {isGoogleSheetsSelected && (
-            <GoogleSheetsSetup
-              onSuccess={() => {
-                refetchEnvironmentDataSources();
-                setTimeout(() => {
-                  router.push('/');
-                }, 1000);
-              }}
-              environmentId={selectedEnvironment?.value}
-            />
+            <>
+              {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
+              <div className="text-gray-400 text-sm">
+                Google Sheets integration is being updated. Please use the settings to configure Google Sheets data
+                sources.
+              </div>
+            </>
           )}
           {dbType.value === SAMPLE_DATABASE && (
             <>

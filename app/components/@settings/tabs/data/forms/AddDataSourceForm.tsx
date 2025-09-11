@@ -305,7 +305,6 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     setDbName('');
     setPropertyValues({});
   };
-
   const isFormDisabled =
     isTestingConnection ||
     !selectedEnvironment ||

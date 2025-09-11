@@ -22,7 +22,6 @@ import GitHubTab from '~/components/@settings/tabs/connections/GitHubTab';
 import { Can } from '@casl/react';
 import { AbilityContext } from '~/components/ability/AbilityProvider';
 import MembersTab from '~/components/@settings/tabs/users/UsersTab';
-import RolesTab from '~/components/@settings/tabs/roles/RolesTab';
 import EnvironmentsTab from '~/components/@settings/tabs/environments';
 import SecretsManagerTab from '~/components/@settings/tabs/secrets-manager';
 
@@ -176,8 +175,6 @@ export const ControlPanel = () => {
         return <GitHubTab />;
       case 'members':
         return <MembersTab />;
-      case 'roles':
-        return <RolesTab />;
       default:
         return null;
     }

@@ -1,34 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { subject } from '@casl/ability';
 import { requireUserAbility } from '~/auth/session';
 import { DataSourceType, PermissionAction, PermissionResource } from '@prisma/client';
 import { createDataSource, getEnvironmentDataSources } from '~/lib/services/datasourceService';
 
 export async function GET(request: NextRequest) {
-  try {
-    const { userAbility } = await requireUserAbility(request);
+  const { userAbility } = await requireUserAbility(request);
 
-    if (!userAbility.can(PermissionAction.read, PermissionResource.DataSource)) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
-    const environmentDataSources = await getEnvironmentDataSources(userAbility);
-
-    return NextResponse.json({ success: true, environmentDataSources });
-  } catch (error) {
-    console.error('Error in GET /api/data-sources:', error);
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 },
-    );
+  if (userAbility.cannot(PermissionAction.read, PermissionResource.DataSource)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
+
+  const environmentDataSources = await getEnvironmentDataSources(userAbility);
+
+  return NextResponse.json({ success: true, environmentDataSources });
 }
 
 export async function POST(request: NextRequest) {
   const { userId, userAbility } = await requireUserAbility(request);
-
-  if (!userAbility.can(PermissionAction.create, PermissionResource.DataSource)) {
-    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-  }
 
   const formData = await request.formData();
   const name = formData.get('name') as string;
@@ -37,6 +26,13 @@ export async function POST(request: NextRequest) {
 
   if (!environmentId) {
     return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
+  }
+
+  if (
+    userAbility.cannot(PermissionAction.create, PermissionResource.DataSource) &&
+    userAbility.cannot(PermissionAction.create, subject(PermissionResource.Environment, { id: environmentId }))
+  ) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
   const propertiesJson = formData.get('properties') as string;

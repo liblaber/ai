@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get the data source with properties
-    const environmentDataSource = await getEnvironmentDataSource(dataSourceId, userId, environmentId);
+    const environmentDataSource = await getEnvironmentDataSource(dataSourceId, userId);
 
     if (!environmentDataSource) {
       return NextResponse.json(

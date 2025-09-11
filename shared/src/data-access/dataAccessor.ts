@@ -22,6 +22,8 @@ export class DataAccessor {
         return new MongoDBAccessor();
       case DataSourceType.GOOGLE_SHEETS:
         return new GoogleSheetsAccessor();
+      case DataSourceType.GOOGLE_DOCS:
+        return new GoogleDocsAccessor();
       default:
         throw new Error(`No database accessor found for type: ${type}`);
     }
@@ -34,11 +36,10 @@ export class DataAccessor {
       case DataSourceType.SQLITE:
       case DataSourceType.MONGODB:
       case DataSourceType.GOOGLE_SHEETS:
+      case DataSourceType.GOOGLE_DOCS:
         return this.getDatabaseAccessor(type);
       case DataSourceType.HUBSPOT:
         return new HubspotAccessor();
-      case DataSourceType.GOOGLE_DOCS:
-        return new GoogleDocsAccessor();
       default:
         throw new Error(`No accessor found for type: ${type}`);
     }
