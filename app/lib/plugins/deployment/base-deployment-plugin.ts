@@ -130,12 +130,14 @@ export abstract class BaseDeploymentPlugin implements DeploymentPlugin {
 
       proc.stdout?.on('data', (data: Buffer) => {
         const message = data.toString();
+        logger.info(message);
         output += message;
         onProgress?.(message);
       });
 
       proc.stderr?.on('data', (data: Buffer) => {
         const message = data.toString();
+        logger.error(message);
         error += message;
         onProgress?.(message);
       });

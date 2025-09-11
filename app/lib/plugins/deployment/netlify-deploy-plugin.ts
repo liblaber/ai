@@ -3,7 +3,14 @@ import { BaseDeploymentPlugin } from './base-deployment-plugin';
 import type { DeploymentConfig, DeploymentProgress, DeploymentResult } from '~/lib/plugins/types';
 import type { NetlifySiteInfo } from '~/types/netlify';
 import { getDeploymentMethodCredential } from '~/lib/services/deploymentMethodService';
-import { DeploymentMethodCredentialsType } from '@prisma/client';
+
+// Define the enum locally until Prisma client is regenerated
+enum DeploymentMethodCredentialsType {
+  API_KEY = 'API_KEY',
+  ACCESS_KEY = 'ACCESS_KEY',
+  SECRET_KEY = 'SECRET_KEY',
+  REGION = 'REGION',
+}
 
 const TOTAL_STEPS = 7;
 
@@ -316,6 +323,84 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
   to = "/index.html"
   status = 200
 
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "ALLOW-FROM *"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Cross-Origin-Resource-Policy = "cross-origin"
+    Cross-Origin-Embedder-Policy = "require-corp"
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cross-Origin-Resource-Policy = "cross-origin"
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization, X-Requested-With"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cross-Origin-Resource-Policy = "cross-origin"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cross-Origin-Resource-Policy = "cross-origin"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/*.jpg"
+  [headers.values]
+    Cross-Origin-Resource-Policy = "cross-origin"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/*.jpeg"
+  [headers.values]
+    Cross-Origin-Resource-Policy = "cross-origin"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/*.gif"
+  [headers.values]
+    Cross-Origin-Resource-Policy = "cross-origin"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/*.svg"
+  [headers.values]
+    Cross-Origin-Resource-Policy = "cross-origin"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/*.woff"
+  [headers.values]
+    Cross-Origin-Resource-Policy = "cross-origin"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/*.woff2"
+  [headers.values]
+    Cross-Origin-Resource-Policy = "cross-origin"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/*.ttf"
+  [headers.values]
+    Cross-Origin-Resource-Policy = "cross-origin"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/*.eot"
+  [headers.values]
+    Cross-Origin-Resource-Policy = "cross-origin"
+    Access-Control-Allow-Origin = "*"
+
 [dev]
   command = "npm run dev"
   port = 3000
@@ -329,7 +414,7 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
     await writeFile(join(tempDir, 'netlify.toml'), netlifyConfig);
 
     // Also create a next.config.js if it doesn't exist to ensure proper Next.js configuration
-    const nextConfigPath = join(tempDir, 'next.config.js');
+    const nextConfigPath = join(tempDir, 'next.config.ts');
     const nextConfigExists = await this.fileExists(nextConfigPath);
 
     if (!nextConfigExists) {
@@ -345,6 +430,31 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'ALLOW-FROM *',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+        ],
+      },
+    ];
   },
 };
 

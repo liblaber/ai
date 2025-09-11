@@ -2,7 +2,14 @@ import { logger } from '~/utils/logger';
 import { BaseDeploymentPlugin } from './base-deployment-plugin';
 import type { DeploymentConfig, DeploymentProgress, DeploymentResult } from '~/lib/plugins/types';
 import { getDeploymentMethodCredential } from '~/lib/services/deploymentMethodService';
-import { DeploymentMethodCredentialsType } from '@prisma/client';
+
+// Define the enum locally until Prisma client is regenerated
+enum DeploymentMethodCredentialsType {
+  API_KEY = 'API_KEY',
+  ACCESS_KEY = 'ACCESS_KEY',
+  SECRET_KEY = 'SECRET_KEY',
+  REGION = 'REGION',
+}
 
 const TOTAL_STEPS = 7;
 
@@ -180,6 +187,37 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
           dest: '/$1',
         },
       ],
+      headers: [
+        {
+          source: '/(.*)',
+          headers: [
+            {
+              key: 'X-Frame-Options',
+              value: 'ALLOW-FROM *',
+            },
+            {
+              key: 'X-Content-Type-Options',
+              value: 'nosniff',
+            },
+            {
+              key: 'Referrer-Policy',
+              value: 'strict-origin-when-cross-origin',
+            },
+            {
+              key: 'Cross-Origin-Resource-Policy',
+              value: 'cross-origin',
+            },
+            {
+              key: 'Cross-Origin-Embedder-Policy',
+              value: 'require-corp',
+            },
+            {
+              key: 'Cross-Origin-Opener-Policy',
+              value: 'same-origin-allow-popups',
+            },
+          ],
+        },
+      ],
       env: {
         NODE_ENV: 'production',
       },
@@ -188,7 +226,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
     await writeFile(join(tempDir, 'vercel.json'), JSON.stringify(vercelConfig, null, 2));
 
     // Create next.config.js if it doesn't exist to ensure proper Next.js configuration
-    const nextConfigPath = join(tempDir, 'next.config.js');
+    const nextConfigPath = join(tempDir, 'next.config.ts');
     const nextConfigExists = await this.fileExists(nextConfigPath);
 
     if (!nextConfigExists) {
@@ -207,6 +245,31 @@ const nextConfig = {
   trailingSlash: true,
   // Disable x-powered-by header
   poweredByHeader: false,
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'ALLOW-FROM *',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
