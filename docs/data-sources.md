@@ -116,21 +116,6 @@ postgresql://myuser:mypassword@localhost:5432/company_db
 postgresql://user:pass@host:5432/db?sslmode=require
 ```
 
-#### What You Can Do
-
-**✅ Supported Operations:**
-
-- Complex SELECT queries with JOINs, subqueries, CTEs
-- INSERT, UPDATE, DELETE operations
-- Advanced filtering and aggregations
-- Window functions and analytics
-- JSON and array data type support
-
-**❌ Restricted Operations:**
-
-- DDL operations (CREATE, DROP, ALTER tables)
-- Administrative commands (GRANT, REVOKE)
-- Database structure modifications
 
 #### Special Features
 
