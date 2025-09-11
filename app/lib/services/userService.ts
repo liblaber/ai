@@ -216,12 +216,6 @@ export const userService = {
         });
       } catch {}
 
-      // Set the deprecated role
-      await prisma.user.update({
-        where: { id: userId },
-        data: {},
-      });
-
       logger.info(`Granted system admin access to user ${userId}`);
     } catch (error) {
       logger.error(`Failed to grant system admin access to user ${userId}:`, error);

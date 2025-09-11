@@ -11,11 +11,17 @@ import { type EnvironmentDataSource, useEnvironmentDataSourcesStore } from '~/li
 import { settingsPanelStore, useSettingsStore } from '~/lib/stores/settings';
 import { useStore } from '@nanostores/react';
 import { logger } from '~/utils/logger';
+import { z } from 'zod';
 
 interface EnvironmentDataSourcesResponse {
   success: boolean;
   environmentDataSources: EnvironmentDataSource[];
 }
+
+const environmentDataSourcesResponseSchema = z.object({
+  success: z.boolean(),
+  environmentDataSources: z.array(z.any()),
+});
 
 export interface TestConnectionResponse {
   success: boolean;
@@ -68,7 +74,15 @@ export default function DataTab() {
       let data: EnvironmentDataSourcesResponse;
 
       try {
-        data = JSON.parse(responseText) as EnvironmentDataSourcesResponse;
+        const rawData = JSON.parse(responseText);
+        const validationResult = environmentDataSourcesResponseSchema.safeParse(rawData);
+
+        if (!validationResult.success) {
+          logger.error('Invalid data sources response format:', validationResult.error);
+          return;
+        }
+
+        data = validationResult.data as EnvironmentDataSourcesResponse;
       } catch (parseError) {
         logger.error('Failed to parse data sources response:', parseError);
         return;
