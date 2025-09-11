@@ -123,7 +123,7 @@ postgresql://user:pass@host:5432/db?sslmode=require
 - **Schema Discovery**: AI automatically understands your tables, relationships, and data types
 - **Enum Support**: Recognizes and uses PostgreSQL enum types
 - **Advanced Types**: Support for JSON, arrays, and custom types
-- **Prepared Statements**: Secure parameter binding with `$1, $2, $3` syntax
+- **Prepared Statements**: Secure parameter binding with appropriate database syntax
 
 #### Performance Notes
 
