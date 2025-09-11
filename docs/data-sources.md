@@ -17,13 +17,7 @@ Connect your data and unlock the power of AI-driven insights. This comprehensive
 
 ## What Are Data Sources?
 
-Data sources are the foundation of your AI applications. They represent any system that contains your data - from traditional databases to modern cloud services. Once connected, our AI can:
-
-- **Analyze** your data with natural language queries
-- **Generate insights** and visualizations automatically
-- **Create dashboards** tailored to your data structure
-- **Answer questions** about your business metrics
-- **Identify patterns** and trends in your data
+Data sources are the foundation of your AI applications. They represent any system that contains your data - from traditional databases to modern cloud services. Once connected, liblab.ai builds applications based on your prompts and connected data source.
 
 ### How It Works
 
