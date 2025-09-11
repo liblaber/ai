@@ -8,18 +8,21 @@ import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useRouter } from 'next/navigation';
 import type { PluginAccessMap } from '~/lib/plugins/types';
 import { useUserStore } from '~/lib/stores/user';
+import type { EnvironmentVariableWithDetails } from '~/lib/stores/environmentVariables';
 import { useEnvironmentVariablesStore } from '~/lib/stores/environmentVariables';
 import { DATA_SOURCE_CONNECTION_ROUTE, TELEMETRY_CONSENT_ROUTE } from '~/lib/constants/routes';
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
 import type { UserProfile } from '~/lib/services/userService';
 import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
 import { type DataSourceDescriptor } from '@liblab/data-access/utils/types';
-import type { EnvironmentVariableWithDetails } from '~/lib/stores/environmentVariables';
+import type { EnvironmentDeploymentMethod } from '~/lib/stores/deploymentMethods';
+import { useDeploymentMethodsStore } from '~/lib/stores/deploymentMethods';
 
 export interface RootData {
   user: UserProfile | null;
   environmentDataSources: EnvironmentDataSource[];
   environmentVariables: EnvironmentVariableWithDetails[];
+  environmentDeploymentMethods: EnvironmentDeploymentMethod[];
   pluginAccess: PluginAccessMap;
   dataSourceTypes: DataSourceDescriptor[];
 }
@@ -36,6 +39,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
   const { setDataSourceTypes } = useDataSourceTypesStore();
   const { setUser } = useUserStore();
   const { setEnvironmentVariables } = useEnvironmentVariablesStore();
+  const { setEnvironmentDeploymentMethods } = useDeploymentMethodsStore();
   const { anonymousProvider } = useAuthProvidersPlugin();
   const router = useRouter();
   const isLoggingIn = useRef(false);
@@ -53,13 +57,19 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     if (rootData.environmentVariables) {
       setEnvironmentVariables(rootData.environmentVariables);
     }
+
+    if (rootData.environmentDeploymentMethods) {
+      setEnvironmentDeploymentMethods(rootData.environmentDeploymentMethods);
+    }
   }, [
     rootData.pluginAccess,
     rootData.dataSourceTypes,
     rootData.environmentVariables,
+    rootData.environmentDeploymentMethods,
     setPluginAccess,
     setDataSourceTypes,
     setEnvironmentVariables,
+    setEnvironmentDeploymentMethods,
   ]);
 
   useEffect(() => {
@@ -141,6 +151,20 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         setEnvironmentVariables(currentEnvironmentVariables);
       } else if (rootData.environmentVariables) {
         setEnvironmentVariables(currentEnvironmentVariables);
+      }
+
+      // Handle environment deployment methods
+      let currentEnvironmentDeploymentMethods = rootData.environmentDeploymentMethods || [];
+
+      if (
+        (!rootData.environmentDeploymentMethods || rootData.environmentDeploymentMethods.length === 0) &&
+        session?.user
+      ) {
+        console.debug('🔄 Fetching deployment methods...');
+        currentEnvironmentDeploymentMethods = await fetchEnvironmentDeploymentMethods();
+        setEnvironmentDeploymentMethods(currentEnvironmentDeploymentMethods);
+      } else if (rootData.environmentDeploymentMethods) {
+        setEnvironmentDeploymentMethods(currentEnvironmentDeploymentMethods);
       }
 
       // Handle user onboarding flow with telemetry and data sources
@@ -260,6 +284,28 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       return environmentVariablesData.environmentVariables || [];
     } catch (error) {
       console.error('❌ Failed to fetch environment variables:', error);
+      return [];
+    }
+  };
+
+  const fetchEnvironmentDeploymentMethods = async (): Promise<EnvironmentDeploymentMethod[]> => {
+    try {
+      const response = await fetch('/api/deployment-methods');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch deployment methods');
+      }
+
+      const data = (await response.json()) as {
+        success: boolean;
+        environmentDeploymentMethods: EnvironmentDeploymentMethod[];
+      };
+
+      console.log('✅ Deployment methods fetched successfully');
+
+      return data.environmentDeploymentMethods || [];
+    } catch (error) {
+      console.error('❌ Failed to fetch deployment methods:', error);
       return [];
     }
   };

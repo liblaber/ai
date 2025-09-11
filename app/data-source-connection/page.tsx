@@ -17,6 +17,7 @@ import {
   SAMPLE_DATABASE,
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
+import { type EnvironmentOption, type EnvironmentsResponse } from '~/types/deployment-methods';
 
 interface ApiResponse {
   success: boolean;
@@ -25,24 +26,6 @@ interface ApiResponse {
   dataSource?: {
     id: string;
   };
-}
-
-interface Environment {
-  id: string;
-  name: string;
-  description?: string;
-}
-
-interface EnvironmentOption {
-  label: string;
-  value: string;
-  description?: string;
-}
-
-interface EnvironmentsResponse {
-  success: boolean;
-  environments: Environment[];
-  error?: string;
 }
 
 export default function DataSourceConnectionPage() {
