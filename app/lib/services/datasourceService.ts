@@ -149,6 +149,15 @@ export async function getDataSource({ id }: { id: string }): Promise<PrismaDataS
   });
 }
 
+export async function getDataSourceEnvironmentIds(dataSourceId: string): Promise<string[]> {
+  const envDataSources = await prisma.environmentDataSource.findMany({
+    where: { dataSourceId },
+    select: { environmentId: true },
+  });
+
+  return envDataSources.map((eds) => eds.environmentId);
+}
+
 export async function createDataSource(data: {
   name: string;
   type: DataSourceType;

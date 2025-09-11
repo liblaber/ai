@@ -3,6 +3,7 @@ import {
   deleteDataSource,
   getConversationCount,
   getDataSource,
+  getDataSourceEnvironmentIds,
   getEnvironmentDataSource,
   updateDataSource,
 } from '~/lib/services/datasourceService';
@@ -56,7 +57,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
   }
 
-  if (userAbility.cannot(PermissionAction.update, subject(PermissionResource.DataSource, dataSource))) {
+  const environmentIds = await getDataSourceEnvironmentIds(id);
+
+  const canAccessEveryEnvironment = environmentIds.every((envId) =>
+    userAbility.can(PermissionAction.update, subject(PermissionResource.Environment, { id: envId })),
+  );
+
+  if (
+    userAbility.cannot(PermissionAction.update, subject(PermissionResource.DataSource, dataSource)) &&
+    !canAccessEveryEnvironment
+  ) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 

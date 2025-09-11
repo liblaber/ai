@@ -67,7 +67,7 @@ export async function DELETE(
     userAbility.cannot(PermissionAction.delete, subject(PermissionResource.DataSource, { id: dataSourceId })) &&
     userAbility.cannot(PermissionAction.delete, subject(PermissionResource.Environment, { id: environmentId }))
   ) {
-    NextResponse.json(
+    return NextResponse.json(
       {
         success: false,
         error: 'Forbidden',

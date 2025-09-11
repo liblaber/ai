@@ -23,8 +23,6 @@ export default function DataSourceDetailsForm({ dataSource }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { refetchEnvironmentDataSources } = useDataSourceActions();
 
-  const mode: 'edit' | 'create' = dataSource ? 'edit' : 'create';
-
   useEffect(() => {
     if (!dataSource) {
       setDataSourceType(DEFAULT_DATA_SOURCES[0]);
@@ -75,12 +73,6 @@ export default function DataSourceDetailsForm({ dataSource }: Props) {
     }
   };
 
-  const onCreateSubmit = async () => {
-    // TODO
-  };
-
-  const isTypePickerDisabled = mode === 'edit' && !!dataSource?.environments.length;
-
   const areValuesChanged = dataSourceName !== dataSource?.name || dataSourceType.type !== dataSource?.type;
 
   const isSubmitDisabled =
@@ -108,7 +100,7 @@ export default function DataSourceDetailsForm({ dataSource }: Props) {
               width="100%"
               minWidth="100%"
               isSearchable={false}
-              isDisabled={isTypePickerDisabled}
+              isDisabled={true}
               menuPlacement="bottom"
               components={{
                 MenuList: SelectDatabaseTypeOptions,
@@ -141,7 +133,7 @@ export default function DataSourceDetailsForm({ dataSource }: Props) {
         <div className="flex items-center justify-end">
           <button
             type="button"
-            onClick={mode === 'edit' ? onEditSubmit : onCreateSubmit}
+            onClick={onEditSubmit}
             disabled={isSubmitDisabled}
             className={classNames(
               'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
