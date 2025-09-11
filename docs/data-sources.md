@@ -5,10 +5,8 @@ Connect your data to start building AI applications instantly. Choose from datab
 ## Table of Contents
 
 - [What Are Data Sources?](#what-are-data-sources)
-- [Quick Start Guide](#quick-start-guide)
+- [Step-By-Step Data Source Management](#step-by-step-data-source-management)
 - [Supported Data Sources](#supported-data-sources)
-- [Database Sources](#database-sources)
-- [Cloud & API Sources](#cloud--api-sources)
 - [Choosing the Right Data Source](#choosing-the-right-data-source)
 - [Security & Best Practices](#security--best-practices)
 - [Troubleshooting](#troubleshooting)
@@ -17,314 +15,65 @@ Connect your data to start building AI applications instantly. Choose from datab
 
 ## What Are Data Sources?
 
-Data sources are where your information lives - databases, spreadsheets, or cloud services. Connect yours and start asking questions in plain English.
+Data sources are where your information lives - databases, spreadsheets, or cloud services. Connect yours and start building applications with natural language.
+liblab.ai supports having multiple environments (e.g., development, staging, production) for each data source, allowing you to switch between them seamlessly.
 
-### How It Works
+## Step-By-Step Data Source Management
 
-1. **Connect** - Add your data in seconds
-2. **Ask** - Use natural language to explore your data
-3. **Get Results** - See instant charts and insights
+Managing data sources in **liblab.ai** is straightforward and flexible, allowing you to connect, configure, and switch between multiple environments with ease.
 
----
+#### 1. Adding your first data source
 
-## Quick Start Guide
+When the app is opened for the first time, you’ll see a screen prompting you to connect your first data source.  
+Choose a **data source type** and an **environment**, then provide the required properties (e.g., connection URL for databases, access token for HubSpot, etc.).
 
-### For Non-Technical Users
+<img src="./assets/1-connect-first-datasource.gif" alt="Add your first data source" height="300px">
 
-**Start here if you want to get up and running quickly:**
+#### 2. Adding a new data source in the control panel
 
-| If you have...                | Recommended option                         | Setup time | Capabilities           |
-| ----------------------------- | ------------------------------------------ | ---------- | ---------------------- |
-| **Excel/Google Sheets**       | [Google Sheets](#google-sheets)            | 2 minutes  | Full read/write access |
-| **CSV files**                 | [SQLite](#sqlite-sample-database)          | 30 seconds | Upload and analyze     |
-| **Need to test the platform** | [Sample Database](#sqlite-sample-database) | Instant    | Pre-loaded demo data   |
-| **CRM system (HubSpot)**      | [HubSpot](#hubspot)                        | 5 minutes  | Customer data analysis |
+You can add as many data sources as you need.  
+Open **Settings** (cog icon in the bottom-left corner), navigate to the **Data Sources** tab, and click **+ Add Data Source**.  
+The process is the same as adding your first data source.
 
-### For Technical Users
+<img src="./assets/2-add-new-datasource.gif" alt="Add new data source" height="300px">
 
-**Popular database options:**
+#### 3. Managing environments for a data source
 
-| Database                      | Setup   |
-| ----------------------------- | ------- |
-| [**PostgreSQL**](#postgresql) | Quick   |
-| [**MySQL**](#mysql)           | Quick   |
-| [**MongoDB**](#mongodb)       | Quick   |
-| [**SQLite**](#sqlite)         | Instant |
+Each data source can have multiple environments, which can later be switched at runtime in your built applications. This makes it possible to use different test or production data seamlessly.
 
----
+To manage environments:
+
+- Go to the **Data Sources** tab in the control panel.
+- Select a data source, then open the **Environments** tab.
+- **Add a new environment** by clicking **+ Add Environment**.
+- **Edit** an existing environment by selecting it to open the edit form.
+- **Delete** an environment by clicking **Delete Environment**.
+  > ⚠️ Note: You cannot delete the only environment of a data source.
+
+<img src="./assets/3-manage-datasource-environments.gif" alt="Manage data source environments" height="300px">
+
+> **Important:** The data source structure (**schema**) must be the same across all environments of a given data source. Otherwise, built applications may not work properly.
+
+#### 4. Switching environments in built applications
+
+When an application is running inside the builder, you can switch environments at runtime through the **Conversation Settings**. This enables quick testing across staging, development, and production environments.
+
+<img src="./assets/4-switch-datasource-environments.gif" alt="Switch data source environments" height="300px">
 
 ## Supported Data Sources
 
-### Database Sources
-
-| Source                    | Status       | Authentication    | Query Language |
-| ------------------------- | ------------ | ----------------- | -------------- |
-| [PostgreSQL](#postgresql) | ✅ Available | Username/Password | SQL            |
-| [MySQL](#mysql)           | ✅ Available | Username/Password | SQL            |
-| [SQLite](#sqlite)         | ✅ Available | File-based        | SQL            |
-| [MongoDB](#mongodb)       | ✅ Available | Connection string |
-
-### Cloud & API Sources
-
-| Source                          | Status       | Authentication    | Access Method |
-| ------------------------------- | ------------ | ----------------- | ------------- |
-| [Google Sheets](#google-sheets) | ✅ Available | OAuth/Apps Script | REST API      |
-| [HubSpot](#hubspot)             | ✅ Available | Access Token      | REST API      |
-
----
-
-## Database Sources
-
-### PostgreSQL
-
-**Best for:** Enterprise applications, complex analytical queries, high-performance requirements
-
-#### Overview
-
-PostgreSQL is a popular database used by many applications. Great for businesses with existing PostgreSQL databases.
-
-#### Connection Setup
-
-**Connection String Format:**
-
-```
-postgresql://username:password@hostname:port/database_name
-```
-
-**Example:**
-
-```
-postgresql://myuser:mypassword@localhost:5432/company_db
-```
-
-**SSL Support:**
-
-```
-postgresql://user:pass@host:5432/db?sslmode=require
-```
-
-#### What You Get
-
-- Automatic understanding of your data structure
-- Secure connections
-- Support for all data types
-
-### MySQL
-
-**Best for:** Web applications, WordPress sites, traditional LAMP stack applications
-
-#### Overview
-
-MySQL powers millions of websites and applications. Perfect if you're already using MySQL for your business.
-
-#### Connection Setup
-
-**Connection String Format:**
-
-```
-mysql://username:password@hostname:port/database_name
-```
-
-**Example:**
-
-```
-mysql://webuser:webpass@db.example.com:3306/website_db
-```
-
-#### What You Can Do
-
-**✅ Supported Operations:**
-
-- Full SQL DML operations (SELECT, INSERT, UPDATE, DELETE)
-- Complex queries with JOINs and subqueries
-- MySQL-specific functions and syntax
-- Data aggregation and reporting
-
-**❌ Restricted Operations:**
-
-- DDL operations (CREATE, DROP, ALTER)
-- Administrative functions
-- Database structure changes
-
-#### What You Need
-
-- MySQL database (version 5.7 or newer)
-- Database login credentials
-- Network access to your database
-
----
-
-### SQLite
-
-**Best for:** Local development, file-based databases, prototyping, small to medium datasets
-
-#### Overview
-
-SQLite works with database files on your computer. No setup needed - just point to your .db file and start exploring.
-
-#### Connection Setup
-
-**Connection String Format:**
-
-```
-sqlite:///path/to/database.db
-```
-
-**Examples:**
-
-```
-sqlite:///Users/john/myapp/data.db
-sqlite:///home/user/projects/analytics.db
-sqlite:///C:/Data/sales.db
-```
-
-#### What You Can Do
-
-**✅ Supported Operations:**
-
-- Full SQL queries with SQLite syntax
-- File-based data access
-- Fast local operations
-- Sample database exploration
-
-**❌ Restricted Operations:**
-
-- DDL operations for security
-- No network connectivity
-- Limited concurrent access
-
-#### What You Need
-
-- A .db file on your computer
-- File access permissions
-
----
-
-### MongoDB
-
-**Best for:** Document-based applications, JSON data, modern web applications, flexible schemas
-
-#### Overview
-
-MongoDB stores data as documents (like JSON files). Great if your data doesn't fit into traditional rows and columns.
-
-#### Connection Setup
-
-**Connection String Format:**
-
-```
-mongodb://username:password@hostname:port/database_name
-```
-
-**Examples:**
-
-```
-mongodb://user:pass@localhost:27017/myapp
-mongodb+srv://user:pass@cluster.mongodb.net/production
-```
-
-#### What You Can Do
-
-**✅ Supported Operations:**
-
-- Document queries with filters and projections
-- Aggregation pipelines for complex data processing
-- JSON-based query syntax
-- Collection and field discovery
-
-**❌ Restricted Operations:**
-
-- Administrative operations (dropDatabase, createUser)
-- Security-sensitive operations ($where, eval)
-- Database structure modifications
-
-#### What You Need
-
-- MongoDB database (version 4.0 or newer)
-- Database connection details
-- Login credentials
-
----
-
-## Cloud & API Sources
-
-### Google Sheets
-
-**Best for:** Spreadsheet data, collaborative datasets, business reporting, real-time data updates
-
-#### Overview
-
-Connect your Google Sheets to analyze spreadsheet data instantly. Perfect for teams already using Google Sheets.
-
-#### Connection Methods
-
-| Method            | Setup Time | Capabilities    |
-| ----------------- | ---------- | --------------- |
-| **Sharable Link** | 30 seconds | Read-only       |
-| **Apps Script**   | 5 minutes  | Full read/write |
-| **OAuth**         | 15 minutes | Full API access |
-
-#### What You Can Do
-
-**✅ Supported Operations:**
-
-- Read entire sheets or specific ranges
-- Write data (with Apps Script or OAuth)
-- Get sheet metadata and structure
-- Real-time data updates
-- Multi-sheet workbook support
-
-**Query Format Example:**
-
-```json
-{
-  "operation": "readRange",
-  "parameters": {
-    "range": "A1:E100",
-    "valueRenderOption": "FORMATTED_VALUE"
-  }
-}
-```
-
-#### What You Need
-
-- Google account
-- Access to the spreadsheet you want to analyze
-- Internet connection
-
-📖 **[View Complete Google Sheets Guide](./getting-started/google-sheets-integration.md)**
-
----
-
-### HubSpot
-
-**Best for:** CRM data analysis, customer insights, sales reporting
-
-#### Overview
-
-Connect your HubSpot CRM to analyze customer data and sales insights. Great for HubSpot users.
-
-#### Connection Setup
-
-- **Authentication**: Private App Access Token
-- **Format**: `pat-xxx-xxxxxxxx-xxxx-xxxxxxxxxxxx`
-- **Access**: Bearer token authentication
-
-#### What You Can Do
-
-**✅ Current Capabilities:**
-
-- Connection testing and validation
-- Access to contact objects
-- Basic CRM data connectivity
-
-#### Requirements
-
-- HubSpot account with appropriate permissions
-- Private app access token
-- Internet connectivity
-
----
+Each data source type in **liblab.ai** may require one or more connection properties, or in some cases a slightly more complex flow (e.g., OAuth).
+
+| Data Source   | Type                      | Required Properties / Flow | Format                                                                                     |
+| ------------- | ------------------------- | -------------------------- | ------------------------------------------------------------------------------------------ |
+| PostgreSQL    | SQL Database              | Connection URL             | `postgres(ql)://username:password@host:port/database`                                      |
+| MySQL         | SQL Database              | Connection URL             | `mysql://username:password@host:port/database`                                             |
+| SQLite        | SQL Database (file-based) | Connection URL             | `sqlite://path/to/database.db`                                                             |
+| MongoDB       | NoSQL Database            | Connection URL             | `mongodb://username:password@host:port/database`                                           |
+| Google Sheets | Spreadsheet (API)         | OAuth / Apps Script        | `sheets://SPREADSHEET_ID/` or `https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit` |
+| HubSpot       | API                       | Access Token               | `pat-xxx-xxxxxxxx-xxxx-xxxxxxxxxxxx`                                                       |
+
+> **Note:** When adding a new data source, the connection must be valid. liblab.ai performs validation to ensure that credentials, tokens, and URLs are correct before the data source can be saved.
 
 ## Choosing the Right Data Source
 
