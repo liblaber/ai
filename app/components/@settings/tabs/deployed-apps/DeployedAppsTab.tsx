@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Edit, Monitor, Trash2 } from 'lucide-react';
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import EditDeployedAppForm from './forms/EditDeployedAppForm';
-import ResourceAccessInvite from '~/components/@settings/shared/components/ResourceAccessInvite';
+import AddResourceAccess from '~/components/@settings/shared/components/AddResourceAccess';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
 import type { Website } from '~/lib/services/websiteService';
@@ -17,7 +17,7 @@ interface WebsitesResponse {
 
 export default function DeployedAppsTab() {
   const [showEditForm, setShowEditForm] = useState(false);
-  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [showAddAccessForm, setShowAddAccessForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedWebsite, setSelectedWebsite] = useState<Website | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -132,23 +132,23 @@ export default function DeployedAppsTab() {
             handleBack();
           }}
           onDelete={() => handleDeleteClick(selectedWebsite)}
-          onInvite={() => {
+          onAddMembers={() => {
             setShowEditForm(false);
-            setShowInviteForm(true);
+            setShowAddAccessForm(true);
           }}
         />
       </div>
     );
   }
 
-  if (showInviteForm && selectedWebsite) {
+  if (showAddAccessForm && selectedWebsite) {
     return (
-      <ResourceAccessInvite
+      <AddResourceAccess
         resourceScope="WEBSITE"
         resource={selectedWebsite}
         onBack={() => {
           setShowEditForm(true);
-          setShowInviteForm(false);
+          setShowAddAccessForm(false);
         }}
       />
     );

@@ -36,7 +36,6 @@ export interface DataSource {
 export const SAMPLE_DATABASE_CONNECTION_STRING = 'sqlite://sample.db';
 
 export async function getEnvironmentDataSources(userAbility: AppAbility): Promise<EnvironmentDataSource[]> {
-  // TODO: @skos Update specific permissions
   const whereClause = buildResourceWhereClause(
     userAbility,
     PermissionAction.read,
@@ -77,7 +76,6 @@ export type ComplexEnvironmentDataSource = EnvironmentDataSource & { dataSource:
 
 export async function getEnvironmentDataSource(
   dataSourceId: string,
-  userId: string,
   environmentId: string,
 ): Promise<ComplexEnvironmentDataSource | null> {
   const environmentDataSource = await prisma.environmentDataSource.findUnique({
@@ -99,9 +97,7 @@ export async function getEnvironmentDataSource(
     },
   });
 
-  // TODO: @skos Update specific permissions
-  // Verify user has access to this data source
-  if (!environmentDataSource || environmentDataSource.dataSource.createdById !== userId) {
+  if (!environmentDataSource) {
     return null;
   }
 
@@ -194,7 +190,7 @@ export async function getDataSourceConnectionUrl(
   dataSourceId: string,
   environmentId: string,
 ): Promise<string | null> {
-  const dataSourceProperties = await getDataSourceProperties(userId, dataSourceId, environmentId);
+  const dataSourceProperties = await getDataSourceProperties(dataSourceId, environmentId);
 
   return dataSourceProperties?.find((prop) => prop.type === SharedDataSourcePropertyType.CONNECTION_URL)?.value || null;
 }
@@ -286,10 +282,10 @@ export async function updateDataSource(data: {
   });
 }
 
-export async function deleteDataSource(id: string, userId: string) {
+export async function deleteDataSource(id: string) {
   prisma.dataSourceProperty.deleteMany({ where: { dataSourceId: id } });
 
-  return prisma.dataSource.delete({ where: { id, createdById: userId } });
+  return prisma.dataSource.delete({ where: { id } });
 }
 
 export async function getDataSourceType(dataSourceId: string) {
@@ -302,7 +298,6 @@ export async function getDataSourceType(dataSourceId: string) {
 }
 
 export async function getDataSourceProperties(
-  userId: string,
   dataSourceId: string,
   environmentId: string,
 ): Promise<SimpleDataSourceProperty[] | null> {
@@ -310,9 +305,6 @@ export async function getDataSourceProperties(
     where: {
       environmentId,
       dataSourceId,
-      dataSource: {
-        createdById: userId, // ownership check
-      },
     },
     include: {
       dataSourceProperties: {

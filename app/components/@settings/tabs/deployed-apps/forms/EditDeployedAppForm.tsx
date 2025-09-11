@@ -12,7 +12,7 @@ interface EditDeployedAppFormProps {
   setIsSubmitting: (value: boolean) => void;
   onSuccess: () => void;
   onDelete: () => void;
-  onInvite: () => void;
+  onAddMembers: () => void;
 }
 
 export default function EditDeployedAppForm({
@@ -21,7 +21,7 @@ export default function EditDeployedAppForm({
   setIsSubmitting,
   onSuccess,
   onDelete,
-  onInvite,
+  onAddMembers,
 }: EditDeployedAppFormProps) {
   const [name, setName] = useState(website.siteName || '');
 
@@ -97,9 +97,12 @@ export default function EditDeployedAppForm({
         </div>
       </div>
 
-      <div>
-        <ResourceAccessMembers resourceScope="WEBSITE" resourceId={website.id} onInvite={onInvite} />
-      </div>
+      <ResourceAccessMembers
+        resourceScope="WEBSITE"
+        resourceId={website.id}
+        resource={website}
+        onAddMembers={onAddMembers}
+      />
 
       <div className="flex items-center justify-between pt-4">
         <button

@@ -1,7 +1,74 @@
-import type { Account, Role, User } from '@prisma/client';
-import { PermissionAction, PermissionResource, PrismaClient } from '@prisma/client';
+import {
+  type Account,
+  DataSourcePropertyType,
+  DataSourceType,
+  PermissionAction,
+  PermissionResource,
+  PrismaClient,
+  type Role,
+  type User,
+} from '@prisma/client';
+import { decryptEnvironmentVariable } from '~/lib/services/environmentVariablesService';
 
 const prisma = new PrismaClient();
+
+async function seedOIDCSSOProvider(): Promise<void> {
+  try {
+    // Check if OIDC environment variables are configured
+    const oidcIssuer = process.env.OIDC_ISSUER;
+    const oidcClientId = process.env.OIDC_CLIENT_ID;
+    const oidcClientSecret = process.env.OIDC_CLIENT_SECRET;
+    const oidcDomain = process.env.OIDC_DOMAIN;
+    const oidcProviderId = process.env.OIDC_PROVIDER_ID;
+
+    if (!oidcIssuer || !oidcClientId || !oidcClientSecret || !oidcDomain || !oidcProviderId) {
+      console.log('⚠️  OIDC SSO not configured - skipping SSO provider seeding');
+      return;
+    }
+
+    // Check if SSO provider already exists
+    const existingProvider = await prisma.ssoProvider.findFirst({
+      where: { providerId: oidcProviderId },
+    });
+
+    if (existingProvider) {
+      console.log('✅ OIDC SSO provider already exists');
+      return;
+    }
+
+    // Create the OIDC SSO provider with enhanced configuration
+    const formattedIssuer = oidcIssuer.endsWith('/') ? oidcIssuer : `${oidcIssuer}/`;
+    const formattedDomain = oidcDomain.endsWith('/') ? oidcDomain : `${oidcDomain}/`;
+
+    const oidcConfig = {
+      clientId: oidcClientId,
+      clientSecret: oidcClientSecret,
+      issuer: formattedIssuer,
+      scopes: ['openid', 'profile', 'email'],
+      discoveryEndpoint: `${formattedIssuer}.well-known/openid-configuration`,
+      authorizationEndpoint: `${formattedIssuer}authorize`,
+      tokenEndpoint: `${formattedIssuer}oauth/token`,
+      userInfoEndpoint: `${formattedIssuer}userinfo`,
+      jwksEndpoint: `${formattedIssuer}.well-known/jwks.json`,
+      pkce: true,
+    };
+
+    await prisma.ssoProvider.create({
+      data: {
+        providerId: oidcProviderId,
+        friendlyName: process.env.OIDC_FRIENDLY_NAME || 'Continue with SSO',
+        issuer: formattedIssuer,
+        domain: formattedDomain,
+        oidcConfig: JSON.stringify(oidcConfig),
+      },
+    });
+
+    console.log('✅ Created OIDC SSO provider');
+  } catch (error) {
+    console.error('❌ Error seeding OIDC SSO provider:', error);
+    // Don't throw error to avoid breaking the entire seed process
+  }
+}
 
 async function seed() {
   if (process.env.LICENSE_KEY !== 'premium') {
@@ -15,6 +82,8 @@ async function seed() {
   await seedDefaultEnvironments();
   await seedBuilderRole();
   await seedOperatorRole();
+  await seedOIDCSSOProvider();
+  await inferDataSourceTypes();
 
   console.log('🎉 Database seed completed successfully');
 }
@@ -232,6 +301,52 @@ async function seedPermissions(
     }
   } catch (error) {
     console.error('❌ Error creating permissions:', error);
+    throw error;
+  }
+}
+
+async function inferDataSourceTypes(): Promise<void> {
+  try {
+    const connectionProps = await prisma.dataSourceProperty.findMany({
+      where: { type: DataSourcePropertyType.CONNECTION_URL },
+      select: {
+        dataSourceId: true,
+        environmentVariable: true,
+      },
+    });
+
+    const dataSourceIdToType = new Map<string, DataSourceType>();
+
+    for (const property of connectionProps) {
+      const { value: connectionUrl } = decryptEnvironmentVariable(property.environmentVariable);
+
+      let inferredType: DataSourceType = DataSourceType.SQLITE;
+
+      if (connectionUrl.includes('postgres')) {
+        inferredType = DataSourceType.POSTGRES;
+      } else if (connectionUrl.includes('mysql')) {
+        inferredType = DataSourceType.MYSQL;
+      } else if (connectionUrl.includes('mongodb')) {
+        inferredType = DataSourceType.MONGODB;
+      } else if (connectionUrl.includes('hubspot')) {
+        inferredType = DataSourceType.HUBSPOT;
+      } else if (connectionUrl.includes('sheets')) {
+        inferredType = DataSourceType.GOOGLE_SHEETS;
+      } else if (connectionUrl.includes('docs')) {
+        inferredType = DataSourceType.GOOGLE_DOCS;
+      }
+
+      dataSourceIdToType.set(property.dataSourceId, inferredType);
+    }
+
+    for (const [dataSourceId, inferredType] of dataSourceIdToType.entries()) {
+      await prisma.dataSource.update({
+        where: { id: dataSourceId },
+        data: { type: inferredType },
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error inferring data source types:', error);
     throw error;
   }
 }

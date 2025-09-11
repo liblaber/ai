@@ -1,5 +1,5 @@
 import type { AuthProvider } from '~/lib/plugins/types';
-import { GoogleIcon, AnonymousIcon } from '~/components/auth/auth-provider-icons';
+import { GoogleIcon, AnonymousIcon, OidcIcon } from '~/components/auth/auth-provider-icons';
 
 export class AuthPluginManager {
   static authProviders: AuthProvider[] = [
@@ -8,6 +8,12 @@ export class AuthPluginManager {
       icon: GoogleIcon(),
       label: 'Login with Google',
       provider: 'google',
+    },
+    {
+      pluginId: 'oidc',
+      icon: OidcIcon(),
+      label: 'Login with SSO',
+      provider: 'oidc',
     },
     {
       pluginId: 'anonymous',
