@@ -233,7 +233,7 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
 
       await this.runCommand(
         'netlify',
-        ['deploy', '--build', '--branch', deploymentAlias],
+        ['deploy', '--build', '--prod'],
         tempDir,
         { NETLIFY_AUTH_TOKEN: token },
         3 * 60 * 1000, // 3 minutes timeout
@@ -275,7 +275,7 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
           websiteId,
           siteInfo.id,
           siteInfo.name,
-          latestDeploy.links.permalink,
+          siteInfo.url,
           chatId,
           userId,
         );
@@ -284,7 +284,7 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
           deploy: {
             id: latestDeploy.id,
             state: latestDeploy.state,
-            url: latestDeploy.links.permalink,
+            url: siteInfo.url,
           },
           site: siteInfo,
           website,
