@@ -24,8 +24,7 @@ export async function GET(request: NextRequest) {
         picture: userInfo.picture,
       },
     });
-  } catch (error) {
-    console.error('Error checking OAuth status:', error);
+  } catch {
     return NextResponse.json({
       success: true,
       authenticated: false,

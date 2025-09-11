@@ -10,8 +10,7 @@ export async function POST(_request: NextRequest) {
     response.cookies.delete('google_user_info');
 
     return response;
-  } catch (error) {
-    console.error('Error in Google OAuth logout:', error);
+  } catch {
     return NextResponse.json({ success: false, error: 'Logout failed' }, { status: 500 });
   }
 }

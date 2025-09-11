@@ -42,8 +42,7 @@ export async function GET(request: NextRequest) {
     });
 
     return response;
-  } catch (error) {
-    console.error('Error in Google OAuth authorize:', error);
+  } catch {
     return NextResponse.json({ success: false, error: 'OAuth authorization failed' }, { status: 500 });
   }
 }

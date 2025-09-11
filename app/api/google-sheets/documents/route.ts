@@ -50,7 +50,6 @@ async function fetchGoogleSheets(accessToken: string): Promise<GoogleDriveFile[]
 
     return data.files;
   } catch (error) {
-    console.error('Error fetching from Google Drive API:', error);
     throw error;
   }
 }
@@ -100,8 +99,7 @@ export async function GET(request: NextRequest) {
           url: file.webViewLink,
         }),
       );
-    } catch (error) {
-      console.error('Failed to fetch from Google Drive API:', error);
+    } catch {
       // Return empty array if API call fails
       documents = [];
     }
@@ -111,9 +109,7 @@ export async function GET(request: NextRequest) {
       documents,
       source: 'google-api',
     });
-  } catch (error) {
-    console.error('Error fetching Google Sheets documents:', error);
-
+  } catch {
     return NextResponse.json({
       success: false,
       error: 'Failed to fetch Google Sheets documents',

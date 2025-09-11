@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { type EnvironmentDataSource, useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { settingsPanelStore, useSettingsStore } from '~/lib/stores/settings';
 import { useStore } from '@nanostores/react';
+import { logger } from '~/utils/logger';
 
 interface EnvironmentDataSourcesResponse {
   success: boolean;
@@ -53,14 +54,14 @@ export default function DataTab() {
       const response = await fetch('/api/data-sources');
 
       if (!response.ok) {
-        console.error('Failed to fetch data sources:', response.status, response.statusText);
+        logger.error('Failed to fetch data sources:', response.status, response.statusText);
         return;
       }
 
       const responseText = await response.text();
 
       if (!responseText) {
-        console.error('Empty response when fetching data sources');
+        logger.error('Empty response when fetching data sources');
         return;
       }
 
@@ -69,17 +70,17 @@ export default function DataTab() {
       try {
         data = JSON.parse(responseText) as EnvironmentDataSourcesResponse;
       } catch (parseError) {
-        console.error('Failed to parse data sources response:', parseError);
+        logger.error('Failed to parse data sources response:', parseError);
         return;
       }
 
       if (data.success) {
         setEnvironmentDataSources(data.environmentDataSources);
       } else {
-        console.error('Data sources fetch was not successful:', data);
+        logger.error('Data sources fetch was not successful:', data);
       }
     } catch (error) {
-      console.error('Error loading data sources:', error);
+      logger.error('Error loading data sources:', error);
     }
   };
 
@@ -141,7 +142,7 @@ export default function DataTab() {
         setShowDeleteConfirm(true);
       }
     } catch (error) {
-      console.error('Failed to fetch conversation count:', error);
+      logger.error('Failed to fetch conversation count:', error);
       setConversationCount(0);
       setShowDeleteConfirm(true);
     }
