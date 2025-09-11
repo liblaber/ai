@@ -7,8 +7,7 @@ Connect your data to start building AI applications instantly. Choose from datab
 - [What Are Data Sources?](#what-are-data-sources)
 - [Step-By-Step Data Source Management](#step-by-step-data-source-management)
 - [Supported Data Sources](#supported-data-sources)
-- [Choosing the Right Data Source](#choosing-the-right-data-source)
-- [Security & Best Practices](#security--best-practices)
+- [Security](#security)
 - [Troubleshooting](#troubleshooting)
 - [Performance Optimization](#performance-optimization)
 - [Advanced Configuration](#advanced-configuration)
@@ -75,156 +74,15 @@ Each data source type in **liblab.ai** may require one or more connection proper
 
 > **Note:** When adding a new data source, the connection must be valid. liblab.ai performs validation to ensure that credentials, tokens, and URLs are correct before the data source can be saved.
 
-## Choosing the Right Data Source
+## Security
 
-### Decision Matrix
+All data source properties are **encrypted** and stored in the local database, meaning **nothing gets sent to the internet**.
 
-#### By Use Case
+For more details, see our [Security & Privacy](./security-and-privacy.md) documentation.
 
-**📊 Business Intelligence & Reporting**
+### What Gets Sent to the LLM
 
-- **Primary**: PostgreSQL, MySQL
-- **Alternative**: Google Sheets (for spreadsheet users)
-- **Why**: Complex queries, aggregations, historical data
-
-**🚀 Rapid Prototyping & Testing**
-
-- **Primary**: SQLite, Sample Database
-- **Alternative**: Google Sheets
-- **Why**: Quick setup, no infrastructure required
-
-**👥 Team Collaboration**
-
-- **Primary**: Google Sheets
-- **Alternative**: MongoDB (for technical teams)
-- **Why**: Real-time updates, familiar interface
-
-**🏢 Enterprise Applications**
-
-- **Primary**: PostgreSQL
-- **Alternative**: MySQL, MongoDB
-- **Why**: Scalability, security, performance
-
-**📱 Modern Web Applications**
-
-- **Primary**: MongoDB
-- **Alternative**: PostgreSQL
-- **Why**: Flexible schema, JSON support
-
-#### By Technical Requirements
-
-**High Performance & Scale**
-
-1. PostgreSQL (with connection pooling)
-2. MySQL (optimized configuration)
-3. MongoDB (proper indexing)
-
-**Simplicity & Quick Setup**
-
-1. SQLite (local files)
-2. Google Sheets (sharable links)
-3. Sample Database (instant)
-
-**Advanced Features**
-
-1. PostgreSQL (advanced SQL, JSON, arrays)
-2. MongoDB (aggregation pipelines)
-3. Google Sheets (collaborative features)
-
-**Security & Compliance**
-
-1. PostgreSQL (enterprise-grade)
-2. MySQL (proven track record)
-3. Google Sheets (OAuth, enterprise controls)
-
-### Architecture Considerations
-
-#### Single User / Small Team
-
-- **SQLite**: Local development, prototyping
-- **Google Sheets**: Collaborative spreadsheets
-- **Sample Database**: Learning and testing
-
-#### Medium Applications
-
-- **MySQL**: Web applications, content management
-- **MongoDB**: APIs, microservices
-- **PostgreSQL**: Data analytics, reporting
-
-#### Enterprise / Large Scale
-
-- **PostgreSQL**: Mission-critical applications
-- **MongoDB**: High-volume, flexible data
-- **Google Sheets**: Business user empowerment
-
----
-
-## Security & Best Practices
-
-### Connection Security
-
-#### Database Connections
-
-```bash
-# ✅ Always use SSL in production
-postgresql://user:pass@host:5432/db?sslmode=require
-
-# ✅ Use environment variables for credentials
-DB_CONNECTION_STRING=mysql://user:${DB_PASSWORD}@host/db
-
-# ❌ Never hardcode passwords
-mysql://user:password123@host/db
-```
-
-#### API Authentication
-
-```bash
-# ✅ Store tokens securely
-GOOGLE_CLIENT_SECRET=your_secret_here
-HUBSPOT_ACCESS_TOKEN=pat-xxx-xxx
-
-# ✅ Use OAuth when possible
-# ✅ Rotate tokens regularly
-# ✅ Minimum required scopes only
-```
-
-### Data Protection
-
-#### Access Control
-
-- **Principle of Least Privilege**: Grant only necessary permissions
-- **Read-Only Access**: Use read-only database users when possible
-- **Network Isolation**: Restrict database access to application servers
-- **Regular Auditing**: Monitor and log data access patterns
-
-#### Credential Management
-
-- **Environment Variables**: Store sensitive data in environment variables
-- **Encryption**: Encrypt credentials at rest
-- **Rotation**: Regularly rotate passwords and tokens
-- **Monitoring**: Alert on unusual access patterns
-
-### Compliance Considerations
-
-#### Data Residency
-
-- **Cloud Sources**: Data remains in respective cloud provider
-- **Database Sources**: Data location controlled by your infrastructure
-- **Local Sources**: Data remains on local systems
-
-#### Privacy & GDPR
-
-- **Google Workspace**: GDPR-compliant, user consent required
-- **Database Sources**: Your responsibility for compliance
-- **Audit Trails**: Maintain logs of data access and modifications
-
-#### Business Continuity
-
-- **Backup Strategies**: Regular backups for critical data sources
-- **Disaster Recovery**: Plan for data source unavailability
-- **Monitoring**: Implement health checks and alerting
-
----
+Your **data is not sent to the LLM**. Only the **schema of the data source** is used as input to the LLM, which generates queries that are then executed locally to retrieve the data.
 
 ## Troubleshooting
 
@@ -232,7 +90,7 @@ HUBSPOT_ACCESS_TOKEN=pat-xxx-xxx
 
 **Can't connect to database?**
 
-- Double-check your username and password
+- Double-check your connection string
 - Make sure your database is running
 - Verify the database name is correct
 
@@ -246,40 +104,7 @@ HUBSPOT_ACCESS_TOKEN=pat-xxx-xxx
 - Verify your access token is correct
 - Check that your token hasn't expired
 
-### Need Help?
-
-If you're still having trouble:
-
-1. Try the sample database first to test the platform
-2. Check your connection details are exactly right
-3. Contact support with your specific error message
-
----
-
-## Next Steps
-
-### Getting Started
-
-1. **[Choose your data source](#choosing-the-right-data-source)** based on your needs
-2. **Follow the setup guide** for your selected source
-3. **Test the connection** with simple queries
-4. **Explore AI capabilities** with natural language questions
-5. **Build dashboards** and visualizations
-
-### Advanced Usage
-
-- **[Google Sheets Integration Guide](./getting-started/google-sheets-integration.md)** - Complete setup instructions
-- **[Configuration Guide](./configuration.md)** - Advanced settings and customization
-- **[Security Guide](./security-and-privacy.md)** - Best practices for production deployments
-
-### Need Help?
-
-- 📖 Check our **[troubleshooting section](#troubleshooting)**
-- 💡 Review **[best practices](#security--best-practices)**
-- 🔍 Search existing documentation
-- 🚀 Start with the **[sample database](#sqlite-sample-database)** to learn the platform
-
-### Stay Updated
+## Stay Updated
 
 - New data sources are added regularly
 - Follow our release notes for new features and improvements
