@@ -70,7 +70,7 @@ interface SelectProps<T extends SelectOption = SelectOption, IsMulti extends boo
 }
 
 const createDefaultStyles = <T extends SelectOption, IsMulti extends boolean = false>(): StylesConfig<T, IsMulti> => ({
-  control: (base) => ({
+  control: (base, state) => ({
     ...base,
     backgroundColor: 'var(--color-depth-4)', // gray-700
     border: '1px solid transparent',
@@ -81,10 +81,11 @@ const createDefaultStyles = <T extends SelectOption, IsMulti extends boolean = f
     height: '36px',
     fontSize: '0.875rem', // text-sm
     color: 'var(--color-primary)',
-    cursor: 'pointer',
+    cursor: state.isDisabled ? 'not-allowed' : 'pointer',
     display: 'flex',
     alignItems: 'center',
     fontFamily: 'sans-serif',
+    opacity: state.isDisabled ? 0.5 : 1,
     '&:hover': {
       border: '1px solid inherit',
     },

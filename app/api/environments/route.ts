@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createEnvironment, getEnvironments } from '~/lib/services/environmentService';
 import { requireUserAbility } from '~/auth/session';
-import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
+import { EnvironmentVariableType, PermissionAction, PermissionResource, Prisma } from '@prisma/client';
 
 export type CreateEnvironmentResponse =
   | {
@@ -26,7 +26,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const environments = await getEnvironments(userAbility);
+  const environments = await getEnvironments(userAbility, {
+    environmentVariableType: EnvironmentVariableType.GLOBAL,
+  });
 
   return NextResponse.json({ success: true, environments });
 }

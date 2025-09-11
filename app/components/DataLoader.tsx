@@ -17,6 +17,7 @@ import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlug
 import { type DataSourceDescriptor } from '@liblab/data-access/utils/types';
 import type { EnvironmentDeploymentMethod } from '~/lib/stores/deploymentMethods';
 import { useDeploymentMethodsStore } from '~/lib/stores/deploymentMethods';
+import { EnvironmentVariableType } from '@prisma/client';
 
 export interface RootData {
   user: UserProfile | null;
@@ -267,7 +268,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       // Fetch environment variables for the first environment (could be enhanced to fetch for all)
       const firstEnvironmentId = environmentsData.environments[0].id;
       const environmentVariablesResponse = await fetch(
-        `/api/environment-variables?environmentId=${firstEnvironmentId}`,
+        `/api/environment-variables?environmentId=${firstEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
       );
 
       if (!environmentVariablesResponse.ok) {

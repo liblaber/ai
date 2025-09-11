@@ -242,7 +242,7 @@ export const ControlPanel = () => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="m-6"
+                    className="px-8 pt-2 pb-6"
                   >
                     {activeTab ? (
                       getTabComponent(activeTab)
