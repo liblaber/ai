@@ -63,14 +63,14 @@ When an application is running inside the builder, you can switch environments a
 
 Each data source type in **liblab.ai** may require one or more connection properties, or in some cases a slightly more complex flow (e.g., OAuth).
 
-| Data Source   | Type                      | Required Properties / Flow | Format                                                                                     |
-| ------------- | ------------------------- | -------------------------- | ------------------------------------------------------------------------------------------ |
-| PostgreSQL    | SQL Database              | Connection URL             | `postgres(ql)://username:password@host:port/database`                                      |
-| MySQL         | SQL Database              | Connection URL             | `mysql://username:password@host:port/database`                                             |
-| SQLite        | SQL Database (file-based) | Connection URL             | `sqlite://path/to/database.db`                                                             |
-| MongoDB       | NoSQL Database            | Connection URL             | `mongodb://username:password@host:port/database`                                           |
-| Google Sheets | Spreadsheet (API)         | OAuth / Apps Script        | `sheets://SPREADSHEET_ID/` or `https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit` |
-| HubSpot       | API                       | Access Token               | `pat-xxx-xxxxxxxx-xxxx-xxxxxxxxxxxx`                                                       |
+| Data Source                          | Type                      | Required Properties / Flow | Format                                                                                     |
+| ------------------------------------ | ------------------------- | -------------------------- | ------------------------------------------------------------------------------------------ |
+| PostgreSQL                           | SQL Database              | Connection URL             | `postgres(ql)://username:password@host:port/database`                                      |
+| MySQL                                | SQL Database              | Connection URL             | `mysql://username:password@host:port/database`                                             |
+| SQLite                               | SQL Database (file-based) | Connection URL             | `sqlite://path/to/database.db`                                                             |
+| MongoDB                              | NoSQL Database            | Connection URL             | `mongodb://username:password@host:port/database`                                           |
+| Google Sheets                        | Spreadsheet (API)         | OAuth / Apps Script        | `sheets://SPREADSHEET_ID/` or `https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit` |
+| [HubSpot](./data-sources/hubspot.md) | API                       | Access Token               | `pat-xxx-xxxxxxxx-xxxx-xxxxxxxxxxxx`                                                       |
 
 > **Note:** When adding a new data source, the connection must be valid. liblab.ai performs validation to ensure that credentials, tokens, and URLs are correct before the data source can be saved.
 
