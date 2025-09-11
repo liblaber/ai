@@ -46,7 +46,7 @@ export async function GET(
 }
 
 const postRequestSchema = z.object({
-  email: z.string(),
+  userId: z.string(),
   permissionLevel: z.enum(PERMISSION_LEVELS),
 });
 
@@ -64,7 +64,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: parsedBody.error.flatten().fieldErrors }, { status: 400 });
     }
 
-    const { email, permissionLevel } = parsedBody.data;
+    const { userId, permissionLevel } = parsedBody.data;
     const resourceConfig = getResourceConfig(resource);
     const { fetchResource, permissionResource, roleScope } = resourceConfig;
 
@@ -74,9 +74,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const user = await userService.getUserByEmail(email);
-
-    // TODO: use invite system if user does not exist
+    const user = await userService.getUser(userId);
 
     await addUserToResourceRole(user.id, resourceId, roleScope, permissionLevel);
 

@@ -7,6 +7,7 @@ import {
 import { logger } from '~/utils/logger';
 import { type EnvironmentVariableType, PermissionAction, PermissionResource } from '@prisma/client';
 import { z } from 'zod';
+import { subject } from '@casl/ability';
 
 const postBodySchema = z.object({
   key: z.string().min(1),
@@ -22,18 +23,17 @@ export async function GET(request: NextRequest) {
     const environmentId = searchParams.get('environmentId');
     const type = searchParams.get('type') as EnvironmentVariableType | null;
 
-    // Check if user has permission to read environment variables
+    if (!environmentId) {
+      return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
+    }
+
     const { userAbility } = await requireUserAbility(request);
 
-    if (!userAbility.can(PermissionAction.read, PermissionResource.EnvironmentVariable)) {
+    if (userAbility.cannot(PermissionAction.read, subject(PermissionResource.Environment, { id: environmentId }))) {
       return NextResponse.json(
         { success: false, error: 'Insufficient permissions to read environment variables' },
         { status: 403 },
       );
-    }
-
-    if (!environmentId) {
-      return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
     }
 
     const environmentVariables = await getEnvironmentVariablesWithEnvironmentDetails(environmentId, type);
@@ -52,17 +52,15 @@ export async function POST(request: NextRequest) {
   try {
     const { userId, userAbility } = await requireUserAbility(request);
 
-    if (!userAbility.can(PermissionAction.create, PermissionResource.EnvironmentVariable)) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
     const body = postBodySchema.parse(await request.json());
 
     const { key, value, type, environmentId, description } = body;
 
-    // Check if user has access to this environment
-    if (!userAbility.can(PermissionAction.read, PermissionResource.Environment)) {
-      return NextResponse.json({ success: false, error: 'Access denied to this environment' }, { status: 403 });
+    if (userAbility.cannot(PermissionAction.create, subject(PermissionResource.Environment, { id: environmentId }))) {
+      return NextResponse.json(
+        { success: false, error: 'Insufficient permissions to create environment variables in this environment' },
+        { status: 403 },
+      );
     }
 
     // Check if environment variable with this key already exists

@@ -173,15 +173,62 @@ cd ai
 pnpm run quickstart
 ```
 
-**Start with Docker**
+**That's it! 🎉** The app will be available at [http://localhost:3000](http://localhost:3000/)
 
-After setup is complete, start the app with Docker:
+### **Quickstart Behavior**
+
+The `pnpm run quickstart` command now **always pulls the latest code and Docker images** to ensure you're running the most up-to-date version. Here's what happens:
+
+- ✅ **Always rebuilds** Docker images with latest code
+- ✅ **Preserves your database** by default (keeps existing data)
+- ✅ **Interactive prompts** if you have existing data
+- ✅ **Migration support** for database schema changes
+
+**Additional quickstart options:**
 
 ```bash
-pnpm run docker:start
+# Standard quickstart (preserves database)
+pnpm run quickstart
+
+# Fresh start (removes all existing data)
+pnpm run quickstart:fresh
+
+# Explicitly preserve database
+pnpm run quickstart:preserve
 ```
 
-**That's it! 🎉** The app will be available at [http://localhost:3000](http://localhost:3000/)
+**Database Migration**
+
+If you encounter database issues after updating, use the migration tool:
+
+```bash
+pnpm run docker:migrate
+```
+
+This provides options to:
+
+- Auto-migrate database schema
+- Create backups before migrating
+- Reset database (⚠️ **loses all data**)
+
+### How Quickstart Handles Your Data
+
+**Your data is PRESERVED when:**
+
+- You run `pnpm run quickstart:preserve`
+- You run the standard `pnpm run quickstart` and choose to preserve data when prompted (this is the default)
+
+**Your data is REMOVED (fresh start) when:**
+
+- You run `pnpm run quickstart:fresh`
+- You run the standard `pnpm run quickstart` and choose to reset the database when prompted
+- No existing data is found (e.g., on first-time setup)
+
+**Important Notes:**
+
+- 🔄 **Code is always updated** - Docker images are rebuilt with latest code
+- 💾 **Database behavior is configurable** - You control whether to keep or reset data
+- ⚠️ **Schema changes may require migration** - Use `pnpm run docker:migrate` if needed
 
 ### **Option 2: Manual Installation**
 

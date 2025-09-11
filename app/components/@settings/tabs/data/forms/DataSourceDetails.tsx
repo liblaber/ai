@@ -16,7 +16,7 @@ type Props = {
   activeTab?: string;
   setActiveTab?: (tab: string) => void;
   onExit: () => void;
-  onInvite: () => void;
+  onAddMembers: () => void;
   reloadDataSources: () => Promise<void>;
 };
 
@@ -26,7 +26,7 @@ export const DataSourceDetails = ({
   setHeaderBackHandler,
   reloadDataSources,
   onExit,
-  onInvite,
+  onAddMembers,
   activeTab,
   setActiveTab,
 }: Props) => {
@@ -161,7 +161,12 @@ export const DataSourceDetails = ({
           )}
         </TabsContent>
         <TabsContent value="members" className="mt-4">
-          <ResourceAccessMembers resourceScope="DATA_SOURCE" resourceId={dataSource.id} onInvite={onInvite} />
+          <ResourceAccessMembers
+            resourceScope="DATA_SOURCE"
+            resourceId={dataSource.id}
+            resource={dataSource}
+            onAddMembers={onAddMembers}
+          />
         </TabsContent>
       </Tabs>
     </div>

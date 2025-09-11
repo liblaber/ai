@@ -1,5 +1,13 @@
 import { prisma } from '~/lib/prisma';
-import { type Environment, EnvironmentVariableType } from '@prisma/client';
+import {
+  type Environment,
+  EnvironmentVariableType,
+  PermissionAction,
+  PermissionResource,
+  Prisma,
+} from '@prisma/client';
+import { buildResourceWhereClause } from '@/lib/casl/prisma-helpers';
+import type { AppAbility } from '~/lib/casl/user-ability';
 
 export interface EnvironmentWithRelations extends Environment {
   dataSources: any[];
@@ -33,10 +41,18 @@ export async function getEnvironmentName(id: string): Promise<string | null> {
   return env?.name ?? null;
 }
 
-export async function getEnvironments({ environmentVariableType }: GetEnvironmentsFilter = {}): Promise<
-  EnvironmentWithRelations[]
-> {
+export async function getEnvironments(
+  userAbility: AppAbility,
+  { environmentVariableType }: GetEnvironmentsFilter = {},
+): Promise<EnvironmentWithRelations[]> {
+  const whereClause = buildResourceWhereClause(
+    userAbility,
+    PermissionAction.read,
+    PermissionResource.Environment,
+  ) as Prisma.EnvironmentWhereInput;
+
   const environments = await prisma.environment.findMany({
+    where: whereClause,
     include: {
       dataSources: {
         include: {

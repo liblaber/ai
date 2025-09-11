@@ -97,6 +97,14 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string().optional(),
     GOOGLE_AUTH_ENCRYPTION_KEY: z.string().optional(),
 
+    // Generic OIDC SSO configuration
+    OIDC_ISSUER: z.string().optional(),
+    OIDC_CLIENT_ID: z.string().optional(),
+    OIDC_CLIENT_SECRET: z.string().optional(),
+    OIDC_DOMAIN: z.string().optional(),
+    OIDC_PROVIDER_ID: z.string().optional(),
+    OIDC_FRIENDLY_NAME: z.string().optional(),
+
     // Development configuration
     npm_package_version: z.string().optional(),
     CUSTOM_KEY: z.string().optional(),

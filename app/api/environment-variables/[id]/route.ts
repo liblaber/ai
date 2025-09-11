@@ -4,16 +4,13 @@ import { prisma } from '~/lib/prisma';
 import { deleteEnvironmentVariable, updateEnvironmentVariable } from '~/lib/services/environmentVariablesService';
 import { logger } from '~/utils/logger';
 import { PermissionAction, PermissionResource } from '@prisma/client';
+import { subject } from '@casl/ability';
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { userAbility } = await requireUserAbility(request);
 
     const { id } = await params;
-
-    if (!userAbility.can(PermissionAction.update, PermissionResource.EnvironmentVariable)) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
 
     const body = (await request.json()) as {
       key: string;
@@ -29,7 +26,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: 'Missing required fields: key, value, type' }, { status: 400 });
     }
 
-    // Check if user has access to this environment variable
     const envVar = await prisma.environmentVariable.findUnique({
       where: { id },
       include: {
@@ -41,9 +37,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: 'Environment variable not found' }, { status: 404 });
     }
 
-    if (!userAbility.can(PermissionAction.read, PermissionResource.Environment)) {
+    const updatedEnvironmentId = environmentId || envVar.environmentId;
+
+    if (
+      userAbility.cannot(
+        PermissionAction.update,
+        subject(PermissionResource.Environment, { id: envVar.environmentId }),
+      ) ||
+      userAbility.cannot(PermissionAction.update, subject(PermissionResource.Environment, { id: updatedEnvironmentId }))
+    ) {
       return NextResponse.json(
-        { success: false, error: 'Access denied to this environment variable' },
+        { success: false, error: 'Insufficient permissions to update environment variable for this environment' },
         { status: 403 },
       );
     }
@@ -52,7 +56,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const existingEnvVar = await prisma.environmentVariable.findFirst({
       where: {
         key,
-        environmentId: environmentId || envVar.environmentId,
+        environmentId: updatedEnvironmentId,
         id: { not: id },
       },
     });
@@ -89,11 +93,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const { id } = await params;
 
-    if (!userAbility.can(PermissionAction.delete, PermissionResource.EnvironmentVariable)) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Check if user has access to this environment variable
     const envVar = await prisma.environmentVariable.findUnique({
       where: { id },
       include: {
@@ -105,9 +104,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ success: false, error: 'Environment variable not found' }, { status: 404 });
     }
 
-    if (!userAbility.can(PermissionAction.read, PermissionResource.Environment)) {
+    if (
+      userAbility.cannot(PermissionAction.delete, subject(PermissionResource.Environment, { id: envVar.environmentId }))
+    ) {
       return NextResponse.json(
-        { success: false, error: 'Access denied to this environment variable' },
+        { success: false, error: 'Insufficient permissions to delete environment variable in this environment' },
         { status: 403 },
       );
     }

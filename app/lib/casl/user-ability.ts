@@ -3,7 +3,7 @@ import { PureAbility, AbilityBuilder } from '@casl/ability';
 import { createPrismaAbility } from '@casl/prisma';
 import { PermissionResource, PermissionAction } from '@prisma/client';
 import type { PrismaQuery, Subjects } from '@casl/prisma';
-import type { DataSource, Environment, Permission, Website } from '@prisma/client';
+import type { DataSource, Environment, EnvironmentVariable, Permission, Website } from '@prisma/client';
 import type { PrismaResources } from './prisma-helpers';
 import { getUserPermissions } from '~/lib/services/permissionService';
 import { logger } from '~/utils/logger';
@@ -18,6 +18,7 @@ type PrismaSubjects = Subjects<{
   Environment: Partial<Environment>;
   DataSource: Partial<DataSource>;
   Website: Partial<Website>;
+  EnvironmentVariable: Partial<EnvironmentVariable>;
 }>;
 
 type NonPrismaSubjects = Exclude<PermissionResource, PrismaResources>;
@@ -42,8 +43,16 @@ export function createAbilityForUser(userId: string, permissions: Permission[]):
       case PermissionResource.Environment:
         if (environmentId) {
           can(action, PermissionResource.Environment, { id: environmentId });
+          // Grant access to environment resources
+          can(action, PermissionResource.DataSource, { environments: { some: { environmentId } } });
+          can(action, PermissionResource.Website, { environmentId });
+          can(action, PermissionResource.EnvironmentVariable, { environmentId });
         } else {
           can(action, PermissionResource.Environment);
+          // Grant access to all environment resources
+          can(action, PermissionResource.DataSource);
+          can(action, PermissionResource.Website);
+          can(action, PermissionResource.EnvironmentVariable);
         }
 
         break;
@@ -76,6 +85,7 @@ export function createAbilityForUser(userId: string, permissions: Permission[]):
   // Add ownership rules
   can(PermissionAction.manage, PermissionResource.DataSource, { createdById: userId });
   can(PermissionAction.manage, PermissionResource.Website, { createdById: userId });
+  can(PermissionAction.manage, PermissionResource.EnvironmentVariable, { createdById: userId });
 
   return build();
 }

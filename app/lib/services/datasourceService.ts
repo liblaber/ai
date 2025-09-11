@@ -64,7 +64,6 @@ export interface CreateDataSourceResponse {
 export const SAMPLE_DATABASE_CONNECTION_STRING = 'sqlite://sample.db';
 
 export async function getEnvironmentDataSources(userAbility: AppAbility): Promise<ComplexEnvironmentDataSource[]> {
-  // TODO: @skos Update specific permissions
   const whereClause = buildResourceWhereClause(
     userAbility,
     PermissionAction.read,
@@ -105,7 +104,6 @@ export async function getEnvironmentDataSources(userAbility: AppAbility): Promis
 
 export async function getEnvironmentDataSource(
   dataSourceId: string,
-  userId: string,
   environmentId: string,
 ): Promise<ComplexEnvironmentDataSource | null> {
   const environmentDataSource = await prisma.environmentDataSource.findUnique({
@@ -127,9 +125,7 @@ export async function getEnvironmentDataSource(
     },
   });
 
-  // TODO: @skos Update specific permissions
-  // Verify user has access to this data source
-  if (!environmentDataSource || environmentDataSource.dataSource.createdById !== userId) {
+  if (!environmentDataSource) {
     return null;
   }
 
@@ -467,10 +463,10 @@ export async function deleteDataSourceEnvironment(dataSourceId: string, environm
   });
 }
 
-export async function deleteDataSource(id: string, userId: string) {
+export async function deleteDataSource(id: string) {
   prisma.dataSourceProperty.deleteMany({ where: { dataSourceId: id } });
 
-  return prisma.dataSource.delete({ where: { id, createdById: userId } });
+  return prisma.dataSource.delete({ where: { id } });
 }
 
 export async function getDataSourceType(dataSourceId: string) {

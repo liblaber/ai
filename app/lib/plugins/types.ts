@@ -13,7 +13,7 @@ export type DataAccessPluginId =
   | 'hubspot'
   | 'google-docs'
   | 'google-sheets';
-export type AuthPluginId = 'anonymous' | 'google' | 'twitch' | 'twitter';
+export type AuthPluginId = 'anonymous' | 'google' | 'oidc' | 'twitch' | 'twitter';
 export type StarterPluginId = 'remix' | 'next';
 export type UserManagementPluginId = 'single-user' | 'multi-user';
 
@@ -33,6 +33,7 @@ export interface Plugin {
 // SSO providers from better-auth: https://www.better-auth.com/docs/authentication/apple
 export type AuthProviderType =
   | 'google'
+  | 'oidc'
   | 'twitch'
   | 'twitter'
   | 'github'

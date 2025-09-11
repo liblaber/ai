@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronRight, Database, Plus, Search, Trash2 } from 'lucide-react';
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import AddDataSourceForm from './forms/AddDataSourceForm';
-import ResourceAccessInvite from '~/components/@settings/shared/components/ResourceAccessInvite';
+import AddResourceAccess from '~/components/@settings/shared/components/AddResourceAccess';
 import { classNames } from '~/utils/classNames';
 import { toast } from 'sonner';
 import {
@@ -31,7 +31,7 @@ export default function DataTab() {
   const { showAddForm } = useStore(settingsPanelStore);
   const [showAddFormLocal, setShowAddFormLocal] = useState(showAddForm);
   const [showDetails, setShowDetails] = useState(false);
-  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [showAddAccessForm, setShowAddAccessForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedEnvironmentDataSource, setSelectedEnvironmentDataSource] = useState<EnvironmentDataSource | null>(
     null,
@@ -226,8 +226,8 @@ export default function DataTab() {
             activeTab={activeDetailsTab}
             setActiveTab={setActiveDetailsTab}
             reloadDataSources={loadDataSources}
-            onInvite={() => {
-              setShowInviteForm(true);
+            onAddMembers={() => {
+              setShowAddAccessForm(true);
               setShowDetails(false);
               setActiveDetailsTab('members');
             }}
@@ -237,14 +237,14 @@ export default function DataTab() {
     );
   }
 
-  if (showInviteForm && selectedDataSource) {
+  if (showAddAccessForm && selectedDataSource) {
     return (
-      <ResourceAccessInvite
+      <AddResourceAccess
         resourceScope="DATA_SOURCE"
         resource={selectedDataSource}
         onBack={() => {
           setShowDetails(true);
-          setShowInviteForm(false);
+          setShowAddAccessForm(false);
         }}
       />
     );

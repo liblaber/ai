@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const environments = await getEnvironments({
+  const environments = await getEnvironments(userAbility, {
     environmentVariableType: EnvironmentVariableType.GLOBAL,
   });
 
