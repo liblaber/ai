@@ -125,20 +125,6 @@ postgresql://user:pass@host:5432/db?sslmode=require
 - **Advanced Types**: Support for JSON, arrays, and custom types
 - **Prepared Statements**: Secure parameter binding with appropriate database syntax
 
-#### Performance Notes
-
-- **Connection Pool**: Max 10 connections, 60s idle timeout
-- **Query Optimization**: Automatic query planning assistance
-- **Type Parsing**: Optimized for numeric and date types
-
-#### Requirements
-
-- PostgreSQL 9.6 or higher
-- Network access to database server
-- Valid user credentials with SELECT permissions
-
----
-
 ### MySQL
 
 **Best for:** Web applications, WordPress sites, traditional LAMP stack applications
