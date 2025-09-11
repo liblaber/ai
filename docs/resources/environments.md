@@ -38,6 +38,15 @@ If you have a data source configured for multiple environments, you can switch b
 3. Use the **Data Source Environment** dropdown to select a different environment
 4. Your application will immediately switch to use the data from the selected environment
 
+## Published Applications
+
+The environment switching feature is particularly powerful when combined with the publish functionality. By using the Switch Environments feature, you can set the current data source from a specific environment to your current conversation. Once you have the desired environment selected, you can then use the publish feature to publish an application that uses the currently selected data source.
+
+This workflow allows you to:
+- Build and test your application using development data
+- Switch to production environment when ready
+- Publish the application with production data sources and secrets
+
 ## Important Considerations
 
 ⚠️ **Schema Compatibility**: When defining a data source across multiple environments, ensure that all environments share the same database schema. If you build an application using one environment and then switch to another, mismatched schemas can break your application.
