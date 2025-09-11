@@ -4,7 +4,7 @@ import { usePluginStore } from '~/lib/plugins/plugin-store';
 import { useDataSourceTypesStore } from '~/lib/stores/dataSourceTypes';
 import { useMemo } from 'react';
 import { type DataAccessPluginId, PluginType } from '~/lib/plugins/types';
-import type { DataSourcePropertyDescriptor, DataSourceType } from '@liblab/data-access/utils/types';
+import { type DataSourcePropertyDescriptor, DataSourceType } from '@liblab/data-access/utils/types';
 
 export type DataSourceOption = {
   value: string;
@@ -15,7 +15,13 @@ export type DataSourceOption = {
 };
 export const SAMPLE_DATABASE = 'sample';
 export const DEFAULT_DATA_SOURCES: DataSourceOption[] = [
-  { value: SAMPLE_DATABASE, label: 'Sample Database', properties: [], status: 'available' },
+  {
+    value: SAMPLE_DATABASE,
+    label: 'Sample Database',
+    properties: [],
+    status: 'available',
+    type: DataSourceType.SQLITE,
+  },
   { value: 'salesforce', label: 'Salesforce', properties: [], status: 'coming-soon' },
   { value: 'jira', label: 'Jira', properties: [], status: 'coming-soon' },
   { value: 'github', label: 'Github', properties: [], status: 'coming-soon' },

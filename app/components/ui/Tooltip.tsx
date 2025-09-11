@@ -9,6 +9,7 @@ interface TooltipProps {
   arrowClassName?: string;
   tooltipStyle?: React.CSSProperties;
   position?: 'top' | 'bottom' | 'left' | 'right';
+  hidden?: boolean;
   maxWidth?: number;
   delay?: number;
 }
@@ -25,9 +26,14 @@ const WithTooltip = forwardRef(
       position = 'top',
       maxWidth = 250,
       delay = 0,
+      hidden = false,
     }: TooltipProps,
     _ref: ForwardedRef<HTMLElement>,
   ) => {
+    if (hidden) {
+      return children;
+    }
+
     return (
       <Tooltip.Root delayDuration={delay}>
         <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
@@ -41,7 +47,7 @@ const WithTooltip = forwardRef(
               max-h-[300px]
               select-none
               rounded-md
-              bg-depth-2
+              bg-depth-3
               text-primary
               text-sm
               leading-tight

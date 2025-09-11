@@ -7,7 +7,9 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "quickstart": "pnpm run setup && pnpm run docker:start",
+    "quickstart": "pnpm run setup && tsx scripts/docker-quickstart.ts",
+    "quickstart:fresh": "pnpm run setup && tsx scripts/docker-quickstart.ts --fresh",
+    "quickstart:preserve": "pnpm run setup && tsx scripts/docker-quickstart.ts --preserve-db",
     "setup": "pnpm i && pnpm run prisma:generate && tsx setup.ts",
     "build": "next build && pnpm run license:notice",
     "dev": "tsx scripts/dev-with-db.ts && tsx pre-start.ts && next dev --turbo",
@@ -23,6 +25,7 @@
     "docker:rebuild": "docker compose up -d --build && tsx scripts/docker-start-prompt.ts",
     "docker:dev": "docker compose -f docker-compose.dev.yml up -d && tsx scripts/docker-start-prompt.ts",
     "docker:stop": "docker compose down",
+    "docker:migrate": "tsx scripts/docker-migrate.ts",
     "db:start": "docker compose -f docker-compose.db.yml up -d",
     "db:stop": "docker compose -f docker-compose.db.yml down",
     "db:restart": "docker compose -f docker-compose.db.yml restart",
