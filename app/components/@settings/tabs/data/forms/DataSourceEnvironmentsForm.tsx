@@ -46,8 +46,6 @@ export default function DataSourceEnvironmentsForm({
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string>('');
   const { environments, setEnvironments } = useEnvironmentsStore();
 
-  console.log('environments', environments);
-
   const selectedEnv = useMemo(() => {
     if (isCreateMode) {
       return null; // No environment selected in create mode
@@ -64,6 +62,18 @@ export default function DataSourceEnvironmentsForm({
   const propertyDescriptors: DataSourcePropertyDescriptor[] = useMemo(() => {
     return (dsOption?.properties as DataSourcePropertyDescriptor[]) || [];
   }, [dsOption?.properties]);
+
+  const expectedProps = useMemo(() => (propertyDescriptors || []).map((p) => p.type), [propertyDescriptors]);
+  const providedPropsMap = useMemo(() => new Map(editedProperties.map((p) => [p.type, p.value])), [editedProperties]);
+
+  const hasAllRequiredProperties = useMemo(
+    () =>
+      expectedProps.every((t) => {
+        const v = providedPropsMap.get(t);
+        return Boolean(v && v.trim() !== '');
+      }),
+    [expectedProps, providedPropsMap],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -187,15 +197,7 @@ export default function DataSourceEnvironmentsForm({
         return;
       }
 
-      // Ensure all expected properties are present
-      const expectedProps = (propertyDescriptors || []).map((p) => p.type);
-      const providedPropsMap = new Map(editedProperties.map((p) => [p.type, p.value]));
-      const hasAllRequiredProperties = expectedProps.every((t) => {
-        const v = providedPropsMap.get(t);
-        return Boolean(v && v.trim() !== '');
-      });
-
-      if (expectedProps.length > 0 && !hasAllRequiredProperties) {
+      if (!hasAllRequiredProperties) {
         setError('Please ensure all required fields are configured for this environment.');
         return;
       }
@@ -203,10 +205,7 @@ export default function DataSourceEnvironmentsForm({
       const formData = new FormData();
       formData.append('type', dsOption.type || dsOption.value.toUpperCase());
 
-      const propsPayload =
-        expectedProps.length > 0
-          ? expectedProps.map((t) => ({ type: t, value: providedPropsMap.get(t) || '' }))
-          : editedProperties.map((p) => ({ type: p.type, value: p.value }));
+      const propsPayload = expectedProps.map((t) => ({ type: t, value: providedPropsMap.get(t) || '' }));
 
       formData.append('properties', JSON.stringify(propsPayload));
 
@@ -261,15 +260,7 @@ export default function DataSourceEnvironmentsForm({
         return;
       }
 
-      // Ensure all expected properties are present
-      const expectedProps = (propertyDescriptors || []).map((p) => p.type);
-      const providedPropsMap = new Map(editedProperties.map((p) => [p.type, p.value]));
-      const hasAllRequiredProperties = expectedProps.every((t) => {
-        const v = providedPropsMap.get(t);
-        return Boolean(v && v.trim() !== '');
-      });
-
-      if (expectedProps.length > 0 && !hasAllRequiredProperties) {
+      if (!hasAllRequiredProperties) {
         setError('Please ensure all required fields are configured for this environment.');
         return;
       }
@@ -278,10 +269,7 @@ export default function DataSourceEnvironmentsForm({
       const testFormData = new FormData();
       testFormData.append('type', dsOption.type || dsOption.value.toUpperCase());
 
-      const propsPayload =
-        expectedProps.length > 0
-          ? expectedProps.map((t) => ({ type: t, value: providedPropsMap.get(t) || '' }))
-          : editedProperties.map((p) => ({ type: p.type, value: p.value }));
+      const propsPayload = expectedProps.map((t) => ({ type: t, value: providedPropsMap.get(t) || '' }));
 
       testFormData.append('properties', JSON.stringify(propsPayload));
 
@@ -374,8 +362,8 @@ export default function DataSourceEnvironmentsForm({
     }
   };
 
-  const handleSave = () => {
-    handleSaveConfirm();
+  const handleSave = async () => {
+    await handleSaveConfirm();
   };
 
   const handleDeleteEnvironment = () => {
@@ -579,9 +567,9 @@ export default function DataSourceEnvironmentsForm({
               onClick={handleSave}
               disabled={
                 isSaving ||
-                (!isCreateMode && !hasChanges) ||
-                editedProperties.length === 0 ||
-                (isCreateMode && !selectedEnvironmentId)
+                !hasAllRequiredProperties ||
+                (isCreateMode && !selectedEnvironmentId) ||
+                (!isCreateMode && !hasChanges)
               }
               variant="primary"
             >

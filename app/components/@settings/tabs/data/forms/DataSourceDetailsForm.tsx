@@ -53,8 +53,6 @@ export default function DataSourceDetailsForm({ dataSource }: Props) {
 
       const formData = new FormData();
       formData.append('name', dataSourceName);
-
-      console.log(dataSourceType);
       formData.append('type', dataSourceType.type!);
 
       const response = await fetch(`/api/data-sources/${dataSource.id}`, {
