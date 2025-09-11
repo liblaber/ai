@@ -15,7 +15,6 @@ import { useAuth } from '~/components/auth/AuthContext';
 import { useSession } from '~/auth/auth-client';
 import { detectBrowser, type BrowserInfo } from '~/lib/utils/browser-detection';
 import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
-import { toast } from 'sonner';
 
 export default function Index() {
   const router = useRouter();
@@ -40,11 +39,6 @@ export default function Index() {
   };
 
   const handleSendMessage = async () => {
-    if (!browserInfo.supportsWebContainers) {
-      toast.error('Please use Chrome, Edge, Brave, or Opera for full functionality');
-      return;
-    }
-
     const messageInput = input.trim();
 
     if (!messageInput) {
