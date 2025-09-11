@@ -121,7 +121,7 @@ postgresql://user:pass@host:5432/db?sslmode=require
 
 - **Connection Pooling**: Automatic connection management for optimal performance
 - **Schema Discovery**: AI automatically understands your tables, relationships, and data types
-- **Enum Support**: Recognizes and uses PostgreSQL enum types
+- **Enum Support**: Recognizes and uses enum types
 - **Advanced Types**: Support for JSON, arrays, and custom types
 - **Prepared Statements**: Secure parameter binding with appropriate database syntax
 
