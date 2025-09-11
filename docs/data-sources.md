@@ -1,6 +1,6 @@
-# Data Sources - Complete Guide
+# Data Sources
 
-Connect your data and unlock the power of AI-driven insights. This comprehensive guide covers all supported data sources, from traditional databases to modern cloud services, helping you choose the right solution for your needs.
+Connect your data to start building AI applications instantly. Choose from databases, spreadsheets, and cloud services to get up and running in minutes.
 
 ## Table of Contents
 
@@ -17,15 +17,13 @@ Connect your data and unlock the power of AI-driven insights. This comprehensive
 
 ## What Are Data Sources?
 
-Data sources are the foundation of your AI applications. They represent any system that contains your data - from traditional databases to modern cloud services. Once connected, liblab.ai builds applications based on your prompts and connected data source.
+Data sources are where your information lives - databases, spreadsheets, or cloud services. Connect yours and start asking questions in plain English.
 
 ### How It Works
 
-1. **Connect**: Add your data source with simple configuration
-2. **Analyze**: AI automatically understands your data structure
-3. **Query**: Ask questions in plain English
-4. **Visualize**: Get instant charts, graphs, and dashboards
-5. **Iterate**: Refine and explore deeper insights
+1. **Connect** - Add your data in seconds
+2. **Ask** - Use natural language to explore your data
+3. **Get Results** - See instant charts and insights
 
 ---
 
@@ -44,14 +42,14 @@ Data sources are the foundation of your AI applications. They represent any syst
 
 ### For Technical Users
 
-**Choose based on your infrastructure:**
+**Popular database options:**
 
-| Database Type                 | Best for                                 | Setup complexity | Performance |
-| ----------------------------- | ---------------------------------------- | ---------------- | ----------- |
-| [**PostgreSQL**](#postgresql) | Production applications, complex queries | Medium           | Excellent   |
-| [**MySQL**](#mysql)           | Web applications, WordPress sites        | Medium           | Excellent   |
-| [**MongoDB**](#mongodb)       | Document stores, modern apps             | Medium           | Very Good   |
-| [**SQLite**](#sqlite)         | Local files, prototypes                  | Easy             | Good        |
+| Database                      | Setup   |
+| ----------------------------- | ------- |
+| [**PostgreSQL**](#postgresql) | Quick   |
+| [**MySQL**](#mysql)           | Quick   |
+| [**MongoDB**](#mongodb)       | Quick   |
+| [**SQLite**](#sqlite)         | Instant |
 
 ---
 
@@ -59,30 +57,19 @@ Data sources are the foundation of your AI applications. They represent any syst
 
 ### Database Sources
 
-| Source                    | Status       | Authentication    | Query Language | Best For                |
-| ------------------------- | ------------ | ----------------- | -------------- | ----------------------- |
-| [PostgreSQL](#postgresql) | ✅ Available | Username/Password | SQL            | Enterprise applications |
-| [MySQL](#mysql)           | ✅ Available | Username/Password | SQL            | Web applications        |
-| [SQLite](#sqlite)         | ✅ Available | File-based        | SQL            | Local development       |
-| [MongoDB](#mongodb)       | ✅ Available | Connection string | JSON queries   | Document stores         |
+| Source                    | Status       | Authentication    | Query Language |
+| ------------------------- | ------------ | ----------------- | -------------- |
+| [PostgreSQL](#postgresql) | ✅ Available | Username/Password | SQL            |
+| [MySQL](#mysql)           | ✅ Available | Username/Password | SQL            |
+| [SQLite](#sqlite)         | ✅ Available | File-based        | SQL            |
+| [MongoDB](#mongodb)       | ✅ Available | Connection string |
 
 ### Cloud & API Sources
 
-| Source                          | Status         | Authentication    | Access Method | Best For          |
-| ------------------------------- | -------------- | ----------------- | ------------- | ----------------- |
-| [Google Sheets](#google-sheets) | ✅ Available   | OAuth/Apps Script | REST API      | Spreadsheet data  |
-| [Google Docs](#google-docs)     | 🚧 Coming Soon | OAuth/API Key     | REST API      | Document analysis |
-| [HubSpot](#hubspot)             | 🚧 Beta        | Access Token      | REST API      | CRM data          |
-
-### Coming Soon
-
-| Source         | Use Case                    |
-| -------------- | --------------------------- |
-| **Salesforce** | Enterprise CRM              |
-| **Jira**       | Project management          |
-| **GitHub**     | Code repositories           |
-| **Airtable**   | Database/spreadsheet hybrid |
-| **Notion**     | Knowledge bases             |
+| Source                          | Status       | Authentication    | Access Method |
+| ------------------------------- | ------------ | ----------------- | ------------- |
+| [Google Sheets](#google-sheets) | ✅ Available | OAuth/Apps Script | REST API      |
+| [HubSpot](#hubspot)             | ✅ Available | Access Token      | REST API      |
 
 ---
 
@@ -94,7 +81,7 @@ Data sources are the foundation of your AI applications. They represent any syst
 
 #### Overview
 
-PostgreSQL is a powerful, open-source relational database known for its reliability, feature robustness, and performance. Perfect for production applications requiring complex queries and high data integrity.
+PostgreSQL is a popular database used by many applications. Great for businesses with existing PostgreSQL databases.
 
 #### Connection Setup
 
@@ -116,14 +103,11 @@ postgresql://myuser:mypassword@localhost:5432/company_db
 postgresql://user:pass@host:5432/db?sslmode=require
 ```
 
+#### What You Get
 
-#### Special Features
-
-- **Connection Pooling**: Automatic connection management for optimal performance
-- **Schema Discovery**: AI automatically understands your tables, relationships, and data types
-- **Enum Support**: Recognizes and uses enum types
-- **Advanced Types**: Support for JSON, arrays, and custom types
-- **Prepared Statements**: Secure parameter binding with appropriate database syntax
+- Automatic understanding of your data structure
+- Secure connections
+- Support for all data types
 
 ### MySQL
 
@@ -131,7 +115,7 @@ postgresql://user:pass@host:5432/db?sslmode=require
 
 #### Overview
 
-MySQL is the world's most popular open-source database, powering millions of web applications. Ideal for web development and applications requiring proven reliability.
+MySQL powers millions of websites and applications. Perfect if you're already using MySQL for your business.
 
 #### Connection Setup
 
@@ -162,25 +146,11 @@ mysql://webuser:webpass@db.example.com:3306/website_db
 - Administrative functions
 - Database structure changes
 
-#### Special Features
+#### What You Need
 
-- **Enhanced Schema Discovery**: Includes table comments, column descriptions
-- **ENUM Type Support**: Recognizes MySQL enum values and constraints
-- **Type Casting**: Automatic type conversion for optimal data handling
-- **MySQL Syntax**: Native support for MySQL-specific SQL features
-- **Prepared Statements**: Secure queries with `?` parameter placeholders
-
-#### Performance Notes
-
-- **Single Connection**: One connection per data source instance
-- **Type Optimization**: Efficient handling of MySQL data types
-- **Query Formatting**: MySQL-specific SQL generation
-
-#### Requirements
-
-- MySQL 5.7 or higher (MySQL 8.0 recommended)
-- Network access to database server
-- User account with appropriate SELECT permissions
+- MySQL database (version 5.7 or newer)
+- Database login credentials
+- Network access to your database
 
 ---
 
@@ -190,7 +160,7 @@ mysql://webuser:webpass@db.example.com:3306/website_db
 
 #### Overview
 
-SQLite is a lightweight, file-based database that requires no server setup. Perfect for development, testing, and applications that need a simple, reliable database.
+SQLite works with database files on your computer. No setup needed - just point to your .db file and start exploring.
 
 #### Connection Setup
 
@@ -223,25 +193,10 @@ sqlite:///C:/Data/sales.db
 - No network connectivity
 - Limited concurrent access
 
-#### Special Features
+#### What You Need
 
-- **File-Based**: No server required, just point to a database file
-- **Sample Database**: Built-in sample data for testing and learning
-- **PRAGMA Support**: Schema introspection using SQLite PRAGMA commands
-- **Cross-Platform**: Works on Windows, macOS, and Linux
-- **Zero Configuration**: No setup required beyond file path
-
-#### Performance Notes
-
-- **High Performance**: Direct file access, no network overhead
-- **Single User**: Optimized for single-user access patterns
-- **Memory Efficiency**: Minimal resource requirements
-
-#### Requirements
-
-- SQLite database file
-- File system read/write permissions
-- Compatible with SQLite 3.x format
+- A .db file on your computer
+- File access permissions
 
 ---
 
@@ -251,7 +206,7 @@ sqlite:///C:/Data/sales.db
 
 #### Overview
 
-MongoDB is a NoSQL document database that stores data in flexible, JSON-like documents. Ideal for applications with evolving schemas and complex, nested data structures.
+MongoDB stores data as documents (like JSON files). Great if your data doesn't fit into traditional rows and columns.
 
 #### Connection Setup
 
@@ -283,38 +238,11 @@ mongodb+srv://user:pass@cluster.mongodb.net/production
 - Security-sensitive operations ($where, eval)
 - Database structure modifications
 
-#### Special Features
+#### What You Need
 
-- **Document Schema Discovery**: Automatically analyzes document structure
-- **Aggregation Pipelines**: Powerful data processing and transformation
-- **JSON Query Format**: Native JSON query syntax
-- **Flexible Schema**: Handles varying document structures
-- **Parameter Substitution**: Secure parameter binding with `$1, $2` syntax
-
-#### Query Format Example
-
-```json
-{
-  "operation": "find",
-  "parameters": {
-    "filter": { "status": "active", "age": { "$gte": 18 } },
-    "projection": { "name": 1, "email": 1 },
-    "limit": 100
-  }
-}
-```
-
-#### Performance Notes
-
-- **Connection Pooling**: Automatic connection management
-- **Timeouts**: 10s server selection, 10s connection timeout
-- **Document Optimization**: Efficient JSON serialization
-
-#### Requirements
-
-- MongoDB 4.0 or higher
-- Network access to MongoDB server
-- Valid authentication credentials
+- MongoDB database (version 4.0 or newer)
+- Database connection details
+- Login credentials
 
 ---
 
@@ -326,15 +254,15 @@ mongodb+srv://user:pass@cluster.mongodb.net/production
 
 #### Overview
 
-Google Sheets integration provides powerful spreadsheet connectivity with multiple authentication methods. Perfect for teams that work with spreadsheet data and need real-time access.
+Connect your Google Sheets to analyze spreadsheet data instantly. Perfect for teams already using Google Sheets.
 
 #### Connection Methods
 
-| Method            | Setup Time | Capabilities    | Best For                       |
-| ----------------- | ---------- | --------------- | ------------------------------ |
-| **Sharable Link** | 30 seconds | Read-only       | Quick testing, public data     |
-| **Apps Script**   | 5 minutes  | Full read/write | Production use, private sheets |
-| **OAuth**         | 15 minutes | Full API access | Enterprise, multi-user         |
+| Method            | Setup Time | Capabilities    |
+| ----------------- | ---------- | --------------- |
+| **Sharable Link** | 30 seconds | Read-only       |
+| **Apps Script**   | 5 minutes  | Full read/write |
+| **OAuth**         | 15 minutes | Full API access |
 
 #### What You Can Do
 
@@ -358,25 +286,11 @@ Google Sheets integration provides powerful spreadsheet connectivity with multip
 }
 ```
 
-#### Special Features
-
-- **Multiple Authentication**: Choose what works for your security needs
-- **Real-time Updates**: Changes reflect immediately
-- **Schema Generation**: AI understands your column structure
-- **Rate Limiting**: Built-in API quota management
-- **Auto-retry**: Handles temporary failures gracefully
-
-#### Performance Notes
-
-- **Rate Limits**: 100 requests/minute, 10k requests/day
-- **Caching**: Intelligent caching for frequently accessed data
-- **Batch Operations**: Efficient bulk data operations
-
-#### Requirements
+#### What You Need
 
 - Google account
-- Internet connectivity
-- Appropriate sheet permissions
+- Access to the spreadsheet you want to analyze
+- Internet connection
 
 📖 **[View Complete Google Sheets Guide](./getting-started/google-sheets-integration.md)**
 
@@ -388,7 +302,7 @@ Google Sheets integration provides powerful spreadsheet connectivity with multip
 
 #### Overview
 
-HubSpot integration provides access to your CRM data for customer analysis and sales insights. Ideal for businesses using HubSpot for customer relationship management.
+Connect your HubSpot CRM to analyze customer data and sales insights. Great for HubSpot users.
 
 #### Connection Setup
 
@@ -404,21 +318,11 @@ HubSpot integration provides access to your CRM data for customer analysis and s
 - Access to contact objects
 - Basic CRM data connectivity
 
-**🚧 In Development:**
-
-- Full contact, company, and deal access
-- Custom property support
-- Advanced filtering and querying
-
 #### Requirements
 
 - HubSpot account with appropriate permissions
 - Private app access token
 - Internet connectivity
-
-#### Status
-
-🚧 **Currently in beta** - Connection testing available, full query interface in development
 
 ---
 
@@ -575,340 +479,31 @@ HUBSPOT_ACCESS_TOKEN=pat-xxx-xxx
 
 ## Troubleshooting
 
-### Common Connection Issues
+### Connection Problems
 
-#### Database Connection Failures
+**Can't connect to database?**
 
-**"Connection refused" or "Cannot connect"**
+- Double-check your username and password
+- Make sure your database is running
+- Verify the database name is correct
 
-```bash
-# Check connectivity
-ping database-host.example.com
-telnet database-host.example.com 5432
+**Google Sheets not working?**
 
-# Verify credentials
-psql postgresql://user:pass@host:5432/db
+- Check that your sheet is shared with "Anyone with the link can view"
+- Make sure you're using the correct sheet URL
 
-# Check firewall rules
-# Ensure port is open (5432 for PostgreSQL, 3306 for MySQL, etc.)
-```
+**HubSpot connection failed?**
 
-**"Authentication failed"**
+- Verify your access token is correct
+- Check that your token hasn't expired
 
-- Verify username and password
-- Check user permissions on target database
-- Confirm user can connect from your IP address
-- For PostgreSQL: Check `pg_hba.conf` settings
+### Need Help?
 
-**"Database does not exist"**
+If you're still having trouble:
 
-- Verify database name spelling
-- Check if database is created
-- Confirm user has access to the database
-
-#### API Connection Issues
-
-**Google Sheets "Permission denied"**
-
-- Verify sheet sharing settings ("Anyone with link can view")
-- Check if Apps Script is deployed correctly
-- Confirm OAuth tokens are valid and not expired
-
-**HubSpot "Unauthorized"**
-
-- Verify access token format (pat-xxx-xxx...)
-- Check token permissions and scopes
-- Confirm token is not expired or revoked
-
-### Query Execution Problems
-
-#### SQL Syntax Errors
-
-```sql
--- ✅ Correct parameter syntax
-SELECT * FROM users WHERE id = $1
-
--- ❌ Incorrect parameter syntax
-SELECT * FROM users WHERE id = ?1
-```
-
-#### MongoDB Query Issues
-
-```json
-// ✅ Correct JSON format
-{
-  "operation": "find",
-  "parameters": {
-    "filter": { "status": "active" }
-  }
-}
-
-// ❌ Invalid JSON
-{
-  operation: "find",
-  parameters: { status: active }
-}
-```
-
-### Performance Issues
-
-#### Slow Query Performance
-
-1. **Check Query Complexity**: Simplify complex JOINs
-2. **Add Indexes**: Ensure proper database indexing
-3. **Limit Results**: Use LIMIT clauses for large datasets
-4. **Connection Pooling**: Verify pool settings
-
-#### API Rate Limiting
-
-1. **Monitor Quotas**: Check API usage limits
-2. **Implement Caching**: Cache frequently accessed data
-3. **Batch Operations**: Combine multiple operations
-4. **Retry Logic**: Implement exponential backoff
-
-### Debugging Steps
-
-#### Step 1: Basic Connectivity
-
-```bash
-# Test network connectivity
-ping hostname
-telnet hostname port
-
-# Test authentication
-# (database-specific connection tools)
-```
-
-#### Step 2: Permission Verification
-
-```sql
--- Check user permissions
-SHOW GRANTS FOR 'username'@'host'; -- MySQL
-\du -- PostgreSQL
-```
-
-#### Step 3: Query Testing
-
-- Start with simple SELECT queries
-- Test parameter substitution
-- Verify data types and formats
-
-#### Step 4: Log Analysis
-
-- Check application logs for detailed errors
-- Review database server logs
-- Monitor API response codes and messages
-
----
-
-## Performance Optimization
-
-### Database Performance
-
-#### Connection Management
-
-```javascript
-// ✅ Use connection pooling
-const pool = new Pool({
-  max: 10,
-  idleTimeoutMillis: 60000,
-  connectionTimeoutMillis: 10000,
-});
-
-// ❌ Creating new connections for each query
-const client = new Client({ connectionString });
-```
-
-#### Query Optimization
-
-```sql
--- ✅ Use indexes effectively
-SELECT * FROM orders
-WHERE customer_id = $1
-  AND created_date >= $2
-ORDER BY created_date DESC
-LIMIT 100;
-
--- ✅ Avoid SELECT *
-SELECT id, name, email FROM users WHERE active = true;
-
--- ❌ Full table scans
-SELECT * FROM large_table WHERE description LIKE '%keyword%';
-```
-
-#### Data Types
-
-- **PostgreSQL**: Use appropriate numeric types (INTEGER vs BIGINT)
-- **MongoDB**: Optimize document structure and indexing
-- **MySQL**: Choose proper VARCHAR lengths and use ENUM when appropriate
-
-### API Performance
-
-#### Google Sheets Optimization
-
-```json
-// ✅ Request specific ranges
-{
-  "operation": "readRange",
-  "parameters": {
-    "range": "A1:E100"
-  }
-}
-
-// ❌ Reading entire sheet unnecessarily
-{
-  "operation": "readSheet",
-  "parameters": {
-    "sheetName": "Data"
-  }
-}
-```
-
-#### Batch Operations
-
-```json
-// ✅ Update multiple cells at once
-{
-  "operation": "updateRange",
-  "parameters": {
-    "range": "A1:C1",
-    "values": [["Value1", "Value2", "Value3"]]
-  }
-}
-
-// ❌ Multiple individual updates
-// Multiple updateCell operations
-```
-
-### Caching Strategies
-
-#### Application-Level Caching
-
-- Cache frequently accessed static data
-- Implement TTL (Time To Live) for cached data
-- Use Redis or in-memory caching for high-performance needs
-
-#### Database-Level Optimization
-
-- Regular ANALYZE/OPTIMIZE TABLE commands
-- Monitor and tune database configuration
-- Implement read replicas for read-heavy workloads
-
-### Monitoring & Metrics
-
-#### Key Metrics to Track
-
-- **Connection pool usage** (database sources)
-- **Query execution time** (all sources)
-- **API quota usage** (cloud sources)
-- **Error rates** and **success rates**
-- **Data freshness** and **update frequency**
-
-#### Alerting Thresholds
-
-- Connection failures > 5% error rate
-- Query execution time > 30 seconds
-- API quota usage > 80%
-- Consecutive failed requests > 10
-
----
-
-## Advanced Configuration
-
-### Environment Variables
-
-#### Database Connections
-
-```bash
-# PostgreSQL
-POSTGRES_CONNECTION_STRING=postgresql://user:pass@host:5432/db
-
-# MySQL
-MYSQL_CONNECTION_STRING=mysql://user:pass@host:3306/db
-
-# MongoDB
-MONGODB_CONNECTION_STRING=mongodb://user:pass@host:27017/db
-```
-
-#### API Credentials
-
-```bash
-# Google Workspace
-GOOGLE_CLIENT_ID=your_client_id
-GOOGLE_CLIENT_SECRET=your_client_secret
-GOOGLE_AUTH_ENCRYPTION_KEY=your_32_char_key
-
-# HubSpot
-HUBSPOT_ACCESS_TOKEN=pat-xxx-xxx
-```
-
-### Custom Configuration
-
-#### Connection Pooling (PostgreSQL)
-
-```javascript
-const poolConfig = {
-  max: 20, // Maximum pool connections
-  idleTimeoutMillis: 60000, // 60 second idle timeout
-  connectionTimeoutMillis: 10000, // 10 second connection timeout
-  ssl: {
-    rejectUnauthorized: false, // For self-signed certificates
-  },
-};
-```
-
-#### SSL Configuration
-
-```bash
-# PostgreSQL with SSL
-postgresql://user:pass@host:5432/db?sslmode=require&sslcert=client-cert.pem
-
-# MySQL with SSL
-mysql://user:pass@host:3306/db?ssl=true&sslca=ca-cert.pem
-```
-
-### Integration Patterns
-
-#### Multi-Source Analytics
-
-```javascript
-// Combine data from multiple sources
-const salesData = await queryDatabase('SELECT * FROM sales WHERE date >= $1', [lastMonth]);
-const customerData = await queryGoogleSheets('{"operation": "readRange", "parameters": {"range": "A:E"}}');
-const crmData = await queryHubSpot('contacts', { filters: { lastSeen: 'recent' } });
-
-// Correlate and analyze across sources
-```
-
-#### Real-time Data Pipeline
-
-```javascript
-// Set up automatic data synchronization
-const syncPipeline = {
-  source: 'google-sheets',
-  destination: 'postgresql',
-  schedule: '*/15 * * * *', // Every 15 minutes
-  transformations: ['validate', 'normalize', 'enrich'],
-};
-```
-
-### Custom Development
-
-#### Plugin Architecture
-
-The application uses a plugin-based architecture that allows for:
-
-- Custom data source implementations
-- Extensible authentication methods
-- Configurable connection parameters
-- Custom query languages and operations
-
-#### API Extensions
-
-- REST API endpoints for programmatic access
-- Webhook support for real-time notifications
-- Custom authentication providers
-- Specialized data transformations
+1. Try the sample database first to test the platform
+2. Check your connection details are exactly right
+3. Contact support with your specific error message
 
 ---
 
@@ -938,5 +533,15 @@ The application uses a plugin-based architecture that allows for:
 ### Stay Updated
 
 - New data sources are added regularly
-- Check the **[coming soon](#coming-soon)** section for upcoming integrations
 - Follow our release notes for new features and improvements
+
+### Coming Soon
+
+| Source          | Use Case                    |
+| --------------- | --------------------------- |
+| **Airtable**    | Database/spreadsheet hybrid |
+| **GitHub**      | Code repositories           |
+| **Google Docs** | General data                |
+| **Jira**        | Project management          |
+| **Notion**      | Knowledge bases             |
+| **Salesforce**  | Enterprise CRM              |
