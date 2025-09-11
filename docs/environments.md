@@ -5,6 +5,7 @@ Environments are a resource used for managing different data sources, secrets, a
 ## Default Environments
 
 By default, two environments are created for you:
+
 - **Development** - For building and testing applications
 - **Production** - For live applications with production data
 
@@ -17,6 +18,7 @@ You can add, edit, or delete environments from **Settings → Environments**. Th
 Environments are particularly useful when working with data sources. You can define a single data source that connects to different databases or services across environments.
 
 **Example:**
+
 - Create a PostgreSQL data source in the **Settings → Data Sources**
 - Add a development database connection URL for the **Development** environment
 - Add a production database connection URL for the **Production** environment
@@ -27,7 +29,7 @@ This setup allows you to build and test applications using different data sets w
 
 Similar to data sources, you can manage secrets (API keys, tokens, credentials) for different environments. This allows you to use different secret values across your development, staging, and production environments.
 
-You can add, update, or delete secrets for any specific environment from **Settings → Secrets Manager**. 
+You can add, update, or delete secrets for any specific environment from **Settings → Secrets Manager**.
 
 ## Switching Environments
 
