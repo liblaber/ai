@@ -24,7 +24,7 @@ interface GetRolesParams {
   scope?: RoleScope;
 }
 
-export async function getRoles({ scope }: GetRolesParams): Promise<Role[]> {
+export async function getRoles({ scope }: GetRolesParams = {}): Promise<Role[]> {
   const roles = await prisma.role.findMany({
     where: {
       scope,

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = request.nextUrl;
   const scopeParam = searchParams.get('scope');
 
   // If a role scope is provided, validate it and override the default
