@@ -2,6 +2,7 @@ import { env } from '~/env';
 import {
   type AuthPluginId,
   type DataAccessPluginId,
+  type DeploymentPluginId,
   type PluginAccessMap,
   type PluginId,
   PluginType,
@@ -34,6 +35,11 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
     'single-user': true,
     'multi-user': false,
   },
+  [PluginType.DEPLOYMENT]: {
+    NETLIFY: true,
+    VERCEL: false,
+    AWS: false,
+  },
 };
 
 export const PREMIUM_PLUGIN_ACCESS = {
@@ -60,6 +66,11 @@ export const PREMIUM_PLUGIN_ACCESS = {
   [PluginType.USER_MANAGEMENT]: {
     'single-user': true,
     'multi-user': true,
+  },
+  [PluginType.DEPLOYMENT]: {
+    NETLIFY: true,
+    VERCEL: true,
+    AWS: true,
   },
 };
 
@@ -98,6 +109,8 @@ class PluginManager {
       return this._pluginAccess[pluginType][pluginId as StarterPluginId];
     } else if (pluginType === PluginType.USER_MANAGEMENT) {
       return this._pluginAccess[pluginType][pluginId as UserManagementPluginId];
+    } else if (pluginType === PluginType.DEPLOYMENT) {
+      return this._pluginAccess[pluginType][pluginId as DeploymentPluginId];
     }
 
     return false;
