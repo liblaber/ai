@@ -57,7 +57,6 @@ async function getRootData() {
       environmentDataSources = await getEnvironmentDataSources(userAbility);
 
       environmentVariables = await getEnvironmentVariables(EnvironmentVariableType.GLOBAL);
-      environmentVariables = await getEnvironmentVariables();
 
       environmentDeploymentMethods = await getEnvironmentDeploymentMethods();
     }
