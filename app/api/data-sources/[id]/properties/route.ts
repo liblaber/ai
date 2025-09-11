@@ -20,10 +20,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     userAbility.cannot(PermissionAction.read, subject(PermissionResource.DataSource, { id })) &&
     userAbility.cannot(PermissionAction.read, subject(PermissionResource.Environment, { id: environmentId }))
   ) {
-    throw new Response('Forbidden', {
-      status: 403,
-      statusText: 'Forbidden',
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Forbidden',
+      },
+      { status: 403 },
+    );
   }
 
   const dataSourceType = await getDataSourceType(id);
