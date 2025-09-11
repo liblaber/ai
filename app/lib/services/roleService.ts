@@ -20,8 +20,15 @@ export async function getRole(id: string): Promise<Role | null> {
   });
 }
 
-export async function getRoles(): Promise<Role[]> {
+interface GetRolesParams {
+  scope?: RoleScope;
+}
+
+export async function getRoles({ scope }: GetRolesParams): Promise<Role[]> {
   const roles = await prisma.role.findMany({
+    where: {
+      scope,
+    },
     include: {
       permissions: true,
       users: {

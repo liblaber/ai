@@ -11,7 +11,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
 
-  const roles = await getRoles();
+  const { searchParams } = new URL(request.url);
+  const scopeParam = searchParams.get('scope');
+
+  // If a role scope is provided, validate it and override the default
+  // default undefined will fetch all roles
+  let scope: RoleScope | undefined = undefined;
+
+  if (scopeParam) {
+    if (Object.values(RoleScope).includes(scopeParam as RoleScope)) {
+      scope = scopeParam as RoleScope;
+    } else {
+      return NextResponse.json({ success: false, error: 'Invalid scope parameter' }, { status: 400 });
+    }
+  }
+
+  const roles = await getRoles({ scope });
 
   return NextResponse.json({ success: true, roles });
 }
