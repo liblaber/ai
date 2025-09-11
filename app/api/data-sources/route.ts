@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { subject } from '@casl/ability';
 import { requireUserAbility } from '~/auth/session';
 import { DataSourceType, PermissionAction, PermissionResource } from '@prisma/client';
-import { createDataSource, getEnvironmentDataSources } from '~/lib/services/datasourceService';
+import {
+  createDataSource,
+  createEnvironmentDataSource,
+  getEnvironmentDataSources,
+} from '~/lib/services/datasourceService';
 
 export async function GET(request: NextRequest) {
   const { userAbility } = await requireUserAbility(request);
@@ -39,15 +43,15 @@ export async function POST(request: NextRequest) {
   const properties = JSON.parse(propertiesJson);
 
   try {
-    const dataSource = await createDataSource({
-      name,
-      type,
-      properties,
+    const dataSource = await createDataSource({ name, type, createdById: userId });
+    const environmentDataSource = await createEnvironmentDataSource({
+      dataSourceId: dataSource.id,
       environmentId,
+      properties,
       createdById: userId,
     });
 
-    return NextResponse.json({ success: true, dataSource });
+    return NextResponse.json({ success: true, environmentDataSource });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Failed to create data source' },

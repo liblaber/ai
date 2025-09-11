@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createDataStream } from 'ai';
 import { PermissionAction, PermissionResource } from '@prisma/client';
 import { type Messages, type StreamingOptions, streamText } from '~/lib/.server/llm/stream-text';
@@ -48,7 +48,7 @@ async function chatAction(request: NextRequest) {
   const userMessageProperties = extractPropertiesFromMessage(userMessage);
 
   if (!userMessage) {
-    throw new Response('Message not specified', {
+    return NextResponse.json('Message not specified', {
       status: 400,
       statusText: 'Bad Request',
     });
@@ -65,7 +65,7 @@ async function chatAction(request: NextRequest) {
       subject(PermissionResource.Environment, { id: environmentDataSource.environmentId }),
     )
   ) {
-    throw new Response('Forbidden', {
+    return NextResponse.json('Forbidden', {
       status: 403,
       statusText: 'Forbidden',
     });
@@ -480,16 +480,22 @@ async function chatAction(request: NextRequest) {
     logger.error(error);
 
     if (error.message?.includes('API key')) {
-      throw new Response('Invalid or missing API key', {
-        status: 401,
-        statusText: 'Unauthorized',
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid or missing API key ',
+        },
+        { status: 401, statusText: 'Unauthorized' },
+      );
     }
 
-    throw new Response(null, {
-      status: 500,
-      statusText: 'Internal Server Error',
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal Server Error',
+      },
+      { status: 500 },
+    );
   }
 }
 

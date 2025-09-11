@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   deleteDataSource,
   getConversationCount,
+  getDataSource,
+  getDataSourceEnvironmentIds,
   getEnvironmentDataSource,
   updateDataSource,
 } from '~/lib/services/datasourceService';
 import { subject } from '@casl/ability';
 import { requireUserAbility } from '~/auth/session';
 import { DataSourceType, PermissionAction, PermissionResource } from '@prisma/client';
-import type { DataSourceProperty } from '@liblab/data-access/utils/types';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userAbility, userId } = await requireUserAbility(request);
@@ -46,31 +47,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { userAbility, userId } = await requireUserAbility(request);
+  const { userAbility } = await requireUserAbility(request);
 
   const { id } = await params;
-  const { searchParams } = new URL(request.url);
-  const environmentId = searchParams.get('environmentId');
 
-  if (!environmentId) {
-    return NextResponse.json({ success: false, error: 'Environment ID is required' }, { status: 400 });
-  }
+  const dataSource = await getDataSource({ id });
 
-  const environmentDataSource = await getEnvironmentDataSource(id, environmentId);
-
-  if (!environmentDataSource) {
+  if (!dataSource) {
     return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
   }
 
+  const environmentIds = await getDataSourceEnvironmentIds(id);
+
+  const canAccessEveryEnvironment = environmentIds.every((envId) =>
+    userAbility.can(PermissionAction.update, subject(PermissionResource.Environment, { id: envId })),
+  );
+
   if (
-    userAbility.cannot(
-      PermissionAction.update,
-      subject(PermissionResource.DataSource, environmentDataSource.dataSource),
-    ) &&
-    userAbility.cannot(
-      PermissionAction.update,
-      subject(PermissionResource.Environment, { id: environmentDataSource.environmentId }),
-    )
+    userAbility.cannot(PermissionAction.update, subject(PermissionResource.DataSource, dataSource)) &&
+    !canAccessEveryEnvironment
   ) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
   }
@@ -78,17 +73,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const formData = await request.formData();
   const name = formData.get('name') as string;
   const type = formData.get('type') as DataSourceType;
-  const propertiesJson = formData.get('properties') as string;
-  const properties = JSON.parse(propertiesJson) as DataSourceProperty[];
 
   try {
-    const updatedDataSource = await updateDataSource({
-      id,
-      name,
-      type,
-      properties,
-      userId,
-    });
+    const updatedDataSource = await updateDataSource(id, { name, type });
 
     return NextResponse.json({ success: true, dataSource: updatedDataSource });
   } catch (error) {

@@ -1,6 +1,11 @@
 import { prisma } from '~/lib/prisma';
-import { PermissionAction, PermissionResource } from '@prisma/client';
-import type { Environment, Prisma } from '@prisma/client';
+import {
+  type Environment,
+  EnvironmentVariableType,
+  PermissionAction,
+  PermissionResource,
+  Prisma,
+} from '@prisma/client';
 import { buildResourceWhereClause } from '@/lib/casl/prisma-helpers';
 import type { AppAbility } from '~/lib/casl/user-ability';
 
@@ -9,6 +14,10 @@ export interface EnvironmentWithRelations extends Environment {
   websites: any[];
   environmentVariables: any[];
 }
+
+type GetEnvironmentsFilter = {
+  environmentVariableType?: EnvironmentVariableType;
+};
 
 export async function getEnvironment(id: string): Promise<EnvironmentWithRelations | null> {
   return prisma.environment.findUnique({
@@ -32,7 +41,10 @@ export async function getEnvironmentName(id: string): Promise<string | null> {
   return env?.name ?? null;
 }
 
-export async function getEnvironments(userAbility: AppAbility): Promise<EnvironmentWithRelations[]> {
+export async function getEnvironments(
+  userAbility: AppAbility,
+  { environmentVariableType }: GetEnvironmentsFilter = {},
+): Promise<EnvironmentWithRelations[]> {
   const whereClause = buildResourceWhereClause(
     userAbility,
     PermissionAction.read,
@@ -48,7 +60,9 @@ export async function getEnvironments(userAbility: AppAbility): Promise<Environm
         },
       },
       websites: true,
-      environmentVariables: true,
+      environmentVariables: {
+        where: environmentVariableType ? { type: environmentVariableType } : undefined,
+      },
     },
     orderBy: { name: 'asc' },
   });
