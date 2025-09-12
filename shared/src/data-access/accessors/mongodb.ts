@@ -159,7 +159,7 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
             modifiedCount: updateResult.modifiedCount,
             acknowledged: updateResult.acknowledged,
             upsertedCount: updateResult.upsertedCount,
-            upsertedIds: updateResult.upsertedId,
+            upsertedId: updateResult.upsertedId,
           },
         ];
       } else if (parsedQuery.operation === 'deleteOne') {
@@ -291,27 +291,37 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
     const originalId = filter._id;
     const alternativeFormats = this._getAlternativeIdFormats(originalId);
 
+    // Operation handlers map
+    const operationHandlers: { [key: string]: (filter: any, updateOrOptions?: any, options?: any) => Promise<any> } = {
+      updateOne: (f, u, o) => collection.updateOne(f, u, o),
+      updateMany: (f, u, o) => collection.updateMany(f, u, o),
+      deleteOne: (f) => collection.deleteOne(f),
+      deleteMany: (f) => collection.deleteMany(f),
+    };
+
+    const executeOperation = operationHandlers[operation];
+
+    if (!executeOperation) {
+      throw new Error(`Unsupported operation: ${operation}`);
+    }
+
+    // Success checkers map
+    const hasResults = (result: any): boolean => {
+      if (operation.includes('update') || operation.includes('delete')) {
+        return result.matchedCount > 0 || result.deletedCount > 0;
+      }
+
+      return false;
+    };
+
+    // Try alternative ID formats
     for (const alternativeId of alternativeFormats) {
       const alternativeFilter = { ...filter, _id: alternativeId };
 
       try {
-        let result;
+        const result = await executeOperation(alternativeFilter, updateOrOptions, options);
 
-        if (operation === 'updateOne') {
-          result = await collection.updateOne(alternativeFilter, updateOrOptions, options);
-        } else if (operation === 'updateMany') {
-          result = await collection.updateMany(alternativeFilter, updateOrOptions, options);
-        } else if (operation === 'deleteOne') {
-          result = await collection.deleteOne(alternativeFilter);
-        } else if (operation === 'deleteMany') {
-          result = await collection.deleteMany(alternativeFilter);
-        } else if (operation === 'find') {
-          result = await collection.find(alternativeFilter, updateOrOptions).toArray();
-        }
-
-        if ((operation.includes('update') || operation.includes('delete')) && result.matchedCount > 0) {
-          return result;
-        } else if (operation === 'find' && result.length > 0) {
+        if (hasResults(result)) {
           return result;
         }
       } catch {
@@ -319,22 +329,15 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
       }
     }
 
-    // If all alternatives fail, return the original result (no matches)
-    let originalResult;
+    // Return default "not found" result based on operation type
+    const defaultResults: { [key: string]: any } = {
+      updateOne: { matchedCount: 0, modifiedCount: 0, acknowledged: true, upsertedId: null },
+      updateMany: { matchedCount: 0, modifiedCount: 0, acknowledged: true, upsertedCount: 0, upsertedId: null },
+      deleteOne: { deletedCount: 0, acknowledged: true },
+      deleteMany: { deletedCount: 0, acknowledged: true },
+    };
 
-    if (operation === 'updateOne') {
-      originalResult = await collection.updateOne(filter, updateOrOptions, options);
-    } else if (operation === 'updateMany') {
-      originalResult = await collection.updateMany(filter, updateOrOptions, options);
-    } else if (operation === 'deleteOne') {
-      originalResult = await collection.deleteOne(filter);
-    } else if (operation === 'deleteMany') {
-      originalResult = await collection.deleteMany(filter);
-    } else if (operation === 'find') {
-      originalResult = await collection.find(filter, updateOrOptions).toArray();
-    }
-
-    return originalResult;
+    return defaultResults[operation] || {};
   }
 
   private _getAlternativeIdFormats(originalId: any): any[] {
@@ -565,7 +568,15 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
 
     this._db = this._client.db(dbName);
 
-    await this._db.listCollections().toArray();
+    try {
+      const collections = await this._db.listCollections().toArray();
+
+      if (collections.length === 0) {
+        console.warn('MongoDB: No collections found in the database. Please verify the database name and connection.');
+      }
+    } catch (error) {
+      console.log('MongoDB: Could not list collections:', (error as Error).message);
+    }
   }
 
   async close(): Promise<void> {
