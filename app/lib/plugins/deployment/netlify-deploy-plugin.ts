@@ -257,7 +257,11 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
       }
 
       const deploys = (await deployResponse.json()) as any[];
-      const latestDeploy = deploys[0];
+      const latestDeploy = deploys?.[0];
+
+      if (!latestDeploy) {
+        throw new Error('No deployment information found after deployment');
+      }
 
       // After successful deployment, save to database and track telemetry
       if (siteInfo) {
