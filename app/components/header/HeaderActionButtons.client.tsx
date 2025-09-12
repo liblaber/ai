@@ -433,18 +433,6 @@ export function HeaderActionButtons() {
   };
 
   const renderDropdownContent = () => {
-    if (deploymentTypesConfig.length === 0) {
-      return (
-        <div className="w-64 p-4 text-sm text-gray-700 dark:text-gray-300">
-          <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-500">
-            <Settings className="w-4 h-4" />
-            Loading...
-          </div>
-          <p className="text-xs text-gray-500">Loading deployment options...</p>
-        </div>
-      );
-    }
-
     if (!deploymentTypesConfig.length) {
       return (
         <div className="w-64 p-4 text-sm text-gray-700 dark:text-gray-300">
