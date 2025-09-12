@@ -71,7 +71,7 @@ export default function AddDeploymentMethodForm({
     };
 
     fetchData();
-  }, [loadProviders]);
+  }, []);
 
   // Auto-select provider when providers are loaded
   useEffect(() => {

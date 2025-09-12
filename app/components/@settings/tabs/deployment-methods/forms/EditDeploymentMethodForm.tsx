@@ -50,7 +50,7 @@ export default function EditDeploymentMethodForm({
     };
 
     loadProvidersData();
-  }, [loadProviders]);
+  }, []);
 
   // Set selected provider when providers are loaded
   useEffect(() => {
