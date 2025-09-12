@@ -44,6 +44,7 @@ async function getRootData() {
     let environmentDataSources: any[] = [];
     let environmentVariables: any[] = [];
     let environmentDeploymentMethods: any[] = [];
+    const deploymentProviders: any[] = [];
     let dataSourceTypes: any[] = [];
 
     if (typedSession?.user) {
@@ -59,6 +60,7 @@ async function getRootData() {
       environmentVariables = await getEnvironmentVariables(EnvironmentVariableType.GLOBAL);
 
       environmentDeploymentMethods = await getEnvironmentDeploymentMethods();
+      // deploymentProviders will be fetched by DataLoader
     }
 
     // Initialize plugin manager
@@ -74,6 +76,7 @@ async function getRootData() {
       environmentDataSources,
       environmentVariables,
       environmentDeploymentMethods,
+      deploymentProviders,
       pluginAccess,
       dataSourceTypes,
     };
@@ -84,6 +87,7 @@ async function getRootData() {
       environmentDataSources: [],
       environmentVariables: [],
       environmentDeploymentMethods: [],
+      deploymentProviders: [],
       pluginAccess: FREE_PLUGIN_ACCESS,
       dataSourceTypes: [],
     };

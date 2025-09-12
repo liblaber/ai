@@ -4,7 +4,11 @@ import { toast } from 'sonner';
 import { Eye, EyeOff, Loader2, Save, Trash2, XCircle } from 'lucide-react';
 import { BaseSelect } from '~/components/ui/Select';
 import { DeploymentMethodCredentialsType } from '@prisma/client';
-import { type EnvironmentDeploymentMethod } from '~/lib/stores/deploymentMethods';
+import {
+  type EnvironmentDeploymentMethod,
+  useDeploymentMethodActions,
+  useDeploymentMethodsStore,
+} from '~/lib/stores/deploymentMethods';
 import { type CredentialField, type DeploymentProviderInfo } from '~/lib/validation/deploymentMethods';
 import { type DeploymentMethodResponse } from '~/types/deployment-methods';
 
@@ -25,47 +29,43 @@ export default function EditDeploymentMethodForm({
 }: EditDeploymentMethodFormProps) {
   const [name, setName] = useState(selectedDeploymentMethod.name);
   const [selectedProvider, setSelectedProvider] = useState<DeploymentProviderInfo | null>(null);
-  const [providers, setProviders] = useState<DeploymentProviderInfo[]>([]);
-  const [isLoadingProviders, setIsLoadingProviders] = useState(true);
   const [credentials, setCredentials] = useState<CredentialField[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [applyToAllEnvironments, setApplyToAllEnvironments] = useState(false);
   const [showSensitiveInput, setShowSensitiveInput] = useState(false);
 
-  // Fetch providers on component mount
+  // Use providers from store
+  const { providers } = useDeploymentMethodsStore();
+  const { loadProviders } = useDeploymentMethodActions();
+
+  // Load providers on component mount
   useEffect(() => {
-    const fetchProviders = async () => {
+    const loadProvidersData = async () => {
       try {
-        const providersResponse = await fetch('/api/deployment-methods/providers');
-        const providersResult = await providersResponse.json<DeploymentProviderInfo[]>();
-
-        if (providersResult) {
-          setProviders(providersResult);
-
-          // Find and set the current provider
-          const currentProvider = providersResult.find(
-            (p: DeploymentProviderInfo) => p.id === selectedDeploymentMethod.provider,
-          );
-
-          if (currentProvider) {
-            setSelectedProvider(currentProvider);
-          } else if (providersResult.length === 1) {
-            // If current provider is not available but only one provider is available, use that one
-            setSelectedProvider(providersResult[0]);
-          }
-        } else {
-          setError('Failed to fetch providers');
-        }
+        await loadProviders();
       } catch (error) {
-        setError('Failed to fetch providers');
-        console.error('Error fetching providers:', error);
-      } finally {
-        setIsLoadingProviders(false);
+        setError('Failed to load providers');
+        console.error('Error loading providers:', error);
       }
     };
 
-    fetchProviders();
-  }, [selectedDeploymentMethod.provider]);
+    loadProvidersData();
+  }, []);
+
+  // Set selected provider when providers are loaded
+  useEffect(() => {
+    if (providers.length > 0 && !selectedProvider) {
+      // Find and set the current provider
+      const currentProvider = providers.find((p: DeploymentProviderInfo) => p.id === selectedDeploymentMethod.provider);
+
+      if (currentProvider) {
+        setSelectedProvider(currentProvider);
+      } else if (providers.length === 1) {
+        // If current provider is not available but only one provider is available, use that one
+        setSelectedProvider(providers[0]);
+      }
+    }
+  }, [providers, selectedProvider, selectedDeploymentMethod.provider]);
 
   // Initialize credentials from selected deployment method
   useEffect(() => {
@@ -135,7 +135,7 @@ export default function EditDeploymentMethodForm({
     }
 
     // Check if all required credentials are filled
-    const missingCredentials = credentials.filter((cred) => !cred.value.trim());
+    const missingCredentials = credentials.filter((cred) => !String(cred.value).trim());
 
     if (missingCredentials.length > 0) {
       setError('Please fill in all required credentials');
@@ -157,7 +157,7 @@ export default function EditDeploymentMethodForm({
           applyToAllEnvironments,
           credentials: credentials.map((cred) => ({
             type: cred.type,
-            value: cred.value.trim(),
+            value: String(cred.value).trim(),
           })),
         }),
       });
@@ -292,8 +292,8 @@ export default function EditDeploymentMethodForm({
                 value: provider.id,
                 description: provider.description,
               }))}
-              placeholder={isLoadingProviders ? 'Loading providers...' : 'Select provider'}
-              isDisabled={isLoadingProviders || providers.length === 1}
+              placeholder={providers.length === 0 ? 'Loading providers...' : 'Select provider'}
+              isDisabled={providers.length === 0 || providers.length === 1}
               width="100%"
               minWidth="100%"
               isSearchable={false}
@@ -314,7 +314,7 @@ export default function EditDeploymentMethodForm({
                   <div className="relative">
                     <input
                       type={isSensitiveCredential(cred.type) && !showSensitiveInput ? 'password' : 'text'}
-                      value={cred.value}
+                      value={String(cred.value)}
                       onChange={(e) => handleCredentialChange(index, e.target.value)}
                       disabled={isSubmitting}
                       className={classNames(
@@ -382,7 +382,10 @@ export default function EditDeploymentMethodForm({
                 type="button"
                 onClick={handleSubmit}
                 disabled={
-                  isSubmitting || !name.trim() || !selectedProvider || credentials.some((cred) => !cred.value.trim())
+                  isSubmitting ||
+                  !name.trim() ||
+                  !selectedProvider ||
+                  credentials.some((cred) => !String(cred.value).trim())
                 }
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',

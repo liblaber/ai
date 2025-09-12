@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       environmentId,
     });
 
-    return NextResponse.json({ success: true, dataSource });
+    return NextResponse.json({ success: true, environmentDataSource: { dataSourceId: dataSource.id, environmentId } });
   } catch (error: any) {
     // Check if this is a "secret already exists" error from Infisical
     if (error?.message?.includes('Secret already exist')) {
