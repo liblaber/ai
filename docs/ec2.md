@@ -20,7 +20,7 @@ This document helps you deploy **liblab.ai** on an **Ubuntu 22.04 EC2 instance**
 
 ```bash
 sudo apt update
-sudo apt install -y docker.io docker-compose curl nginx certbot python3-certbot-nginx
+sudo apt install -y docker.io docker-compose-plugin curl nginx certbot python3-certbot-nginx
 sudo systemctl enable --now docker nginx
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
