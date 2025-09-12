@@ -105,7 +105,8 @@ This enables HTTPS and sets up auto-renewal ([DEV Community][1], [Reintech][2]).
 sudo tee /etc/systemd/system/liblab-ai.service <<EOF
 [Unit]
 Description=liblab.ai service
-After=network.target
+After=network.target docker.service
+Wants=docker.service
 
 [Service]
 WorkingDirectory=/home/ubuntu/ai
