@@ -474,23 +474,10 @@ export class WorkbenchStore {
           currentFolder.file(pathSegments[pathSegments.length - 1], dirent.content);
         } else if (dirent?.type === 'file' && filePath === toAbsoluteFilePath('.env')) {
           const lines = dirent.content.split('\n').filter((line) => line.trim() !== '');
-          const viteApiUrlIndex = lines.findIndex((line) => line.startsWith('VITE_API_BASE_URL='));
 
-          if (viteApiUrlIndex !== -1) {
-            lines[viteApiUrlIndex] = "VITE_API_BASE_URL='http://localhost:3000'";
-          } else {
-            lines.push("VITE_API_BASE_URL='http://localhost:3000'");
-          }
-
-          // Ensure QUERY_MODE is set to direct
-          const queryModeIndex = lines.findIndex((line) => line.startsWith('QUERY_MODE='));
-
-          if (queryModeIndex !== -1) {
-            lines[queryModeIndex] = 'QUERY_MODE=direct';
-          } else if (lines.length === 0 || !lines.some((line) => line.startsWith('QUERY_MODE='))) {
-            // If QUERY_MODE is not set, add it
-            lines.push('QUERY_MODE=direct');
-          }
+          this.#updateOrWriteEnvironmentVariable(lines, 'VITE_API_BASE_URL', "'http://localhost:3000'");
+          this.#updateOrWriteEnvironmentVariable(lines, 'QUERY_MODE', 'direct');
+          this.#updateOrWriteEnvironmentVariable(lines, 'API_MODE', 'direct');
 
           zip.file(relativePath, lines.join('\n') + '\n');
         } else {
@@ -696,6 +683,19 @@ export class WorkbenchStore {
   #getArtifact(id: string) {
     const artifacts = this.artifacts.get();
     return artifacts[id];
+  }
+
+  #updateOrWriteEnvironmentVariable(lines: string[], key: string, value: string) {
+    const configLine = `${key}=${value}`;
+    const existingIndex = lines.findIndex((line) => line.startsWith(`${key}=`));
+
+    if (existingIndex !== -1) {
+      // Update existing line
+      lines[existingIndex] = configLine;
+    } else {
+      // Add new line if it doesn't exist
+      lines.push(configLine);
+    }
   }
 }
 
