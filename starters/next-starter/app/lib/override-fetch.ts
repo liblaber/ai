@@ -2,7 +2,7 @@ if (process.env.NEXT_RUNTIME === 'nodejs' && process.env.API_MODE !== 'direct') 
   const originalFetch = global.fetch;
 
   global.fetch = async (url, options = {}) => {
-    if (isApiUrl(url)) {
+    if (shouldNotProxyRequest(url)) {
       return originalFetch(url, options);
     }
 
@@ -13,11 +13,15 @@ if (process.env.NEXT_RUNTIME === 'nodejs' && process.env.API_MODE !== 'direct') 
   };
 }
 
-function isApiUrl(url: RequestInfo | URL): boolean {
+function shouldNotProxyRequest(url: RequestInfo | URL): boolean {
   const hostname = typeof url === 'string' ? new URL(url).hostname : url instanceof URL ? url.hostname : '';
 
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return true;
+  }
+
   if (!process.env.VITE_API_BASE_URL) {
-    throw new Error('VITE_API_BASE_URL is not defined');
+    return false;
   }
 
   return hostname === new URL(process.env.VITE_API_BASE_URL).hostname;
