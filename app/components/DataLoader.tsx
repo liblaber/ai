@@ -70,11 +70,13 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       setProviders(rootData.deploymentProviders);
     }
   }, [
-    rootData.pluginAccess,
-    rootData.dataSourceTypes,
-    rootData.environmentVariables,
-    rootData.environmentDeploymentMethods,
-    rootData.deploymentProviders,
+    JSON.stringify({
+      pluginAccess: rootData.pluginAccess,
+      dataSourceTypes: rootData.dataSourceTypes,
+      environmentVariables: rootData.environmentVariables,
+      environmentDeploymentMethods: rootData.environmentDeploymentMethods,
+      deploymentProviders: rootData.deploymentProviders,
+    }),
     setPluginAccess,
     setDataSourceTypes,
     setEnvironmentVariables,
