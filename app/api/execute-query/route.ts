@@ -2,11 +2,11 @@ import { decryptData, encryptData } from '@liblab/encryption/encryption';
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery } from '~/lib/database';
 import { env } from '~/env';
-import { z } from 'zod';
 import { createScopedLogger } from '~/utils/logger';
 import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 const logger = createScopedLogger('execute-query');
+import { z } from 'zod';
 
 const encryptedRequestSchema = z.object({
   encryptedData: z.string().min(1, 'Encrypted data is required'),

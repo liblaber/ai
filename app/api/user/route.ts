@@ -2,10 +2,10 @@ import { PermissionAction, PermissionResource } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserAbility } from '~/auth/session';
 import { userService } from '~/lib/services/userService';
-import { z } from 'zod';
 import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('user-api');
+import { z } from 'zod';
 
 const updateRoleSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),

@@ -13,6 +13,8 @@ import {
 } from '~/lib/stores/environmentDataSources';
 import { settingsPanelStore, useSettingsStore } from '~/lib/stores/settings';
 import { useStore } from '@nanostores/react';
+import { logger } from '~/utils/logger';
+import { z } from 'zod';
 import { FilterButton } from '~/components/@settings/shared/components/FilterButton';
 import ActiveFilters from '~/components/@settings/shared/components/ActiveFilters';
 import { DataSourceDetails } from '~/components/@settings/tabs/data/forms/DataSourceDetails';
@@ -21,6 +23,50 @@ interface EnvironmentDataSourcesResponse {
   success: boolean;
   environmentDataSources: EnvironmentDataSource[];
 }
+
+const environmentDataSourceSchema = z.object({
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+  dataSourceId: z.string(),
+  environmentId: z.string(),
+  environment: z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().nullable(),
+  }),
+  dataSource: z.object({
+    id: z.string(),
+    name: z.string(),
+    createdAt: z.coerce.date(),
+    type: z.string(),
+    typeLabel: z.string(),
+    updatedAt: z.coerce.date(),
+  }),
+  dataSourceProperties: z.array(
+    z.object({
+      type: z.string(),
+      environmentVariables: z.array(
+        z.object({
+          id: z.string(),
+          key: z.string(),
+          value: z.string(),
+          description: z.string().nullable(),
+          type: z.enum(['GLOBAL', 'DATA_SOURCE']),
+          environmentId: z.string(),
+          dataSourceId: z.string().nullable(),
+          createdById: z.string(),
+          createdAt: z.coerce.date(),
+          updatedAt: z.coerce.date(),
+        }),
+      ),
+    }),
+  ),
+});
+
+const environmentDataSourcesResponseSchema = z.object({
+  success: z.boolean(),
+  environmentDataSources: z.array(environmentDataSourceSchema),
+});
 
 export interface TestConnectionResponse {
   success: boolean;
@@ -63,16 +109,47 @@ export default function DataTab() {
     }
   }, [selectedTab]);
 
+  // Centralized data source loading function with proper validation
   const loadDataSources = useCallback(async () => {
     try {
       const response = await fetch('/api/data-sources');
-      const data = (await response.json()) as EnvironmentDataSourcesResponse;
+
+      if (!response.ok) {
+        logger.error('Failed to fetch data sources:', response.status, response.statusText);
+        return;
+      }
+
+      const responseText = await response.text();
+
+      if (!responseText) {
+        logger.error('Empty response when fetching data sources');
+        return;
+      }
+
+      let data: EnvironmentDataSourcesResponse;
+
+      try {
+        const rawData = JSON.parse(responseText);
+        const validationResult = environmentDataSourcesResponseSchema.safeParse(rawData);
+
+        if (!validationResult.success) {
+          logger.error('Invalid data sources response format:', validationResult.error);
+          return;
+        }
+
+        data = validationResult.data as EnvironmentDataSourcesResponse;
+      } catch (parseError) {
+        logger.error('Failed to parse data sources response:', parseError);
+        return;
+      }
 
       if (data.success) {
         setEnvironmentDataSources(data.environmentDataSources);
+      } else {
+        logger.error('Data sources fetch was not successful:', data);
       }
     } catch (error) {
-      console.error('Failed to load data sources:', error);
+      logger.error('Error loading data sources:', error);
     }
   }, [setEnvironmentDataSources]);
 
@@ -104,13 +181,8 @@ export default function DataTab() {
     if (data.success) {
       toast.success('Data source deleted successfully');
 
-      // Reload data sources
-      const reloadResponse = await fetch('/api/data-sources');
-      const reloadData = (await reloadResponse.json()) as EnvironmentDataSourcesResponse;
-
-      if (reloadData.success) {
-        setEnvironmentDataSources(reloadData.environmentDataSources);
-      }
+      // Reload data sources using centralized function
+      await loadDataSources();
 
       setShowDeleteConfirm(false);
       setShowDetails(false);
@@ -177,19 +249,9 @@ export default function DataTab() {
         <AddDataSourceForm
           isSubmitting={isSubmitting}
           setIsSubmitting={setIsSubmitting}
-          onSuccess={() => {
-            // Reload data sources
-            const reloadResponse = fetch('/api/data-sources');
-            reloadResponse
-              .then((response) => response.json())
-              .then((data: unknown) => {
-                const typedData = data as EnvironmentDataSourcesResponse;
-
-                if (typedData.success) {
-                  setEnvironmentDataSources(typedData.environmentDataSources);
-                }
-              })
-              .catch((error) => console.error('Failed to reload data sources after add:', error));
+          onSuccess={async () => {
+            // Reload data sources using centralized function
+            await loadDataSources();
             handleBack();
           }}
         />

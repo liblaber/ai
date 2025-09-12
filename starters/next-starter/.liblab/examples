@@ -306,4 +306,185 @@ export const SIDEBAR_LINKS = [
       </liblabArtifact>
     </assistant_response>
   </example>
+  <example>
+    <user_prompt>Create a dashboard using Google Sheets data</user_prompt>
+    <assistant_response>
+      I'll create a dashboard that connects to Google Sheets and displays the data in interactive charts.
+
+      <liblabArtifact id="google-sheets-dashboard" title="Create Google Sheets Dashboard">
+        <liblabAction type="commit-message">Add Google Sheets dashboard with data visualization</liblabAction>
+        <liblabAction type="file" filePath="app/page.tsx">
+import { executeQuery } from '@/db/execute-query';
+import { CustomerData } from '@/components/dashboard/CustomerData';
+import { WithErrorHandling } from '@/components/hoc/WithErrorHandling';
+import { Customer } from '@/types';
+
+export default async function Home() {
+  // Note: For Google Sheets, queries are JSON format, not SQL
+  const customersResult = await executeQuery<Customer>(
+    JSON.stringify({
+      operation: "readSheetPaginated",
+      parameters: {
+        maxRows: 50,
+        valueRenderOption: "FORMATTED_VALUE"
+      }
+    })
+  );
+
+  return (
+    <main className="p-8 space-y-8">
+      <h1 className="text-4xl font-bold">Customer Dashboard</h1>
+      <div className="grid gap-8 md:grid-cols-1">
+        <WithErrorHandling queryData={customersResult} component={CustomerData} />
+      </div>
+    </main>
+  );
+}
+        </liblabAction>
+        <liblabAction type="file" filePath="app/components/dashboard/CustomerData.tsx">
+'use client';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { Bar, BarChart, XAxis, YAxis, PieChart, Pie, Cell } from 'recharts';
+import { Customer } from '@/types';
+
+const COLORS = [
+  'var(--color-chart-1)',
+  'var(--color-chart-2)', 
+  'var(--color-chart-3)',
+  'var(--color-chart-4)',
+  'var(--color-chart-5)'
+];
+
+export function CustomerData({ data }: { data: Customer[] }) {
+  // Process data for country distribution
+  const countryData = data.reduce((acc, customer) => {
+    const country = customer.Country || 'Unknown';
+    acc[country] = (acc[country] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const pieData = Object.entries(countryData)
+    .map(([country, count]) => ({ country, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  const chartConfig = {
+    customers: {
+      label: 'Customers',
+      theme: {
+        light: 'var(--color-chart-1)',
+        dark: 'var(--color-chart-1)',
+      },
+    },
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer Distribution by Country</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                dataKey="count"
+                nameKey="country"
+                cx="50%"
+                cy="50%"
+                outerRadius={120}
+                label={(entry) => entry.country}
+              >
+                {pieData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <ChartTooltip />
+            </PieChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Countries by Customer Count</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig}>
+            <BarChart data={pieData.slice(0, 8)}>
+              <XAxis dataKey="country" />
+              <YAxis />
+              <ChartTooltip />
+              <Bar
+                dataKey="count"
+                name="customers"
+                fill="var(--color-chart-1)"
+              />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Country
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {data.slice(0, 20).map((customer, index) => (
+                  <tr key={index}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {customer['First Name']} {customer['Last Name']}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {customer.Email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {customer.Country}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+        </liblabAction>
+        <liblabAction type="file" filePath="app/types.ts">
+export interface Customer {
+  'First Name': string;
+  'Last Name': string;
+  'Customer Id': string;
+  Country: string;
+  Email: string;
+  'Phone 1': string;
+  Index: string;
+  Index_numeric: number;
+  row_number: number;
+}
+        </liblabAction>
+      </liblabArtifact>
+    </assistant_response>
+  </example>
 </examples>

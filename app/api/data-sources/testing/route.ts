@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('Error testing connection:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',
