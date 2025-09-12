@@ -119,7 +119,7 @@ export class AwsDeployPlugin extends BaseDeploymentPlugin {
           AWS_SECRET_ACCESS_KEY: secretAccessKey,
           AWS_REGION: region,
         },
-        5 * 60 * 1000, // 5 minutes timeout
+        15 * 60 * 1000,
       );
 
       logger.info('SST deployment completed', JSON.stringify({ chatId, output: deployResult.output }));
