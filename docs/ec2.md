@@ -95,7 +95,7 @@ sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx -d your-domain.com
 ```
 
-This enables HTTPS and sets up auto-renewal ([DEV Community][1], [Reintech][2]).
+This enables HTTPS and sets up auto-renewal.
 
 ---
 
@@ -124,7 +124,7 @@ sudo systemctl enable liblab-ai
 sudo systemctl start liblab-ai
 ```
 
-This ensures liblab.ai auto-starts on reboot and restarts on failure ([DEV Community][3], [DigitalOcean][4]).
+This ensures liblab.ai auto-starts on reboot and restarts on failure.
 
 ---
 
