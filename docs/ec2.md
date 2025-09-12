@@ -110,7 +110,7 @@ Wants=docker.service
 
 [Service]
 WorkingDirectory=/home/ubuntu/ai
-ExecStart=/usr/bin/pnpm run quickstart
+ExecStart=/usr/local/bin/pnpm run quickstart
 Restart=on-failure
 User=ubuntu
 Environment=NODE_ENV=production
