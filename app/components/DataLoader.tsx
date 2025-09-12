@@ -222,7 +222,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     };
 
     loadUserData();
-  }, [session?.user, anonymousProvider, rootData, router]);
+  }, [JSON.stringify({ user: session?.user, provider: anonymousProvider, rootData })]);
 
   const fetchUserData = async (): Promise<UserProfile> => {
     try {
