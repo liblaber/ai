@@ -398,6 +398,7 @@ pnpm run dev
 - [**Contributing Guidelines**](https://github.com/liblaber/ai/blob/main/CONTRIBUTING.md) - How to contribute to the project
 - [Security & Privacy](docs/security-and-privacy.md)
 - [Configuration](docs/configuration.md)
+- [Deploy on EC2 with HTTPS & Auto-Restart](docs/ec2.md)
 - [Getting Started](docs/getting-started.md)
 - [Features](docs/features.md)
 - [Environments](docs/environments.md)
