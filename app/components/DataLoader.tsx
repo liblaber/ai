@@ -20,7 +20,6 @@ import { useDeploymentMethodsStore } from '~/lib/stores/deploymentMethods';
 import { EnvironmentVariableType } from '@prisma/client';
 import type { DeploymentProviderInfo } from '~/types/deployment-methods';
 import { logger } from '~/utils/logger';
-import { getDeploymentProviders } from '~/lib/services/deploymentMethodService';
 
 export interface RootData {
   user: UserProfile | null;
@@ -183,7 +182,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
 
       if ((!rootData.deploymentProviders || rootData.deploymentProviders.length === 0) && session?.user) {
         logger.debug('🔄 Fetching deployment providers...');
-        currentDeploymentProviders = await getDeploymentProviders();
+        currentDeploymentProviders = await fetchDeploymentProviders();
         setProviders(currentDeploymentProviders);
       } else if (rootData.deploymentProviders) {
         setProviders(currentDeploymentProviders);
@@ -328,6 +327,25 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       return data.environmentDeploymentMethods || [];
     } catch (error) {
       logger.error('❌ Failed to fetch deployment methods:', error);
+      return [];
+    }
+  };
+
+  const fetchDeploymentProviders = async (): Promise<DeploymentProviderInfo[]> => {
+    try {
+      const response = await fetch('/api/deployment-methods/providers');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch deployment providers');
+      }
+
+      const data = (await response.json()) as DeploymentProviderInfo[];
+
+      logger.info('✅ Deployment providers fetched successfully');
+
+      return data || [];
+    } catch (error) {
+      logger.error('❌ Failed to fetch deployment providers:', error);
       return [];
     }
   };

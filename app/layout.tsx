@@ -11,7 +11,7 @@ import { auth } from '~/auth/auth-config';
 import type { Session } from '~/auth/session';
 import { getUserAbility } from '~/lib/casl/user-ability';
 import { getEnvironmentVariables } from '~/lib/services/environmentVariablesService';
-import { getEnvironmentDeploymentMethods, getDeploymentProviders } from '~/lib/services/deploymentMethodService';
+import { getEnvironmentDeploymentMethods } from '~/lib/services/deploymentMethodService';
 import { EnvironmentVariableType } from '@prisma/client';
 
 // Force dynamic rendering to prevent static generation issues with headers
@@ -44,7 +44,7 @@ async function getRootData() {
     let environmentDataSources: any[] = [];
     let environmentVariables: any[] = [];
     let environmentDeploymentMethods: any[] = [];
-    let deploymentProviders: any[] = [];
+    const deploymentProviders: any[] = [];
     let dataSourceTypes: any[] = [];
 
     if (typedSession?.user) {
@@ -60,7 +60,7 @@ async function getRootData() {
       environmentVariables = await getEnvironmentVariables(EnvironmentVariableType.GLOBAL);
 
       environmentDeploymentMethods = await getEnvironmentDeploymentMethods();
-      deploymentProviders = await getDeploymentProviders();
+      // deploymentProviders will be fetched by DataLoader
     }
 
     // Initialize plugin manager

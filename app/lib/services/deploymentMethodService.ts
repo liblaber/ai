@@ -3,7 +3,6 @@ import { env } from '~/env';
 import { decryptData, encryptData } from '@liblab/encryption/encryption';
 import { DeploymentMethodCredentialsType, DeploymentProvider } from '@prisma/client';
 import { type CreateDeploymentMethodInput, type UpdateDeploymentMethodInput } from '~/lib/validation/deploymentMethods';
-import type { DeploymentProviderInfo } from '~/types/deployment-methods';
 
 export interface EnvironmentDeploymentMethod {
   id: string;
@@ -421,21 +420,4 @@ export async function getDeploymentMethodCredentials(
   }
 
   return credentials;
-}
-
-export async function getDeploymentProviders() {
-  try {
-    const response = await fetch('/api/deployment-methods/providers');
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch deployment providers');
-    }
-
-    const providers = await response.json<DeploymentProviderInfo[]>();
-
-    return providers;
-  } catch (error) {
-    console.error('Error fetching deployment providers:', error);
-    return [];
-  }
 }
