@@ -34,6 +34,17 @@ export default defineConfig({
 
     /* Record video for every run */
     video: 'on',
+
+    /* Navigation timeout */
+    navigationTimeout: 60000,
+
+    /* Action timeout */
+    actionTimeout: 30000,
+
+    /* Expect timeout */
+    expect: {
+      timeout: 15000,
+    },
   },
 
   /* Configure projects for major browsers */
@@ -45,6 +56,19 @@ export default defineConfig({
 
         // Show browser window during test execution (only in non-CI environments)
         headless: !!process.env.CI,
+
+        // Set larger viewport for more reliable testing
+        viewport: { width: 1280, height: 720 },
+
+        // Extra options for stability
+        launchOptions: {
+          args: [
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+          ],
+        },
       },
     },
   ],

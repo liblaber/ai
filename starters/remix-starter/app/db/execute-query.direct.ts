@@ -1,6 +1,13 @@
 import { DataAccessor } from '@/lib/data-access/dataAccessor';
 
-const databaseUrlDecoded = decodeURIComponent(process.env.DATABASE_URL || '');
+let databaseUrlDecoded = process.env.CONNECTION_URL || '';
+
+// Handle double URL encoding - decode until we get a valid URL format
+while (databaseUrlDecoded.includes('%')) {
+  const decoded = decodeURIComponent(databaseUrlDecoded);
+  if (decoded === databaseUrlDecoded) break; // No more decoding needed
+  databaseUrlDecoded = decoded;
+}
 let accessor: ReturnType<typeof DataAccessor.getAccessor> | null = null;
 
 async function getAccessor() {

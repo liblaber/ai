@@ -1,5 +1,6 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createDataStream } from 'ai';
+import { PermissionAction, PermissionResource } from '@prisma/client';
 import { type Messages, type StreamingOptions, streamText } from '~/lib/.server/llm/stream-text';
 import { createScopedLogger } from '~/utils/logger';
 import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
@@ -10,19 +11,18 @@ import { messageService } from '~/lib/services/messageService';
 import { MESSAGE_ROLE } from '~/types/database';
 import { createId } from '@paralleldrive/cuid2';
 import { conversationService } from '~/lib/services/conversationService';
-import type { StarterPluginId } from '~/lib/plugins/types';
 import type { FileMap } from '~/lib/stores/files';
 import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
-import { prisma } from '~/lib/prisma';
 import { LLMManager } from '~/lib/modules/llm/manager';
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import { type UserProfile, userService } from '~/lib/services/userService';
 import { createImplementationPlan } from '~/lib/.server/llm/create-implementation-plan';
-import { getDatabaseSchema } from '~/lib/schema';
-import { requireUserId } from '~/auth/session';
-import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
+import { subject } from '@casl/ability';
+import { requireUserAbility } from '~/auth/session';
 import { AI_SDK_INVALID_KEY_ERROR } from '~/utils/constants';
+import { resolveDataSourceContextProvider } from '~/lib/plugins/data-source/context-provider/data-source-context-provider';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 const WORK_DIR = '/home/project';
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function chatAction(request: NextRequest) {
-  const userId = await requireUserId(request);
+  const { userAbility, userId } = await requireUserAbility(request);
 
   const body = await request.json<{
     messages: Messages;
@@ -48,13 +48,30 @@ async function chatAction(request: NextRequest) {
   const userMessageProperties = extractPropertiesFromMessage(userMessage);
 
   if (!userMessage) {
-    throw new Response('Message not specified', {
+    return NextResponse.json('Message not specified', {
       status: 400,
       statusText: 'Bad Request',
     });
   }
 
   const conversation = await conversationService.getConversation(conversationId);
+  const environmentDataSource = await conversationService.getConversationEnvironmentDataSource(conversationId);
+  const dataSource = environmentDataSource.dataSource;
+
+  if (
+    userAbility.cannot(PermissionAction.read, subject(PermissionResource.DataSource, dataSource)) &&
+    userAbility.cannot(
+      PermissionAction.read,
+      subject(PermissionResource.Environment, { id: environmentDataSource.environmentId }),
+    )
+  ) {
+    return NextResponse.json('Forbidden', {
+      status: 403,
+      statusText: 'Forbidden',
+    });
+  }
+
+  const dataSourceContextProvider = resolveDataSourceContextProvider(dataSource.type);
 
   const cumulativeUsage = {
     completionTokens: 0,
@@ -201,14 +218,11 @@ async function chatAction(request: NextRequest) {
             };
             dataStream.writeData(currentProgressAnnotation);
 
-            const dataSource = await conversationService.getConversationDataSource(conversationId);
-            const databaseSchema = await getDatabaseSchema(dataSource.id, userId);
-
-            implementationPlan = await createImplementationPlan({
+            const implementationPlanResult = await createImplementationPlan({
               isFirstUserMessage: !!userMessageProperties.isFirstUserMessage,
               summary,
               userPrompt: userMessage.content,
-              schema: formatDbSchemaForLLM(databaseSchema),
+              schema: await dataSourceContextProvider?.getSchema?.(environmentDataSource),
               onFinish: (response) => {
                 if (response.usage) {
                   logger.debug('createImplementationPlan token usage', JSON.stringify(response.usage));
@@ -218,7 +232,16 @@ async function chatAction(request: NextRequest) {
                 }
               },
             });
-            logger.debug('Created Implementation Plan:', implementationPlan);
+
+            if (implementationPlanResult) {
+              implementationPlan = implementationPlanResult;
+              logger.debug('Created implementation plan:', implementationPlan.implementationPlan);
+              logger.debug(
+                'Requires additional data source context:',
+                implementationPlan.requiresAdditionalDataSourceContext,
+              );
+            }
+
             currentProgressAnnotation = {
               type: 'progress',
               label: 'implementation-plan',
@@ -227,6 +250,55 @@ async function chatAction(request: NextRequest) {
               message: 'Implementation plan created',
             };
             dataStream.writeData(currentProgressAnnotation);
+          }
+
+          let additionalDataSourceContext: string | null = null;
+
+          if (implementationPlan?.requiresAdditionalDataSourceContext) {
+            if (dataSourceContextProvider) {
+              currentProgressAnnotation = {
+                type: 'progress',
+                label: 'data-source-context',
+                status: 'in-progress',
+                order: progressCounter++,
+                message: 'Analyzing data source context...',
+              };
+              dataStream.writeData(currentProgressAnnotation);
+
+              const { additionalContext, llmUsage: additionalContextUsage } =
+                await dataSourceContextProvider.getContext({
+                  userPrompt: userMessage.content,
+                  conversationSummary: summary,
+                  implementationPlan: implementationPlan?.implementationPlan,
+                  environmentDataSource,
+                });
+
+              additionalDataSourceContext = additionalContext;
+
+              if (additionalContextUsage) {
+                logger.debug(`Additional context token usage: ${JSON.stringify(additionalContextUsage)}`);
+                cumulativeUsage.completionTokens += additionalContextUsage.completionTokens || 0;
+                cumulativeUsage.promptTokens += additionalContextUsage.promptTokens || 0;
+                cumulativeUsage.totalTokens += additionalContextUsage.totalTokens || 0;
+              }
+
+              if (additionalDataSourceContext) {
+                logger.debug('Additional Data Source Context:', additionalDataSourceContext);
+              } else {
+                logger.debug(`No additional context provided for: ${dataSource.type}`);
+              }
+
+              currentProgressAnnotation = {
+                type: 'progress',
+                label: 'data-source-context',
+                status: 'complete',
+                order: progressCounter++,
+                message: 'Data source context analyzed',
+              };
+              dataStream.writeData(currentProgressAnnotation);
+            } else {
+              logger.debug(`Skipping additional data source context for unsupported type: ${dataSource.type}`);
+            }
           }
 
           // Stream the text
@@ -278,8 +350,8 @@ async function chatAction(request: NextRequest) {
 
                 logger.debug('Prompt saved');
 
-                const userId = await requireUserId(request);
                 const user = await userService.getUser(userId);
+
                 await trackChatPrompt(conversationId, currentModel, user, userMessageProperties.content);
               } catch (error) {
                 logger.error('Failed to save prompt', error);
@@ -325,11 +397,12 @@ async function chatAction(request: NextRequest) {
             options,
             files,
             promptId,
-            starterId: conversation?.starterId as StarterPluginId,
+            conversation: conversation!,
             contextOptimization,
             contextFiles: filteredFiles,
             summary,
             implementationPlan,
+            additionalDataSourceContext,
             messageSliceId,
             request,
           });
@@ -407,16 +480,22 @@ async function chatAction(request: NextRequest) {
     logger.error(error);
 
     if (error.message?.includes('API key')) {
-      throw new Response('Invalid or missing API key', {
-        status: 401,
-        statusText: 'Unauthorized',
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid or missing API key ',
+        },
+        { status: 401, statusText: 'Unauthorized' },
+      );
     }
 
-    throw new Response(null, {
-      status: 500,
-      statusText: 'Internal Server Error',
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Internal Server Error',
+      },
+      { status: 500 },
+    );
   }
 }
 
@@ -430,36 +509,25 @@ async function trackChatPrompt(
   userMessage: string,
 ): Promise<void> {
   try {
-    const conversationWithDataSource = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-      include: {
-        dataSource: {
-          select: {
-            connectionString: true,
-          },
+    const environmentDataSource = await conversationService.getConversationEnvironmentDataSource(conversationId);
+
+    const pluginId = await DataSourcePluginManager.getAccessorPluginId(
+      environmentDataSource.dataSource.type as DataSourceType,
+    );
+
+    const telemetry = await getTelemetry();
+    await telemetry.trackTelemetryEvent(
+      {
+        eventType: TelemetryEventType.USER_CHAT_PROMPT,
+        properties: {
+          conversationId,
+          dataSourceType: pluginId,
+          llmModel,
+          userMessage,
         },
       },
-    });
-
-    if (conversationWithDataSource?.dataSource.connectionString) {
-      const pluginId = DataSourcePluginManager.getAccessorPluginId(
-        conversationWithDataSource.dataSource.connectionString,
-      );
-
-      const telemetry = await getTelemetry();
-      await telemetry.trackTelemetryEvent(
-        {
-          eventType: TelemetryEventType.USER_CHAT_PROMPT,
-          properties: {
-            conversationId,
-            dataSourceType: pluginId,
-            llmModel,
-            userMessage,
-          },
-        },
-        user,
-      );
-    }
+      user,
+    );
   } catch (telemetryError) {
     logger.error('Failed to track telemetry event', telemetryError);
   }

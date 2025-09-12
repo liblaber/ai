@@ -20,6 +20,8 @@ RUN npm install -g pnpm && pnpm install
 # Last supported deno version for netlify is 2.2.4
 RUN npm install -g deno@2.2.4
 
+RUN npm install -g sst
+
 RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment
 RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
 RUN echo "LANG=en_US.UTF-8" > /etc/locale.conf

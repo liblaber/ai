@@ -50,7 +50,7 @@ export function detectProjectCommands(packageJson: File): ProjectCommands | null
         'Would you like me to inspect package.json to determine the available scripts for running this project?',
     };
   } catch (error) {
-    console.error('Error parsing package.json:', error);
+    logger.error('Error parsing package.json:', error);
     return null;
   }
 }

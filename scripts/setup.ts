@@ -183,25 +183,27 @@ async function main(): Promise<void> {
     },
   ];
 
-  const providerValue = await select({
-    message: 'Select your AI provider:',
-    options: providers.map((p) => ({ value: p.value, label: p.label })),
-  });
+  // Skip provider setup if any provider API key already exists
+  const anyProviderApiKeyExists = providers.some((p) => hasEnvVar(envContent, p.apiKeyEnv));
 
-  if (isCancel(providerValue)) {
-    log.warn('Setup cancelled.');
-    process.exit(0);
-  }
+  if (!anyProviderApiKeyExists) {
+    const providerValue = await select({
+      message: 'Select your AI provider:',
+      options: providers.map((p) => ({ value: p.value, label: p.label })),
+    });
 
-  const selected = providers.find((p) => p.value === providerValue);
+    if (isCancel(providerValue)) {
+      log.warn('Setup cancelled.');
+      process.exit(0);
+    }
 
-  if (!selected) {
-    log.error('Unknown provider.');
-    process.exit(1);
-  }
+    const selected = providers.find((p) => p.value === providerValue);
 
-  // If API key already exists, skip provider setup
-  if (!hasEnvVar(envContent, selected.apiKeyEnv)) {
+    if (!selected) {
+      log.error('Unknown provider.');
+      process.exit(1);
+    }
+
     // Prompt for model name
     const modelNameResult = await text({
       message: `Enter the model name for ${selected.label} (e.g. ${selected.modelExample}):`,

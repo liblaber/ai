@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userService } from '~/lib/services/userService';
-import { getResourceRoleByUser } from '~/lib/services/roleService';
-import { requireUserAbility } from '~/auth/session';
-import { PermissionAction, PermissionResource, Prisma, RoleScope } from '@prisma/client';
-import { invalidateUserAbilityCache } from '~/lib/casl/user-ability';
-import { prisma } from '~/lib/prisma';
 import { subject } from '@casl/ability';
+import { PermissionAction, Prisma } from '@prisma/client';
+import { z } from 'zod';
+import { requireUserAbility } from '~/auth/session';
+import { removeUserFromResourceRole, updateUserRoleForResource } from '~/lib/services/roleService';
+import { PERMISSION_LEVELS } from '~/lib/services/permissionService';
+import { invalidateUserAbilityCache } from '~/lib/casl/user-ability';
+import { getResourceConfig } from '~/lib/utils/resource-utils';
 
 export async function DELETE(
   request: NextRequest,
@@ -14,90 +15,85 @@ export async function DELETE(
   try {
     const { userAbility } = await requireUserAbility(request);
     const { resource, resourceId, memberId } = await params;
-    const roleScope = getRoleScope(resource);
+    const { fetchResource, permissionResource, roleScope } = getResourceConfig(resource);
 
-    const role = await getResourceRoleByUser(roleScope, resourceId, memberId);
+    const resourceData = await fetchResource(resourceId);
 
-    if (!role) {
-      return NextResponse.json({ success: false, error: 'Role not found' }, { status: 404 });
-    }
-
-    if (!role.resourceId) {
-      return NextResponse.json({ success: false, error: 'Resource ID missing for scoped role' }, { status: 400 });
-    }
-
-    const resourceMap = {
-      [RoleScope.ENVIRONMENT]: {
-        resourceType: PermissionResource.Environment,
-        model: prisma.environment,
-        select: { id: true },
-      },
-      [RoleScope.DATA_SOURCE]: {
-        resourceType: PermissionResource.DataSource,
-        model: prisma.dataSource,
-        select: { id: true, createdById: true },
-      },
-      [RoleScope.WEBSITE]: {
-        resourceType: PermissionResource.Website,
-        model: prisma.website,
-        select: { id: true, createdById: true },
-      },
-    };
-
-    const mapping = resourceMap[role.scope as keyof typeof resourceMap];
-
-    if (!mapping) {
-      return NextResponse.json({ success: false, error: 'Invalid role scope' }, { status: 400 });
-    }
-
-    const resourceType = mapping.resourceType;
-
-    const resourceData = await (mapping.model as any).findUnique({
-      where: { id: role.resourceId },
-      select: mapping.select,
-    });
-
-    if (!resourceData) {
-      return NextResponse.json({ success: false, error: 'Resource not found' }, { status: 404 });
-    }
-
-    if (!userAbility.can(PermissionAction.manage, subject(resourceType, resourceData))) {
+    if (userAbility.cannot(PermissionAction.manage, subject(permissionResource, resourceData))) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    await userService.removeUserFromRole(memberId, role.id);
+    await removeUserFromResourceRole(memberId, resourceId, roleScope);
+
     invalidateUserAbilityCache(memberId);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.startsWith('Invalid resource type')) {
-        return NextResponse.json({ success: false, error: 'Invalid route' }, { status: 400 });
-      }
+    if (error instanceof Error && error.message.startsWith('Invalid resource type')) {
+      return NextResponse.json({ success: false, error: 'Invalid route' }, { status: 400 });
     }
 
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2025') {
-        return NextResponse.json({ success: false, error: 'User not found in this role' }, { status: 404 });
-      }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json(
+        { success: false, error: `${error.meta?.modelName || 'Resource'} not found` },
+        { status: 404 },
+      );
     }
 
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Failed to remove user from role' },
-      { status: 400 },
-    );
+    return NextResponse.json({ success: false, error: 'Failed to remove user from role' }, { status: 500 });
   }
 }
 
-function getRoleScope(resourceType: string) {
-  switch (resourceType.toLowerCase()) {
-    case 'data-sources':
-      return RoleScope.DATA_SOURCE;
-    case 'environments':
-      return RoleScope.ENVIRONMENT;
-    case 'websites':
-      return RoleScope.WEBSITE;
-    default:
-      throw new Error(`Invalid resource type provided: "${resourceType}"`);
+const patchRequestSchema = z.object({
+  permissionLevel: z.enum(PERMISSION_LEVELS),
+});
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ resource: string; resourceId: string; memberId: string }> },
+) {
+  try {
+    const { userAbility, userId } = await requireUserAbility(request);
+    const { resource, resourceId, memberId } = await params;
+
+    if (userId === memberId) {
+      return NextResponse.json({ success: false, error: 'You cannot change your own role' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const parsedBody = patchRequestSchema.safeParse(body);
+
+    if (!parsedBody.success) {
+      return NextResponse.json({ success: false, error: parsedBody.error.flatten().fieldErrors }, { status: 400 });
+    }
+
+    const { permissionLevel: newPermissionLevel } = parsedBody.data;
+
+    const { fetchResource, permissionResource, roleScope } = getResourceConfig(resource);
+
+    const resourceData = await fetchResource(resourceId);
+
+    if (userAbility.cannot(PermissionAction.manage, subject(permissionResource, resourceData))) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
+    await updateUserRoleForResource(memberId, resourceId, roleScope, newPermissionLevel);
+
+    invalidateUserAbilityCache(memberId);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Invalid resource type')) {
+      return NextResponse.json({ success: false, error: 'Invalid route' }, { status: 400 });
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json(
+        { success: false, error: `${error.meta?.modelName || 'Resource'} not found` },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({ success: false, error: 'Failed to update user role' }, { status: 500 });
   }
 }

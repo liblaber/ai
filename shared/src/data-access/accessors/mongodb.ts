@@ -1,21 +1,19 @@
-import { MongoClient, Db, Collection } from 'mongodb';
-import type { BaseAccessor } from '../baseAccessor';
+import { Collection, Db, MongoClient } from 'mongodb';
 import type { Table } from '../../types';
+import { BaseDatabaseAccessor } from '../baseDatabaseAccessor';
+import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '../utils/types';
 
-export class MongoDBAccessor implements BaseAccessor {
-  static pluginId = 'mongodb';
+export class MongoDBAccessor extends BaseDatabaseAccessor {
+  readonly dataSourceType: DataSourceType = DataSourceType.MONGODB;
+  readonly pluginId: DataAccessPluginId = 'mongodb';
   readonly label = 'MongoDB';
   readonly preparedStatementPlaceholderExample = '{ field: $value }';
   readonly connectionStringFormat = 'mongodb://username:password@host:port/database';
   private _client: MongoClient | null = null;
   private _db: Db | null = null;
 
-  static isAccessor(databaseUrl: string): boolean {
-    return databaseUrl.startsWith('mongodb://') || databaseUrl.startsWith('mongodb+srv://');
-  }
-
-  async testConnection(databaseUrl: string): Promise<boolean> {
-    const client = new MongoClient(databaseUrl, {
+  async testConnection(dataSourceProperties: DataSourceProperty[]): Promise<boolean> {
+    const client = new MongoClient(this.getConnectionStringFromProperties(dataSourceProperties), {
       serverSelectionTimeoutMS: 10000,
       connectTimeoutMS: 10000,
     });
@@ -185,7 +183,9 @@ export class MongoDBAccessor implements BaseAccessor {
     }
   }
 
-  validate(connectionString: string): void {
+  validateProperties(dataSourceProperties: DataSourceProperty[]): void {
+    const connectionString = this.getConnectionStringFromProperties(dataSourceProperties);
+
     try {
       new URL(connectionString);
     } catch {

@@ -65,7 +65,7 @@ export function detectBrowser(): BrowserInfo {
     if (config.userAgentCheck(userAgent)) {
       const match = userAgent.match(config.versionRegex);
       const version = match ? match[1] : 'unknown';
-      const supportsWebContainers = config.supportsWebContainers && checkWebContainerSupport();
+      const supportsWebContainers = config.supportsWebContainers;
 
       return {
         name: config.name,
@@ -80,17 +80,4 @@ export function detectBrowser(): BrowserInfo {
     version: 'unknown',
     supportsWebContainers: false,
   };
-}
-
-function checkWebContainerSupport(): boolean {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  const hasSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined';
-  const hasWorker = typeof Worker !== 'undefined';
-  const hasWebAssembly = typeof WebAssembly !== 'undefined';
-
-  // Chrome and Edge reliably support WebContainers with proper COEP headers
-  return hasSharedArrayBuffer && hasWorker && hasWebAssembly;
 }

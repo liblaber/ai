@@ -1,33 +1,35 @@
 import { Pool, types } from 'pg';
-import type { BaseAccessor } from '../baseAccessor';
 import { type Table } from '../../types';
 import { format } from 'sql-formatter';
+import { BaseDatabaseAccessor } from '../baseDatabaseAccessor';
+import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '../utils/types';
+import type { BaseAccessor } from '../baseAccessor';
 
 const typesToParse = [types.builtins.INT4, types.builtins.INT8, types.builtins.NUMERIC];
 typesToParse.forEach((type) => {
   types.setTypeParser(type, (value: any) => parseFloat(value));
 });
 
-export class PostgresAccessor implements BaseAccessor {
-  static pluginId: string = 'postgres';
+export class PostgresAccessor extends BaseDatabaseAccessor implements BaseAccessor {
+  readonly dataSourceType: DataSourceType = DataSourceType.POSTGRES;
+
+  readonly pluginId: DataAccessPluginId = 'postgres';
   readonly label = 'PostgreSQL';
   readonly preparedStatementPlaceholderExample = '$1, $2, $3';
   readonly connectionStringFormat = 'postgres(ql)://username:password@host:port/database';
   private _pool: Pool | null = null;
 
-  static isAccessor(databaseUrl: string): boolean {
-    return databaseUrl.startsWith('postgres://') || databaseUrl.startsWith('postgresql://');
-  }
-
-  async testConnection(databaseUrl: string): Promise<boolean> {
+  async testConnection(dataSourceProperties: DataSourceProperty[]): Promise<boolean> {
+    const connectionString = this.getConnectionStringFromProperties(dataSourceProperties);
     const pool = new Pool({
-      connectionString: databaseUrl,
+      connectionString,
       connectionTimeoutMillis: 10000,
       idleTimeoutMillis: 60000,
       max: 10,
       ssl: {
         rejectUnauthorized:
-          databaseUrl.toLowerCase().includes('sslmode=verify-full') || databaseUrl.includes('sslmode=verify-ca'),
+          connectionString.toLowerCase().includes('sslmode=verify-full') ||
+          connectionString.includes('sslmode=verify-ca'),
       },
     });
 
@@ -58,8 +60,11 @@ export class PostgresAccessor implements BaseAccessor {
     }
   }
 
-  validate(connectionString: string): void {
-    const regex = /^postgres(?:ql)?:\/\/([a-zA-Z0-9_-]+):(.+)@([a-zA-Z0-9.-]+):([0-9]{1,5})\/([a-zA-Z0-9_-]+)(\?.*)?$/;
+  validateProperties(dataSourceProperties: DataSourceProperty[]): void {
+    const connectionString = this.getConnectionStringFromProperties(dataSourceProperties);
+
+    const regex =
+      /^postgres(?:ql)?:\/\/([a-zA-Z0-9_-]+):(.+)@([a-zA-Z0-9.-]+):([0-9]{1,5})\/([a-zA-Z0-9_\s%]+)(\?.*)?$/;
     const match = connectionString.match(regex);
 
     if (!match) {

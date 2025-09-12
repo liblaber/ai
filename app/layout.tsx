@@ -2,14 +2,20 @@ import './styles/index.scss';
 import type { ReactNode } from 'react';
 import { ClientProviders } from './components/ClientProviders';
 import './globals.css';
-import { getDataSources } from '~/lib/services/datasourceService';
+import { getEnvironmentDataSources } from '~/lib/services/datasourceService';
 import { userService } from '~/lib/services/userService';
-import { getUserAbility } from './lib/casl/user-ability';
 import PluginManager, { FREE_PLUGIN_ACCESS } from '~/lib/plugins/plugin-manager';
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import { headers } from 'next/headers';
 import { auth } from '~/auth/auth-config';
 import type { Session } from '~/auth/session';
+import { getUserAbility } from '~/lib/casl/user-ability';
+import { getEnvironmentVariables } from '~/lib/services/environmentVariablesService';
+import { getEnvironmentDeploymentMethods } from '~/lib/services/deploymentMethodService';
+import { EnvironmentVariableType } from '@prisma/client';
+
+// Force dynamic rendering to prevent static generation issues with headers
+export const dynamic = 'force-dynamic';
 
 const inlineThemeCode = `
   setLiblabTheme();
@@ -35,16 +41,26 @@ async function getRootData() {
     const typedSession = session as Session;
 
     let user = null;
-    let dataSources: any[] = [];
+    let environmentDataSources: any[] = [];
+    let environmentVariables: any[] = [];
+    let environmentDeploymentMethods: any[] = [];
+    const deploymentProviders: any[] = [];
     let dataSourceTypes: any[] = [];
 
     if (typedSession?.user) {
       // Get user profile
       user = await userService.getUser(typedSession.user.id);
 
-      // Get data sources for the user
+      // Create user ability
       const userAbility = await getUserAbility(typedSession.user.id);
-      dataSources = await getDataSources(userAbility);
+
+      // Get data sources for the user
+      environmentDataSources = await getEnvironmentDataSources(userAbility);
+
+      environmentVariables = await getEnvironmentVariables(EnvironmentVariableType.GLOBAL);
+
+      environmentDeploymentMethods = await getEnvironmentDeploymentMethods();
+      // deploymentProviders will be fetched by DataLoader
     }
 
     // Initialize plugin manager
@@ -53,11 +69,14 @@ async function getRootData() {
     const pluginAccess = PluginManager.getInstance().getAccessMap();
 
     // Get available data source types
-    dataSourceTypes = DataSourcePluginManager.getAvailableDatabaseTypes();
+    dataSourceTypes = await DataSourcePluginManager.getAvailableDataSourceTypes();
 
     return {
       user,
-      dataSources,
+      environmentDataSources,
+      environmentVariables,
+      environmentDeploymentMethods,
+      deploymentProviders,
       pluginAccess,
       dataSourceTypes,
     };
@@ -65,7 +84,10 @@ async function getRootData() {
     console.error('Error loading root data:', error);
     return {
       user: null,
-      dataSources: [],
+      environmentDataSources: [],
+      environmentVariables: [],
+      environmentDeploymentMethods: [],
+      deploymentProviders: [],
       pluginAccess: FREE_PLUGIN_ACCESS,
       dataSourceTypes: [],
     };

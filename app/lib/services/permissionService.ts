@@ -1,8 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import { PermissionAction, PermissionResource } from '@prisma/client';
 import type { Permission } from '@prisma/client';
+import { logger } from '~/utils/logger';
 
-export type PermissionLevel = 'viewer' | 'manage';
+export const PERMISSION_LEVELS = ['viewer', 'manage'] as const;
+
+export type PermissionLevel = (typeof PERMISSION_LEVELS)[number];
 export interface PermissionDetails {
   label: string;
   action: PermissionAction;
@@ -19,24 +22,13 @@ export const permissionLevels: Record<PermissionLevel, PermissionDetails> = {
   },
 } as const;
 
-/**
- * Validates and retrieves permission level case-insensitively.
- * Returns null if invalid.
- */
-export function getPermissionLevelDetails(
-  levelInput: string,
-): { level: PermissionLevel; details: PermissionDetails } | null {
-  const normalizedLevel = levelInput.toLowerCase();
-
-  if (normalizedLevel in permissionLevels) {
-    const level = normalizedLevel as PermissionLevel;
-    return { level, details: permissionLevels[level] };
-  }
-
-  return null;
+export function getPermissionLevelDetails(level: PermissionLevel): PermissionDetails {
+  return permissionLevels[level];
 }
 
 export async function getUserPermissions(userId: string): Promise<Permission[]> {
+  logger.debug(`Fetching permissions for user ID: ${userId}`);
+
   const userWithRoles = await prisma.user.findUnique({
     where: { id: userId },
     include: {
@@ -98,4 +90,16 @@ export async function deletePermission(id: string): Promise<Permission> {
   return prisma.permission.delete({
     where: { id },
   });
+}
+
+/**
+ * Check if a user has any meaningful permissions beyond basic ownership rules
+ * @param userId The user ID to check
+ * @returns true if user has permissions, false if they only have ownership rules
+ */
+export async function userHasMeaningfulPermissions(userId: string): Promise<boolean> {
+  const permissions = await getUserPermissions(userId);
+
+  // Check if user has any permissions
+  return permissions.length > 0;
 }

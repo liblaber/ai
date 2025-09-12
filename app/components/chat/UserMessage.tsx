@@ -2,7 +2,7 @@
  * @ts-nocheck
  * Preventing TS checks with files presented in the video for a better presentation.
  */
-import { DATA_SOURCE_ID_REGEX, FILES_REGEX, FIRST_USER_MESSAGE_REGEX } from '~/utils/constants';
+import { DATA_SOURCE_ID_REGEX, ENVIRONMENT_ID_REGEX, FILES_REGEX, FIRST_USER_MESSAGE_REGEX } from '~/utils/constants';
 import { Markdown } from './Markdown';
 
 interface UserMessageProps {
@@ -45,5 +45,6 @@ function stripMetadata(content: string) {
     .replace(artifactRegex, '')
     .replace(FIRST_USER_MESSAGE_REGEX, '')
     .replace(DATA_SOURCE_ID_REGEX, '')
+    .replace(ENVIRONMENT_ID_REGEX, '')
     .replace(FILES_REGEX, '');
 }

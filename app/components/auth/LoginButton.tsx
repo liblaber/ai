@@ -11,11 +11,13 @@ import { Dialog } from '~/components/ui/Dialog';
 import { useAuth } from '~/components/auth/AuthContext';
 import { Button } from '~/components/ui/Button';
 import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
+import { useSSOConfig } from '~/lib/hooks/useSSOConfig';
 import type { AuthProvider, AuthProviderType } from '~/lib/plugins/types';
 
 export function LoginButton() {
   const { isLoginModalOpen, toggleLoginModal, loginModalTitle } = useAuth();
   const { socialProviders, anonymousProvider } = useAuthProvidersPlugin();
+  const { config: ssoConfig, loading: ssoLoading } = useSSOConfig();
 
   const handleProviderLogin = async (provider: AuthProviderType) => {
     toggleLoginModal(false);
@@ -31,6 +33,20 @@ export function LoginButton() {
           });
           break;
         }
+        case 'oidc': {
+          // Use OIDC SSO for authentication
+          if (!ssoConfig?.providers.oidc.configured) {
+            throw new Error('OIDC SSO is not configured');
+          }
+
+          await signIn.sso({
+            providerId: ssoConfig.providers.oidc.providerId,
+            callbackURL: window.location.origin + '/',
+            errorCallbackURL: window.location.origin + '/',
+            newUserCallbackURL: window.location.origin + '/',
+          });
+          break;
+        }
         default:
           await signIn.social({ provider });
           break;
@@ -41,6 +57,22 @@ export function LoginButton() {
   };
 
   const renderAuthButton = (provider: AuthProvider) => {
+    // Filter out OIDC if not configured
+    if (provider.provider === 'oidc' && (!ssoConfig?.providers.oidc.configured || ssoLoading)) {
+      return null;
+    }
+
+    // Filter out Google if not configured
+    if (provider.provider === 'google' && (!ssoConfig?.providers.google.configured || ssoLoading)) {
+      return null;
+    }
+
+    // Use friendly name for OIDC if available, otherwise use provider label
+    const displayLabel =
+      provider.provider === 'oidc' && ssoConfig?.providers.oidc.friendlyName
+        ? ssoConfig.providers.oidc.friendlyName
+        : provider.label;
+
     return (
       <Button
         variant="outline"
@@ -48,7 +80,7 @@ export function LoginButton() {
         onClick={() => handleProviderLogin(provider.provider)}
       >
         {provider.icon}
-        {provider.label}
+        {displayLabel}
       </Button>
     );
   };
@@ -75,11 +107,14 @@ export function LoginButton() {
           </DialogDescription>
 
           <div className="flex flex-col gap-3 w-full max-w-80 px-6">
-            {socialProviders.map((provider: AuthProvider) => (
-              <div key={provider.pluginId}>{renderAuthButton(provider)}</div>
-            ))}
+            {socialProviders
+              .map((provider: AuthProvider) => renderAuthButton(provider))
+              .filter(Boolean)
+              .map((button, index) => (
+                <div key={index}>{button}</div>
+              ))}
 
-            {socialProviders.length > 0 && anonymousProvider && (
+            {socialProviders.filter((p) => renderAuthButton(p) !== null).length > 0 && anonymousProvider && (
               <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-300"></div>

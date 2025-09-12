@@ -16,6 +16,9 @@ export interface MySqlColumn extends Column {
 export interface Table {
   tableName: string;
   columns: Column[];
+  metadata?: {
+    [key: string]: any;
+  };
 }
 
 export interface MySqlTable extends Table {

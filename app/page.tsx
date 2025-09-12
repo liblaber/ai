@@ -5,7 +5,7 @@ import { Header } from '~/components/header/Header';
 import { Background } from '~/components/ui/Background';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDataSourcesStore } from '~/lib/stores/dataSources';
+import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { Menu } from '~/components/sidebar/Menu.client';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { PendingPrompt } from '~/components/chat/BaseChat';
@@ -15,11 +15,10 @@ import { useAuth } from '~/components/auth/AuthContext';
 import { useSession } from '~/auth/auth-client';
 import { detectBrowser, type BrowserInfo } from '~/lib/utils/browser-detection';
 import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
-import { toast } from 'sonner';
 
 export default function Index() {
   const router = useRouter();
-  const { selectedDataSourceId, dataSources } = useDataSourcesStore();
+  const { selectedEnvironmentDataSource, environmentDataSources } = useEnvironmentDataSourcesStore();
   const [input, setInput] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [imageDataList, setImageDataList] = useState<string[]>([]);
@@ -40,11 +39,6 @@ export default function Index() {
   };
 
   const handleSendMessage = async () => {
-    if (!browserInfo.supportsWebContainers) {
-      toast.error('Please use Chrome, Edge, Brave, or Opera for full functionality');
-      return;
-    }
-
     const messageInput = input.trim();
 
     if (!messageInput) {
@@ -55,7 +49,7 @@ export default function Index() {
       input,
       files: uploadedFiles.map((f) => f.name),
       images: imageDataList,
-      dataSourceId: selectedDataSourceId,
+      environmentDataSource: selectedEnvironmentDataSource,
     };
 
     sessionStorage.setItem('pendingPrompt', JSON.stringify(pendingPrompt));
@@ -66,7 +60,7 @@ export default function Index() {
       return;
     }
 
-    if (dataSources.length === 0 || !selectedDataSourceId) {
+    if (environmentDataSources.length === 0 || !selectedEnvironmentDataSource) {
       router.push(DATA_SOURCE_CONNECTION_ROUTE);
 
       return;

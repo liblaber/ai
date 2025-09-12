@@ -2,7 +2,7 @@ import { Prisma, PermissionAction } from '@prisma/client';
 import { accessibleBy } from '@casl/prisma';
 import type { AppAbility } from './user-ability';
 
-export type PrismaResources = 'Environment' | 'DataSource' | 'Website';
+export type PrismaResources = 'Environment' | 'DataSource' | 'Website' | 'EnvironmentVariable';
 
 type WhereInputForResource<T extends PrismaResources> = T extends 'DataSource'
   ? Prisma.DataSourceWhereInput
@@ -10,7 +10,9 @@ type WhereInputForResource<T extends PrismaResources> = T extends 'DataSource'
     ? Prisma.EnvironmentWhereInput
     : T extends 'Website'
       ? Prisma.WebsiteWhereInput
-      : never;
+      : T extends 'EnvironmentVariable'
+        ? Prisma.EnvironmentVariableWhereInput
+        : never;
 
 /**
  * Builds a generic Prisma WHERE clause for a given resource based on a user's abilities.

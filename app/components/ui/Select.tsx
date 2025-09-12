@@ -2,7 +2,7 @@
 
 import React from 'react';
 import type { ControlProps, OptionProps, StylesConfig } from 'react-select';
-import Select, { components } from 'react-select';
+import Select, { components, type MultiValue, type SingleValue } from 'react-select';
 import { ClientOnly } from '~/components/ui/ClientOnly';
 
 export interface SelectOption {
@@ -48,29 +48,30 @@ const Control = ({ children, controlIcon, ...props }: ControlWithIconProps) => {
   );
 };
 
-interface SelectProps<T extends SelectOption = SelectOption> {
-  value?: T | null;
-  onChange?: (option: T | null) => void;
+interface SelectProps<T extends SelectOption = SelectOption, IsMulti extends boolean = false> {
+  value?: IsMulti extends true ? readonly T[] : T | null;
+  onChange?: (newValue: IsMulti extends true ? MultiValue<T> : SingleValue<T>) => void;
   options: readonly T[];
   placeholder?: string;
   isSearchable?: boolean;
   isClearable?: boolean;
   isDisabled?: boolean;
+  isLoading?: boolean;
+  isMulti?: IsMulti;
   className?: string;
   width?: string;
   minWidth?: string;
   menuPlacement?: 'auto' | 'bottom' | 'top';
   menuPosition?: 'absolute' | 'fixed';
   components?: any;
-  styles?: Partial<StylesConfig<T, false>>;
+  styles?: Partial<StylesConfig<T, IsMulti>>;
   controlIcon?: React.ReactNode;
   dataTestId?: string;
 }
 
-const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> => ({
-  control: (base) => ({
+const createDefaultStyles = <T extends SelectOption, IsMulti extends boolean = false>(): StylesConfig<T, IsMulti> => ({
+  control: (base, state) => ({
     ...base,
-    minWidth: '300px',
     backgroundColor: 'var(--color-depth-4)', // gray-700
     border: '1px solid transparent',
     boxShadow: 'none',
@@ -80,10 +81,11 @@ const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> =
     height: '36px',
     fontSize: '0.875rem', // text-sm
     color: 'var(--color-primary)',
-    cursor: 'pointer',
+    cursor: state.isDisabled ? 'not-allowed' : 'pointer',
     display: 'flex',
     alignItems: 'center',
     fontFamily: 'sans-serif',
+    opacity: state.isDisabled ? 0.5 : 1,
     '&:hover': {
       border: '1px solid inherit',
     },
@@ -192,7 +194,7 @@ const createDefaultStyles = <T extends SelectOption>(): StylesConfig<T, false> =
   }),
 });
 
-export const BaseSelect = <T extends SelectOption = SelectOption>({
+export const BaseSelect = <T extends SelectOption = SelectOption, IsMulti extends boolean = false>({
   value,
   onChange,
   options,
@@ -200,6 +202,8 @@ export const BaseSelect = <T extends SelectOption = SelectOption>({
   isSearchable = false,
   isClearable = false,
   isDisabled = false,
+  isLoading = false,
+  isMulti = false as IsMulti,
   className = '',
   width = '200px',
   minWidth = '200px',
@@ -209,8 +213,8 @@ export const BaseSelect = <T extends SelectOption = SelectOption>({
   styles: customStyles,
   controlIcon,
   dataTestId,
-}: SelectProps<T>) => {
-  const defaultStyles = createDefaultStyles<T>();
+}: SelectProps<T, IsMulti>) => {
+  const defaultStyles = createDefaultStyles<T, IsMulti>();
   const mergedStyles = { ...defaultStyles, ...customStyles };
 
   const defaultComponents = {
@@ -222,7 +226,7 @@ export const BaseSelect = <T extends SelectOption = SelectOption>({
   return (
     <ClientOnly>
       <div style={{ width, minWidth }} data-testid={dataTestId}>
-        <Select<T>
+        <Select<T, IsMulti>
           value={value}
           onChange={onChange}
           options={options}
@@ -230,6 +234,8 @@ export const BaseSelect = <T extends SelectOption = SelectOption>({
           isSearchable={isSearchable}
           isClearable={isClearable}
           isDisabled={isDisabled}
+          isLoading={isLoading}
+          isMulti={isMulti}
           className={className}
           styles={mergedStyles}
           components={defaultComponents}

@@ -9,6 +9,7 @@ import { classNames } from '~/utils/classNames';
 import { cubicEasingFn } from '~/utils/easings';
 import { WORK_DIR } from '~/utils/constants';
 import { Check, ChevronDown, ChevronUp, Circle, Files, LoaderCircle, Terminal, X } from 'lucide-react';
+import CallStackErrorBoundary from '~/components/debug/CallStackErrorBoundary';
 
 const highlighterOptions = {
   langs: ['shell'],
@@ -65,69 +66,71 @@ export const Artifact = ({ messageId }: ArtifactProps) => {
   }, [actions]);
 
   return (
-    <div className="artifact flex flex-col overflow-hidden rounded-xl w-full transition-border duration-150 my-6">
-      <div className="flex">
-        <button
-          className="flex items-stretch bg-depth-2 hover:bg-depth-2/50 w-full overflow-hidden"
-          onClick={() => {
-            workbenchStore.devMode.set(true);
-            workbenchStore.currentView.set('code');
-          }}
-        >
-          {artifact.type == 'bundled' && (
-            <>
-              <div className="p-4">
-                {allActionFinished ? <Files className="w-8 h-8" /> : <Circle className="w-8 h-8 animate-spin" />}
-              </div>
-              <div className="bg-depth-2 w-[1px]" />
-            </>
-          )}
-          <div className="px-5 p-3.5 w-full text-left">
-            <div className="w-full text-primary font-medium leading-5 text-sm">{artifact?.title}</div>
-            <div className="w-full text-secondary text-xs mt-0.5">Click for the code view</div>
-          </div>
-        </button>
+    <CallStackErrorBoundary componentName={`Artifact-${messageId}`}>
+      <div className="artifact flex flex-col overflow-hidden rounded-xl w-full transition-border duration-150 my-6">
+        <div className="flex">
+          <button
+            className="flex items-stretch bg-depth-2 hover:bg-depth-2/50 w-full overflow-hidden"
+            onClick={() => {
+              workbenchStore.devMode.set(true);
+              workbenchStore.currentView.set('code');
+            }}
+          >
+            {artifact.type == 'bundled' && (
+              <>
+                <div className="p-4">
+                  {allActionFinished ? <Files className="w-8 h-8" /> : <Circle className="w-8 h-8 animate-spin" />}
+                </div>
+                <div className="bg-depth-2 w-[1px]" />
+              </>
+            )}
+            <div className="px-5 p-3.5 w-full text-left">
+              <div className="w-full text-primary font-medium leading-5 text-sm">{artifact?.title}</div>
+              <div className="w-full text-secondary text-xs mt-0.5">Click for the code view</div>
+            </div>
+          </button>
+          <AnimatePresence>
+            {actions.length && artifact.type !== 'bundled' && (devMode || !allActionFinished) && (
+              <motion.button
+                initial={{ width: 0 }}
+                animate={{ width: 'auto' }}
+                exit={{ width: 0 }}
+                transition={{ duration: 0.15, ease: cubicEasingFn }}
+                className="bg-depth-2 hover:bg-depth-2/50"
+                onClick={devMode ? toggleActions : undefined}
+              >
+                <div className="p-4">
+                  {!devMode && !allActionFinished ? (
+                    <LoaderCircle className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <div className={showActions ? 'w-4 h-4' : 'w-4 h-4'}>
+                      {showActions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
+                  )}
+                </div>
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
         <AnimatePresence>
-          {actions.length && artifact.type !== 'bundled' && (devMode || !allActionFinished) && (
-            <motion.button
-              initial={{ width: 0 }}
-              animate={{ width: 'auto' }}
-              exit={{ width: 0 }}
-              transition={{ duration: 0.15, ease: cubicEasingFn }}
-              className="bg-depth-2 hover:bg-depth-2/50"
-              onClick={devMode ? toggleActions : undefined}
+          {artifact.type !== 'bundled' && showActions && actions.length > 0 && devMode && (
+            <motion.div
+              className="actions"
+              initial={{ height: 0 }}
+              animate={{ height: 'auto' }}
+              exit={{ height: '0px' }}
+              transition={{ duration: 0.15 }}
             >
-              <div className="p-4">
-                {!devMode && !allActionFinished ? (
-                  <LoaderCircle className="w-4 h-4 animate-spin" />
-                ) : (
-                  <div className={showActions ? 'w-4 h-4' : 'w-4 h-4'}>
-                    {showActions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </div>
-                )}
+              <div className="border-depth-2 h-[1px]" />
+
+              <div className="p-5 text-left bg-depth-2">
+                <ActionList actions={actions} />
               </div>
-            </motion.button>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
-      <AnimatePresence>
-        {artifact.type !== 'bundled' && showActions && actions.length > 0 && devMode && (
-          <motion.div
-            className="actions"
-            initial={{ height: 0 }}
-            animate={{ height: 'auto' }}
-            exit={{ height: '0px' }}
-            transition={{ duration: 0.15 }}
-          >
-            <div className="border-depth-2 h-[1px]" />
-
-            <div className="p-5 text-left bg-depth-2">
-              <ActionList actions={actions} />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+    </CallStackErrorBoundary>
   );
 };
 
@@ -169,85 +172,90 @@ function openArtifactInWorkbench(filePath: any) {
 
 const ActionList = ({ actions }: ActionListProps) => {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-      <ul className="pl-0!">
-        {actions.map((action, index) => {
-          const { status, type, content } = action;
-          const isLast = index === actions.length - 1;
+    <CallStackErrorBoundary componentName={`ActionList-${actions.length}-actions`}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.15 }}
+      >
+        <ul className="pl-0!">
+          {actions.map((action, index) => {
+            const { status, type, content } = action;
+            const isLast = index === actions.length - 1;
 
-          console.log('Status:', status);
-
-          return (
-            <motion.li
-              key={index}
-              variants={actionVariants}
-              initial="hidden"
-              animate="visible"
-              className="list-none"
-              transition={{
-                duration: 0.2,
-                ease: cubicEasingFn,
-              }}
-            >
-              <div className="flex items-center gap-1.5 text-sm">
-                <div className={classNames('text-lg', getIconColor(action.status))}>
-                  {status === 'running' ? (
-                    <>
-                      {type !== 'start' ? (
-                        <LoaderCircle className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Terminal className="w-4 h-4" />
-                      )}
-                    </>
-                  ) : status === 'pending' ? (
-                    <Circle className="w-4 h-4" />
-                  ) : status === 'complete' ? (
-                    <Check className="w-4 h-4" />
-                  ) : status === 'failed' || status === 'aborted' ? (
-                    <X className="w-4 h-4" />
+            return (
+              <motion.li
+                key={index}
+                variants={actionVariants}
+                initial="hidden"
+                animate="visible"
+                className="list-none"
+                transition={{
+                  duration: 0.2,
+                  ease: cubicEasingFn,
+                }}
+              >
+                <div className="flex items-center gap-1.5 text-sm">
+                  <div className={classNames('text-lg', getIconColor(action.status))}>
+                    {status === 'running' ? (
+                      <>
+                        {type !== 'start' ? (
+                          <LoaderCircle className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Terminal className="w-4 h-4" />
+                        )}
+                      </>
+                    ) : status === 'pending' ? (
+                      <Circle className="w-4 h-4" />
+                    ) : status === 'complete' ? (
+                      <Check className="w-4 h-4" />
+                    ) : status === 'failed' || status === 'aborted' ? (
+                      <X className="w-4 h-4" />
+                    ) : null}
+                  </div>
+                  {type === 'file' ? (
+                    <div>
+                      Create{' '}
+                      <code
+                        className="bg-depth-3 !text-xs px-1.5 py-1 rounded-md text-accent! hover:underline cursor-pointer"
+                        onClick={() => openArtifactInWorkbench(action.filePath)}
+                      >
+                        {action.filePath}
+                      </code>
+                    </div>
+                  ) : type === 'shell' ? (
+                    <div className="flex items-center w-full min-h-[28px]">
+                      <span className="flex-1">Run command</span>
+                    </div>
+                  ) : type === 'start' ? (
+                    <a
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setTimeout(() => {
+                          workbenchStore.currentView.set('preview');
+                        }, 100);
+                      }}
+                      className="flex items-center w-full min-h-[28px]"
+                    >
+                      <span className="flex-1">Start Application</span>
+                    </a>
                   ) : null}
                 </div>
-                {type === 'file' ? (
-                  <div>
-                    Create{' '}
-                    <code
-                      className="bg-depth-3 !text-xs px-1.5 py-1 rounded-md text-accent! hover:underline cursor-pointer"
-                      onClick={() => openArtifactInWorkbench(action.filePath)}
-                    >
-                      {action.filePath}
-                    </code>
-                  </div>
-                ) : type === 'shell' ? (
-                  <div className="flex items-center w-full min-h-[28px]">
-                    <span className="flex-1">Run command</span>
-                  </div>
-                ) : type === 'start' ? (
-                  <a
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setTimeout(() => {
-                        workbenchStore.currentView.set('preview');
-                      }, 100);
-                    }}
-                    className="flex items-center w-full min-h-[28px]"
-                  >
-                    <span className="flex-1">Start Application</span>
-                  </a>
-                ) : null}
-              </div>
-              {(type === 'shell' || type === 'start') && (
-                <ShellCodeBlock
-                  className={classNames('mt-1', {
-                    'mb-3.5': !isLast,
-                  })}
-                  code={content}
-                />
-              )}
-            </motion.li>
-          );
-        })}
-      </ul>
-    </motion.div>
+                {(type === 'shell' || type === 'start') && (
+                  <ShellCodeBlock
+                    className={classNames('mt-1', {
+                      'mb-3.5': !isLast,
+                    })}
+                    code={content}
+                  />
+                )}
+              </motion.li>
+            );
+          })}
+        </ul>
+      </motion.div>
+    </CallStackErrorBoundary>
   );
 };
 

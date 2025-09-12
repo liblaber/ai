@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { userService, type UserProfile } from '~/lib/services/userService';
 import { requireUserId } from '~/auth/session';
+import { createScopedLogger } from '~/utils/logger';
+
+const logger = createScopedLogger('me-api');
 
 interface UserResponse {
   success: boolean;
@@ -28,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Failed to fetch user data:', error);
+    logger.error('Failed to fetch user data:', error);
 
     const response: UserResponse = {
       success: false,
