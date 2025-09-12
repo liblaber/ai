@@ -28,8 +28,9 @@ interface ApiResponse {
   success: boolean;
   message?: string;
   error?: string;
-  dataSource?: {
-    id: string;
+  environmentDataSource?: {
+    dataSourceId: string;
+    environmentId: string;
   };
 }
 
@@ -165,10 +166,13 @@ export default function DataSourceConnectionPage() {
 
       const result = (await response.json()) as ApiResponse;
 
-      if (result.success && result.dataSource) {
+      if (result.success && result.environmentDataSource) {
         setIsSuccess(true);
         refetchEnvironmentDataSources();
-        setSelectedEnvironmentDataSource(result.dataSource.id, selectedEnvironment!.value);
+        setSelectedEnvironmentDataSource(
+          result.environmentDataSource.dataSourceId,
+          result.environmentDataSource.environmentId,
+        );
         setTimeout(() => {
           router.push('/');
         }, 1000);
@@ -226,10 +230,13 @@ export default function DataSourceConnectionPage() {
 
       const result = (await response.json()) as ApiResponse;
 
-      if (result.success && result.dataSource) {
+      if (result.success && result.environmentDataSource) {
         setIsSuccess(true);
         refetchEnvironmentDataSources();
-        setSelectedEnvironmentDataSource(result.dataSource.id, selectedEnvironment.value);
+        setSelectedEnvironmentDataSource(
+          result.environmentDataSource.dataSourceId,
+          result.environmentDataSource.environmentId,
+        );
         setTimeout(() => {
           router.push('/');
         }, 1000);
@@ -267,10 +274,13 @@ export default function DataSourceConnectionPage() {
 
       const result = (await response.json()) as ApiResponse;
 
-      if (result.success && result.dataSource) {
+      if (result.success && result.environmentDataSource) {
         setIsSuccess(true);
         refetchEnvironmentDataSources();
-        setSelectedEnvironmentDataSource(result.dataSource.id, selectedEnvironment!.value);
+        setSelectedEnvironmentDataSource(
+          result.environmentDataSource.dataSourceId,
+          result.environmentDataSource.environmentId,
+        );
         setTimeout(() => {
           router.push('/');
         }, 1000);
