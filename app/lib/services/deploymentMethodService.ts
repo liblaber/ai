@@ -421,3 +421,31 @@ export async function getDeploymentMethodCredentials(
 
   return credentials;
 }
+
+export async function getDeploymentProviders() {
+  // This matches the structure from the API route
+  return [
+    {
+      id: 'vercel',
+      name: 'Vercel',
+      description: 'Deploy to Vercel platform',
+      requiredCredentials: [DeploymentMethodCredentialsType.API_KEY],
+    },
+    {
+      id: 'netlify',
+      name: 'Netlify',
+      description: 'Deploy to Netlify platform',
+      requiredCredentials: [DeploymentMethodCredentialsType.API_KEY],
+    },
+    {
+      id: 'aws',
+      name: 'AWS S3',
+      description: 'Deploy to AWS S3 bucket',
+      requiredCredentials: [
+        DeploymentMethodCredentialsType.ACCESS_KEY,
+        DeploymentMethodCredentialsType.SECRET_KEY,
+        DeploymentMethodCredentialsType.REGION,
+      ],
+    },
+  ];
+}
