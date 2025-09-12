@@ -2,7 +2,7 @@ if (process.env.NEXT_RUNTIME === 'nodejs' && process.env.API_MODE !== 'direct') 
   const originalFetch = global.fetch;
 
   global.fetch = async (url, options = {}) => {
-    if (shouldNotProxyRequest(url)) {
+    if (shouldSkipProxy(url)) {
       return originalFetch(url, options);
     }
 
@@ -13,7 +13,7 @@ if (process.env.NEXT_RUNTIME === 'nodejs' && process.env.API_MODE !== 'direct') 
   };
 }
 
-function shouldNotProxyRequest(url: RequestInfo | URL): boolean {
+function shouldSkipProxy(url: RequestInfo | URL): boolean {
   const hostname =
     typeof url === 'string'
       ? new URL(url).hostname
