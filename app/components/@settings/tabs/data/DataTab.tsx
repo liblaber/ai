@@ -24,9 +24,48 @@ interface EnvironmentDataSourcesResponse {
   environmentDataSources: EnvironmentDataSource[];
 }
 
+const environmentDataSourceSchema = z.object({
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+  dataSourceId: z.string(),
+  environmentId: z.string(),
+  environment: z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().nullable(),
+  }),
+  dataSource: z.object({
+    id: z.string(),
+    name: z.string(),
+    createdAt: z.coerce.date(),
+    type: z.string(),
+    typeLabel: z.string(),
+    updatedAt: z.coerce.date(),
+  }),
+  dataSourceProperties: z.array(
+    z.object({
+      type: z.string(),
+      environmentVariables: z.array(
+        z.object({
+          id: z.string(),
+          key: z.string(),
+          value: z.string(),
+          description: z.string().nullable(),
+          type: z.enum(['GLOBAL', 'DATA_SOURCE']),
+          environmentId: z.string(),
+          dataSourceId: z.string().nullable(),
+          createdById: z.string(),
+          createdAt: z.coerce.date(),
+          updatedAt: z.coerce.date(),
+        }),
+      ),
+    }),
+  ),
+});
+
 const environmentDataSourcesResponseSchema = z.object({
   success: z.boolean(),
-  environmentDataSources: z.array(z.any()),
+  environmentDataSources: z.array(environmentDataSourceSchema),
 });
 
 export interface TestConnectionResponse {
