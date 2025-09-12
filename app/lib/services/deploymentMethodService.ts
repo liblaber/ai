@@ -3,6 +3,7 @@ import { env } from '~/env';
 import { decryptData, encryptData } from '@liblab/encryption/encryption';
 import { DeploymentMethodCredentialsType, DeploymentProvider } from '@prisma/client';
 import { type CreateDeploymentMethodInput, type UpdateDeploymentMethodInput } from '~/lib/validation/deploymentMethods';
+import type { DeploymentProviderInfo } from '~/types/deployment-methods';
 
 export interface EnvironmentDeploymentMethod {
   id: string;
@@ -423,29 +424,18 @@ export async function getDeploymentMethodCredentials(
 }
 
 export async function getDeploymentProviders() {
-  // This matches the structure from the API route
-  return [
-    {
-      id: 'vercel',
-      name: 'Vercel',
-      description: 'Deploy to Vercel platform',
-      requiredCredentials: [DeploymentMethodCredentialsType.API_KEY],
-    },
-    {
-      id: 'netlify',
-      name: 'Netlify',
-      description: 'Deploy to Netlify platform',
-      requiredCredentials: [DeploymentMethodCredentialsType.API_KEY],
-    },
-    {
-      id: 'aws',
-      name: 'AWS S3',
-      description: 'Deploy to AWS S3 bucket',
-      requiredCredentials: [
-        DeploymentMethodCredentialsType.ACCESS_KEY,
-        DeploymentMethodCredentialsType.SECRET_KEY,
-        DeploymentMethodCredentialsType.REGION,
-      ],
-    },
-  ];
+  try {
+    const response = await fetch('/api/deployment-methods/providers');
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch deployment providers');
+    }
+
+    const providers = await response.json<DeploymentProviderInfo[]>();
+
+    return providers;
+  } catch (error) {
+    console.error('Error fetching deployment providers:', error);
+    return [];
+  }
 }
