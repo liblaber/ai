@@ -10,7 +10,9 @@ import {
 import type { DataSourceWithEnvironments } from '~/lib/stores/environmentDataSources';
 import { useDataSourceActions } from '~/lib/stores/environmentDataSources';
 import { toast } from 'sonner';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
+import { Button } from '~/components/ui/Button';
+import { DeleteConfirmationModal } from '~/components/ui/DeleteConfirmationModal';
 
 interface Props {
   dataSource: DataSourceWithEnvironments | null;
@@ -21,6 +23,9 @@ export default function DataSourceDetailsForm({ dataSource }: Props) {
   const [dataSourceType, setDataSourceType] = useState<DataSourceOption>({} as DataSourceOption);
   const [dataSourceName, setDataSourceName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [conversationCount, setConversationCount] = useState<number | undefined>(undefined);
+  const [isLoadingConversationCount, setIsLoadingConversationCount] = useState(false);
   const { refetchEnvironmentDataSources } = useDataSourceActions();
 
   useEffect(() => {
@@ -70,6 +75,49 @@ export default function DataSourceDetailsForm({ dataSource }: Props) {
       toast.error(error instanceof Error ? error.message : 'Failed to update data source');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteDataSource = async () => {
+    try {
+      setIsLoadingConversationCount(true);
+
+      const response = await fetch(`/api/data-sources/${dataSource.id}`);
+      const data = await response.json<{ success: boolean; conversationCount?: number }>();
+
+      if (data.success) {
+        setConversationCount(data.conversationCount);
+        setIsDeleteModalOpen(true);
+      } else {
+        toast.error('Failed to fetch conversation count');
+      }
+    } catch (error) {
+      toast.error('Failed to fetch conversation count');
+      console.error('Error fetching conversation count:', error);
+    } finally {
+      setIsLoadingConversationCount(false);
+    }
+  };
+
+  const onDeleteDataSource = async () => {
+    try {
+      const response = await fetch(`/api/data-sources/${dataSource.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Data source deleted');
+        await refetchEnvironmentDataSources();
+        setIsDeleteModalOpen(false);
+      } else {
+        toast.error('Failed to delete data source');
+        setIsDeleteModalOpen(false);
+        console.error('Error deleting data source:', response);
+      }
+    } catch (error) {
+      toast.error('Failed to delete data source');
+      setIsDeleteModalOpen(false);
+      console.error('Error deleting data source:', error);
     }
   };
 
@@ -130,18 +178,21 @@ export default function DataSourceDetailsForm({ dataSource }: Props) {
       </div>
 
       <div className="pt-2">
-        <div className="flex items-center justify-end">
-          <button
-            type="button"
-            onClick={onEditSubmit}
-            disabled={isSubmitDisabled}
-            className={classNames(
-              'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-              'bg-accent-500 hover:bg-accent-600',
-              'text-gray-950 dark:text-gray-950',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
+        <div className="flex items-center justify-between">
+          <Button onClick={handleDeleteDataSource} variant="destructive" disabled={isLoadingConversationCount}>
+            {isLoadingConversationCount ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <span>Loading...</span>
+              </>
+            ) : (
+              <>
+                <Trash2 className="w-4 h-4 mr-2" />
+                <span>Delete data source</span>
+              </>
             )}
-          >
+          </Button>
+          <Button type="button" variant="primary" onClick={onEditSubmit} disabled={isSubmitDisabled}>
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -149,13 +200,28 @@ export default function DataSourceDetailsForm({ dataSource }: Props) {
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
                 <span>Save</span>
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={onDeleteDataSource}
+        entityName={`"${dataSource.name}"`}
+        customWarning={
+          conversationCount
+            ? {
+                title: `This will also delete ${conversationCount} conversation${conversationCount === 1 ? '' : 's'}!`,
+                description:
+                  'All conversations associated with this data source will be permanently deleted and cannot be recovered.',
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

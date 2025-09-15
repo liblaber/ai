@@ -1,7 +1,7 @@
 import { classNames } from '~/utils/classNames';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { CheckCircle, Loader2, Plug, Save, XCircle } from 'lucide-react';
+import { CheckCircle, Loader2, Plug, XCircle } from 'lucide-react';
 import type { TestConnectionResponse } from '~/components/@settings/tabs/data/DataTab';
 import { z } from 'zod';
 import { BaseSelect } from '~/components/ui/Select';
@@ -510,7 +510,6 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4" />
                       <span>Create</span>
                     </>
                   )}

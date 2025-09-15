@@ -47,6 +47,8 @@ export type ComplexEnvironmentDataSource = EnvironmentDataSource & {
   dataSourceProperties: (DataSourceProperty & {
     environmentVariable: EnvironmentVariable;
   })[];
+} & {
+  conversationCount: number;
 };
 
 export interface CreateDataSourceEnvironmentResponse {
@@ -98,6 +100,7 @@ export async function getEnvironmentDataSources(userAbility: AppAbility): Promis
         ...dsp,
         environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
       })),
+      conversationCount: eds.conversations?.length || 0,
     })),
   );
 }
@@ -140,12 +143,16 @@ export async function getEnvironmentDataSource(
       ...dsp,
       environmentVariable: decryptEnvironmentVariable(dsp.environmentVariable),
     })),
+    conversationCount: environmentDataSource.conversations?.length || 0,
   };
 }
 
-export async function getDataSource({ id }: { id: string }): Promise<PrismaDataSource | null> {
+export async function getDataSource({ id }: { id: string }) {
   return prisma.dataSource.findUnique({
     where: { id },
+    include: {
+      environments: true,
+    },
   });
 }
 
@@ -445,15 +452,34 @@ export async function updateEnvironmentDataSourceProperties(data: {
   });
 }
 
-export async function deleteDataSourceEnvironment(dataSourceId: string, environmentId: string): Promise<void> {
+export async function deleteDataSourceEnvironment(
+  dataSourceId: string,
+  environmentId: string,
+  tx?: PrismaTransaction,
+): Promise<void> {
   logger.debug(`Deleting environment data source [${environmentId}, ${dataSourceId}]`);
 
-  prisma.$transaction(async (tx) => {
+  const transactionFn: (fn: (tx: PrismaTransaction) => Promise<void>) => Promise<void> = tx
+    ? (fn) => fn(tx)
+    : (fn) => prisma.$transaction(fn);
+
+  await transactionFn(async (tx) => {
+    logger.debug(`Deleting conversation for environment data source [${environmentId}, ${dataSourceId}]`);
+
+    await tx.conversation.deleteMany({
+      where: {
+        dataSourceId,
+        environmentId,
+      },
+    });
+
     const dataSourceProperties = await tx.dataSourceProperty.findMany({
       where: { dataSourceId, environmentId },
     });
 
     for (const property of dataSourceProperties) {
+      logger.debug(`Deleting environment variable [${property.environmentVariableId}] for property [${property.type}]`);
+
       await tx.environmentVariable.delete({
         where: { id: property.environmentVariableId },
       });
@@ -469,13 +495,25 @@ export async function deleteDataSourceEnvironment(dataSourceId: string, environm
         },
       },
     });
+
+    logger.debug(`Deleted environment data source [${environmentId}, ${dataSourceId}]`);
   });
 }
 
 export async function deleteDataSource(id: string) {
-  prisma.dataSourceProperty.deleteMany({ where: { dataSourceId: id } });
+  await prisma.$transaction(async (tx) => {
+    logger.debug(`Deleting data source [${id}]`);
 
-  return prisma.dataSource.delete({ where: { id } });
+    const environmentDataSources = await tx.environmentDataSource.findMany({ where: { dataSourceId: id } });
+
+    for (const environmentDataSource of environmentDataSources) {
+      await deleteDataSourceEnvironment(id, environmentDataSource.environmentId, tx);
+    }
+
+    tx.dataSource.delete({ where: { id } });
+
+    logger.debug(`Deleted data source [${id}]`);
+  });
 }
 
 export async function getDataSourceType(dataSourceId: string) {

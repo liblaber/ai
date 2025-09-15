@@ -29,6 +29,7 @@ const environmentDataSourceSchema = z.object({
   updatedAt: z.coerce.date(),
   dataSourceId: z.string(),
   environmentId: z.string(),
+  conversationCount: z.number(),
   environment: z.object({
     id: z.string(),
     name: z.string(),
@@ -45,20 +46,18 @@ const environmentDataSourceSchema = z.object({
   dataSourceProperties: z.array(
     z.object({
       type: z.string(),
-      environmentVariables: z.array(
-        z.object({
-          id: z.string(),
-          key: z.string(),
-          value: z.string(),
-          description: z.string().nullable(),
-          type: z.enum(['GLOBAL', 'DATA_SOURCE']),
-          environmentId: z.string(),
-          dataSourceId: z.string().nullable(),
-          createdById: z.string(),
-          createdAt: z.coerce.date(),
-          updatedAt: z.coerce.date(),
-        }),
-      ),
+      environmentVariable: z.object({
+        id: z.string(),
+        key: z.string(),
+        value: z.string(),
+        description: z.string().optional(),
+        type: z.enum(['GLOBAL', 'DATA_SOURCE']),
+        environmentId: z.string(),
+        dataSourceId: z.string().optional(),
+        createdById: z.string(),
+        createdAt: z.coerce.date(),
+        updatedAt: z.coerce.date(),
+      }),
     }),
   ),
 });
