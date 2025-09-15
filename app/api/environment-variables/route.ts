@@ -5,6 +5,7 @@ import {
   getEnvironmentVariablesWithEnvironmentDetails,
 } from '~/lib/services/environmentVariablesService';
 import { logger } from '~/utils/logger';
+import { prisma } from '~/lib/prisma';
 import { type EnvironmentVariableType, PermissionAction, PermissionResource } from '@prisma/client';
 import { z } from 'zod';
 import { subject } from '@casl/ability';

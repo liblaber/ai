@@ -23,6 +23,7 @@ export interface EnvironmentDataSource {
   updatedAt: Date;
   dataSourceId: string;
   environmentId: string;
+  conversationCount: number;
   environment: {
     id: string;
     name: string;
@@ -39,7 +40,7 @@ export interface EnvironmentDataSource {
   dataSourceProperties: [
     {
       type: DataSourcePropertyType;
-      environmentVariables: EnvironmentVariable[];
+      environmentVariable: EnvironmentVariable;
     },
   ];
 }
@@ -52,6 +53,7 @@ export interface DataSourceWithEnvironments {
   environments: {
     id: string;
     name: string;
+    conversationCount: number;
     dataSourceProperties: {
       type: DataSourcePropertyType;
       value: string;
@@ -94,10 +96,11 @@ export const useEnvironmentDataSourcesStore = create<EnvironmentDataSourcesStore
           grouped[dataSourceId].environments.push({
             id: eds.environment.id,
             name: eds.environment.name,
+            conversationCount: eds.conversationCount,
             dataSourceProperties:
-              (eds.dataSourceProperties as any)?.map((prop: any) => ({
+              eds.dataSourceProperties?.map((prop) => ({
                 type: prop.type,
-                value: prop.environmentVariable?.value ?? prop.environmentVariables?.[0]?.value ?? '',
+                value: prop.environmentVariable?.value ?? '',
               })) || [],
           });
         }

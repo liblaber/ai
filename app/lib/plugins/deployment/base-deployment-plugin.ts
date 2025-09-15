@@ -130,12 +130,14 @@ export abstract class BaseDeploymentPlugin implements DeploymentPlugin {
 
       proc.stdout?.on('data', (data: Buffer) => {
         const message = data.toString();
+        logger.info(message);
         output += message;
         onProgress?.(message);
       });
 
       proc.stderr?.on('data', (data: Buffer) => {
         const message = data.toString();
+        logger.error(message);
         error += message;
         onProgress?.(message);
       });
@@ -208,6 +210,30 @@ export abstract class BaseDeploymentPlugin implements DeploymentPlugin {
       {
         eventType: TelemetryEventType.USER_APP_DEPLOY,
         properties: { websiteInfo: siteInfo, provider },
+      },
+      user,
+    );
+  }
+
+  /**
+   * Tracks deployment error telemetry event
+   */
+  protected async trackDeploymentErrorTelemetry(
+    error: string,
+    userId: string,
+    provider: string,
+    chatId?: string,
+  ): Promise<void> {
+    const telemetry = await getTelemetry();
+    const user = await userService.getUser(userId);
+    await telemetry.trackTelemetryEvent(
+      {
+        eventType: TelemetryEventType.USER_APP_DEPLOY_ERROR,
+        properties: {
+          error,
+          provider,
+          chatId,
+        },
       },
       user,
     );

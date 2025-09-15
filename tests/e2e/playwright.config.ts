@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { defineConfig, devices } from '@playwright/test';
 
 /**
@@ -29,7 +30,7 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
 
-    /* Take screenshot on failure */
+    /* Take the screenshot on failure */
     screenshot: 'only-on-failure',
 
     /* Record video for every run */
@@ -40,11 +41,6 @@ export default defineConfig({
 
     /* Action timeout */
     actionTimeout: 30000,
-
-    /* Expect timeout */
-    expect: {
-      timeout: 15000,
-    },
   },
 
   /* Configure projects for major browsers */

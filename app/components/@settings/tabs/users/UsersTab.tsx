@@ -138,7 +138,7 @@ export default function UsersTab() {
 
     const fetchRoles = async () => {
       try {
-        const response = await fetch('/api/roles');
+        const response = await fetch('/api/roles?scope=GENERAL');
         const data = (await response.json()) as { success: boolean; roles?: Role[] };
 
         if (data.success && data.roles) {

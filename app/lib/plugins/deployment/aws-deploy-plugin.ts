@@ -119,7 +119,7 @@ export class AwsDeployPlugin extends BaseDeploymentPlugin {
           AWS_SECRET_ACCESS_KEY: secretAccessKey,
           AWS_REGION: region,
         },
-        5 * 60 * 1000, // 5 minutes timeout
+        15 * 60 * 1000,
       );
 
       logger.info('SST deployment completed', JSON.stringify({ chatId, output: deployResult.output }));
@@ -157,9 +157,23 @@ export class AwsDeployPlugin extends BaseDeploymentPlugin {
         site: siteInfo,
         website,
       };
-    } catch (error: any) {
-      logger.error('Error during AWS deployment', JSON.stringify({ chatId, error: error.message }));
-      throw new Error(`AWS deployment failed: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Error during AWS deployment', JSON.stringify({ chatId, error: errorMessage }));
+
+      try {
+        await this.trackDeploymentErrorTelemetry(errorMessage, userId, 'aws', chatId);
+      } catch (telemetryError) {
+        logger.error(
+          'Failed to track deployment error telemetry',
+          JSON.stringify({
+            chatId,
+            telemetryError: telemetryError instanceof Error ? telemetryError.message : 'Unknown error',
+          }),
+        );
+      }
+
+      throw new Error(`AWS deployment failed: ${errorMessage}`);
     } finally {
       await this.cleanupTempDirectory(tempDir, chatId);
     }
