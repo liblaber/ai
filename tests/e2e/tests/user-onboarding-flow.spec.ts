@@ -95,211 +95,35 @@ test.describe('User Onboarding Flow Test', () => {
     await chatInterface.waitFor({ state: 'visible', timeout: 10000 });
     console.log('✅ Chat interface loaded');
 
-    // Wait for any iframe to appear first, but check if it becomes visible
-    console.log('🔍 Looking for any iframe in the page...');
+    const iframe = page.locator('iframe[title="preview"]');
+    await iframe.waitFor({ state: 'visible', timeout: 120000 });
+    console.log('✅ Iframe found, waiting for it to load...');
 
-    // First wait for iframe to be attached to DOM
-    const anyIframe = page.locator('iframe');
-    await anyIframe.first().waitFor({ state: 'attached', timeout: 30000 });
-    console.log('✅ Found an iframe attached to DOM...');
-
-    // Try to wait for it to become visible, but with shorter timeout
-    try {
-      await anyIframe.first().waitFor({ state: 'visible', timeout: 30000 });
-      console.log('✅ Iframe became visible naturally');
-    } catch {
-      console.log('⚠️ Iframe not visible yet, checking if it can be made visible...');
-
-      // Try to trigger visibility by scrolling or interactions
-      await page.evaluate(() => {
-        const iframes = document.querySelectorAll('iframe');
-        iframes.forEach((iframe) => {
-          if (iframe.style.display === 'none') {
-            iframe.style.display = 'block';
-          }
-
-          if (iframe.hasAttribute('hidden')) {
-            iframe.removeAttribute('hidden');
-          }
-
-          iframe.scrollIntoView();
-        });
-      });
-
-      await page.waitForTimeout(5000);
-
-      // Try waiting for visibility again
-      try {
-        await anyIframe.first().waitFor({ state: 'visible', timeout: 10000 });
-        console.log('✅ Iframe became visible after DOM manipulation');
-      } catch {
-        console.log('⚠️ Iframe still not visible, will proceed with attached iframe');
-      }
-    }
-
-    // Now look specifically for preview iframe with better error handling
-    let iframe;
-
-    try {
-      iframe = page.locator('iframe[title="preview"]');
-      await iframe.waitFor({ state: 'attached', timeout: 30000 });
-      console.log('✅ Preview iframe found and attached');
-
-      // Try to make it visible if it's not already
-      try {
-        await iframe.waitFor({ state: 'visible', timeout: 10000 });
-        console.log('✅ Preview iframe is visible');
-      } catch {
-        console.log('⚠️ Preview iframe attached but not visible, trying to show it...');
-        await page.evaluate(() => {
-          const previewIframe = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement | null;
-
-          if (previewIframe) {
-            previewIframe.style.display = 'block';
-            previewIframe.removeAttribute('hidden');
-            previewIframe.style.visibility = 'visible';
-            previewIframe.scrollIntoView();
-          }
-        });
-        await page.waitForTimeout(2000);
-      }
-    } catch {
-      console.log('⚠️ Preview iframe not found, using any available iframe...');
-
-      // Use any iframe that's attached
-      iframe = anyIframe.first();
-      console.log('✅ Using the first available iframe');
-    }
-
-    await iframe.waitFor({ state: 'attached', timeout: 10000 });
+    await iframe.waitFor({ state: 'attached', timeout: 30000 });
     console.log('✅ Iframe attached, waiting for content...');
 
-    // Wait much longer for app to build and render in the iframe
-    console.log('⏳ Waiting for app to build in StackBlitz (this may take a while)...');
-    await page.waitForTimeout(30000); // Wait 30 seconds for build process
-
-    // Wait for any signs that the app has loaded in the iframe
-    try {
-      // Look for common app indicators in iframe
-      console.log('🔍 Checking if app has loaded in iframe...');
-
-      // Try to access iframe content to see if app is ready
-      const frame = await iframe.elementHandle().then((handle) => handle?.contentFrame());
-
-      if (frame) {
-        // Look for any HTML content that indicates the app has loaded
-        const bodyContent = await frame
-          .locator('body')
-          .innerHTML()
-          .catch(() => '');
-        console.log('📄 Current iframe content length:', bodyContent.length);
-
-        // If we have substantial content, app might be loading
-        if (bodyContent.length > 1000) {
-          console.log('✅ App appears to be loading, waiting additional time for completion...');
-          await page.waitForTimeout(20000); // Wait another 20 seconds
-        }
-      }
-    } catch {
-      console.log('⚠️ Could not check iframe content, proceeding with content search...');
-    }
+    // Wait for built app to render in the iframe
+    await page.waitForTimeout(5000);
 
     try {
       // Step 7: Check for "Hello World!" content inside the iframe
-      console.log('🔍 Looking for "Hello World!" content in iframe...');
+      console.log(' Looking for "Hello World!" content in iframe...');
 
       const frame = await iframe
         .elementHandle()
         .then((handle: ElementHandle<SVGElement | HTMLElement> | null) => handle?.contentFrame());
 
       if (!frame) {
-        console.log('⚠️ Could not get frame content, trying to wait for frame to be ready...');
-        await page.waitForTimeout(5000);
-
-        const retryFrame = await iframe
-          .elementHandle()
-          .then((handle: ElementHandle<SVGElement | HTMLElement> | null) => handle?.contentFrame());
-
-        if (!retryFrame) {
-          throw new Error('Could not get frame from iframe element after retry');
-        }
-
-        // Use the retry frame
-        const helloWorldHeading = retryFrame.locator('h1:has-text("Hello World!")');
-        await helloWorldHeading.waitFor({ state: 'visible', timeout: 30000 });
-        console.log('✅ Found "Hello World!" heading in iframe after retry!');
-      } else {
-        // Try different selectors for any app content that indicates success
-        const appSelectors = [
-          'h1:has-text("Hello World!")', // Original target
-          'h1:text("Hello World!")',
-          '[data-testid*="hello"]',
-          'h1', // Any h1 tag
-          'h2', // Any h2 tag
-          'div[id="__next"]', // Next.js app container
-          'div[class*="app"]', // Any app container
-          'main', // Main content area
-          'body > div:not(script)', // Any content div
-          '*:has-text("Hello")', // Any element with "Hello"
-          '*:has-text("World")', // Any element with "World"
-        ];
-
-        let found = false;
-
-        for (const selector of appSelectors) {
-          try {
-            const element = frame.locator(selector);
-            await element.first().waitFor({ state: 'visible', timeout: 5000 });
-            console.log(`✅ Found app content using selector: ${selector}`);
-            found = true;
-            break;
-          } catch {
-            console.log(`⚠️ Selector ${selector} not found, trying next...`);
-            continue;
-          }
-        }
-
-        if (!found) {
-          // Check if we have any substantial content at all
-          const bodyContent = await frame
-            .locator('body')
-            .innerHTML()
-            .catch(() => '');
-          console.log('📄 Iframe body content length:', bodyContent.length);
-          console.log('📄 Iframe body content preview:', bodyContent.substring(0, 500));
-
-          // If there's substantial content, consider it a partial success
-          if (bodyContent.length > 2000 && !bodyContent.includes('webcontainer-context')) {
-            console.log('✅ Found substantial app content in iframe (partial success)');
-            found = true;
-          } else {
-            // Check if this is a known StackBlitz building issue
-            if (bodyContent.includes('webcontainer-context') || bodyContent.length < 1000) {
-              console.log('⚠️ App failed to build in StackBlitz - this is a known environment issue');
-              console.log('📋 Evidence of build failure:');
-              console.log('   - Terminal errors: "No available shell terminal found"');
-              console.log('   - Database errors: "Failed to get database schema"');
-              console.log('   - Iframe contains only StackBlitz config, not built app');
-              console.log('✅ Test infrastructure is working - marking as environment issue');
-              found = true; // Mark as success since test infrastructure works
-            } else {
-              throw new Error('Could not find any app content in iframe');
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error finding content in iframe:', error);
-
-      // Try to get more debug info
-      try {
-        const iframeHTML = await iframe.innerHTML();
-        console.log('📄 Iframe outer HTML:', iframeHTML.substring(0, 200));
-      } catch {
-        console.log('📄 Could not read iframe HTML');
+        throw new Error('Could not get frame from iframe element');
       }
 
-      throw new Error(`Could not find "Hello World!" heading in iframe: ${error.message}`);
+      const helloWorldHeading = frame.locator('h1:has-text("Hello World!")');
+      await helloWorldHeading.waitFor({ state: 'visible', timeout: 30000 });
+
+      console.log('✅ Found "Hello World!" heading in iframe!');
+    } catch {
+      console.error('❌ Could not find "Hello World!" heading in iframe');
+      throw new Error('Could not find "Hello World!" heading in iframe');
     }
 
     console.log('🎉 Test completed successfully!');
