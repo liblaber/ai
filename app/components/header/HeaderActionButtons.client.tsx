@@ -287,7 +287,10 @@ export function HeaderActionButtons() {
           // Skip build and .netlify directories
           if (
             entry.isDirectory() &&
-            (entry.name === 'build' || entry.name === '.netlify' || entry.name === 'node_modules')
+            (entry.name === 'build' ||
+              entry.name === '.netlify' ||
+              entry.name === 'node_modules' ||
+              entry.name === '.next')
           ) {
             continue;
           }
