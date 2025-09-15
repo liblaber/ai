@@ -1,4 +1,5 @@
 import { Collection, Db, MongoClient, ObjectId } from 'mongodb';
+import * as parser from 'mongodb-query-parser';
 import type { Table } from '../../types';
 import { BaseDatabaseAccessor } from '../baseDatabaseAccessor';
 import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '../utils/types';
@@ -39,11 +40,17 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
     let parsedQuery: any;
 
     try {
-      parsedQuery = JSON.parse(query);
+      // Use mongodb-query-parser for safe parsing with BSON type preservation
+      parsedQuery = parser.parseFilter(query);
     } catch (parseError) {
-      throw new Error(
-        `Invalid JSON format for MongoDB query: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`,
-      );
+      // Fallback to JSON parse for backward compatibility
+      try {
+        parsedQuery = JSON.parse(query);
+      } catch {
+        throw new Error(
+          `Invalid MongoDB query format: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`,
+        );
+      }
     }
 
     try {
@@ -250,8 +257,7 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
             const paramIndex = parseInt(obj[key].substring(1)) - 1;
 
             if (paramIndex >= 0 && paramIndex < params.length) {
-              const value = this._parseParameterValue(params[paramIndex]);
-              obj[key] = this._convertValueForField(key, value);
+              obj[key] = this._parseParameterValue(params[paramIndex]);
             }
           } else if (typeof obj[key] === 'object') {
             this._replaceParametersRecursively(obj[key], params, visited);
@@ -259,15 +265,6 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
         }
       }
     }
-  }
-
-  private _convertValueForField(fieldName: string, value: any): any {
-    // Handle _id field conversions
-    if (fieldName === '_id') {
-      return this._convertIdValue(value);
-    }
-
-    return value;
   }
 
   private async _retryWithAlternativeIdFormats(
@@ -368,35 +365,6 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
     return alternatives;
   }
 
-  private _convertIdValue(value: any): any {
-    // If the value is already an ObjectId, keep it
-    if (value && typeof value === 'object' && value.constructor && value.constructor.name === 'ObjectId') {
-      return value;
-    }
-
-    // For string values that look like ObjectIds (24 hex characters), try to convert
-    if (typeof value === 'string' && /^[0-9a-fA-F]{24}$/.test(value)) {
-      try {
-        return new ObjectId(value);
-      } catch {
-        // If conversion fails, return as string
-        return value;
-      }
-    }
-
-    // For numeric values, convert to string (most common case)
-    if (typeof value === 'number') {
-      return value.toString();
-    }
-
-    // For string numbers, keep as string but also prepare for number fallback
-    if (typeof value === 'string' && /^\d+$/.test(value)) {
-      return value; // Keep as string, but we'll add fallback logic in execution
-    }
-
-    return value;
-  }
-
   private _isValidParameterPlaceholder(value: string): boolean {
     // Only accept exact matches for parameter placeholders like $1, $2, etc.
     return /^\$\d+$/.test(value);
@@ -432,18 +400,23 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
     let parsedQuery: any;
 
     try {
-      // Try direct JSON parsing first
-      parsedQuery = JSON.parse(query);
+      // Use mongodb-query-parser for safe parsing
+      parsedQuery = parser.parseFilter(query);
     } catch (parseError) {
-      throw new Error(
-        `Invalid JSON format for MongoDB query: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-      );
+      // Fallback to JSON parse for backward compatibility
+      try {
+        parsedQuery = JSON.parse(query);
+      } catch {
+        throw new Error(
+          `Invalid MongoDB query format: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+        );
+      }
     }
 
     try {
       // Validate that we have a proper MongoDB query structure
       if (!parsedQuery || typeof parsedQuery !== 'object') {
-        throw new Error('MongoDB query must be a valid JSON object');
+        throw new Error('MongoDB query must be a valid object');
       }
 
       if (!parsedQuery.collection) {
@@ -632,11 +605,18 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
 
   formatQuery(query: string): string {
     try {
-      const parsedQuery = JSON.parse(query);
+      // Try mongodb-query-parser first for better BSON type handling
+      const parsedQuery = parser.parseFilter(query);
       return JSON.stringify(parsedQuery, null, 2);
     } catch {
-      // If it's not valid JSON, return as-is
-      return query;
+      try {
+        // Fallback to JSON parse
+        const parsedQuery = JSON.parse(query);
+        return JSON.stringify(parsedQuery, null, 2);
+      } catch {
+        // If both fail, return as-is
+        return query;
+      }
     }
   }
 
@@ -738,43 +718,5 @@ Now, generate MongoDB queries based on the following user request:
 <userRequest>
 ${userPrompt}
 </userRequest>`;
-  }
-
-  private _safeStringify(obj: any, maxDepth = 3): string {
-    const seen = new WeakSet();
-
-    const replacer = (key: string, value: any, depth = 0): any => {
-      if (depth > maxDepth) {
-        return '[Max Depth Reached]';
-      }
-
-      if (typeof value === 'object' && value !== null) {
-        if (seen.has(value)) {
-          return '[Circular Reference]';
-        }
-
-        seen.add(value);
-
-        if (Array.isArray(value)) {
-          return value.map((item, index) => replacer(String(index), item, depth + 1));
-        } else {
-          const result: any = {};
-
-          for (const [k, v] of Object.entries(value)) {
-            result[k] = replacer(k, v, depth + 1);
-          }
-
-          return result;
-        }
-      }
-
-      return value;
-    };
-
-    try {
-      return JSON.stringify(replacer('', obj), null, 2);
-    } catch (error) {
-      return '[Serialization Error: ' + (error as Error).message + ']';
-    }
   }
 }
