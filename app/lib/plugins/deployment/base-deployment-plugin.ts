@@ -219,7 +219,7 @@ export abstract class BaseDeploymentPlugin implements DeploymentPlugin {
    * Tracks deployment error telemetry event
    */
   protected async trackDeploymentErrorTelemetry(
-    error: Error,
+    error: string,
     userId: string,
     provider: string,
     chatId?: string,
@@ -230,10 +230,9 @@ export abstract class BaseDeploymentPlugin implements DeploymentPlugin {
       {
         eventType: TelemetryEventType.USER_APP_DEPLOY_ERROR,
         properties: {
-          error: error.message,
+          error,
           provider,
           chatId,
-          stack: error.stack,
         },
       },
       user,
