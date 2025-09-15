@@ -99,8 +99,7 @@ test.describe('User Onboarding Flow Test', () => {
     await iframe.waitFor({ state: 'visible', timeout: 120000 });
     console.log('✅ Iframe found, waiting for it to load...');
 
-    await iframe.waitFor({ state: 'attached', timeout: 30000 });
-    console.log('✅ Iframe attached, waiting for content...');
+    console.log('✅ Iframe visible, waiting for content...');
 
     // Wait for built app to render in the iframe
     await page.waitForTimeout(5000);
@@ -121,9 +120,9 @@ test.describe('User Onboarding Flow Test', () => {
       await helloWorldHeading.waitFor({ state: 'visible', timeout: 30000 });
 
       console.log('✅ Found "Hello World!" heading in iframe!');
-    } catch {
-      console.error('❌ Could not find "Hello World!" heading in iframe');
-      throw new Error('Could not find "Hello World!" heading in iframe');
+    } catch (error) {
+      console.error('❌ Could not find "Hello World!" heading in iframe', error);
+      throw new Error(`Could not find "Hello World!" heading in iframe: ${error}`);
     }
 
     console.log('🎉 Test completed successfully!');
