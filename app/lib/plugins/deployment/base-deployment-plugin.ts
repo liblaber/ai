@@ -216,6 +216,30 @@ export abstract class BaseDeploymentPlugin implements DeploymentPlugin {
   }
 
   /**
+   * Tracks deployment error telemetry event
+   */
+  protected async trackDeploymentErrorTelemetry(
+    error: string,
+    userId: string,
+    provider: string,
+    chatId?: string,
+  ): Promise<void> {
+    const telemetry = await getTelemetry();
+    const user = await userService.getUser(userId);
+    await telemetry.trackTelemetryEvent(
+      {
+        eventType: TelemetryEventType.USER_APP_DEPLOY_ERROR,
+        properties: {
+          error,
+          provider,
+          chatId,
+        },
+      },
+      user,
+    );
+  }
+
+  /**
    * Sends progress update
    */
   protected async sendProgress(
