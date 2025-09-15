@@ -296,6 +296,22 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
       }
 
       throw new Error('Site info not available after deployment');
+    } catch (error: any) {
+      logger.error('Error during Netlify deployment', JSON.stringify({ chatId, error: error.message }));
+
+      try {
+        await this.trackDeploymentErrorTelemetry(error, userId, 'netlify', chatId);
+      } catch (telemetryError) {
+        logger.error(
+          'Failed to track deployment error telemetry',
+          JSON.stringify({
+            chatId,
+            telemetryError: telemetryError instanceof Error ? telemetryError.message : 'Unknown error',
+          }),
+        );
+      }
+
+      throw new Error(`Netlify deployment failed: ${error.message}`);
     } finally {
       // Clean up temporary directory
       await this.cleanupTempDirectory(tempDir, chatId);

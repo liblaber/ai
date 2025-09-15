@@ -154,6 +154,19 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
       };
     } catch (error: any) {
       logger.error('Error during Vercel deployment', JSON.stringify({ chatId, error: error.message }));
+
+      try {
+        await this.trackDeploymentErrorTelemetry(error, userId, 'vercel', chatId);
+      } catch (telemetryError) {
+        logger.error(
+          'Failed to track deployment error telemetry',
+          JSON.stringify({
+            chatId,
+            telemetryError: telemetryError instanceof Error ? telemetryError.message : 'Unknown error',
+          }),
+        );
+      }
+
       throw new Error(`Vercel deployment failed: ${error.message}`);
     } finally {
       await this.cleanupTempDirectory(tempDir, chatId);
