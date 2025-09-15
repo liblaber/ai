@@ -222,7 +222,20 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     };
 
     loadUserData();
-  }, [JSON.stringify({ user: session?.user, provider: anonymousProvider, rootData })]);
+  }, [
+    JSON.stringify({
+      sessionUser: session?.user,
+      provider: anonymousProvider,
+      rootData: {
+        user: rootData.user,
+        environmentDataSources: rootData.environmentDataSources,
+        environmentVariables: rootData.environmentVariables,
+        environmentDeploymentMethods: rootData.environmentDeploymentMethods,
+        deploymentProviders: rootData.deploymentProviders,
+      },
+    }),
+    router,
+  ]);
 
   const fetchUserData = async (): Promise<UserProfile> => {
     try {
