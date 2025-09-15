@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle, Eye, EyeOff, Info, Loader2, Plug, Save, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle, Eye, EyeOff, Info, Loader2, Plug, Trash2, XCircle } from 'lucide-react';
 import { classNames } from '~/utils/classNames';
 import type { DataSourceWithEnvironments } from '~/lib/stores/environmentDataSources';
 import { type DataSourceOption, useDataSourceTypesPlugin } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
@@ -11,6 +11,7 @@ import WithTooltip from '~/components/ui/Tooltip';
 import { logger } from '~/utils/logger';
 import { useEnvironmentsStore } from '~/lib/stores/environments';
 import type { EnvironmentWithRelations } from '~/lib/services/environmentService';
+import { DeleteConfirmationModal } from '~/components/ui/DeleteConfirmationModal';
 
 type Props = {
   dataSource: DataSourceWithEnvironments;
@@ -546,7 +547,7 @@ export default function DataSourceEnvironmentsForm({
           <div className="flex items-center gap-3">
             {!isCreateMode && (
               <WithTooltip
-                tooltip="It is not possible to delete the only environment for the data source"
+                tooltip="It is not possible to delete the only environment for the data source. If you want to delete the whole data source, do it from the 'Details' tab."
                 hidden={!isOnlyEnvironment}
               >
                 <div>
@@ -580,7 +581,6 @@ export default function DataSourceEnvironmentsForm({
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4 mr-2" />
                   <span>{isCreateMode ? 'Add Environment' : 'Save Changes'}</span>
                 </>
               )}
@@ -589,49 +589,21 @@ export default function DataSourceEnvironmentsForm({
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <AlertTriangle className="w-6 h-6 text-red-500" />
-              <h3 className="text-lg font-semibold text-primary">Confirm Delete Environment</h3>
-            </div>
-            <p className="text-sm text-secondary mb-6">
-              Are you sure you want to delete this environment? This action will remove the environment and all its
-              associated data source properties. This action cannot be undone.
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirmation(false)}
-                disabled={isSaving}
-                className={classNames(
-                  'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                  'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500',
-                  'text-gray-700 dark:text-gray-200',
-                  'disabled:opacity-50 disabled:cursor-not-allowed',
-                )}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteConfirm}
-                disabled={isSaving}
-                className={classNames(
-                  'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                  'bg-red-500 hover:bg-red-600',
-                  'text-white',
-                  'disabled:opacity-50 disabled:cursor-not-allowed',
-                )}
-              >
-                Delete Environment
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmationModal
+        isOpen={showDeleteConfirmation}
+        onClose={() => setShowDeleteConfirmation(false)}
+        onConfirm={handleDeleteConfirm}
+        entityName={`"${selectedEnv?.name}" environment for "${dataSource.name}"`}
+        customWarning={
+          selectedEnv?.conversationCount
+            ? {
+                title: `This will also delete ${selectedEnv.conversationCount} conversation${selectedEnv.conversationCount === 1 ? '' : 's'}!`,
+                description:
+                  'All conversations associated with this data source will be permanently deleted and cannot be recovered.',
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }
