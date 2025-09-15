@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ChevronRight, Database, Plus, Search, Trash2 } from 'lucide-react';
-import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
+import { ArrowLeft, ChevronRight, Database, Plus, Search } from 'lucide-react';
 import AddDataSourceForm from './forms/AddDataSourceForm';
 import AddResourceAccess from '~/components/@settings/shared/components/AddResourceAccess';
 import { classNames } from '~/utils/classNames';
-import { toast } from 'sonner';
 import {
   type DataSourceWithEnvironments,
   type EnvironmentDataSource,
@@ -77,10 +75,6 @@ export default function DataTab() {
   const [showAddFormLocal, setShowAddFormLocal] = useState(showAddForm);
   const [showDetails, setShowDetails] = useState(false);
   const [showAddAccessForm, setShowAddAccessForm] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [selectedEnvironmentDataSource, setSelectedEnvironmentDataSource] = useState<EnvironmentDataSource | null>(
-    null,
-  );
   const [selectedDataSource, setSelectedDataSource] = useState<DataSourceWithEnvironments | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { setEnvironmentDataSources, dataSources } = useEnvironmentDataSourcesStore();
@@ -163,34 +157,6 @@ export default function DataTab() {
     setSelectedDataSource(selectedDataSourceToRefresh || null);
   }, [dataSources]);
 
-  const handleDelete = async () => {
-    if (!selectedEnvironmentDataSource) {
-      return;
-    }
-
-    const response = await fetch(
-      `/api/data-sources/${selectedEnvironmentDataSource.dataSourceId}?environmentId=${selectedEnvironmentDataSource.environmentId}`,
-      {
-        method: 'DELETE',
-      },
-    );
-
-    const data = (await response.json()) as { success: boolean; error?: string };
-
-    if (data.success) {
-      toast.success('Data source deleted successfully');
-
-      // Reload data sources using centralized function
-      await loadDataSources();
-
-      setShowDeleteConfirm(false);
-      setShowDetails(false);
-      setSelectedEnvironmentDataSource(null);
-    } else {
-      toast.error(data.error || 'Failed to delete data source');
-    }
-  };
-
   const handleShowDetails = (dataSource: DataSourceWithEnvironments) => {
     setShowDetails(true);
     setSelectedDataSource(dataSource);
@@ -202,12 +168,10 @@ export default function DataTab() {
   const handleBack = () => {
     setShowDetails(false);
     setShowAddFormLocal(false);
-    setSelectedEnvironmentDataSource(null);
   };
 
   const handleAdd = () => {
     setShowAddFormLocal(true);
-    setSelectedEnvironmentDataSource(null);
   };
 
   const addFilter = (filter: string) => {
@@ -419,59 +383,6 @@ export default function DataTab() {
           </div>
         )}
       </div>
-
-      <DialogRoot open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <Dialog>
-          <div className="rounded-xl bg-white dark:bg-[#0A0A0A] border border-[#E5E5E5] dark:border-[#1A1A1A] overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-[#F5F5F5] dark:bg-[#1A1A1A] border border-[#E5E5E5] dark:border-[#1A1A1A]">
-                    <Trash2 className="w-5 h-5 text-tertiary" />
-                  </div>
-                  <div>
-                    <DialogTitle title="Delete Data Source" />
-                    <p className="text-sm text-secondary">This action cannot be undone</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-sm text-secondary">
-                  Are you sure you want to delete the data source "{selectedEnvironmentDataSource?.dataSource.name}"?
-                  This will This will remove all associated data and cannot be undone.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-[#E5E5E5] dark:border-[#1A1A1A]">
-                <DialogClose asChild>
-                  <button
-                    className={classNames(
-                      'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                      'bg-[#F5F5F5] hover:bg-[#E5E5E5]',
-                      'dark:bg-[#1A1A1A] dark:hover:bg-[#2A2A2A]',
-                      'text-primary',
-                    )}
-                  >
-                    Cancel
-                  </button>
-                </DialogClose>
-                <button
-                  onClick={handleDelete}
-                  className={classNames(
-                    'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                    'bg-red-500 hover:bg-red-600',
-                    'text-white',
-                  )}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Delete</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </Dialog>
-      </DialogRoot>
     </div>
   );
 }
