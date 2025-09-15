@@ -111,9 +111,24 @@ The tests are configured in `playwright.config.ts`:
 
 ## Adding New Tests
 
-### Test Structure and Organization
+### Table of Contents
 
-Create new test files in the `tests/` directory following the pattern:
+- [Test Writing Approach](#test-writing-approach)
+- [Writing Effective Playwright Tests](#writing-effective-playwright-tests)
+  - [1. Use Data Test IDs for Reliable Element Selection](#1-use-data-test-ids-for-reliable-element-selection)
+  - [2. Selector Strategy Priority](#2-selector-strategy-priority)
+  - [3. Proper Wait Strategies and Timeouts](#3-proper-wait-strategies-and-timeouts)
+  - [4. Working with Asynchronous Content](#4-working-with-asynchronous-content)
+  - [5. Common Patterns and Tips](#5-common-patterns-and-tips)
+- [Debugging Tests](#debugging-tests)
+- [Performance Considerations](#performance-considerations)
+- [Further Reading](#further-reading)
+
+### Test Writing Approach
+
+**File Organization:**
+
+Create new test files in the `tests/` directory following this pattern:
 
 ```typescript
 import { test, expect } from '@playwright/test';
@@ -124,6 +139,41 @@ test.describe('Feature Name Tests', () => {
   });
 });
 ```
+
+**Start with the Happy Path:**
+
+1. Write the main user flow first
+2. Add error handling and edge cases later
+3. Keep tests focused on one feature/flow
+
+**Structure your tests using Arrange-Act-Assert:**
+
+```typescript
+test('User can create and submit a form', async ({ page }) => {
+  // ARRANGE - Setup initial state and navigate to the page
+  await page.goto('/form');
+  
+  // Wait for the form to be ready
+  await page.locator('[data-testid="name-input"]').waitFor({ state: 'visible' });
+
+  // ACT - Perform user actions
+  await page.fill('[data-testid="name-input"]', 'John Doe');
+  await page.fill('[data-testid="email-input"]', 'john@example.com');
+  await page.click('[data-testid="submit-button"]');
+
+  // ASSERT - Verify expected outcomes
+  await expect(page.getByText('Form submitted successfully')).toBeVisible();
+  await expect(page).toHaveURL('/success');
+});
+```
+
+**Key Principles:**
+
+- **Arrange**: Set up the test environment, navigate to pages, prepare data
+- **Act**: Perform the user actions you want to test (clicks, typing, etc.)
+- **Assert**: Verify that the expected outcomes occurred
+- **One test, one scenario**: Each test should focus on a single user journey or feature
+- **Descriptive test names**: Use clear, descriptive names that explain what the test does
 
 ### Writing Effective Playwright Tests
 
@@ -206,32 +256,64 @@ test('Complex workflow', async ({ page }) => {
 });
 ```
 
-#### 4. Test Writing Approach
+#### 4. Working with Asynchronous Content
 
-**Start with the Happy Path:**
-
-1. Write the main user flow first
-2. Add error handling and edge cases later
-3. Keep tests focused on one feature/flow
-
-**Structure your tests:**
+**Handle dynamic content properly:**
 
 ```typescript
-test('User can create and submit a form', async ({ page }) => {
-  // Arrange - Setup initial state
-  await page.goto('/form');
-
-  // Act - Perform user actions
-  await page.fill('[data-testid="name-input"]', 'John Doe');
-  await page.fill('[data-testid="email-input"]', 'john@example.com');
-  await page.click('[data-testid="submit-button"]');
-
-  // Assert - Verify expected outcomes
-  await expect(page.getByText('Form submitted successfully')).toBeVisible();
+// Wait for content that loads asynchronously
+await page.waitForFunction(() => {
+  const element = document.querySelector('[data-testid="dynamic-content"]');
+  return element && element.textContent.trim() !== '';
 });
+
+// Wait for API responses
+await page.waitForResponse((response) => response.url().includes('/api/data') && response.status() === 200);
+
+// Handle iframe content
+const iframe = page.locator('iframe[title="preview"]');
+await iframe.waitFor({ state: 'attached' });
+const frame = await iframe.contentFrame();
+await frame.locator('h1').waitFor({ state: 'visible' });
 ```
 
-#### 5. Debugging Tests
+#### 5. Common Patterns and Tips
+
+**Form Interactions:**
+
+```typescript
+// Fill and submit forms
+await page.fill('[data-testid="input-field"]', 'value');
+await page.selectOption('[data-testid="dropdown"]', 'option-value');
+await page.check('[data-testid="checkbox"]');
+await page.click('[data-testid="submit"]');
+```
+
+**Navigation and URLs:**
+
+```typescript
+// Wait for navigation
+await page.click('[data-testid="nav-link"]');
+await page.waitForURL('/new-page');
+
+// Verify current URL
+await expect(page).toHaveURL('/expected-path');
+```
+
+**Content Verification:**
+
+```typescript
+// Check text content
+await expect(page.getByText('Expected text')).toBeVisible();
+
+// Check element attributes
+await expect(page.locator('[data-testid="input"]')).toHaveValue('expected');
+
+// Check element count
+await expect(page.locator('[data-testid="list-item"]')).toHaveCount(3);
+```
+
+### Debugging Tests
 
 **Test Results and Debugging Artifacts:**
 
@@ -276,95 +358,17 @@ test('Debug example', async ({ page }) => {
 **Debugging Commands:**
 
 ```bash
-# View test report with videos and results
+# Run tests (HTML report is automatically generated)
+npm test
+
+# View the HTML report with videos and results
 npm run report
 
 # Run in debug mode (opens browser dev tools)
 npx playwright test --debug
 
-# Run specific test with pause
-npx playwright test --grep "test name" --debug
-
-# Run tests and immediately open report
-npx playwright test && npm run report
-```
-
-#### 6. Working with Asynchronous Content
-
-**Handle dynamic content properly:**
-
-```typescript
-// Wait for content that loads asynchronously
-await page.waitForFunction(() => {
-  const element = document.querySelector('[data-testid="dynamic-content"]');
-  return element && element.textContent.trim() !== '';
-});
-
-// Wait for API responses
-await page.waitForResponse((response) => response.url().includes('/api/data') && response.status() === 200);
-
-// Handle iframe content
-const iframe = page.locator('iframe[title="preview"]');
-await iframe.waitFor({ state: 'attached' });
-const frame = await iframe.contentFrame();
-await frame.locator('h1').waitFor({ state: 'visible' });
-```
-
-#### 7. Error Handling and Resilient Tests
-
-```typescript
-test('Resilient test example', async ({ page }) => {
-  // Handle optional elements
-  try {
-    const modal = page.locator('[data-testid="welcome-modal"]');
-    await modal.waitFor({ state: 'visible', timeout: 5000 });
-    await page.click('[data-testid="close-modal"]');
-  } catch {
-    console.log('No welcome modal found, continuing...');
-  }
-
-  // Retry mechanisms for flaky elements (note: tests already have built-in retries in CI)
-  await expect(async () => {
-    await page.click('[data-testid="flaky-button"]');
-    await expect(page.getByText('Success')).toBeVisible();
-  }).toPass({ timeout: 30000 });
-});
-```
-
-#### 8. Common Patterns and Tips
-
-**Form Interactions:**
-
-```typescript
-// Fill and submit forms
-await page.fill('[data-testid="input-field"]', 'value');
-await page.selectOption('[data-testid="dropdown"]', 'option-value');
-await page.check('[data-testid="checkbox"]');
-await page.click('[data-testid="submit"]');
-```
-
-**Navigation and URLs:**
-
-```typescript
-// Wait for navigation
-await page.click('[data-testid="nav-link"]');
-await page.waitForURL('/new-page');
-
-// Verify current URL
-await expect(page).toHaveURL('/expected-path');
-```
-
-**Content Verification:**
-
-```typescript
-// Check text content
-await expect(page.getByText('Expected text')).toBeVisible();
-
-// Check element attributes
-await expect(page.locator('[data-testid="input"]')).toHaveValue('expected');
-
-// Check element count
-await expect(page.locator('[data-testid="list-item"]')).toHaveCount(3);
+# Run specific test file
+npx playwright test tests/your-test-file.spec.ts
 ```
 
 ### Performance Considerations
