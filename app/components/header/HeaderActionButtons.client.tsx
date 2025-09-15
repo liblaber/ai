@@ -284,11 +284,7 @@ export function HeaderActionButtons() {
         for (const entry of entries) {
           const fullPath = path.join(dirPath, entry.name);
 
-          // Skip build and .netlify directories
-          if (
-            entry.isDirectory() &&
-            (entry.name === 'build' || entry.name === '.netlify' || entry.name === 'node_modules')
-          ) {
+          if (entry.isDirectory() && ['build', '.netlify', 'node_modules', '.next'].includes(entry.name)) {
             continue;
           }
 
