@@ -145,6 +145,7 @@ const textarea = page.locator('[data-testid="homepage-textarea"]');
 ```
 
 **Why data-testid?**
+
 - More stable than CSS classes (which can change with styling)
 - More reliable than text content (which can change with i18n)
 - Explicit intent for testing
@@ -187,6 +188,7 @@ await expect(page.getByText('Success!')).toBeVisible({ timeout: 15000 });
 ```
 
 **Timeout Guidelines:**
+
 - **Fast interactions** (clicks, typing): 5-10 seconds
 - **Page loads**: 15-30 seconds
 - **API calls**: 15-30 seconds
@@ -195,10 +197,10 @@ await expect(page.getByText('Success!')).toBeVisible({ timeout: 15000 });
 ```typescript
 test('Complex workflow', async ({ page }) => {
   test.setTimeout(180000); // 3 minutes for entire test
-  
+
   // Short timeout for quick interactions
   await page.locator('[data-testid="quick-btn"]').waitFor({ timeout: 5000 });
-  
+
   // Longer timeout for API responses
   await expect(page.getByText('Data loaded')).toBeVisible({ timeout: 30000 });
 });
@@ -207,21 +209,23 @@ test('Complex workflow', async ({ page }) => {
 #### 4. Test Writing Approach
 
 **Start with the Happy Path:**
+
 1. Write the main user flow first
 2. Add error handling and edge cases later
 3. Keep tests focused on one feature/flow
 
 **Structure your tests:**
+
 ```typescript
 test('User can create and submit a form', async ({ page }) => {
   // Arrange - Setup initial state
   await page.goto('/form');
-  
+
   // Act - Perform user actions
   await page.fill('[data-testid="name-input"]', 'John Doe');
   await page.fill('[data-testid="email-input"]', 'john@example.com');
   await page.click('[data-testid="submit-button"]');
-  
+
   // Assert - Verify expected outcomes
   await expect(page.getByText('Form submitted successfully')).toBeVisible();
 });
@@ -230,6 +234,7 @@ test('User can create and submit a form', async ({ page }) => {
 #### 5. Debugging Tests
 
 **Test Results and Debugging Artifacts:**
+
 - **Videos**: Located in `test-results/` folder, recorded for every test run
 - **Screenshots**: Only taken on test failures, plus manual ones for debugging
 - **Test Reports**: View comprehensive test results with videos using the HTML reporter
@@ -239,20 +244,20 @@ test('User can create and submit a form', async ({ page }) => {
 ```typescript
 test('Debug example', async ({ page }) => {
   // Enable console logging
-  page.on('console', msg => console.log('Browser:', msg.text()));
-  page.on('pageerror', error => console.log('Error:', error.message));
-  
+  page.on('console', (msg) => console.log('Browser:', msg.text()));
+  page.on('pageerror', (error) => console.log('Error:', error.message));
+
   // Add debug points
   console.log('🧭 Starting navigation...');
   await page.goto('/');
-  
+
   console.log('🔍 Looking for element...');
   const element = page.locator('[data-testid="target"]');
   await element.waitFor({ state: 'visible' });
-  
+
   // Take manual screenshots for debugging
   await page.screenshot({ path: 'debug-step-1.png' });
-  
+
   // Pause execution to inspect manually
   await page.pause();
 });
@@ -296,9 +301,7 @@ await page.waitForFunction(() => {
 });
 
 // Wait for API responses
-await page.waitForResponse(response => 
-  response.url().includes('/api/data') && response.status() === 200
-);
+await page.waitForResponse((response) => response.url().includes('/api/data') && response.status() === 200);
 
 // Handle iframe content
 const iframe = page.locator('iframe[title="preview"]');
@@ -319,7 +322,7 @@ test('Resilient test example', async ({ page }) => {
   } catch {
     console.log('No welcome modal found, continuing...');
   }
-  
+
   // Retry mechanisms for flaky elements (note: tests already have built-in retries in CI)
   await expect(async () => {
     await page.click('[data-testid="flaky-button"]');
@@ -331,6 +334,7 @@ test('Resilient test example', async ({ page }) => {
 #### 8. Common Patterns and Tips
 
 **Form Interactions:**
+
 ```typescript
 // Fill and submit forms
 await page.fill('[data-testid="input-field"]', 'value');
@@ -340,6 +344,7 @@ await page.click('[data-testid="submit"]');
 ```
 
 **Navigation and URLs:**
+
 ```typescript
 // Wait for navigation
 await page.click('[data-testid="nav-link"]');
@@ -350,6 +355,7 @@ await expect(page).toHaveURL('/expected-path');
 ```
 
 **Content Verification:**
+
 ```typescript
 // Check text content
 await expect(page.getByText('Expected text')).toBeVisible();
@@ -360,7 +366,6 @@ await expect(page.locator('[data-testid="input"]')).toHaveValue('expected');
 // Check element count
 await expect(page.locator('[data-testid="list-item"]')).toHaveCount(3);
 ```
-
 
 ### Performance Considerations
 
