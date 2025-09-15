@@ -45,89 +45,36 @@ liblab.ai supports both read and write MongoDB operations:
 - **deleteOne**: Delete a single document
 - **deleteMany**: Delete multiple documents
 
-## Query Structure
+## Using MongoDB with liblab.ai
 
-All MongoDB queries in liblab.ai must be formatted as JSON objects with this structure:
+Once connected, you can interact with your MongoDB data using natural language. liblab.ai automatically generates the appropriate MongoDB queries based on your requests.
 
-```json
-{
-  "collection": "collection_name",
-  "operation": "find",
-  "filter": { "status": "active" },
-  "options": { "limit": 10 }
-}
-```
+## Examples
 
-Required fields:
+### Example Requests
 
-- `collection`: The MongoDB collection name
-- `operation`: One of the supported operations
+Instead of writing complex MongoDB queries, simply ask liblab.ai in natural language:
 
-Additional fields depend on the operation type:
-
-- **find**: `filter` (object), `options` (object)
-- **aggregate**: `pipeline` (array)
-- **insertOne**: `document` (object)
-- **insertMany**: `documents` (array)
-- **updateOne/updateMany**: `filter` (object), `update` (object), `options` (optional)
-- **deleteOne/deleteMany**: `filter` (object)
-
-## Basic Examples
-
-### Finding Documents
-
-```json
-{
-  "collection": "users",
-  "operation": "find",
-  "filter": { "status": "active" },
-  "options": { "limit": 10, "sort": { "name": 1 } }
-}
-```
-
-### Inserting Documents
-
-```json
-{
-  "collection": "users",
-  "operation": "insertOne",
-  "document": {
-    "name": "John Doe",
-    "email": "john@example.com",
-    "status": "active"
-  }
-}
-```
-
-### Updating Documents
-
-```json
-{
-  "collection": "users",
-  "operation": "updateOne",
-  "filter": { "_id": "USER_ID" },
-  "update": { "$set": { "status": "inactive" } }
-}
-```
+- **"Show me all active users"** - Finds documents with active status
+- **"Add a new user named John Doe with email john@example.com"** - Inserts new documents
+- **"Update user status to inactive where id is 12345"** - Updates specific documents
+- **"Delete all inactive users"** - Removes documents matching criteria
+- **"Group sales by month and show total revenue"** - Creates aggregation pipelines
 
 ## Security & Best Practices
 
-### Allowed Operations
+liblab.ai includes built-in security measures to protect your MongoDB data:
 
-- ✅ **find, aggregate, insertOne, insertMany, updateOne, updateMany, deleteOne, deleteMany**
-- ❌ **drop, admin operations, and dangerous operators like $where**
-
-### Connection Security
-
-- **Encrypted connections**: Supports TLS/SSL (mongodb+srv://)
-- **Authentication**: Username/password validation
-- **Connection timeouts**: 10-second timeout for connection attempts
+- **Secure connections** with TLS/SSL encryption support
+- **Authentication** through username/password validation
+- **Query validation** to prevent dangerous operations
+- **Connection timeouts** for reliable connectivity
 
 ### Best Practices
 
-1. **Use specific filters** to limit result sizes
-2. **Create indexes** on frequently queried fields
-3. **Test queries** in MongoDB shell before using in liblab.ai
-4. **Monitor write operations** carefully in production environments
+- **Use specific queries** to get exactly the data you need
+- **Create database indexes** on frequently searched fields for better performance
+- **Test with sample data** before using in production
+- **Use MongoDB Atlas** for managed hosting with enhanced security
 
-For production deployments, consider MongoDB Atlas for managed hosting with built-in security and monitoring.
+liblab.ai automatically handles query optimization and security validation, so you can focus on building your application.

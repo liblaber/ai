@@ -39,7 +39,6 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
     let parsedQuery: any;
 
     try {
-      // Parse the query which should be a MongoDB aggregation pipeline or find query
       parsedQuery = JSON.parse(query);
     } catch (parseError) {
       throw new Error(
@@ -53,175 +52,165 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
       }
 
       const collection: Collection = this._db.collection(parsedQuery.collection);
+      const processedQuery = this._processParameters(parsedQuery, params);
 
-      let result: any[] = [];
-
-      // Handle different types of MongoDB operations
-      if (parsedQuery.operation === 'find') {
-        const filter = parsedQuery.filter || {};
-        const options = parsedQuery.options || {};
-
-        // Apply parameters if provided
-        if (params && params.length > 0) {
-          this._applyParameters(filter, params);
-        }
-
-        const cursor = collection.find(filter, options);
-        result = await cursor.toArray();
-      } else if (parsedQuery.operation === 'aggregate') {
-        const pipeline = parsedQuery.pipeline || [];
-
-        // Apply parameters if provided
-        if (params && params.length > 0) {
-          this._applyParametersToPipeline(pipeline, params);
-        }
-
-        const cursor = collection.aggregate(pipeline);
-        result = await cursor.toArray();
-      } else if (parsedQuery.operation === 'insertOne') {
-        const document = parsedQuery.document || {};
-
-        // Apply parameters if provided
-        if (params && params.length > 0) {
-          this._applyParameters(document, params);
-        }
-
-        const insertResult = await collection.insertOne(document);
-        result = [
-          {
-            insertedId: insertResult.insertedId,
-            acknowledged: insertResult.acknowledged,
-          },
-        ];
-      } else if (parsedQuery.operation === 'insertMany') {
-        const documents = parsedQuery.documents || [];
-
-        // Apply parameters if provided
-        if (params && params.length > 0) {
-          this._applyParameters(documents, params);
-        }
-
-        const insertResult = await collection.insertMany(documents);
-        result = [
-          {
-            insertedIds: insertResult.insertedIds,
-            insertedCount: insertResult.insertedCount,
-            acknowledged: insertResult.acknowledged,
-          },
-        ];
-      } else if (parsedQuery.operation === 'updateOne') {
-        const filter = parsedQuery.filter || {};
-        const update = parsedQuery.update || {};
-        const options = parsedQuery.options || {};
-
-        // Apply parameters if provided
-        if (params && params.length > 0) {
-          this._applyParameters(filter, params);
-          this._applyParameters(update, params);
-        }
-
-        let updateResult = await collection.updateOne(filter, update, options);
-
-        // If no matches and we have an _id field, try alternative formats
-        if (updateResult.matchedCount === 0 && filter._id !== undefined) {
-          updateResult = await this._retryWithAlternativeIdFormats(collection, 'updateOne', filter, update, options);
-        }
-
-        result = [
-          {
-            matchedCount: updateResult.matchedCount,
-            modifiedCount: updateResult.modifiedCount,
-            acknowledged: updateResult.acknowledged,
-            upsertedId: updateResult.upsertedId,
-          },
-        ];
-      } else if (parsedQuery.operation === 'updateMany') {
-        const filter = parsedQuery.filter || {};
-        const update = parsedQuery.update || {};
-        const options = parsedQuery.options || {};
-
-        // Apply parameters if provided
-        if (params && params.length > 0) {
-          this._applyParameters(filter, params);
-          this._applyParameters(update, params);
-        }
-
-        let updateResult = await collection.updateMany(filter, update, options);
-
-        // If no matches and we have an _id field, try alternative formats
-        if (updateResult.matchedCount === 0 && filter._id !== undefined) {
-          updateResult = await this._retryWithAlternativeIdFormats(collection, 'updateMany', filter, update, options);
-        }
-
-        result = [
-          {
-            matchedCount: updateResult.matchedCount,
-            modifiedCount: updateResult.modifiedCount,
-            acknowledged: updateResult.acknowledged,
-            upsertedCount: updateResult.upsertedCount,
-            upsertedId: updateResult.upsertedId,
-          },
-        ];
-      } else if (parsedQuery.operation === 'deleteOne') {
-        const filter = parsedQuery.filter || {};
-
-        // Apply parameters if provided
-        if (params && params.length > 0) {
-          this._applyParameters(filter, params);
-        }
-
-        let deleteResult = await collection.deleteOne(filter);
-
-        // If no matches and we have an _id field, try alternative formats
-        if (deleteResult.deletedCount === 0 && filter._id !== undefined) {
-          deleteResult = await this._retryWithAlternativeIdFormats(collection, 'deleteOne', filter);
-        }
-
-        result = [
-          {
-            deletedCount: deleteResult.deletedCount,
-            acknowledged: deleteResult.acknowledged,
-          },
-        ];
-      } else if (parsedQuery.operation === 'deleteMany') {
-        const filter = parsedQuery.filter || {};
-
-        // Apply parameters if provided
-        if (params && params.length > 0) {
-          this._applyParameters(filter, params);
-        }
-
-        let deleteResult = await collection.deleteMany(filter);
-
-        // If no matches and we have an _id field, try alternative formats
-        if (deleteResult.deletedCount === 0 && filter._id !== undefined) {
-          deleteResult = await this._retryWithAlternativeIdFormats(collection, 'deleteMany', filter);
-        }
-
-        result = [
-          {
-            deletedCount: deleteResult.deletedCount,
-            acknowledged: deleteResult.acknowledged,
-          },
-        ];
-      } else {
-        throw new Error(`Unsupported MongoDB operation: ${parsedQuery.operation}`);
-      }
-
-      return result;
+      return await this._executeOperation(collection, processedQuery);
     } catch (error) {
       throw new Error((error as Error)?.message);
     }
   }
 
-  private _applyParameters(obj: any, params: string[]): void {
-    // Securely replace parameter placeholders by recursively traversing the object
-    this._replaceParametersRecursively(obj, params);
+  private _processParameters(query: any, params?: string[]): any {
+    if (!params || params.length === 0) {
+      return query;
+    }
+
+    const processedQuery = JSON.parse(JSON.stringify(query));
+    this._replaceParametersRecursively(processedQuery, params);
+
+    return processedQuery;
   }
 
-  private _applyParametersToPipeline(pipeline: any[], params: string[]): void {
-    // Securely replace parameter placeholders in the aggregation pipeline
-    this._replaceParametersRecursively(pipeline, params);
+  private async _executeOperation(collection: Collection, query: any): Promise<any[]> {
+    const { operation } = query;
+
+    switch (operation) {
+      case 'find':
+        return await this._executeFindOperation(collection, query);
+      case 'aggregate':
+        return await this._executeAggregateOperation(collection, query);
+      case 'insertOne':
+        return await this._executeInsertOneOperation(collection, query);
+      case 'insertMany':
+        return await this._executeInsertManyOperation(collection, query);
+      case 'updateOne':
+        return await this._executeUpdateOneOperation(collection, query);
+      case 'updateMany':
+        return await this._executeUpdateManyOperation(collection, query);
+      case 'deleteOne':
+        return await this._executeDeleteOneOperation(collection, query);
+      case 'deleteMany':
+        return await this._executeDeleteManyOperation(collection, query);
+      default:
+        throw new Error(`Unsupported MongoDB operation: ${operation}`);
+    }
+  }
+
+  private async _executeFindOperation(collection: Collection, query: any): Promise<any[]> {
+    const filter = query.filter || {};
+    const options = query.options || {};
+    const cursor = collection.find(filter, options);
+
+    return await cursor.toArray();
+  }
+
+  private async _executeAggregateOperation(collection: Collection, query: any): Promise<any[]> {
+    const pipeline = query.pipeline || [];
+    const cursor = collection.aggregate(pipeline);
+
+    return await cursor.toArray();
+  }
+
+  private async _executeInsertOneOperation(collection: Collection, query: any): Promise<any[]> {
+    const document = query.document || {};
+    const result = await collection.insertOne(document);
+
+    return [
+      {
+        insertedId: result.insertedId,
+        acknowledged: result.acknowledged,
+      },
+    ];
+  }
+
+  private async _executeInsertManyOperation(collection: Collection, query: any): Promise<any[]> {
+    const documents = query.documents || [];
+    const result = await collection.insertMany(documents);
+
+    return [
+      {
+        insertedIds: result.insertedIds,
+        insertedCount: result.insertedCount,
+        acknowledged: result.acknowledged,
+      },
+    ];
+  }
+
+  private async _executeUpdateOneOperation(collection: Collection, query: any): Promise<any[]> {
+    const filter = query.filter || {};
+    const update = query.update || {};
+    const options = query.options || {};
+
+    let result = await collection.updateOne(filter, update, options);
+
+    if (result.matchedCount === 0 && filter._id !== undefined) {
+      result = await this._retryWithAlternativeIdFormats(collection, 'updateOne', filter, update, options);
+    }
+
+    return [
+      {
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+        acknowledged: result.acknowledged,
+        upsertedId: result.upsertedId,
+      },
+    ];
+  }
+
+  private async _executeUpdateManyOperation(collection: Collection, query: any): Promise<any[]> {
+    const filter = query.filter || {};
+    const update = query.update || {};
+    const options = query.options || {};
+
+    let result = await collection.updateMany(filter, update, options);
+
+    if (result.matchedCount === 0 && filter._id !== undefined) {
+      result = await this._retryWithAlternativeIdFormats(collection, 'updateMany', filter, update, options);
+    }
+
+    return [
+      {
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+        acknowledged: result.acknowledged,
+        upsertedCount: result.upsertedCount,
+        upsertedId: result.upsertedId,
+      },
+    ];
+  }
+
+  private async _executeDeleteOneOperation(collection: Collection, query: any): Promise<any[]> {
+    const filter = query.filter || {};
+
+    let result = await collection.deleteOne(filter);
+
+    if (result.deletedCount === 0 && filter._id !== undefined) {
+      result = await this._retryWithAlternativeIdFormats(collection, 'deleteOne', filter);
+    }
+
+    return [
+      {
+        deletedCount: result.deletedCount,
+        acknowledged: result.acknowledged,
+      },
+    ];
+  }
+
+  private async _executeDeleteManyOperation(collection: Collection, query: any): Promise<any[]> {
+    const filter = query.filter || {};
+
+    let result = await collection.deleteMany(filter);
+
+    if (result.deletedCount === 0 && filter._id !== undefined) {
+      result = await this._retryWithAlternativeIdFormats(collection, 'deleteMany', filter);
+    }
+
+    return [
+      {
+        deletedCount: result.deletedCount,
+        acknowledged: result.acknowledged,
+      },
+    ];
   }
 
   private _replaceParametersRecursively(obj: any, params: string[], visited = new WeakSet()): void {
