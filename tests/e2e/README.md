@@ -382,6 +382,7 @@ npx playwright test tests/your-test-file.spec.ts
 ### Further Reading
 
 - [Playwright Documentation](https://playwright.dev/docs/intro)
+- [Playwright VSCode Extension](https://playwright.dev/docs/getting-started-vscode)
 - [Best Practices Guide](https://playwright.dev/docs/best-practices)
 - [Locator Strategies](https://playwright.dev/docs/locators)
 - [Debugging Tests](https://playwright.dev/docs/debug)
