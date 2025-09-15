@@ -101,9 +101,6 @@ test.describe('User Onboarding Flow Test', () => {
 
     console.log('✅ Iframe visible, waiting for content...');
 
-    // Wait for built app to render in the iframe
-    await page.waitForTimeout(5000);
-
     try {
       // Step 7: Check for "Hello World!" content inside the iframe
       console.log(' Looking for "Hello World!" content in iframe...');
