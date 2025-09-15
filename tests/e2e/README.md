@@ -152,7 +152,7 @@ test.describe('Feature Name Tests', () => {
 test('User can create and submit a form', async ({ page }) => {
   // ARRANGE - Setup initial state and navigate to the page
   await page.goto('/form');
-  
+
   // Wait for the form to be ready
   await page.locator('[data-testid="name-input"]').waitFor({ state: 'visible' });
 
