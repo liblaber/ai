@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { defineConfig, devices } from '@playwright/test';
 
 /**
@@ -29,11 +30,17 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
 
-    /* Take screenshot on failure */
+    /* Take the screenshot on failure */
     screenshot: 'only-on-failure',
 
     /* Record video for every run */
     video: 'on',
+
+    /* Navigation timeout */
+    navigationTimeout: 60000,
+
+    /* Action timeout */
+    actionTimeout: 30000,
   },
 
   /* Configure projects for major browsers */
@@ -45,6 +52,19 @@ export default defineConfig({
 
         // Show browser window during test execution (only in non-CI environments)
         headless: !!process.env.CI,
+
+        // Set larger viewport for more reliable testing
+        viewport: { width: 1280, height: 720 },
+
+        // Extra options for stability
+        launchOptions: {
+          args: [
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+          ],
+        },
       },
     },
   ],

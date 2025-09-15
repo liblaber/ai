@@ -1,12 +1,12 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { DataAccessor } from 'shared/src/data-access/dataAccessor';
-import { type DataSource } from './datasourceService';
 import { getLlm } from '~/lib/.server/llm/get-llm';
 
 import { logger } from '~/utils/logger';
-import { formatDbSchemaForLLM } from '~/lib/.server/llm/database-source';
-import { getSchemaCache, getSuggestionsCache, setSuggestionsCache } from '~/lib/schema';
+import { getSuggestionsCache, setSuggestionsCache } from '~/lib/schema';
+import { formatDbSchemaForPrompt } from '~/lib/plugins/data-source/context-provider/database/utils';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
 
 /**
  * Returns a random subset of suggestions from the provided array
@@ -23,33 +23,49 @@ const suggestionResponseSchema = z.object({
   suggestions: z.array(z.string().max(128)).length(12),
 });
 
+type GenerateSuggestionsProps = {
+  connectionString: string;
+  dataSourceId: string;
+  dataSourceType: DataSourceType;
+};
+
 /**
  * Generates contextual suggestions based on the database schema
- * @param dataSource - The ID of the data source
+ * @param connectionString - Database connection string
+ * @param dataSourceType - Type of the data source
+ * @param dataSourceId - ID of the data source
  * @returns Promise<string[]> - Array of 3 suggestion prompts
  */
-export async function generateSchemaBasedSuggestions(dataSource: DataSource): Promise<string[]> {
+export async function generateSchemaBasedSuggestions({
+  connectionString,
+  dataSourceType,
+  dataSourceId,
+}: GenerateSuggestionsProps): Promise<string[]> {
   try {
     // Check cache first (31 days TTL)
-    const cachedSuggestions = await getSuggestionsCache(dataSource.connectionString, 60 * 60 * 24 * 31);
+    const cachedSuggestions = await getSuggestionsCache(connectionString, 60 * 60 * 24 * 31);
 
     if (cachedSuggestions) {
-      logger.info(`Found cached suggestions for data source ${dataSource.id}`);
+      logger.info(`Found cached suggestions for data source ${dataSourceId}`);
 
       // Return 3 random suggestions from the cached array
       return getRandomSuggestions(cachedSuggestions, 3);
     }
 
-    const accessor = DataAccessor.getAccessor(dataSource.connectionString);
+    const accessor = DataAccessor.getDatabaseAccessor(dataSourceType);
 
-    await accessor.initialize(dataSource.connectionString);
+    await accessor.initialize(connectionString);
 
     try {
-      const schema = (await getSchemaCache(dataSource.connectionString)) || (await accessor.getSchema());
+      const schema = await accessor?.getSchema?.();
+
+      if (!schema) {
+        throw new Error('Could not retrieve database schema');
+      }
 
       const llm = await getLlm();
 
-      const formattedSchema = formatDbSchemaForLLM(schema);
+      const formattedSchema = formatDbSchemaForPrompt(schema);
 
       const systemPrompt = `You are an expert software architect and data analyst. Your task is to analyze a database schema and generate 12 compelling suggestion prompts that users could use to create meaningful applications, tools, and solutions.
 
@@ -107,9 +123,9 @@ Make sure that the suggestions are not too long, at most 6-7 words.
 
       const allSuggestions = result.object.suggestions;
 
-      await setSuggestionsCache(dataSource.connectionString, allSuggestions, schema);
+      await setSuggestionsCache(connectionString, allSuggestions, schema);
 
-      logger.info(`Generated and cached 12 schema-based suggestions for data source ${dataSource.id}`);
+      logger.info(`Generated and cached 12 schema-based suggestions for data source ${dataSourceId}`);
 
       // Return 3 random suggestions from the generated array
       return getRandomSuggestions(allSuggestions, 3);

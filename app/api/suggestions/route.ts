@@ -1,26 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDataSource } from '~/lib/services/datasourceService';
+import { getEnvironmentDataSource } from '~/lib/services/datasourceService';
 import { generateSchemaBasedSuggestions } from '~/lib/services/suggestionService';
 import { SAMPLE_DATABASE_NAME } from '@liblab/data-access/accessors/sqlite';
 import { logger } from '~/utils/logger';
+import { subject } from '@casl/ability';
+import { requireUserAbility } from '~/auth/session';
+import { z } from 'zod';
+import { DataSourcePropertyType, PermissionAction, PermissionResource } from '@prisma/client';
+import type { DataSourceType } from '@liblab/data-access/utils/types';
+
+const suggestionsRequestSchema = z.object({
+  dataSourceId: z.string().min(1, 'Data source ID is required'),
+  environmentId: z.string().min(1, 'Environment ID is required'),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { dataSourceId } = await request.json<{ dataSourceId: string }>();
+    const { userAbility } = await requireUserAbility(request);
+    const body = await request.json();
 
-    if (!dataSourceId) {
-      return NextResponse.json({ success: false, error: 'Data source ID is required' }, { status: 400 });
+    const validationResult = suggestionsRequestSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { success: false, error: validationResult.error.errors[0]?.message || 'Invalid request data' },
+        { status: 400 },
+      );
     }
 
-    // Fetch the data source using the service
-    const dataSource = await getDataSource(dataSourceId);
+    const { dataSourceId, environmentId } = validationResult.data;
 
-    if (!dataSource) {
+    // Fetch the environment data source using the service
+    const environmentDataSource = await getEnvironmentDataSource(dataSourceId, environmentId);
+
+    if (!environmentDataSource) {
       return NextResponse.json({ success: false, error: 'Data source not found' }, { status: 404 });
     }
 
-    // Check if it's the sample database
-    const isSampleDatabase = dataSource.connectionString === `sqlite://${SAMPLE_DATABASE_NAME}`;
+    if (
+      userAbility.cannot(
+        PermissionAction.read,
+        subject(PermissionResource.DataSource, environmentDataSource.dataSource),
+      ) &&
+      userAbility.cannot(
+        PermissionAction.read,
+        subject(PermissionResource.Environment, { id: environmentDataSource.environmentId }),
+      )
+    ) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
+    const dataSourceProperty = environmentDataSource.dataSourceProperties.find(
+      (dsp) => dsp.type === DataSourcePropertyType.CONNECTION_URL,
+    );
+
+    if (!dataSourceProperty) {
+      return NextResponse.json({ success: false, error: 'Data source property not found' }, { status: 404 });
+    }
+
+    const connectionUrl = dataSourceProperty.environmentVariable.value;
+
+    const isSampleDatabase = connectionUrl === `sqlite://${SAMPLE_DATABASE_NAME}`;
 
     let suggestions: string[];
 
@@ -32,7 +72,13 @@ export async function POST(request: NextRequest) {
       ];
     } else {
       // Generate schema-based suggestions for non-sample databases
-      suggestions = await generateSchemaBasedSuggestions(dataSource);
+      // Create a compatible dataSource object for the suggestion service
+      const dataSourceForSuggestions = {
+        dataSourceId: environmentDataSource.dataSource.id,
+        connectionString: connectionUrl || '',
+        dataSourceType: environmentDataSource.dataSource.type as DataSourceType,
+      };
+      suggestions = await generateSchemaBasedSuggestions(dataSourceForSuggestions);
     }
 
     return NextResponse.json({

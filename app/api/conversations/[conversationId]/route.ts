@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(conversation);
   } catch (error) {
-    console.error('Error fetching conversation:', error);
+    logger.error('Error fetching conversation:', error);
     return NextResponse.json(
       {
         error: 'Failed to fetch conversation',
@@ -108,6 +108,8 @@ async function handleDelete(conversationId: string, userId: string) {
 
 const UPDATE_CONVERSATION_SCHEMA = z.object({
   description: z.string().nullable().optional(),
+  environmentId: z.string().optional(),
+  dataSourceId: z.string().optional(),
 });
 
 async function handlePatch(conversationId: string, userId: string, request: NextRequest) {
@@ -115,11 +117,7 @@ async function handlePatch(conversationId: string, userId: string, request: Next
     const body = await request.json();
     const updateData = UPDATE_CONVERSATION_SCHEMA.parse(body);
 
-    const updatedConversation = await conversationService.updateConversationDescription(
-      conversationId,
-      userId,
-      updateData,
-    );
+    const updatedConversation = await conversationService.updateConversation(conversationId, userId, updateData);
 
     if (!updatedConversation) {
       return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });

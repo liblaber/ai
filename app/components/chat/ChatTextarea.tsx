@@ -5,7 +5,7 @@ import { IconButton } from '~/components/ui/IconButton';
 import WithTooltip from '~/components/ui/Tooltip';
 import FilePreview from './FilePreview';
 import { ScreenshotStateManager } from './ScreenshotStateManager';
-import { useDataSourcesStore } from '~/lib/stores/dataSources';
+import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { openSettingsPanel } from '~/lib/stores/settings';
 import { SendButton } from './SendButton.client';
 import { processImageFile } from '~/utils/fileUtils';
@@ -31,6 +31,12 @@ interface ChatTextareaProps {
   onSend: (e: React.UIEvent) => void;
   isStreaming?: boolean;
   handleStop?: () => void;
+  onDataSourceChange?: (
+    dataSourceId: string,
+    environmentId: string,
+    dataSourceName: string,
+    environmentName: string,
+  ) => void;
 }
 
 export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
@@ -53,10 +59,11 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
       onSend,
       isStreaming = false,
       handleStop,
+      onDataSourceChange,
     },
     ref,
   ) => {
-    const { dataSources } = useDataSourcesStore();
+    const { environmentDataSources } = useEnvironmentDataSourcesStore();
 
     const handleConnectDataSource = () => {
       openSettingsPanel('data', true);
@@ -157,8 +164,13 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
         </div>
         <div className="flex justify-between items-center text-sm mt-2">
           <div className="flex gap-1 items-center">
-            {dataSources.length > 0 ? (
-              <DataSourcePicker onAddNew={handleConnectDataSource} disabled={true} />
+            {environmentDataSources.length > 0 ? (
+              <DataSourcePicker
+                onAddNew={handleConnectDataSource}
+                disabled={true}
+                onDataSourceChange={onDataSourceChange}
+                placement={'top'}
+              />
             ) : (
               <button
                 onClick={handleConnectDataSource}

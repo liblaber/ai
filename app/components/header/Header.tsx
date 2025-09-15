@@ -5,7 +5,7 @@ import { IconButton } from '~/components/ui/IconButton';
 import { chatStore } from '~/lib/stores/chat';
 import { classNames } from '~/utils/classNames';
 import { HeaderActionButtons } from './HeaderActionButtons.client';
-import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
+import { ConversationSettings } from '~/lib/persistence/ConversationSettings';
 import { Logo } from '~/components/Logo';
 import { UserMenu } from '~/components/auth/UserMenu';
 import { useSession } from '~/auth/auth-client';
@@ -47,7 +47,7 @@ export function Header({ showMenuIcon = true }: Props) {
       {chat.started && (
         <>
           <span className="flex-1 px-4 truncate text-center text-primary">
-            <ClientOnly>{() => <ChatDescription />}</ClientOnly>
+            <ClientOnly>{() => <ConversationSettings />}</ClientOnly>
           </span>
           <ClientOnly>
             {() => (

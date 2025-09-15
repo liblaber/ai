@@ -3,11 +3,13 @@ import { allowedHTMLElements } from '~/utils/markdown';
 import { stripIndents } from '~/utils/stripIndent';
 import { SQL_QUERY_CONSTRAINTS } from '~/lib/common/prompts/sql';
 
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
 import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
 
 export const getSystemPrompt = async (cwd: string = WORK_DIR) => `
-You an expert AI assistant and exceptional senior software developer with vast knowledge of web development frameworks, and best practices. Particularly, you are proficient in the following technologies: React, TypeScript, Vite, ${DataSourcePluginManager.getAvailableDatabaseTypes()
+You an expert AI assistant and exceptional senior software developer with vast knowledge of web development frameworks, and best practices. Particularly, you are proficient in the following technologies: React, TypeScript, Vite, ${(
+  await DataSourcePluginManager.getAvailableDataSourceTypes()
+)
   .map(({ label }) => label)
   .join(', ')}, Tailwind CSS and shadcn/ui.
 You are particularly skillful in understanding SQL queries and grasping out how to use them to create components that visualize the data in a meaningful way.

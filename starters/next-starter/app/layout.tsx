@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import SidebarNav from '@/components/building-blocks/sidebar-nav/SidebarNav';
+import '@/lib/override-fetch';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',

@@ -1,48 +1,94 @@
-import type { Account, Environment, Organization, Role, User } from '@prisma/client';
-import { DeprecatedRole, PermissionAction, PermissionResource, PrismaClient } from '@prisma/client';
+import {
+  type Account,
+  DataSourcePropertyType,
+  DataSourceType,
+  PermissionAction,
+  PermissionResource,
+  PrismaClient,
+  type Role,
+  type User,
+} from '@prisma/client';
+import { decryptEnvironmentVariable } from '~/lib/services/environmentVariablesService';
 
 const prisma = new PrismaClient();
 
+async function seedOIDCSSOProvider(): Promise<void> {
+  try {
+    // Check if OIDC environment variables are configured
+    const oidcIssuer = process.env.OIDC_ISSUER;
+    const oidcClientId = process.env.OIDC_CLIENT_ID;
+    const oidcClientSecret = process.env.OIDC_CLIENT_SECRET;
+    const oidcDomain = process.env.OIDC_DOMAIN;
+    const oidcProviderId = process.env.OIDC_PROVIDER_ID;
+
+    if (!oidcIssuer || !oidcClientId || !oidcClientSecret || !oidcDomain || !oidcProviderId) {
+      console.log('⚠️  OIDC SSO not configured - skipping SSO provider seeding');
+      return;
+    }
+
+    // Check if SSO provider already exists
+    const existingProvider = await prisma.ssoProvider.findFirst({
+      where: { providerId: oidcProviderId },
+    });
+
+    if (existingProvider) {
+      console.log('✅ OIDC SSO provider already exists');
+      return;
+    }
+
+    // Create the OIDC SSO provider with enhanced configuration
+    const formattedIssuer = oidcIssuer.endsWith('/') ? oidcIssuer : `${oidcIssuer}/`;
+    const formattedDomain = oidcDomain.endsWith('/') ? oidcDomain : `${oidcDomain}/`;
+
+    const oidcConfig = {
+      clientId: oidcClientId,
+      clientSecret: oidcClientSecret,
+      issuer: formattedIssuer,
+      scopes: ['openid', 'profile', 'email'],
+      discoveryEndpoint: `${formattedIssuer}.well-known/openid-configuration`,
+      authorizationEndpoint: `${formattedIssuer}authorize`,
+      tokenEndpoint: `${formattedIssuer}oauth/token`,
+      userInfoEndpoint: `${formattedIssuer}userinfo`,
+      jwksEndpoint: `${formattedIssuer}.well-known/jwks.json`,
+      pkce: true,
+    };
+
+    await prisma.ssoProvider.create({
+      data: {
+        providerId: oidcProviderId,
+        friendlyName: process.env.OIDC_FRIENDLY_NAME || 'Continue with SSO',
+        issuer: formattedIssuer,
+        domain: formattedDomain,
+        oidcConfig: JSON.stringify(oidcConfig),
+      },
+    });
+
+    console.log('✅ Created OIDC SSO provider');
+  } catch (error) {
+    console.error('❌ Error seeding OIDC SSO provider:', error);
+    // Don't throw error to avoid breaking the entire seed process
+  }
+}
+
 async function seed() {
-  const organization = await seedOrganization();
-  const initialUser = await seedInitialUser(organization.id);
-  await seedInitialAccount(initialUser);
-  await seedDefaultAdmin(initialUser.id, organization.id);
-  await seedDefaultEnvironment(organization.id);
-  await seedBuilderRole(organization.id);
-  await seedOperatorRole(organization.id);
+  if (process.env.LICENSE_KEY !== 'premium') {
+    const initialUser = await seedInitialUser();
+    await seedInitialAccount(initialUser);
+    await seedDefaultAdmin(initialUser.id);
+  } else {
+    await seedDefaultAdmin();
+  }
+
+  await seedDefaultEnvironments();
+  await seedBuilderRole();
+  await seedOperatorRole();
+  await seedOIDCSSOProvider();
+  await inferDataSourceTypes();
 
   console.log('🎉 Database seed completed successfully');
 }
 
-async function seedOrganization(): Promise<Organization> {
-  try {
-    const anonymousOrganization = {
-      name: 'Anonymous',
-      domain: 'anonymous.com',
-    };
-
-    let organization = await prisma.organization.findUnique({
-      where: { domain: anonymousOrganization.domain },
-    });
-
-    if (!organization) {
-      organization = await prisma.organization.create({
-        data: anonymousOrganization,
-      });
-      console.log('✅ Created anonymous organization');
-    } else {
-      console.log('✅ Anonymous organization already exists');
-    }
-
-    return organization;
-  } catch (error) {
-    console.error('❌ Error creating organization:', error);
-    throw error;
-  }
-}
-
-async function seedInitialUser(organizationId: string): Promise<User> {
+async function seedInitialUser(): Promise<User> {
   try {
     let initialUser = await prisma.user.findUnique({
       where: {
@@ -55,8 +101,6 @@ async function seedInitialUser(organizationId: string): Promise<User> {
         email: 'anonymous@anonymous.com',
         name: 'Anonymous',
         emailVerified: false,
-        organizationId,
-        role: DeprecatedRole.ADMIN,
         isAnonymous: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -107,36 +151,49 @@ async function seedInitialAccount(initialUser: User): Promise<Account> {
   }
 }
 
-async function seedDefaultEnvironment(organizationId: string): Promise<Environment> {
+async function seedDefaultEnvironments(): Promise<void> {
   try {
-    let environment = await prisma.environment.findFirst({
-      where: { name: 'Default' },
-    });
+    const environments = [
+      {
+        name: 'Development',
+        description: 'Default development environment',
+      },
+      {
+        name: 'Production',
+        description: 'Default production environment',
+      },
+    ];
 
-    if (!environment) {
-      environment = await prisma.environment.create({
-        data: {
-          name: 'Default',
-          description: 'Default environment',
-          organizationId,
-        },
+    for (const envData of environments) {
+      let environment = await prisma.environment.findFirst({
+        where: { name: envData.name },
       });
-      console.log('✅ Created default environment');
-    } else {
-      console.log('✅ Default environment already exists');
-    }
 
-    return environment;
+      if (!environment) {
+        environment = await prisma.environment.create({
+          data: {
+            name: envData.name,
+            description: envData.description,
+          },
+        });
+        console.log(`✅ Created default ${envData.name} environment`);
+      } else {
+        console.log(`✅ ${envData.name} environment already exists`);
+      }
+    }
   } catch (error) {
-    console.error('❌ Error creating default environment:', error);
+    console.error('❌ Error creating default environments:', error);
     throw error;
   }
 }
 
-async function seedDefaultAdmin(userId: string, organizationId: string): Promise<void> {
+async function seedDefaultAdmin(userId?: string): Promise<void> {
   try {
-    const adminRole = await seedRole(organizationId, 'Admin', 'Full system administrator with all privileges');
-    await seedUserRole(userId, adminRole.id);
+    const adminRole = await seedRole('Admin', 'Full system administrator with all privileges');
+
+    if (userId) {
+      await seedUserRole(userId, adminRole.id);
+    }
 
     const permissions = [{ resource: PermissionResource.all, action: PermissionAction.manage }];
     await seedPermissions(adminRole.id, permissions);
@@ -146,9 +203,9 @@ async function seedDefaultAdmin(userId: string, organizationId: string): Promise
   }
 }
 
-async function seedBuilderRole(organizationId: string): Promise<void> {
+async function seedBuilderRole(): Promise<void> {
   try {
-    const builderRole = await seedRole(organizationId, 'Builder', 'Application developer and app user');
+    const builderRole = await seedRole('Builder', 'Application developer and app user');
 
     // All permissions except admin app
     const permissions = [
@@ -164,9 +221,9 @@ async function seedBuilderRole(organizationId: string): Promise<void> {
   }
 }
 
-async function seedOperatorRole(organizationId: string): Promise<void> {
+async function seedOperatorRole(): Promise<void> {
   try {
-    const operatorRole = await seedRole(organizationId, 'App User', 'End user with app-only access');
+    const operatorRole = await seedRole('App User', 'End user with app-only access');
 
     // Access only to websites
     const permissions = [{ resource: PermissionResource.Website, action: PermissionAction.manage }];
@@ -177,10 +234,10 @@ async function seedOperatorRole(organizationId: string): Promise<void> {
   }
 }
 
-async function seedRole(organizationId: string, name: string, description: string | null = null): Promise<Role> {
+async function seedRole(name: string, description: string | null = null): Promise<Role> {
   try {
     let role = await prisma.role.findFirst({
-      where: { organizationId, name },
+      where: { name },
     });
 
     if (!role) {
@@ -188,7 +245,6 @@ async function seedRole(organizationId: string, name: string, description: strin
         data: {
           name,
           description,
-          organizationId,
         },
       });
       console.log(`✅ Created ${name} role`);
@@ -245,6 +301,52 @@ async function seedPermissions(
     }
   } catch (error) {
     console.error('❌ Error creating permissions:', error);
+    throw error;
+  }
+}
+
+async function inferDataSourceTypes(): Promise<void> {
+  try {
+    const connectionProps = await prisma.dataSourceProperty.findMany({
+      where: { type: DataSourcePropertyType.CONNECTION_URL },
+      select: {
+        dataSourceId: true,
+        environmentVariable: true,
+      },
+    });
+
+    const dataSourceIdToType = new Map<string, DataSourceType>();
+
+    for (const property of connectionProps) {
+      const { value: connectionUrl } = decryptEnvironmentVariable(property.environmentVariable);
+
+      let inferredType: DataSourceType = DataSourceType.SQLITE;
+
+      if (connectionUrl.includes('postgres')) {
+        inferredType = DataSourceType.POSTGRES;
+      } else if (connectionUrl.includes('mysql')) {
+        inferredType = DataSourceType.MYSQL;
+      } else if (connectionUrl.includes('mongodb')) {
+        inferredType = DataSourceType.MONGODB;
+      } else if (connectionUrl.includes('hubspot')) {
+        inferredType = DataSourceType.HUBSPOT;
+      } else if (connectionUrl.includes('sheets')) {
+        inferredType = DataSourceType.GOOGLE_SHEETS;
+      } else if (connectionUrl.includes('docs')) {
+        inferredType = DataSourceType.GOOGLE_DOCS;
+      }
+
+      dataSourceIdToType.set(property.dataSourceId, inferredType);
+    }
+
+    for (const [dataSourceId, inferredType] of dataSourceIdToType.entries()) {
+      await prisma.dataSource.update({
+        where: { id: dataSourceId },
+        data: { type: inferredType },
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error inferring data source types:', error);
     throw error;
   }
 }

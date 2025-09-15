@@ -1,54 +1,61 @@
-import type { BaseAccessor, BaseAccessorConstructor } from './baseAccessor';
+import { type BaseAccessor } from './baseAccessor';
 import { PostgresAccessor } from './accessors/postgres';
 import { MySQLAccessor } from './accessors/mysql';
 import { SQLiteAccessor } from './accessors/sqlite';
 import { MongoDBAccessor } from './accessors/mongodb';
-import type { Table } from '../types';
+import { DataSourceType } from './utils/types';
+import type { BaseDatabaseAccessor } from './baseDatabaseAccessor';
+import { HubspotAccessor } from './accessors/hubspot';
+import { GoogleSheetsAccessor } from './accessors/google-sheets';
+import { GoogleDocsAccessor } from './accessors/google-docs';
 
 export class DataAccessor {
-  private static _getAllAccessors(): BaseAccessorConstructor[] {
-    return [PostgresAccessor, MySQLAccessor, SQLiteAccessor, MongoDBAccessor];
+  static getDatabaseAccessor(type: DataSourceType): BaseDatabaseAccessor {
+    switch (type.toUpperCase()) {
+      case DataSourceType.POSTGRES:
+        return new PostgresAccessor();
+      case DataSourceType.MYSQL:
+        return new MySQLAccessor();
+      case DataSourceType.SQLITE:
+        return new SQLiteAccessor();
+      case DataSourceType.MONGODB:
+        return new MongoDBAccessor();
+      case DataSourceType.GOOGLE_SHEETS:
+        return new GoogleSheetsAccessor();
+      case DataSourceType.GOOGLE_DOCS:
+        return new GoogleDocsAccessor();
+      default:
+        throw new Error(`No database accessor found for type: ${type}`);
+    }
   }
 
-  static getAccessor(databaseUrl: string): BaseAccessor {
-    const allAccessors = this._getAllAccessors();
+  static async getAccessor(type: DataSourceType): Promise<BaseAccessor> {
+    switch (type.toUpperCase()) {
+      case DataSourceType.POSTGRES:
+      case DataSourceType.MYSQL:
+      case DataSourceType.SQLITE:
+      case DataSourceType.MONGODB:
+      case DataSourceType.GOOGLE_SHEETS:
+      case DataSourceType.GOOGLE_DOCS:
+        return this.getDatabaseAccessor(type);
+      case DataSourceType.HUBSPOT:
+        return new HubspotAccessor();
+      default:
+        throw new Error(`No accessor found for type: ${type}`);
+    }
+  }
 
-    const accessorClass = allAccessors.find((acc: BaseAccessorConstructor) => acc.isAccessor(databaseUrl));
-
-    if (!accessorClass) {
-      throw new Error(`No accessor found for database URL: ${databaseUrl}`);
+  static async getDataSourceLabel(type: DataSourceType): Promise<string> {
+    if (this._cachedTypeLabels.has(type)) {
+      return this._cachedTypeLabels.get(type)!;
     }
 
-    return new accessorClass();
+    const accessor = await this.getAccessor(type);
+
+    this._cachedTypeLabels.set(type, accessor.label);
+
+    return accessor.label;
   }
 
-  static getByDatabaseType(databaseType: string): BaseAccessor | null {
-    const allAccessors = this._getAllAccessors();
-    const accessorClass = allAccessors.find((acc: BaseAccessorConstructor) => acc.pluginId === databaseType);
-
-    if (!accessorClass) {
-      return null;
-    }
-
-    return new accessorClass();
-  }
-
-  /**
-   * Returns all available database types by reading the pluginId from all registered accessors
-   * @returns Array of available database type strings
-   */
-  static getAvailableDatabaseTypes(): string[] {
-    const allAccessors = this._getAllAccessors();
-    return allAccessors.map((acc: BaseAccessorConstructor) => acc.pluginId);
-  }
-
-  /**
-   * Gets a sample schema for the specified database type
-   * @param databaseType - The database type to get sample schema for
-   * @returns Sample schema or null if database type is not found
-   */
-  static getSampleSchema(databaseType: string): Table[] | null {
-    const accessor = this.getByDatabaseType(databaseType);
-    return accessor ? accessor.generateSampleSchema() : null;
-  }
+  static _cachedTypeLabels: Map<DataSourceType, string> = new Map<DataSourceType, string>();
 }

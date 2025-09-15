@@ -1,21 +1,44 @@
 import { logger } from '~/utils/logger';
-import { DataSourcePluginManager } from '~/lib/plugins/data-access/data-access-plugin-manager';
+import { isGoogleConnection } from '@liblab/data-access/accessors/google-sheets';
+import { DataSourcePluginManager } from '~/lib/plugins/data-source/data-access-plugin-manager';
+import type { BaseDatabaseAccessor } from '@liblab/data-access/baseDatabaseAccessor';
+import { DataSourceType } from '@liblab/data-access/utils/types';
 
-export async function executeQuery(connectionUrl: string, query: string, params?: string[]): Promise<any[]> {
-  const dataAccessor = DataSourcePluginManager.getAccessor(connectionUrl);
+export async function executeQuery(
+  connectionUrl: string,
+  dataSourceType: DataSourceType,
+  query: string,
+  params?: string[],
+): Promise<any[]> {
+  const dataAccessor = (await DataSourcePluginManager.getAccessor(dataSourceType)) as BaseDatabaseAccessor;
 
   try {
     await dataAccessor.initialize(connectionUrl);
+
+    // Enhanced logging for Google Sheets JSON parsing issues
+    const isSheetsError = isGoogleConnection(connectionUrl);
+
+    if (isSheetsError) {
+      console.log('[Database] Google Sheets query execution:', {
+        queryType: typeof query,
+        queryLength: query.length,
+        firstChars: query.substring(0, 100),
+        queryPreview: query.length > 200 ? query.substring(0, 200) + '...' : query,
+        connectionUrl: connectionUrl.substring(0, 50) + '...',
+      });
+    }
+
     dataAccessor.guardAgainstMaliciousQuery(query);
 
     return await dataAccessor.executeQuery(query, params);
   } catch (e) {
-    // Enhanced error logging for MongoDB JSON parsing issues
+    // Enhanced error logging for MongoDB and Google Sheets JSON parsing issues
     const isMongoError = connectionUrl.startsWith('mongodb');
+    const isSheetsError = isGoogleConnection(connectionUrl);
     const isJsonError = e instanceof Error && e.message.includes('Invalid JSON format');
 
-    if (isMongoError && isJsonError) {
-      logger.error('MongoDB JSON parsing error:', {
+    if ((isMongoError || isSheetsError) && isJsonError) {
+      logger.error('JSON parsing error:', {
         error: e instanceof Error ? e.message : String(e),
         query,
         queryLength: query.length,

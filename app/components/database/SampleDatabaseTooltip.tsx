@@ -67,8 +67,8 @@ export const SampleDatabaseTooltip = () => {
                 contact info, and subscription tier.
               </div>
               <div>
-                <strong className="text-primary">Users</strong> – People who work for each organization, including their
-                roles and login activity.
+                <strong className="text-primary">Members</strong> – People who work for each organization, including
+                their roles and login activity.
               </div>
               <div>
                 <strong className="text-primary">Products</strong> – Items or services offered by organizations, with

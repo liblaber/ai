@@ -19,11 +19,12 @@ import { Settings } from 'lucide-react';
 import DataTab from '~/components/@settings/tabs/data/DataTab';
 import DeployedAppsTab from '~/components/@settings/tabs/deployed-apps/DeployedAppsTab';
 import GitHubTab from '~/components/@settings/tabs/connections/GitHubTab';
-import { useUserStore } from '~/lib/stores/user';
-import { DeprecatedRole } from '@prisma/client';
-import OrganizationTab from '~/components/@settings/tabs/organization/OrganizationTab';
-import MembersTab from '~/components/@settings/tabs/members/MembersTab';
-import RolesTab from '~/components/@settings/tabs/roles/RolesTab';
+import { Can } from '@casl/react';
+import { AbilityContext } from '~/components/ability/AbilityProvider';
+import MembersTab from '~/components/@settings/tabs/users/UsersTab';
+import EnvironmentsTab from '~/components/@settings/tabs/environments';
+import SecretsManagerTab from '~/components/@settings/tabs/secrets-manager';
+import DeploymentMethodsTab from '~/components/@settings/tabs/deployment-methods/DeploymentMethodsTab';
 
 const LAST_ACCESSED_TAB_KEY = 'control-panel-last-tab';
 
@@ -84,8 +85,6 @@ export const ControlPanel = () => {
 
   // Store values
   const tabConfiguration = useStore(tabConfigurationStore);
-  const { user } = useUserStore();
-  const role = user?.role;
 
   // Memoize the base tab configurations to avoid recalculation
   const baseTabConfig = useMemo(() => {
@@ -167,16 +166,18 @@ export const ControlPanel = () => {
     switch (tabId) {
       case 'data':
         return <DataTab />;
+      case 'environments':
+        return <EnvironmentsTab />;
+      case 'secrets-manager':
+        return <SecretsManagerTab />;
+      case 'deployment-methods':
+        return <DeploymentMethodsTab />;
       case 'deployed-apps':
         return <DeployedAppsTab />;
       case 'github':
         return <GitHubTab />;
-      case 'organization':
-        return <OrganizationTab />;
       case 'members':
         return <MembersTab />;
-      case 'roles':
-        return <RolesTab />;
       default:
         return null;
     }
@@ -222,11 +223,11 @@ export const ControlPanel = () => {
                 <div className="flex-1 overflow-y-auto p-4">
                   <TabSection title="Workspace" tabs={visibleTabs} activeTab={activeTab} onTabClick={handleTabClick} />
 
-                  {role === DeprecatedRole.ADMIN && (
+                  <Can I="view" a="AdminApp" ability={React.useContext(AbilityContext)}>
                     <div className="mt-6">
                       <TabSection title="Admin" tabs={adminTabs} activeTab={activeTab} onTabClick={handleTabClick} />
                     </div>
-                  )}
+                  </Can>
                 </div>
               </div>
 
@@ -241,7 +242,7 @@ export const ControlPanel = () => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="m-6"
+                    className="px-8 pt-2 pb-6"
                   >
                     {activeTab ? (
                       getTabComponent(activeTab)
