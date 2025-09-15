@@ -288,6 +288,9 @@ importers:
       mongodb:
         specifier: ^6.18.0
         version: 6.18.0
+      mongodb-query-parser:
+        specifier: ^4.4.2
+        version: 4.4.2(bson@6.10.4)
       mysql2:
         specifier: ^3.14.1
         version: 3.14.3
@@ -2480,6 +2483,11 @@ packages:
 
   '@mongodb-js/saslprep@1.3.0':
     resolution: {integrity: sha512-zlayKCsIjYb7/IdfqxorK5+xUMyi4vOKcFy10wKJYc63NSdKI8mNME+uJqfatkPmOSMMUiojrL58IePKBm3gvQ==}
+
+  '@mongodb-js/shell-bson-parser@1.3.1':
+    resolution: {integrity: sha512-BnSjWc/XPVkugi78VaoRzdJMVgzFXiXvngcwWApzXNrQuKXzAXXQSuZ6kazx5toExPjHwu20gQmre59vKR0ZXw==}
+    peerDependencies:
+      bson: ^4.6.3 || ^5 || ^6
 
   '@nanostores/react@0.7.3':
     resolution: {integrity: sha512-/XuLAMENRu/Q71biW4AZ4qmU070vkZgiQ28gaTSNRPm2SZF5zGAR81zPE1MaMB4SeOp6ZTst92NBaG75XSspNg==}
@@ -7445,6 +7453,9 @@ packages:
   jackspeak@3.4.3:
     resolution: {integrity: sha512-OGlZQpz2yfahA/Rd1Y8Cd9SIEsqvXkLVoSw/cgwhnhFMDbsQFeZYoJJ7bIZBS9BcamUW96asq/npPWugM+RQBw==}
 
+  javascript-stringify@2.1.0:
+    resolution: {integrity: sha512-JVAfqNPTvNq3sB/VHQJAFxN/sPgKnsKrCwyRt15zwNCdrMMJDdcEOdubuy+DuJYYdm0ox1J4uzEuYKkN+9yhVg==}
+
   jest-changed-files@30.0.5:
     resolution: {integrity: sha512-bGl2Ntdx0eAwXuGpdLdVYVr5YQHnSZlQ0y9HVDu565lCUAe9sj6JOtBbMmBBikGIegne9piDDIOeiLVoqTkz4A==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
@@ -8365,6 +8376,11 @@ packages:
 
   mongodb-connection-string-url@3.0.2:
     resolution: {integrity: sha512-rMO7CGo/9BFwyZABcKAWL8UJwH/Kc2x0g72uhDWzG48URRax5TCIcJ7Rc3RZqffZzO/Gwff/jyKwCU9TN8gehA==}
+
+  mongodb-query-parser@4.4.2:
+    resolution: {integrity: sha512-QHLojfyklUqzQz0eU0xWj6cJrbmOGLzkdErpoYa2X/UBrRWxuRT/BWY++m0sONku0HTzTFnYaOK84dB0T7hBCg==}
+    peerDependencies:
+      bson: ^4.6.3 || ^5 || ^6
 
   mongodb@6.18.0:
     resolution: {integrity: sha512-fO5ttN9VC8P0F5fqtQmclAkgXZxbIkYRTUi1j8JO6IYwvamkhtYDilJr35jOPELR49zqCJgXZWwCtW7B+TM8vQ==}
@@ -13836,6 +13852,11 @@ snapshots:
   '@mongodb-js/saslprep@1.3.0':
     dependencies:
       sparse-bitfield: 3.0.3
+
+  '@mongodb-js/shell-bson-parser@1.3.1(bson@6.10.4)':
+    dependencies:
+      acorn: 8.15.0
+      bson: 6.10.4
 
   '@nanostores/react@0.7.3(nanostores@0.10.3)(react@18.3.1)':
     dependencies:
@@ -19503,6 +19524,8 @@ snapshots:
     optionalDependencies:
       '@pkgjs/parseargs': 0.11.0
 
+  javascript-stringify@2.1.0: {}
+
   jest-changed-files@30.0.5:
     dependencies:
       execa: 5.1.1
@@ -20826,6 +20849,16 @@ snapshots:
     dependencies:
       '@types/whatwg-url': 11.0.5
       whatwg-url: 14.2.0
+
+  mongodb-query-parser@4.4.2(bson@6.10.4):
+    dependencies:
+      '@mongodb-js/shell-bson-parser': 1.3.1(bson@6.10.4)
+      bson: 6.10.4
+      debug: 4.4.1(supports-color@9.4.0)
+      javascript-stringify: 2.1.0
+      lodash: 4.17.21
+    transitivePeerDependencies:
+      - supports-color
 
   mongodb@6.18.0:
     dependencies:

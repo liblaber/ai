@@ -143,6 +143,7 @@
     "lucide-react": "^0.539.0",
     "mime": "^4.0.4",
     "mongodb": "^6.18.0",
+    "mongodb-query-parser": "^4.4.2",
     "mysql2": "^3.14.1",
     "nanostores": "^0.10.3",
     "netlify": "^13.3.4",
