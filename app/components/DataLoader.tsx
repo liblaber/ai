@@ -219,10 +219,11 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
   }, [
     JSON.stringify({
       sessionUser: session?.user,
-      provider: anonymousProvider,
+      provider: anonymousProvider?.provider,
       rootData: {
         user: rootData.user,
         environmentDataSources: rootData.environmentDataSources,
+        dataSourceTypes: rootData.dataSourceTypes,
         environmentVariables: rootData.environmentVariables,
         environmentDeploymentMethods: rootData.environmentDeploymentMethods,
         deploymentProviders: rootData.deploymentProviders,
