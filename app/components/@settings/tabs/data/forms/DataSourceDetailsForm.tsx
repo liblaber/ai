@@ -108,16 +108,15 @@ export default function DataSourceDetailsForm({ dataSource }: Props) {
       if (response.ok) {
         toast.success('Data source deleted');
         await refetchEnvironmentDataSources();
-        setIsDeleteModalOpen(false);
       } else {
         toast.error('Failed to delete data source');
-        setIsDeleteModalOpen(false);
         console.error('Error deleting data source:', response);
       }
     } catch (error) {
       toast.error('Failed to delete data source');
-      setIsDeleteModalOpen(false);
       console.error('Error deleting data source:', error);
+    } finally {
+      setIsDeleteModalOpen(false);
     }
   };
 

@@ -510,7 +510,7 @@ export async function deleteDataSource(id: string) {
       await deleteDataSourceEnvironment(id, environmentDataSource.environmentId, tx);
     }
 
-    tx.dataSource.delete({ where: { id } });
+    await tx.dataSource.delete({ where: { id } });
 
     logger.debug(`Deleted data source [${id}]`);
   });
