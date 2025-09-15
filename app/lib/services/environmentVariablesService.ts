@@ -86,21 +86,29 @@ export async function createEnvironmentVariable(
   dataSourceId?: string,
   tx?: PrismaTransaction,
 ): Promise<EnvironmentVariable> {
-  const encryptedValue = encryptValue(value);
-  const client = tx || prisma;
+  try {
+    const encryptedValue = encryptValue(value);
+    const client = tx || prisma;
 
-  const envVar = await client.environmentVariable.create({
-    data: {
-      key,
-      value: encryptedValue,
-      description: description || null,
-      type,
-      environmentId,
-      createdById,
-    },
-  });
+    const envVar = await client.environmentVariable.create({
+      data: {
+        key,
+        value: encryptedValue,
+        description: description || null,
+        type,
+        environmentId,
+        createdById,
+      },
+    });
 
-  return decryptEnvironmentVariable(envVar);
+    return decryptEnvironmentVariable(envVar);
+  } catch (error: any) {
+    if (error.code === 'P2002' && error.meta?.target?.includes('key_environmentId')) {
+      throw new Error(`Environment variable with key '${key}' already exists in this environment.`);
+    }
+
+    throw error;
+  }
 }
 
 export async function updateEnvironmentVariable(

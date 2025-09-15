@@ -70,11 +70,13 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       setProviders(rootData.deploymentProviders);
     }
   }, [
-    rootData.pluginAccess,
-    rootData.dataSourceTypes,
-    rootData.environmentVariables,
-    rootData.environmentDeploymentMethods,
-    rootData.deploymentProviders,
+    JSON.stringify({
+      pluginAccess: rootData.pluginAccess,
+      dataSourceTypes: rootData.dataSourceTypes,
+      environmentVariables: rootData.environmentVariables,
+      environmentDeploymentMethods: rootData.environmentDeploymentMethods,
+      deploymentProviders: rootData.deploymentProviders,
+    }),
     setPluginAccess,
     setDataSourceTypes,
     setEnvironmentVariables,
@@ -214,7 +216,20 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     };
 
     loadUserData();
-  }, [session?.user, anonymousProvider, rootData, router]);
+  }, [
+    JSON.stringify({
+      sessionUser: session?.user,
+      provider: anonymousProvider,
+      rootData: {
+        user: rootData.user,
+        environmentDataSources: rootData.environmentDataSources,
+        environmentVariables: rootData.environmentVariables,
+        environmentDeploymentMethods: rootData.environmentDeploymentMethods,
+        deploymentProviders: rootData.deploymentProviders,
+      },
+    }),
+    router,
+  ]);
 
   const fetchUserData = async (): Promise<UserProfile> => {
     try {

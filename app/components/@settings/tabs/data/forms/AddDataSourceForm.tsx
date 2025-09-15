@@ -12,12 +12,8 @@ import {
   SAMPLE_DATABASE,
   useDataSourceTypesPlugin,
 } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
-import {
-  GoogleWorkspaceConnector,
-  type GoogleWorkspaceConnection,
-} from '~/components/google-workspace/GoogleWorkspaceConnector';
+import GoogleSheetsSetup from './GoogleSheetsSetup';
 import type { DataSourcePropertyDescriptor } from '@liblab/data-access/utils/types';
-import { DataSourcePropertyType } from '@liblab/data-access/utils/types';
 
 interface DataSourceResponse {
   success: boolean;
@@ -302,67 +298,6 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     }
   };
 
-  const handleGoogleSheetsConnection = async (connection: GoogleWorkspaceConnection) => {
-    try {
-      setError(null);
-      setTestResult(null);
-      setIsSubmitting(true);
-
-      if (!selectedEnvironment) {
-        setError('Please select an environment');
-        return;
-      }
-
-      // Create connection string for Google Sheets
-      let connectionString = '';
-
-      if (connection.accessToken && connection.refreshToken) {
-        // OAuth connection
-        connectionString = `sheets://${connection.documentId}?access_token=${encodeURIComponent(connection.accessToken)}&refresh_token=${encodeURIComponent(connection.refreshToken)}`;
-      } else {
-        // Public URL connection
-        connectionString = connection.url;
-      }
-
-      // Add Apps Script URL if provided
-      if (connection.appsScriptUrl) {
-        connectionString += `${connectionString.includes('?') ? '&' : '?'}apps_script_url=${encodeURIComponent(connection.appsScriptUrl)}`;
-      }
-
-      const formData = new FormData();
-      formData.append('name', connection.title);
-      formData.append('environmentId', selectedEnvironment.value);
-      formData.append('type', dbType.type || dbType.value.toUpperCase());
-
-      const properties = [
-        {
-          type: DataSourcePropertyType.CONNECTION_URL,
-          value: connectionString,
-        },
-      ];
-      formData.append('properties', JSON.stringify(properties));
-      formData.append('type', dbType.type || dbType.value.toUpperCase());
-
-      const response = await fetch('/api/data-sources', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = (await response.json()) as DataSourceResponse;
-
-      if (result.success) {
-        toast.success('Google Sheets data source added successfully');
-        onSuccess();
-      } else {
-        setError(result.error || 'Failed to create Google Sheets data source');
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleDatabaseTypeChange = (value: DataSourceOption) => {
     setDbType(value);
     setError(null);
@@ -370,7 +305,6 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
     setDbName('');
     setPropertyValues({});
   };
-
   const isFormDisabled =
     isTestingConnection ||
     !selectedEnvironment ||
@@ -423,16 +357,16 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
           </div>
 
           {isGoogleSheetsSelected && (
-            <>
-              {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
-              <GoogleWorkspaceConnector
-                type="sheets"
-                onConnection={handleGoogleSheetsConnection}
-                onError={setError}
-                isConnecting={isSubmitting}
-                isSuccess={false}
-              />
-            </>
+            <GoogleSheetsSetup
+              onSuccess={() => {
+                setTestResult({
+                  success: true,
+                  message: 'Google Sheets connected successfully',
+                });
+                onSuccess();
+              }}
+              environmentId={selectedEnvironment?.value}
+            />
           )}
 
           {dbType.value !== SAMPLE_DATABASE && !isGoogleSheetsSelected && (

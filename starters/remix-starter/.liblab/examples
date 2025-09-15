@@ -533,4 +533,213 @@ export default function Index() {
       </liblabArtifact>
     </assistant_response>
   </example>
+  <example>
+    <user_prompt>Create a dashboard using Google Sheets data</user_prompt>
+    <assistant_response>
+      I'll create a dashboard that connects to Google Sheets and displays customer data in interactive charts.
+
+      <liblabArtifact id="google-sheets-customer-dashboard" title="Create Google Sheets Customer Dashboard">
+        <liblabAction type="commit-message">Add Google Sheets customer dashboard with data visualization</liblabAction>
+        <liblabAction type="file" filePath="app/routes/customers.tsx">
+import { json, type LoaderFunctionArgs } from '@remix-run/node';
+import { useLoaderData } from '@remix-run/react';
+import { executeQuery, QueryData } from '@/db/execute-query';
+import CustomerDashboard from '@/components/dashboard/CustomerDashboard';
+
+interface CustomerData {
+  'First Name': string;
+  'Last Name': string;
+  'Customer Id': string;
+  Country: string;
+  Email: string;
+  'Phone 1': string;
+  Index: string;
+  Index_numeric: number;
+  row_number: number;
+}
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  try {
+    // Note: For Google Sheets, queries are JSON format, not SQL
+    const customersData = await executeQuery<CustomerData>(
+      JSON.stringify({
+        operation: "readSheetPaginated",
+        parameters: {
+          maxRows: 100,
+          valueRenderOption: "FORMATTED_VALUE"
+        }
+      })
+    );
+
+    return json({
+      customers: customersData,
+    });
+  } catch (error) {
+    console.error('Error in customers loader:', error);
+    return json({ 
+      customers: { isError: true, errorMessage: 'Failed to load customer data' },
+    });
+  }
+}
+
+export default function CustomersPage() {
+  const data = useLoaderData<typeof loader>();
+
+  return (
+    <div className="p-8">
+      <h1 className="text-4xl font-bold mb-8">Customer Dashboard</h1>
+      <CustomerDashboard customers={data.customers} />
+    </div>
+  );
+}
+        </liblabAction>
+        <liblabAction type="file" filePath="app/components/dashboard/CustomerDashboard.tsx">
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { QueryData } from '@/db/execute-query';
+
+interface CustomerData {
+  'First Name': string;
+  'Last Name': string;
+  'Customer Id': string;
+  Country: string;
+  Email: string;
+  'Phone 1': string;
+  Index: string;
+  Index_numeric: number;
+  row_number: number;
+}
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+interface CustomerDashboardProps {
+  customers: QueryData<CustomerData[]>;
+}
+
+export default function CustomerDashboard({ customers }: CustomerDashboardProps) {
+  if (customers.isError) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-red-500">Error: {customers.errorMessage}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const customerData = customers.data;
+
+  // Process data for country distribution
+  const countryData = customerData.reduce((acc, customer) => {
+    const country = customer.Country || 'Unknown';
+    acc[country] = (acc[country] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const pieData = Object.entries(countryData)
+    .map(([country, count]) => ({ country, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  const barData = pieData.slice(0, 8);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Distribution by Country</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  dataKey="count"
+                  nameKey="country"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  label={(entry) => entry.country}
+                >
+                  {pieData.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Countries by Customer Count</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={barData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="country" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer Details ({customerData.length} customers)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Country
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Customer ID
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {customerData.slice(0, 25).map((customer, index) => (
+                  <tr key={index}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {customer['First Name']} {customer['Last Name']}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {customer.Email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {customer.Country}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-xs text-gray-400">
+                      {customer['Customer Id']}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+        </liblabAction>
+      </liblabArtifact>
+    </assistant_response>
+  </example>
 </examples>

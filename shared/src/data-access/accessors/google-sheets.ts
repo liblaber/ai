@@ -1,7 +1,14 @@
+import { z } from 'zod';
 import type { Table } from '../../types';
 import { GoogleWorkspaceError } from './google-workspace/types';
 import { GoogleWorkspaceAuthManager } from './google-workspace/auth-manager';
-import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '../utils/types';
+import {
+  type DataAccessPluginId,
+  type DataSourceProperty,
+  type DataSourcePropertyDescriptor,
+  DataSourcePropertyType,
+  DataSourceType,
+} from '../utils/types';
 import { BaseDatabaseAccessor } from '../baseDatabaseAccessor';
 
 // Google Sheets URL constants
@@ -18,14 +25,306 @@ export const isGoogleConnection = (connectionString: string): boolean => {
   );
 };
 
-// TODO: https://linear.app/liblab/issue/ENG-966/adapt-google-sheets-docs-to-a-new-accessor-context-provider-style
+// Zod schema for DataSourceProperty validation
+const dataSourcePropertySchema = z.object({
+  type: z.nativeEnum(DataSourcePropertyType),
+  value: z.string(),
+});
+
+const dataSourcePropertiesArraySchema = z.array(dataSourcePropertySchema);
+
+// Schema for webhook responses (flexible structure)
+const webhookResponseSchema = z
+  .object({
+    error: z.string().optional(),
+  })
+  .passthrough(); // Allow additional properties
+
+/**
+ * Comprehensive Google Sheets Operations Guide
+ * This defines exactly what operations are available and how to use them.
+ * LLM MUST ONLY use operations from this list.
+ */
+export const GOOGLE_SHEETS_OPERATIONS = {
+  // READ OPERATIONS - For getting data from sheets
+  READ_OPERATIONS: {
+    readSheet: {
+      description: 'Read all data from the active sheet with automatic pagination',
+      parameters: {
+        sheetName: 'Optional: specific sheet name',
+        startRow: 'Optional: row to start from (default: 1)',
+        maxRows: 'Optional: max rows to return (default: 100, max: 100)',
+      },
+      example: '{"operation": "readSheet", "parameters": {"maxRows": 50}}',
+      useCase: 'Default operation for displaying sheet data in UI',
+    },
+    readSheetPaginated: {
+      description: 'Read sheet data with explicit pagination controls',
+      parameters: {
+        sheetName: 'Optional: specific sheet name',
+        startRow: 'Optional: row to start from (default: 1)',
+        maxRows: 'Optional: max rows to return (default: 50, max: 100)',
+      },
+      example: '{"operation": "readSheetPaginated", "parameters": {"startRow": 1, "maxRows": 25}}',
+      useCase: 'When you need precise pagination control',
+    },
+    readRange: {
+      description: 'Read data from a specific cell range',
+      parameters: {
+        range: 'Required: A1 notation range (e.g., "A1:C10")',
+        valueRenderOption: 'Optional: FORMATTED_VALUE, UNFORMATTED_VALUE, or FORMULA',
+      },
+      example: '{"operation": "readRange", "parameters": {"range": "A1:C10"}}',
+      useCase: 'When you need specific cells or ranges',
+    },
+    getValues: {
+      description: 'Alias for readRange operation',
+      parameters: 'Same as readRange',
+      example: '{"operation": "getValues", "parameters": {"range": "A1:C10"}}',
+      useCase: 'Alternative name for readRange',
+    },
+    getAllSheets: {
+      description: 'Get list of all sheets in the spreadsheet',
+      parameters: 'None',
+      example: '{"operation": "getAllSheets"}',
+      useCase: 'To discover available sheets before reading data',
+    },
+    getSheetInfo: {
+      description: 'Get information about a specific sheet',
+      parameters: {
+        gid: 'Optional: sheet GID (default: 0)',
+        sheetName: 'Optional: sheet name for reference',
+      },
+      example: '{"operation": "getSheetInfo", "parameters": {"gid": 0}}',
+      useCase: 'To check if a sheet exists or get sheet metadata',
+    },
+  },
+
+  // WRITE OPERATIONS - For modifying sheet data (requires Apps Script URL)
+  WRITE_OPERATIONS: {
+    appendRow: {
+      description: 'Add a single row to the end of the sheet',
+      parameters: {
+        values: 'Required: Array of values for the new row',
+      },
+      example: '{"operation": "appendRow", "parameters": {"values": ["John", "Doe", "30"]}}',
+      useCase: 'Add button in UI - adds one new record',
+    },
+    appendRows: {
+      description: 'Add multiple rows to the end of the sheet',
+      parameters: {
+        values: 'Required: 2D array of values for multiple rows',
+      },
+      example:
+        '{"operation": "appendRows", "parameters": {"values": [["John", "Doe", "30"], ["Jane", "Smith", "25"]]}}',
+      useCase: 'Bulk add operation - adds multiple records at once',
+    },
+    updateCell: {
+      description: 'Update a single cell value',
+      parameters: {
+        row: 'Required: 0-based row index',
+        column: 'Required: 0-based column index',
+        value: 'Required: new cell value',
+      },
+      example: '{"operation": "updateCell", "parameters": {"row": 1, "column": 0, "value": "Updated Name"}}',
+      useCase: 'Update button in UI - modifies specific cell',
+    },
+    updateRange: {
+      description: 'Update multiple cells in a range',
+      parameters: {
+        range: 'Required: A1 notation range (e.g., "A1:C1")',
+        values: 'Required: 2D array of values matching the range size',
+      },
+      example: '{"operation": "updateRange", "parameters": {"range": "A1:C1", "values": [["John", "Doe", "30"]]}}',
+      useCase: 'Update button in UI - modifies entire row or range',
+    },
+    updateValues: {
+      description: 'Alias for updateRange operation',
+      parameters: 'Same as updateRange',
+      example: '{"operation": "updateValues", "parameters": {"range": "A1:C1", "values": [["John", "Doe", "30"]]}}',
+      useCase: 'Alternative name for updateRange',
+    },
+    insertRow: {
+      description: 'Insert a blank row at specified position',
+      parameters: {
+        rowIndex: 'Required: 0-based row index where to insert',
+      },
+      example: '{"operation": "insertRow", "parameters": {"rowIndex": 1}}',
+      useCase: 'Insert blank row before adding data',
+    },
+    deleteRow: {
+      description: 'Delete a row at specified position',
+      parameters: {
+        rowIndex: 'Required: 0-based row index to delete',
+      },
+      example: '{"operation": "deleteRow", "parameters": {"rowIndex": 1}}',
+      useCase: 'Delete button in UI - removes specific row',
+    },
+    clearValues: {
+      description: 'Clear content from a range of cells',
+      parameters: {
+        range: 'Required: A1 notation range to clear',
+      },
+      example: '{"operation": "clearValues", "parameters": {"range": "A1:C10"}}',
+      useCase: 'Clear button in UI - empties specific cells',
+    },
+    clearRange: {
+      description: 'Alias for clearValues operation',
+      parameters: 'Same as clearValues',
+      example: '{"operation": "clearRange", "parameters": {"range": "A1:C10"}}',
+      useCase: 'Alternative name for clearValues',
+    },
+  },
+
+  // UI ACTION MAPPINGS - What operation to use for each UI action
+  UI_ACTION_MAPPINGS: {
+    'Add Record': 'appendRow',
+    'Add Multiple Records': 'appendRows',
+    'Update Record': 'updateRange',
+    'Update Cell': 'updateCell',
+    'Delete Record': 'deleteRow',
+    'Clear Data': 'clearValues',
+    'Load Data': 'readSheet',
+    'Load Paginated': 'readSheetPaginated',
+    'Get Range': 'readRange',
+    'List Sheets': 'getAllSheets',
+    'Check Sheet': 'getSheetInfo',
+  },
+} as const;
+
+/**
+ * Helper functions for operation validation and guidance
+ */
+
+// Get all valid operations as a flat array
+export const getAllValidOperations = (): string[] => {
+  return [
+    ...Object.keys(GOOGLE_SHEETS_OPERATIONS.READ_OPERATIONS),
+    ...Object.keys(GOOGLE_SHEETS_OPERATIONS.WRITE_OPERATIONS),
+  ];
+};
+
+// Check if an operation is valid
+export const isValidOperation = (operation: string): boolean => {
+  return getAllValidOperations().includes(operation);
+};
+
+// Get operation details for guidance
+export const getOperationGuide = (operation: string): any => {
+  return (
+    (GOOGLE_SHEETS_OPERATIONS.READ_OPERATIONS as any)[operation] ||
+    (GOOGLE_SHEETS_OPERATIONS.WRITE_OPERATIONS as any)[operation] ||
+    null
+  );
+};
+
+// Get the recommended operation for a UI action
+export const getOperationForUIAction = (uiAction: string): string | null => {
+  return (GOOGLE_SHEETS_OPERATIONS.UI_ACTION_MAPPINGS as any)[uiAction] || null;
+};
+
+// Generate comprehensive error message with available operations
+export const getOperationErrorMessage = (): string => {
+  const readOps = Object.keys(GOOGLE_SHEETS_OPERATIONS.READ_OPERATIONS);
+  const writeOps = Object.keys(GOOGLE_SHEETS_OPERATIONS.WRITE_OPERATIONS);
+
+  return `Google Sheets query must specify a valid operation. Available operations:
+READ OPERATIONS: ${readOps.join(', ')}
+WRITE OPERATIONS: ${writeOps.join(', ')}
+
+Use the GOOGLE_SHEETS_OPERATIONS constant for detailed guidance on each operation.`;
+};
+
 export class GoogleSheetsAccessor extends BaseDatabaseAccessor {
   readonly pluginId: DataAccessPluginId = 'google-sheets';
   readonly label = 'Google Sheets';
   readonly dataSourceType: DataSourceType = DataSourceType.GOOGLE_SHEETS;
-  readonly preparedStatementPlaceholderExample = '{ range: $1, sheetName: $2, valueRenderOption: $3 }';
   readonly connectionStringFormat =
-    'sheets://SPREADSHEET_ID/ or https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit';
+    'https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit OR sheets://SPREADSHEET_ID';
+  readonly preparedStatementPlaceholderExample = '$1, $2, $3';
+
+  getRequiredDataSourcePropertyDescriptors(): DataSourcePropertyDescriptor[] {
+    return [
+      {
+        type: DataSourcePropertyType.CONNECTION_URL,
+        label: 'Google Sheets URL or Spreadsheet ID',
+        format: 'https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit or just SPREADSHEET_ID',
+      },
+      // Optional properties for Apps Script Web App (for write operations)
+      {
+        type: DataSourcePropertyType.CLIENT_ID,
+        label: 'Apps Script Web App URL (Optional)',
+        format: 'https://script.google.com/macros/s/SCRIPT_ID/exec',
+      },
+      // Optional properties for OAuth authentication
+      {
+        type: DataSourcePropertyType.ACCESS_TOKEN,
+        label: 'OAuth Access Token (Optional)',
+        format: 'OAuth 2.0 access token for authenticated access',
+      },
+      {
+        type: DataSourcePropertyType.REFRESH_TOKEN,
+        label: 'OAuth Refresh Token (Optional)',
+        format: 'OAuth 2.0 refresh token for token renewal',
+      },
+    ];
+  }
+
+  private _getConnectionStringFromProperties(dataSourceProperties: DataSourceProperty[]): string {
+    const connectionUrlProperty = dataSourceProperties.find(
+      (prop) => prop.type === DataSourcePropertyType.CONNECTION_URL,
+    );
+
+    if (!connectionUrlProperty || !connectionUrlProperty.value) {
+      throw new Error('Missing required property: Connection URL');
+    }
+
+    return connectionUrlProperty.value;
+  }
+
+  private _extractPropertiesFromDataSource(dataSourceProperties: DataSourceProperty[]): {
+    spreadsheetId: string;
+    accessToken?: string;
+    refreshToken?: string;
+    appsScriptUrl?: string;
+  } {
+    const connectionUrl = this._getConnectionStringFromProperties(dataSourceProperties);
+    const accessToken = dataSourceProperties.find((prop) => prop.type === DataSourcePropertyType.ACCESS_TOKEN)?.value;
+    const refreshToken = dataSourceProperties.find((prop) => prop.type === DataSourcePropertyType.REFRESH_TOKEN)?.value;
+    const appsScriptUrl = dataSourceProperties.find((prop) => prop.type === DataSourcePropertyType.CLIENT_ID)?.value;
+
+    // Extract spreadsheet ID from URL or use directly if it's just an ID
+    let spreadsheetId: string;
+
+    if (connectionUrl.includes('docs.google.com/spreadsheets')) {
+      // Extract from full URL
+      const match = connectionUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+
+      if (!match) {
+        throw new GoogleWorkspaceError('Invalid Google Sheets URL format');
+      }
+
+      spreadsheetId = match[1];
+    } else if (connectionUrl.startsWith('sheets://')) {
+      // Extract from sheets protocol
+      const url = new URL(connectionUrl);
+      spreadsheetId = url.hostname;
+    } else {
+      // Assume it's a direct spreadsheet ID
+      spreadsheetId = connectionUrl;
+    }
+
+    if (!spreadsheetId) {
+      throw new GoogleWorkspaceError('Could not extract spreadsheet ID from connection URL');
+    }
+
+    return {
+      spreadsheetId,
+      accessToken,
+      refreshToken,
+      appsScriptUrl,
+    };
+  }
 
   private _spreadsheetId: string | null = null;
   private _appsScriptUrl: string | null = null;
@@ -39,14 +338,13 @@ export class GoogleSheetsAccessor extends BaseDatabaseAccessor {
 
   async testConnection(dataSourceProperties: DataSourceProperty[]): Promise<boolean> {
     try {
-      const connectionString = this.getConnectionStringFromProperties(dataSourceProperties);
-      const spreadsheetId = this._extractSpreadsheetId(connectionString);
+      const { spreadsheetId } = this._extractPropertiesFromDataSource(dataSourceProperties);
 
       // Check if this is an Apps Script Web App URL
       if (this._isAppsScriptUrl(spreadsheetId)) {
         // For Apps Script URLs, test the doGet endpoint
         try {
-          const response = await fetch(`https://script.google.com/macros/s/${spreadsheetId}/exec`, {
+          const response = await this._proxyFetch(`https://script.google.com/macros/s/${spreadsheetId}/exec`, {
             method: 'GET',
           });
           return response.ok;
@@ -68,7 +366,7 @@ export class GoogleSheetsAccessor extends BaseDatabaseAccessor {
       for (const endpoint of testEndpoints) {
         try {
           const method = endpoint.includes('csv') ? 'GET' : 'HEAD';
-          const response = await fetch(endpoint, {
+          const response = await this._proxyFetch(endpoint, {
             method,
             headers: {
               'User-Agent': 'Mozilla/5.0 (compatible; Google Sheets Accessor)',
@@ -148,12 +446,14 @@ export class GoogleSheetsAccessor extends BaseDatabaseAccessor {
         case 'readSheet':
         case 'readSheetPaginated':
         case 'getAllSheets':
+        case 'getSheetInfo':
         case 'getValues':
           return await this._executeReadOperation(parsedQuery, spreadsheetId);
         case 'updateRange':
         case 'updateValues': // Alias for updateRange
         case 'updateCell':
         case 'appendRow':
+        case 'appendRows':
         case 'appendSheet':
         case 'appendValues':
         case 'clearValues':
@@ -188,8 +488,9 @@ export class GoogleSheetsAccessor extends BaseDatabaseAccessor {
           `Received what appears to be a SQL query: "${trimmedQuery.substring(0, 50)}..." ` +
           `\n\n🔥 IMPORTANT: This is a Google Sheets data source, not a SQL database!` +
           `\n\n✅ CORRECT FORMAT: {"operation": "readSheet", "parameters": {"valueRenderOption": "FORMATTED_VALUE"}} ` +
-          `\n\n📋 Supported JSON operations: readSheet, readSheetPaginated, readRange, getAllSheets, getValues, updateRange, updateValues, updateCell, appendValues, appendRow, appendSheet, clearValues, clearRange, insertRow, deleteRow.` +
-          `\n\n💡 TIP: Use getAllSheets to discover available sheets first.`,
+          `\n\n📋 Supported JSON operations: ${getAllValidOperations().join(', ')}.` +
+          `\n\n💡 TIP: Use getAllSheets to discover available sheets first, then readSheet to get data.` +
+          `\n\n🔧 For UI actions: Add Record → appendRow, Update Record → updateRange, Delete Record → deleteRow.`,
       );
     }
 
@@ -214,28 +515,8 @@ export class GoogleSheetsAccessor extends BaseDatabaseAccessor {
         throw new GoogleWorkspaceError('Google Sheets query must specify an operation');
       }
 
-      if (
-        ![
-          'readRange',
-          'readSheet',
-          'readSheetPaginated',
-          'getAllSheets',
-          'getValues',
-          'updateRange',
-          'updateValues',
-          'updateCell',
-          'appendValues',
-          'appendRow',
-          'appendSheet',
-          'clearValues',
-          'clearRange',
-          'insertRow',
-          'deleteRow',
-        ].includes(parsedQuery.operation)
-      ) {
-        throw new GoogleWorkspaceError(
-          'Google Sheets query must specify a valid operation (readRange, readSheet, readSheetPaginated, getAllSheets, getValues, updateRange, updateValues, updateCell, appendValues, appendRow, appendSheet, clearValues, clearRange, insertRow, deleteRow)',
-        );
+      if (!isValidOperation(parsedQuery.operation)) {
+        throw new GoogleWorkspaceError(getOperationErrorMessage());
       }
 
       // Check for potentially dangerous parameters (use word boundaries to avoid false positives)
@@ -272,14 +553,22 @@ export class GoogleSheetsAccessor extends BaseDatabaseAccessor {
 
   validateProperties(dataSourceProperties: DataSourceProperty[]): void {
     try {
-      const connectionString = this.getConnectionStringFromProperties(dataSourceProperties);
-      const spreadsheetId = this._extractSpreadsheetId(connectionString);
+      const { spreadsheetId, accessToken, refreshToken } = this._extractPropertiesFromDataSource(dataSourceProperties);
 
       // Validate spreadsheet ID format
-      const spreadsheetIdPattern = /^[a-zA-Z0-9-_]{20,}$/;
+      const spreadsheetIdPattern = /^[a-zA-Z0-9-_]{10,}$/;
 
       if (!spreadsheetIdPattern.test(spreadsheetId)) {
         throw new GoogleWorkspaceError(`Invalid Google Sheets spreadsheet ID format: ${spreadsheetId}`);
+      }
+
+      // If access token is provided, refresh token should also be provided
+      if (accessToken && !refreshToken) {
+        throw new GoogleWorkspaceError('Refresh token is required when access token is provided');
+      }
+
+      if (refreshToken && !accessToken) {
+        throw new GoogleWorkspaceError('Access token is required when refresh token is provided');
       }
     } catch (error) {
       if (error instanceof GoogleWorkspaceError) {
@@ -305,34 +594,100 @@ export class GoogleSheetsAccessor extends BaseDatabaseAccessor {
   }
 
   async initialize(connectionString: string): Promise<void> {
-    // Extract spreadsheet ID from connection string
-    this._spreadsheetId = this._extractSpreadsheetId(connectionString);
-
-    // Initialize auth manager if OAuth tokens are present
-    if (this._accessToken && this._refreshToken) {
+    try {
+      // First, try to parse as DataSourceProperty[] format (new way)
       try {
-        this._authManager = new GoogleWorkspaceAuthManager();
-        await this._authManager.initialize({
-          type: 'oauth2',
-          clientId: process.env.GOOGLE_CLIENT_ID || '',
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-          redirectUri: process.env.GOOGLE_REDIRECT_URI || '',
-          scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-          credentials: {
-            access_token: this._accessToken,
-            refresh_token: this._refreshToken,
-            expiry_date: Date.now() + 3600 * 1000, // Assume 1 hour expiry if not specified
-            token_type: 'Bearer',
-            scope: undefined,
-          },
-        });
+        const parsedData = JSON.parse(connectionString);
+        const properties = dataSourcePropertiesArraySchema.parse(parsedData);
+        await this.initializeWithProperties(properties);
       } catch {
-        // Continue without auth manager - fallback to existing behavior
+        // Not JSON, continue with string format
       }
-    }
 
-    // Skip connection test as server-side requests to Google Sheets often fail due to CORS
-    // We'll handle access errors during actual query execution for better error messages
+      // Handle legacy connectionString format (existing way)
+      if (connectionString.startsWith('https://docs.google.com/spreadsheets/')) {
+        // Direct Google Sheets URL
+        this._spreadsheetId = this._extractSpreadsheetId(connectionString);
+      } else if (connectionString.startsWith('sheets://')) {
+        // sheets protocol format with potential auth tokens
+        this._spreadsheetId = this._extractSpreadsheetId(connectionString);
+      } else {
+        // Assume it's a direct spreadsheet ID
+        this._spreadsheetId = connectionString;
+      }
+
+      // Initialize auth manager if OAuth tokens are present
+      if (this._accessToken && this._refreshToken) {
+        try {
+          this._authManager = new GoogleWorkspaceAuthManager();
+          await this._authManager.initialize({
+            type: 'oauth2',
+            clientId: process.env.GOOGLE_CLIENT_ID || '',
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+            redirectUri: process.env.GOOGLE_REDIRECT_URI || '',
+            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+            credentials: {
+              access_token: this._accessToken,
+              refresh_token: this._refreshToken,
+              expiry_date: Date.now() + 3600 * 1000, // Assume 1 hour expiry if not specified
+              token_type: 'Bearer',
+              scope: undefined,
+            },
+          });
+        } catch {
+          // Continue without auth manager - fallback to existing behavior
+        }
+      }
+    } catch (error) {
+      throw new GoogleWorkspaceError(
+        `Failed to initialize Google Sheets accessor: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  /**
+   * Initialize with data source properties (new pattern)
+   */
+  async initializeWithProperties(dataSourceProperties: DataSourceProperty[]): Promise<void> {
+    try {
+      const { spreadsheetId, accessToken, refreshToken, appsScriptUrl } =
+        this._extractPropertiesFromDataSource(dataSourceProperties);
+
+      this._spreadsheetId = spreadsheetId;
+      this._accessToken = accessToken || null;
+      this._refreshToken = refreshToken || null;
+      this._appsScriptUrl = appsScriptUrl || null;
+
+      // Initialize auth manager if OAuth tokens are present
+      if (this._accessToken && this._refreshToken) {
+        try {
+          this._authManager = new GoogleWorkspaceAuthManager();
+          await this._authManager.initialize({
+            type: 'oauth2',
+            clientId: process.env.GOOGLE_CLIENT_ID || '',
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+            redirectUri: process.env.GOOGLE_REDIRECT_URI || '',
+            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+            credentials: {
+              access_token: this._accessToken,
+              refresh_token: this._refreshToken,
+              expiry_date: Date.now() + 3600 * 1000, // Assume 1 hour expiry if not specified
+              token_type: 'Bearer',
+              scope: undefined,
+            },
+          });
+        } catch {
+          // Continue without auth manager - fallback to existing behavior
+        }
+      }
+
+      // Skip connection test as server-side requests to Google Sheets often fail due to CORS
+      // We'll handle access errors during actual query execution for better error messages
+    } catch (error) {
+      throw new GoogleWorkspaceError(
+        `Failed to initialize Google Sheets accessor with properties: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
   /**
@@ -347,6 +702,21 @@ export class GoogleSheetsAccessor extends BaseDatabaseAccessor {
     this._appsScriptUrl = null;
     this._accessToken = null;
     this._refreshToken = null;
+  }
+
+  /**
+   * Proxy-aware fetch method for webcontainer environments
+   */
+  private async _proxyFetch(url: string, options?: RequestInit): Promise<Response> {
+    // Check if we're in a webcontainer environment by looking for the API base URL
+    if (typeof window !== 'undefined' && window.location.hostname.includes('webcontainer')) {
+      // Use the proxy endpoint for webcontainer environments
+      const proxyUrl = `/api/execute-api-call?url=${encodeURIComponent(url)}`;
+      return fetch(proxyUrl, options);
+    } else {
+      // Direct fetch for server environments
+      return fetch(url, options);
+    }
   }
 
   generateSampleSchema(): Table[] {
@@ -590,7 +960,10 @@ ${userPrompt}
     }
 
     // Validate values array for write operations
-    if (['updateRange', 'updateValues', 'appendValues', 'appendRow'].includes(operation) && parameters.values) {
+    if (
+      ['updateRange', 'updateValues', 'appendValues', 'appendRow', 'appendRows'].includes(operation) &&
+      parameters.values
+    ) {
       if (!Array.isArray(parameters.values)) {
         throw new GoogleWorkspaceError(`Invalid values parameter for ${operation}. Must be an array.`);
       }
@@ -662,7 +1035,28 @@ ${userPrompt}
 
     const spreadsheetId = match[1];
 
-    // For HTTPS URLs, we assume public access (no Apps Script or OAuth tokens in URL)
+    // Parse URL to extract parameters (Apps Script URL, OAuth tokens, etc.)
+    try {
+      const url = new URL(connectionString);
+
+      // Extract Apps Script URL if present
+      const appsScriptParam = url.searchParams.get('appsScript');
+
+      if (appsScriptParam) {
+        this._appsScriptUrl = decodeURIComponent(appsScriptParam);
+      }
+
+      // Extract OAuth tokens if present
+      const accessToken = url.searchParams.get('access_token');
+      const refreshToken = url.searchParams.get('refresh_token');
+
+      if (accessToken && refreshToken) {
+        this._accessToken = decodeURIComponent(accessToken);
+        this._refreshToken = decodeURIComponent(refreshToken);
+      }
+    } catch {
+      // If URL parsing fails, continue with just the spreadsheet ID
+    }
 
     return spreadsheetId;
   }
@@ -731,6 +1125,7 @@ ${userPrompt}
             result = await this._updateCellNoAuth(spreadsheetId, parsedQuery.parameters);
             break;
           case 'appendRow':
+          case 'appendRows':
           case 'appendSheet':
           case 'appendValues':
             result = await this._appendRowNoAuth(spreadsheetId, parsedQuery.parameters);
@@ -799,6 +1194,7 @@ See documentation for setup instructions.
         case 'updateCell':
           return await this._updateRangeWithOAuth(spreadsheetId, parsedQuery.parameters, headers);
         case 'appendRow':
+        case 'appendRows':
         case 'appendValues':
           return await this._appendValuesWithOAuth(spreadsheetId, parsedQuery.parameters, headers);
         case 'insertRow':
@@ -841,7 +1237,7 @@ See documentation for setup instructions.
 
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=${valueInputOption}`;
 
-    const response = await fetch(url, {
+    const response = await this._proxyFetch(url, {
       method: 'PUT',
       headers,
       body: JSON.stringify({ values }),
@@ -862,7 +1258,7 @@ See documentation for setup instructions.
   private async _appendValuesWithOAuth(spreadsheetId: string, parameters: any, headers: any): Promise<any[]> {
     const { range, values, valueInputOption = 'USER_ENTERED' } = parameters;
 
-    const response = await fetch(
+    const response = await this._proxyFetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=${valueInputOption}`,
       {
         method: 'POST',
@@ -884,24 +1280,27 @@ See documentation for setup instructions.
     // Insert row by shifting existing rows down
     const { sheetId = 0, insertIndex = 0 } = parameters;
 
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        requests: [
-          {
-            insertDimension: {
-              range: {
-                sheetId,
-                dimension: 'ROWS',
-                startIndex: insertIndex,
-                endIndex: insertIndex + 1,
+    const response = await this._proxyFetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          requests: [
+            {
+              insertDimension: {
+                range: {
+                  sheetId,
+                  dimension: 'ROWS',
+                  startIndex: insertIndex,
+                  endIndex: insertIndex + 1,
+                },
               },
             },
-          },
-        ],
-      }),
-    });
+          ],
+        }),
+      },
+    );
 
     if (!response.ok) {
       throw new GoogleWorkspaceError(`Failed to insert row: ${response.statusText}`);
@@ -917,24 +1316,27 @@ See documentation for setup instructions.
       throw new GoogleWorkspaceError('deleteIndex is required for deleteRow operation');
     }
 
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        requests: [
-          {
-            deleteDimension: {
-              range: {
-                sheetId,
-                dimension: 'ROWS',
-                startIndex: deleteIndex,
-                endIndex: deleteIndex + 1,
+    const response = await this._proxyFetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          requests: [
+            {
+              deleteDimension: {
+                range: {
+                  sheetId,
+                  dimension: 'ROWS',
+                  startIndex: deleteIndex,
+                  endIndex: deleteIndex + 1,
+                },
               },
             },
-          },
-        ],
-      }),
-    });
+          ],
+        }),
+      },
+    );
 
     if (!response.ok) {
       throw new GoogleWorkspaceError(`Failed to delete row: ${response.statusText}`);
@@ -950,7 +1352,7 @@ See documentation for setup instructions.
       throw new GoogleWorkspaceError('range is required for clearValues operation');
     }
 
-    const response = await fetch(
+    const response = await this._proxyFetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:clear`,
       {
         method: 'POST',
@@ -1001,6 +1403,8 @@ See documentation for setup instructions.
       }
       case 'getAllSheets':
         return await this._getAllSheets(spreadsheetId);
+      case 'getSheetInfo':
+        return await this._getSheetInfo(spreadsheetId, parsedQuery.parameters);
       case 'readRange':
       case 'getValues':
         return await this._readRange(spreadsheetId, parsedQuery.parameters);
@@ -1014,7 +1418,7 @@ See documentation for setup instructions.
     const endpoint = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`;
 
     try {
-      const response = await fetch(endpoint, {
+      const response = await this._proxyFetch(endpoint, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
@@ -1057,7 +1461,7 @@ See documentation for setup instructions.
 
     for (const endpoint of endpoints) {
       try {
-        const response = await fetch(endpoint, {
+        const response = await this._proxyFetch(endpoint, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           },
@@ -1102,7 +1506,7 @@ See documentation for setup instructions.
 
     for (const endpoint of endpoints) {
       try {
-        const response = await fetch(endpoint, {
+        const response = await this._proxyFetch(endpoint, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           },
@@ -1138,12 +1542,15 @@ Last error: ${lastError?.message || 'Unknown error'}`;
       // First, test if we can access data without specifying a sheet name
       // This will use the first/default sheet - this is the most reliable approach
       try {
-        const response = await fetch(`https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv`, {
-          method: 'HEAD',
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        const response = await this._proxyFetch(
+          `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv`,
+          {
+            method: 'HEAD',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
           },
-        });
+        );
 
         if (response.ok) {
           return ''; // Empty string means use default sheet
@@ -1152,7 +1559,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
 
       // Try GID-based approach - GID 0 is always the first sheet
       try {
-        const response = await fetch(
+        const response = await this._proxyFetch(
           `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=0`,
           {
             method: 'HEAD',
@@ -1199,7 +1606,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
 
     for (let gid = 0; gid < maxSheetsToCheck; gid++) {
       try {
-        const response = await fetch(
+        const response = await this._proxyFetch(
           `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`,
           {
             method: 'HEAD',
@@ -1246,6 +1653,62 @@ Last error: ${lastError?.message || 'Unknown error'}`;
     ];
   }
 
+  private async _getSheetInfo(spreadsheetId: string, parameters?: any): Promise<any[]> {
+    // Get info for a specific sheet by gid or name
+    const gid = parameters?.gid !== undefined ? parameters.gid : 0;
+    const sheetName = parameters?.sheetName;
+
+    try {
+      // Test if the sheet exists by trying to access it
+      const response = await this._proxyFetch(
+        `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`,
+        {
+          method: 'HEAD',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+        },
+      );
+
+      if (response.ok) {
+        // Return sheet info
+        return [
+          {
+            name: sheetName || `Sheet_${gid}`,
+            id: gid,
+            index: gid,
+            sheetType: 'GRID',
+            gid,
+            exists: true,
+          },
+        ];
+      } else {
+        return [
+          {
+            name: sheetName || `Sheet_${gid}`,
+            id: gid,
+            index: gid,
+            sheetType: 'GRID',
+            gid,
+            exists: false,
+          },
+        ];
+      }
+    } catch (error) {
+      return [
+        {
+          name: sheetName || `Sheet_${gid}`,
+          id: gid,
+          index: gid,
+          sheetType: 'GRID',
+          gid,
+          exists: false,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      ];
+    }
+  }
+
   private _parseCSVData(csvData: string, _sheetName: string = '', startRow?: number, maxRows?: number): any[] {
     const lines = csvData.split('\n');
 
@@ -1278,31 +1741,13 @@ Last error: ${lastError?.message || 'Unknown error'}`;
     const start = startRow ? Math.max(1, startRow) : 1;
     const end = Math.min(totalDataRows, start + safeMaxRows - 1);
 
-    // Add metadata for pagination
-    const metadata = {
-      totalRows: totalDataRows,
-      currentStart: start,
-      currentEnd: end,
-      hasMore: end < totalDataRows,
-      nextStart: end < totalDataRows ? end + 1 : null,
-    };
-
     for (let rowIndex = start; rowIndex <= end; rowIndex++) {
       const row = this._parseCSVRow(nonEmptyLines[rowIndex]);
 
-      // Simple row structure - minimal processing
-      const rowData: any = {
-        row_number: rowIndex + 1,
-        values: row,
-      };
+      // Clean row structure - just the data
+      const rowData: any = {};
 
-      // Add metadata only to first row
-      if (rowIndex === start) {
-        rowData._metadata = metadata;
-        rowData.headers = headerRow;
-      }
-
-      // Simple field mapping - keep header names as-is, minimal processing
+      // Map CSV columns to object properties
       for (let colIndex = 0; colIndex < headerRow.length; colIndex++) {
         const cellValue = row[colIndex] || '';
         const header = headerRow[colIndex];
@@ -1617,7 +2062,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
       // Try different approaches for writing to public sheets
       try {
         // Attempt 1: Try using Google's edit endpoint (might work for public sheets with edit access)
-        await fetch(`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`, {
+        await this._proxyFetch(`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -1647,7 +2092,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
             formData.append(`entry.${1000000 + index}`, String(value || ''));
           });
 
-          await fetch(`https://docs.google.com/forms/d/e/${spreadsheetId}/formResponse`, {
+          await this._proxyFetch(`https://docs.google.com/forms/d/e/${spreadsheetId}/formResponse`, {
             method: 'POST',
             body: formData,
             mode: 'no-cors',
@@ -1690,7 +2135,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
         throw new Error('Not an Apps Script Web App');
       }
 
-      const response = await fetch(webhookUrl, {
+      const response = await this._proxyFetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1705,7 +2150,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
         throw new Error('Webhook submission failed');
       }
 
-      const result = (await response.json()) as any;
+      const result = webhookResponseSchema.parse(await response.json());
 
       return [{ success: true, result }];
     } catch (error) {
@@ -1793,7 +2238,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
         ...parameters,
       };
 
-      const response = await fetch(webhookUrl, {
+      const response = await this._proxyFetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1809,7 +2254,7 @@ Last error: ${lastError?.message || 'Unknown error'}`;
       const responseText = await response.text();
 
       try {
-        const result = JSON.parse(responseText) as any;
+        const result = webhookResponseSchema.parse(JSON.parse(responseText));
 
         if (result.error) {
           throw new Error(result.error);

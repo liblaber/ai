@@ -58,17 +58,47 @@ export function generateOAuthCallbackHTML({ type, data, error }: OAuthCallbackDa
     (function() {
       try {
         const messageData = ${JSON.stringify(messageData)};
+        
+        // Send message to parent window
         if (window.opener) {
           window.opener.postMessage(messageData, window.location.origin);
         }
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage(messageData, window.location.origin);
+        }
+        
+        // For successful auth, show success message then allow auto-close
+        if (messageData.type === 'GOOGLE_AUTH_SUCCESS') {
+          // Update the message to show success
+          const container = document.querySelector('.container');
+          if (container) {
+            container.innerHTML = '<h1 class="success">✓ Authentication Successful</h1><p>This window will close automatically in a few seconds...</p>';
+          }
+          
+          // Wait longer before attempting to close so user can see success
+          setTimeout(() => {
+            try {
+              window.close();
+            } catch (e) {
+              // If we can't close automatically, show manual close option
+              if (container) {
+                container.innerHTML = '<h1 class="success">✓ Authentication Complete</h1><p>You can close this window now.</p><button onclick="window.close()" style="padding: 10px 20px; background: #0066cc; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">Close Window</button>';
+              }
+            }
+          }, 1000); // 1 second delay
+        }
+        
       } catch (error) {
         console.error('Failed to send message to parent window:', error);
+        // Still try to close on error
+        setTimeout(() => {
+          try {
+            window.close();
+          } catch (e) {
+            window.location.href = '/settings?tab=data&oauth=error';
+          }
+        }, 1000);
       }
-      
-      // Close window after a brief delay
-      setTimeout(() => {
-        window.close();
-      }, 1000);
     })();
   </script>
 </body>
