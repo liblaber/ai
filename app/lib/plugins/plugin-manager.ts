@@ -141,31 +141,22 @@ class PluginManager {
 
     // If license is free, only allow anonymous auth and configured providers
     if (!license || license !== 'premium') {
-      console.log('📋 Using FREE_PLUGIN_ACCESS with dynamic provider support');
-      return {
-        ...FREE_PLUGIN_ACCESS,
-        [PluginType.AUTH]: {
-          ...FREE_PLUGIN_ACCESS[PluginType.AUTH],
-          google: hasGoogleOAuth,
-          oidc: hasOIDCSSO,
-        },
-      };
-    }
-
-    // If license is premium but neither Google OAuth nor OIDC SSO is configured, fall back to free access
-    if (!hasGoogleOAuth && !hasOIDCSSO) {
-      console.warn(
-        'Premium license detected but neither Google OAuth nor OIDC SSO configured. Falling back to free access.',
-      );
-      console.log('📋 Falling back to FREE_PLUGIN_ACCESS');
-
+      console.log('📋 Using FREE_PLUGIN_ACCESS');
       return FREE_PLUGIN_ACCESS;
     }
 
     // Premium license with Google OAuth or OIDC SSO configured
     console.log('📋 Using PREMIUM_PLUGIN_ACCESS');
 
-    return PREMIUM_PLUGIN_ACCESS;
+    return {
+      ...PREMIUM_PLUGIN_ACCESS,
+      [PluginType.AUTH]: {
+        ...PREMIUM_PLUGIN_ACCESS[PluginType.AUTH],
+        anonymous: !(hasGoogleOAuth || hasOIDCSSO),
+        google: hasGoogleOAuth,
+        oidc: hasOIDCSSO,
+      },
+    };
   }
 }
 
