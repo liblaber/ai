@@ -32,6 +32,17 @@ Local Machine ← Encrypted Response ← Secure Tunnel ← Preview Dashboard
 - No data is stored on external servers
 - You maintain complete control over your data access
 
+## Single Sign-On (SSO) Security
+
+For enterprise deployments, liblab.ai supports OpenID Connect (OIDC) SSO integration, allowing you to:
+
+- **Centralize authentication** through your existing identity provider (Okta, Auth0, Google Workspace, etc.)
+- **Enforce organizational security policies** like multi-factor authentication and password requirements
+- **Control access centrally** without managing separate user accounts
+- **Audit user access** through your identity provider's logging system
+
+See our [SSO Setup Guide](sso-setup.md) for configuration instructions.
+
 ## Telemetry
 
 ### Basic Telemetry
