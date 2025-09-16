@@ -3,7 +3,11 @@ import { CheckCircle, Eye, EyeOff, Info, Loader2, Plug, Trash2, XCircle } from '
 import { classNames } from '~/utils/classNames';
 import type { DataSourceWithEnvironments } from '~/lib/stores/environmentDataSources';
 import { type DataSourceOption, useDataSourceTypesPlugin } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
-import type { DataSourcePropertyDescriptor } from '@liblab/data-access/utils/types';
+import {
+  DataSourcePropertyType,
+  DataSourceType,
+  type DataSourcePropertyDescriptor,
+} from '@liblab/data-access/utils/types';
 import { getDataSourceProperties } from '~/components/@settings/utils/data-sources';
 import { z } from 'zod';
 import { Button } from '~/components/ui/Button';
@@ -24,6 +28,12 @@ type Props = {
 };
 
 type SimpleProperty = { type: string; value: string };
+
+// Google Sheets specific state
+interface GoogleSheetsConfig {
+  googleSheetsUrl: string;
+  appsScriptUrl: string;
+}
 
 export default function DataSourceEnvironmentsForm({
   dataSource,
@@ -47,6 +57,43 @@ export default function DataSourceEnvironmentsForm({
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string>('');
   const { environments, setEnvironments } = useEnvironmentsStore();
 
+  // Google Sheets specific state
+  const [googleSheetsConfig, setGoogleSheetsConfig] = useState<GoogleSheetsConfig>({
+    googleSheetsUrl: '',
+    appsScriptUrl: '',
+  });
+
+  const isGoogleSheets = useMemo(() => dataSource.type === DataSourceType.GOOGLE_SHEETS, [dataSource.type]);
+
+  // Helper functions for Google Sheets URLs
+  const parseGoogleSheetsConnectionString = (connectionString: string): GoogleSheetsConfig => {
+    try {
+      const url = new URL(connectionString);
+      const appsScriptParam = url.searchParams.get('appsScript');
+
+      return {
+        googleSheetsUrl: connectionString.split('?')[0], // Remove query params for display
+        appsScriptUrl: appsScriptParam ? decodeURIComponent(appsScriptParam) : '',
+      };
+    } catch {
+      // If not a valid URL, it might be a direct Google Sheets URL
+      return {
+        googleSheetsUrl: connectionString,
+        appsScriptUrl: '',
+      };
+    }
+  };
+
+  const createGoogleSheetsConnectionString = (config: GoogleSheetsConfig): string => {
+    let connectionString = config.googleSheetsUrl;
+
+    if (config.appsScriptUrl) {
+      connectionString += `${connectionString.includes('?') ? '&' : '?'}appsScript=${encodeURIComponent(config.appsScriptUrl)}`;
+    }
+
+    return connectionString;
+  };
+
   const selectedEnv = useMemo(() => {
     if (isCreateMode) {
       return null; // No environment selected in create mode
@@ -67,14 +114,17 @@ export default function DataSourceEnvironmentsForm({
   const expectedProps = useMemo(() => (propertyDescriptors || []).map((p) => p.type), [propertyDescriptors]);
   const providedPropsMap = useMemo(() => new Map(editedProperties.map((p) => [p.type, p.value])), [editedProperties]);
 
-  const hasAllRequiredProperties = useMemo(
-    () =>
-      expectedProps.every((t) => {
-        const v = providedPropsMap.get(t);
-        return Boolean(v && v.trim() !== '');
-      }),
-    [expectedProps, providedPropsMap],
-  );
+  const hasAllRequiredProperties = useMemo(() => {
+    if (isGoogleSheets) {
+      // For Google Sheets, only require the Google Sheets URL
+      return Boolean(googleSheetsConfig.googleSheetsUrl && googleSheetsConfig.googleSheetsUrl.trim() !== '');
+    }
+
+    return expectedProps.every((t) => {
+      const v = providedPropsMap.get(t);
+      return Boolean(v && v.trim() !== '');
+    });
+  }, [expectedProps, providedPropsMap, isGoogleSheets, googleSheetsConfig]);
 
   useEffect(() => {
     let mounted = true;
@@ -99,11 +149,33 @@ export default function DataSourceEnvironmentsForm({
           if (result) {
             setProperties(result);
             setEditedProperties(result);
+
+            // Parse Google Sheets URLs if this is a Google Sheets data source
+            if (isGoogleSheets) {
+              const connectionProperty = result.find((p) => p.type === DataSourcePropertyType.CONNECTION_URL);
+
+              if (connectionProperty?.value) {
+                const parsedConfig = parseGoogleSheetsConnectionString(connectionProperty.value);
+                setGoogleSheetsConfig(parsedConfig);
+              }
+            }
           } else {
             // fallback to values we already have on the details object
             const fallbackProperties = (selectedEnv?.dataSourceProperties as any) || [];
             setProperties(fallbackProperties);
             setEditedProperties(fallbackProperties);
+
+            // Parse Google Sheets URLs from fallback properties
+            if (isGoogleSheets) {
+              const connectionProperty = fallbackProperties.find(
+                (p: any) => p.type === DataSourcePropertyType.CONNECTION_URL,
+              );
+
+              if (connectionProperty?.value) {
+                const parsedConfig = parseGoogleSheetsConnectionString(connectionProperty.value);
+                setGoogleSheetsConfig(parsedConfig);
+              }
+            }
           }
         }
       } catch (e) {
@@ -113,6 +185,18 @@ export default function DataSourceEnvironmentsForm({
         const fallbackProperties = (selectedEnv?.dataSourceProperties as any) || [];
         setProperties(fallbackProperties);
         setEditedProperties(fallbackProperties);
+
+        // Parse Google Sheets URLs from fallback properties in error case
+        if (isGoogleSheets) {
+          const connectionProperty = fallbackProperties.find(
+            (p: any) => p.type === DataSourcePropertyType.CONNECTION_URL,
+          );
+
+          if (connectionProperty?.value) {
+            const parsedConfig = parseGoogleSheetsConnectionString(connectionProperty.value);
+            setGoogleSheetsConfig(parsedConfig);
+          }
+        }
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -165,6 +249,15 @@ export default function DataSourceEnvironmentsForm({
         return [...prev, { type, value }];
       }
     });
+  };
+
+  const handleGoogleSheetsConfigChange = (config: GoogleSheetsConfig) => {
+    setGoogleSheetsConfig(config);
+
+    if (isGoogleSheets) {
+      const connectionString = createGoogleSheetsConnectionString(config);
+      handlePropertyChange(DataSourcePropertyType.CONNECTION_URL, connectionString);
+    }
   };
 
   const hasChanges = useMemo(() => {
@@ -459,39 +552,107 @@ export default function DataSourceEnvironmentsForm({
               </select>
             </div>
           )}
-          {editedProperties.map((prop) => (
-            <div key={prop.type}>
-              <label className="mb-3 block text-sm font-medium text-secondary">{getLabelForType(prop.type)}</label>
-              <div className="relative">
-                <input
-                  type={showSensitiveInput ? 'text' : 'password'}
-                  value={prop.value}
-                  onChange={(e) => handlePropertyChange(prop.type, e.target.value)}
-                  disabled={isSaving}
-                  className={classNames(
-                    'w-full px-4 py-2.5 pr-12 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                    'text-primary placeholder-tertiary text-base',
-                    'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
-                    'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
-                    'transition-all duration-200',
-                    'disabled:opacity-50 disabled:cursor-not-allowed',
-                  )}
-                  placeholder={getFormatForType(prop.type)}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowSensitiveInput((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group"
-                  tabIndex={-1}
-                >
-                  <span className="text-gray-400 group-hover:text-white transition-colors">
-                    {showSensitiveInput ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </span>
-                </button>
+          {isGoogleSheets ? (
+            // Google Sheets specific inputs
+            <>
+              <div>
+                <label className="mb-3 block text-sm font-medium text-secondary">Google Sheets URL</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={googleSheetsConfig.googleSheetsUrl}
+                    onChange={(e) =>
+                      handleGoogleSheetsConfigChange({
+                        ...googleSheetsConfig,
+                        googleSheetsUrl: e.target.value,
+                      })
+                    }
+                    disabled={isSaving}
+                    className={classNames(
+                      'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                      'text-primary placeholder-tertiary text-base',
+                      'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                      'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                      'transition-all duration-200',
+                      'disabled:opacity-50 disabled:cursor-not-allowed',
+                    )}
+                    placeholder="https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit"
+                  />
+                </div>
+                <label className="mb-3 block !text-[11px] text-secondary mt-1">
+                  For read operations. e.g. https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit
+                </label>
               </div>
-              <label className="mb-3 block !text-[13px] text-secondary mt-2">e.g. {getFormatForType(prop.type)}</label>
-            </div>
-          ))}
+
+              <div>
+                <label className="mb-3 block text-sm font-medium text-secondary">
+                  Apps Script Web App URL (Optional)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={googleSheetsConfig.appsScriptUrl}
+                    onChange={(e) =>
+                      handleGoogleSheetsConfigChange({
+                        ...googleSheetsConfig,
+                        appsScriptUrl: e.target.value,
+                      })
+                    }
+                    disabled={isSaving}
+                    className={classNames(
+                      'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                      'text-primary placeholder-tertiary text-base',
+                      'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                      'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                      'transition-all duration-200',
+                      'disabled:opacity-50 disabled:cursor-not-allowed',
+                    )}
+                    placeholder="https://script.google.com/macros/s/SCRIPT_ID/exec"
+                  />
+                </div>
+                <label className="mb-3 block !text-[11px] text-secondary mt-1">
+                  For write operations. e.g. https://script.google.com/macros/s/SCRIPT_ID/exec
+                </label>
+              </div>
+            </>
+          ) : (
+            // Regular properties for other data sources
+            editedProperties.map((prop) => (
+              <div key={prop.type}>
+                <label className="mb-3 block text-sm font-medium text-secondary">{getLabelForType(prop.type)}</label>
+                <div className="relative">
+                  <input
+                    type={showSensitiveInput ? 'text' : 'password'}
+                    value={prop.value}
+                    onChange={(e) => handlePropertyChange(prop.type, e.target.value)}
+                    disabled={isSaving}
+                    className={classNames(
+                      'w-full px-4 py-2.5 pr-12 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                      'text-primary placeholder-tertiary text-base',
+                      'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                      'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                      'transition-all duration-200',
+                      'disabled:opacity-50 disabled:cursor-not-allowed',
+                    )}
+                    placeholder={getFormatForType(prop.type)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSensitiveInput((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group"
+                    tabIndex={-1}
+                  >
+                    <span className="text-gray-400 group-hover:text-white transition-colors">
+                      {showSensitiveInput ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </span>
+                  </button>
+                </div>
+                <label className="mb-3 block !text-[13px] text-secondary mt-2">
+                  e.g. {getFormatForType(prop.type)}
+                </label>
+              </div>
+            ))
+          )}
 
           {(testResult || error) && (
             <div
