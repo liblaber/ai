@@ -1,9 +1,8 @@
 import { classNames } from '~/utils/classNames';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Loader2, Save, Trash2, XCircle } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Loader2, Save, Trash2, XCircle } from 'lucide-react';
 import { BaseSelect } from '~/components/ui/Select';
-import { DeploymentMethodCredentialsType } from '@prisma/client';
 import {
   type EnvironmentDeploymentMethod,
   useDeploymentMethodActions,
@@ -11,6 +10,7 @@ import {
 } from '~/lib/stores/deploymentMethods';
 import { type CredentialField, type DeploymentProviderInfo } from '~/lib/validation/deploymentMethods';
 import { type DeploymentMethodResponse } from '~/types/deployment-methods';
+import type { CredentialType } from '~/components/@settings/tabs/deployment-methods/forms/AddDeploymentMethodForm';
 
 interface EditDeploymentMethodFormProps {
   selectedDeploymentMethod: EnvironmentDeploymentMethod;
@@ -18,6 +18,7 @@ interface EditDeploymentMethodFormProps {
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: (responseData?: any) => void;
   onDelete: (responseData?: any) => void;
+  onBack?: () => void;
 }
 
 export default function EditDeploymentMethodForm({
@@ -26,8 +27,8 @@ export default function EditDeploymentMethodForm({
   setIsSubmitting,
   onSuccess,
   onDelete,
+  onBack,
 }: EditDeploymentMethodFormProps) {
-  const [name, setName] = useState(selectedDeploymentMethod.name);
   const [selectedProvider, setSelectedProvider] = useState<DeploymentProviderInfo | null>(null);
   const [credentials, setCredentials] = useState<CredentialField[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +72,7 @@ export default function EditDeploymentMethodForm({
   useEffect(() => {
     if (selectedDeploymentMethod.credentials) {
       const initialCredentials: CredentialField[] = selectedDeploymentMethod.credentials.map((cred) => ({
-        type: cred.type as DeploymentMethodCredentialsType,
+        type: cred.type as CredentialType,
         value: cred.value,
       }));
       setCredentials(initialCredentials);
@@ -85,7 +86,7 @@ export default function EditDeploymentMethodForm({
         // Try to preserve existing values
         const existingCred = credentials.find((cred) => cred.type === credType);
         return {
-          type: credType as DeploymentMethodCredentialsType,
+          type: credType as CredentialType,
           value: existingCred?.value || '',
         };
       });
@@ -104,13 +105,13 @@ export default function EditDeploymentMethodForm({
 
   const getCredentialDisplayName = (type: string): string => {
     switch (type) {
-      case DeploymentMethodCredentialsType.API_KEY:
+      case 'API_KEY':
         return 'API Key';
-      case DeploymentMethodCredentialsType.ACCESS_KEY:
+      case 'ACCESS_KEY':
         return 'Access Key';
-      case DeploymentMethodCredentialsType.SECRET_KEY:
+      case 'SECRET_KEY':
         return 'Secret Key';
-      case DeploymentMethodCredentialsType.REGION:
+      case 'REGION':
         return 'Region';
       default:
         return type;
@@ -118,16 +119,11 @@ export default function EditDeploymentMethodForm({
   };
 
   const isSensitiveCredential = (type: string): boolean => {
-    return type !== DeploymentMethodCredentialsType.REGION;
+    return type !== 'REGION';
   };
 
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-
-    if (!name.trim()) {
-      setError('Please enter a deployment method name');
-      return;
-    }
 
     if (!selectedProvider) {
       setError('Please select a provider');
@@ -152,7 +148,6 @@ export default function EditDeploymentMethodForm({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: name.trim(),
           provider: selectedProvider.id,
           applyToAllEnvironments,
           credentials: credentials.map((cred) => ({
@@ -166,12 +161,12 @@ export default function EditDeploymentMethodForm({
 
       if (data.success) {
         const successMessage = applyToAllEnvironments
-          ? `Deployment method updated successfully across all environments`
-          : 'Deployment method updated successfully';
+          ? `Publishing method updated successfully across all environments`
+          : 'Publishing method updated successfully';
         toast.success(successMessage);
         onSuccess(data);
       } else {
-        const message = data.error || 'Failed to update deployment method';
+        const message = data.error || 'Failed to update publishing method';
         setError(message);
         toast.error(message);
       }
@@ -179,7 +174,7 @@ export default function EditDeploymentMethodForm({
       const message =
         error instanceof Error
           ? error.message
-          : String(error) || 'Failed to update deployment method. Please try again.';
+          : String(error) || 'Failed to update publishing method. Please try again.';
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -198,10 +193,10 @@ export default function EditDeploymentMethodForm({
       const data = await response.json<DeploymentMethodResponse>();
 
       if (data.success) {
-        toast.success('Deployment method deleted successfully');
+        toast.success('Publishing method deleted successfully');
         onDelete(data);
       } else {
-        const message = data.error || 'Failed to delete deployment method';
+        const message = data.error || 'Failed to delete publishing method';
         setError(message);
         toast.error(message);
       }
@@ -209,7 +204,7 @@ export default function EditDeploymentMethodForm({
       const message =
         error instanceof Error
           ? error.message
-          : String(error) || 'Failed to delete deployment method. Please try again.';
+          : String(error) || 'Failed to delete publishing method. Please try again.';
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -218,6 +213,32 @@ export default function EditDeploymentMethodForm({
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className={classNames(
+                'inline-flex items-center gap-2 p-2 text-sm font-medium rounded-lg transition-colors',
+                'dark:bg-gray-900 dark:text-gray-300',
+                'hover:bg-gray-100 dark:hover:bg-gray-800',
+              )}
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div>
+            <h2 className="text-lg font-medium text-primary">
+              {selectedProvider ? `Connect to ${selectedProvider.name}` : 'Edit Publishing Method'}
+            </h2>
+            <p className="text-sm text-secondary">
+              {selectedProvider
+                ? `Modify your ${selectedProvider.name} publishing method connection settings`
+                : 'Modify your publishing method connection settings'}
+            </p>
+          </div>
+        </div>
+      </div>
       <div className="space-y-4">
         <div className="space-y-4">
           {!applyToAllEnvironments && (
@@ -249,25 +270,6 @@ export default function EditDeploymentMethodForm({
             <p className="text-xs text-gray-500 mt-1 ml-7">
               This will update the deployment method with the same credentials across all environments
             </p>
-          </div>
-
-          <div className="mb-6">
-            <label className="mb-3 block text-sm font-medium text-secondary">Deployment Method Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isSubmitting}
-              className={classNames(
-                'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                'text-primary placeholder-tertiary text-base',
-                'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
-                'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
-                'transition-all duration-200',
-                'disabled:opacity-50 disabled:cursor-not-allowed',
-              )}
-              placeholder="Enter deployment method name"
-            />
           </div>
 
           <div className="mb-6">
@@ -309,12 +311,12 @@ export default function EditDeploymentMethodForm({
               {credentials.map((cred, index) => (
                 <div key={index}>
                   <label className="mb-3 block text-sm font-medium text-secondary">
-                    {getCredentialDisplayName(cred.type)}
+                    {getCredentialDisplayName(String(cred.type))}
                   </label>
                   <div className="relative">
                     <input
-                      type={isSensitiveCredential(cred.type) && !showSensitiveInput ? 'password' : 'text'}
-                      value={String(cred.value)}
+                      type={isSensitiveCredential(String(cred.type)) && !showSensitiveInput ? 'password' : 'text'}
+                      value={String(cred.value || '')}
                       onChange={(e) => handleCredentialChange(index, e.target.value)}
                       disabled={isSubmitting}
                       className={classNames(
@@ -324,11 +326,11 @@ export default function EditDeploymentMethodForm({
                         'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
                         'transition-all duration-200',
                         'disabled:opacity-50 disabled:cursor-not-allowed',
-                        isSensitiveCredential(cred.type) ? 'pr-12' : '',
+                        isSensitiveCredential(String(cred.type)) ? 'pr-12' : '',
                       )}
-                      placeholder={`Enter ${getCredentialDisplayName(cred.type).toLowerCase()}`}
+                      placeholder={`Enter ${getCredentialDisplayName(String(cred.type)).toLowerCase()}`}
                     />
-                    {isSensitiveCredential(cred.type) && (
+                    {isSensitiveCredential(String(cred.type)) && (
                       <button
                         type="button"
                         onClick={() => setShowSensitiveInput((prev) => !prev)}
@@ -381,12 +383,7 @@ export default function EditDeploymentMethodForm({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={
-                  isSubmitting ||
-                  !name.trim() ||
-                  !selectedProvider ||
-                  credentials.some((cred) => !String(cred.value).trim())
-                }
+                disabled={isSubmitting || !selectedProvider || credentials.some((cred) => !String(cred.value).trim())}
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                   'bg-accent-500 hover:bg-accent-600',

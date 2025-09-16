@@ -4,6 +4,7 @@ import { deploymentProviderInfoSchema } from '~/lib/validation/deploymentMethods
 import { requireUserId } from '~/auth/session';
 import PluginManager from '~/lib/plugins/plugin-manager';
 import { PluginType } from '~/lib/plugins/types';
+import { logger } from '~/utils/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,6 +44,8 @@ export async function GET(request: NextRequest) {
     const availableProviders = allProviders.filter((provider) => {
       return pluginManager.isPluginAvailable(PluginType.DEPLOYMENT, provider.id as any);
     });
+
+    logger.info('Available deployment providers:', availableProviders);
 
     const validationResult = deploymentProviderInfoSchema.array().safeParse(availableProviders);
 
