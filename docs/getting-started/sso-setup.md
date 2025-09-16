@@ -17,24 +17,17 @@ You'll need these details from your identity provider (Okta, Auth0, Google Works
 
 Add these to your `.env` file:
 
-```bash
-OIDC_ISSUER=https://your-identity-provider.com/oauth2/default
-OIDC_CLIENT_ID=your-client-id-here
-OIDC_CLIENT_SECRET=your-client-secret-here
-OIDC_DOMAIN=yourcompany.com
-OIDC_PROVIDER_ID=your-provider-id
-OIDC_FRIENDLY_NAME=Continue with Company SSO
-```
+- `OIDC_ISSUER` - Your identity provider's issuer URL
+- `OIDC_CLIENT_ID` - Client ID from your identity provider
+- `OIDC_CLIENT_SECRET` - Client secret from your identity provider
+- `OIDC_DOMAIN` - Your organization's email domain
+- `OIDC_PROVIDER_ID` - Unique identifier for this SSO provider
+- `OIDC_FRIENDLY_NAME` - Display name for the SSO button
 
 ### 3. Restart Your Application
 
-```bash
-# If using Docker
-docker-compose restart
-
-# If running locally
-pnpm run dev
-```
+- **If using Docker:** Run `docker-compose restart`
+- **If running locally:** Run `pnpm run dev`
 
 ### 4. Test SSO
 
