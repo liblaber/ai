@@ -66,19 +66,14 @@ Before setting up SSO, you'll need:
 ### For Google Workspace
 
 1. **Go to Google Cloud Console**
-2. **Create a new project or select existing one**
-3. **Enable Google+ API:**
-   - Go to APIs & Services → Library
-   - Search for "Google+ API" and enable it
-
-4. **Create OAuth 2.0 credentials:**
+2. **Create a new project or select an existing one**
+3. **Create OAuth 2.0 credentials:**
    - Go to APIs & Services → Credentials
-   - Click "Create Credentials" → "OAuth 2.0 Client IDs"
+   - Click "Create Credentials" → "OAuth client ID"
    - Choose "Web application"
-   - **Authorized redirect URIs:** `https://your-liblab-domain.com/api/auth/sso/callback/your-provider-id`
-
-5. **Get your configuration details:**
-   - Note down the **Client ID** and **Client Secret**
+   - Under **Authorized redirect URIs**, add `https://your-liblab-domain.com/api/auth/sso/callback/your-provider-id`
+4. **Get your configuration details:**
+   - After creating the client ID, note down the **Client ID** and **Client Secret**.
    - The **Issuer URL** is: `https://accounts.google.com`
 
 ## Step 2: Configure liblab.ai
