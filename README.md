@@ -395,9 +395,10 @@ pnpm run dev
 
 ## **📚 Resources**
 
-- [**Contributing Guidelines**](https://github.com/liblaber/ai/blob/main/CONTRIBUTING.md) - How to contribute to the project
+- [**Contributing Guidelines**](https://github.com/liblaber/ai/blob/main/CONTRIBUTING.md) - How to contribute to the project
 - [Security & Privacy](docs/security-and-privacy.md)
 - [Configuration](docs/configuration.md)
+- [SSO Setup Guide](docs/sso-setup.md) - Configure Single Sign-On with your identity provider
 - [Deploy on EC2 with HTTPS & Auto-Restart](docs/ec2.md)
 - [Getting Started](docs/getting-started.md)
 - [Features](docs/features.md)

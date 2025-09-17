@@ -54,6 +54,36 @@ STARTER=
 
 Starters live in `starters/`. Each starter must include a `.liblab` directory with: `prompt`, `technologies`, `examples`, and `ignore`.
 
+## Single Sign-On (SSO) Configuration
+
+liblab.ai supports OpenID Connect (OIDC) SSO integration with popular identity providers like Okta, Auth0, Google Workspace, and Azure AD.
+
+### Quick Setup
+
+Add these environment variables to enable SSO:
+
+```bash
+# OIDC SSO Configuration
+OIDC_ISSUER=https://your-identity-provider.com/oauth2/default
+OIDC_CLIENT_ID=your-client-id-here
+OIDC_CLIENT_SECRET=your-client-secret-here
+OIDC_DOMAIN=yourcompany.com
+OIDC_PROVIDER_ID=your-provider-id
+OIDC_FRIENDLY_NAME=Continue with Company SSO
+```
+
+### Detailed Setup Guide
+
+For step-by-step instructions on configuring SSO with your identity provider, see our [SSO Setup Guide](sso-setup.md).
+
+### Supported Providers
+
+- **Okta** - Enterprise identity management
+- **Auth0** - Universal authentication platform
+- **Google Workspace** - Google's enterprise solution
+- **Azure AD** - Microsoft's identity platform
+- **Any OIDC-compatible provider**
+
 ## Custom User Management
 
 Override default behavior by implementing a plugin at `app/lib/plugins/user-management/custom-user-management.ts` that implements the `UserManagementPlugin` interface. You can use provided services like `userService` and `organizationService`.
