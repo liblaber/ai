@@ -9,6 +9,10 @@
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
     "test:headless": "playwright test --headed=false",
+    "test:mongodb": "playwright test add-mongodb-datasource-flow.spec.ts",
+    "test:mysql": "playwright test add-mysql-datasource-flow.spec.ts",
+    "test:postgres": "playwright test add-postgres-datasource-flow.spec.ts",
+    "test:datasources": "playwright test --grep \"Add.*Data Source Flow\"",
     "report": "playwright show-report"
   },
   "keywords": [
