@@ -74,6 +74,9 @@ npm run test:headless
 # Run MongoDB data source tests only
 npm run test:mongodb
 
+# Run MySQL data source tests only
+npm run test:mysql
+
 # Run PostgreSQL data source tests only
 npm run test:postgres
 
