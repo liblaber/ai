@@ -39,9 +39,7 @@ test.describe('Invite Member Flow', () => {
     await page.waitForLoadState('networkidle');
 
     // Verify success toast
-    const toast = page.getByText(/invitation(s)? sent successfully/i);
-    await expect(toast).toBeVisible();
-    await expect(toast).toHaveText('1 invitation sent successfully');
+    await expect(page.getByText('1 invitation sent successfully')).toBeVisible();
 
     console.log('🎉 Invite member test completed successfully!');
   });
