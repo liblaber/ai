@@ -12,6 +12,7 @@
     "test:mongodb": "playwright test add-mongodb-datasource-flow.spec.ts",
     "test:mysql": "playwright test add-mysql-datasource-flow.spec.ts",
     "test:postgres": "playwright test add-postgres-datasource-flow.spec.ts",
+    "test:sqlite": "playwright test add-sqlite-datasource-flow.spec.ts",
     "test:datasources": "playwright test --grep \"Add.*Data Source Flow\"",
     "report": "playwright show-report"
   },

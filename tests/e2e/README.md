@@ -80,6 +80,9 @@ npm run test:mysql
 # Run PostgreSQL data source tests only
 npm run test:postgres
 
+# Run SQLite data source tests only
+npm run test:sqlite
+
 # Run all data source tests
 npm run test:datasources
 ```
