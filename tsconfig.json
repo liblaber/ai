@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "types": ["vite/client", "@cloudflare/workers-types/2023-07-01", "@types/dom-speech-recognition", "jest"],
     "isolatedModules": true,
     "esModuleInterop": true,
     "jsx": "preserve",
