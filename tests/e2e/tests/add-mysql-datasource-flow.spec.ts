@@ -1,17 +1,17 @@
 import { type Page, test, expect } from '@playwright/test';
 import { performInitialSetup, navigateToSettings, navigateToDataSourceForm } from '../helpers/setup';
 
-test.describe('Add MongoDB Data Source Flow', () => {
+test.describe('Add MySQL Data Source Flow', () => {
   test.beforeEach(async ({ page }) => {
     test.setTimeout(120000);
     await performInitialSetup(page);
     await navigateToSettings(page);
   });
 
-  test('Create MongoDB data source with valid connection string', async ({ page }: { page: Page }) => {
-    console.log('Starting MongoDB data source creation test...');
+  test('Create MySQL data source with valid connection string', async ({ page }: { page: Page }) => {
+    console.log('Starting MySQL data source creation test...');
 
-    await navigateToDataSourceForm(page, 'mongodb');
+    await navigateToDataSourceForm(page, 'mysql');
 
     console.log('🔍 Looking for database name input...');
 
@@ -19,15 +19,15 @@ test.describe('Add MongoDB Data Source Flow', () => {
       'input[placeholder*="data source name"], input[placeholder*="Data Source Name"], input[name*="dbName"], input[name*="name"]',
     );
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
-    console.log('✅ Found database name input, filling "test-mongodb"...');
-    await dbNameInput.fill('test-mongodb');
+    console.log('✅ Found database name input, filling "test-mysql"...');
+    await dbNameInput.fill('test-mysql');
 
     console.log('🔍 Looking for connection string input...');
 
-    const connStrInput = page.locator('input[placeholder*="mongodb://username:password@host:port/database"]');
+    const connStrInput = page.locator('input[placeholder*="mysql://username:password@host:port/database"]');
     await connStrInput.waitFor({ state: 'visible', timeout: 10000 });
     console.log('✅ Found connection string input, filling connection string...');
-    await connStrInput.fill('mongodb://testuser:testpass@localhost:27017/testdb');
+    await connStrInput.fill('mysql://testuser:testpass@localhost:3306/testdb');
 
     console.log('🔍 Looking for save/create button...');
 
@@ -65,13 +65,13 @@ test.describe('Add MongoDB Data Source Flow', () => {
         console.log('✅ No error messages found - form submission completed successfully!');
       }
     }
-    console.log('🎉 MongoDB data source creation test completed successfully!');
+    console.log('🎉 MySQL data source creation test completed successfully!');
   });
 
-  test('Validate MongoDB connection string format and required fields', async ({ page }: { page: Page }) => {
-    console.log('Starting MongoDB validation test...');
+  test('Validate MySQL connection string format and required fields', async ({ page }: { page: Page }) => {
+    console.log('Starting MySQL validation test...');
 
-    await navigateToDataSourceForm(page, 'mongodb');
+    await navigateToDataSourceForm(page, 'mysql');
 
     // Test 1: Try to create without filling required fields
     console.log('🔍 Testing form validation - attempting to create without required fields...');
@@ -90,7 +90,7 @@ test.describe('Add MongoDB Data Source Flow', () => {
       'input[placeholder*="data source name"], input[placeholder*="Data Source Name"], input[name*="dbName"], input[name*="name"]',
     );
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
-    await dbNameInput.fill('test-mongodb-validation');
+    await dbNameInput.fill('test-mysql-validation');
     console.log('✅ Filled data source name');
 
     // Assert that Create button is still disabled without connection string
@@ -100,9 +100,9 @@ test.describe('Add MongoDB Data Source Flow', () => {
     // Test 3: Test connection functionality
     console.log('🔍 Testing connection string input and test connection...');
 
-    const connStrInput = page.locator('input[placeholder*="mongodb://username:password@host:port/database"]');
+    const connStrInput = page.locator('input[placeholder*="mysql://username:password@host:port/database"]');
     await connStrInput.waitFor({ state: 'visible', timeout: 10000 });
-    await connStrInput.fill('mongodb://testuser:testpass@localhost:27017/testdb');
+    await connStrInput.fill('mysql://testuser:testpass@localhost:3306/testdb');
     console.log('✅ Filled connection string');
 
     // Assert that Create button is now enabled with all required fields filled
@@ -118,11 +118,11 @@ test.describe('Add MongoDB Data Source Flow', () => {
 
       // Wait for test result (either success or failure)
       await page.waitForLoadState('networkidle');
-      console.log('✅ Test connection completed (result may vary based on actual MongoDB availability)');
+      console.log('✅ Test connection completed (result may vary based on actual MySQL availability)');
     } catch {
       console.log('ℹ️ Test Connection button not found or not clickable - this may be expected');
     }
 
-    console.log('🎉 MongoDB validation test completed successfully!');
+    console.log('🎉 MySQL validation test completed successfully!');
   });
 });
