@@ -1,61 +1,14 @@
-import { type ConsoleMessage, type ElementHandle, type Page, test } from '@playwright/test';
+import { type ElementHandle, type Page, test } from '@playwright/test';
+import { performInitialSetup } from '@tests/e2e/helpers/setup';
 
 test.describe('User Onboarding Flow Test', () => {
   test('Complete user onboarding flow', async ({ page }: { page: Page }) => {
-    test.setTimeout(180000); // 3 minutes for this specific test
-
-    // Enable browser console logging for debugging
-    page.on('console', (msg: ConsoleMessage) => console.log('🖥️ Browser console:', msg.text()));
-    page.on('pageerror', (error: Error) => console.log('🖥️ Browser error:', error.message));
+    test.setTimeout(180000);
+    await performInitialSetup(page);
 
     console.log('Starting user onboarding flow test...');
 
-    // Step 1: Navigate to the application
-    console.log('🧭 Navigating to application...');
-    await page.goto('/');
-
-    // Wait for the page to load
-    await page.waitForLoadState('networkidle');
-    console.log('✅ Page loaded successfully');
-
-    // Step 2: Handle telemetry consent page
-    try {
-      console.log('🔍 Checking for telemetry consent page...');
-
-      const telemetryHeading = page.locator('h1:has-text("Help us improve liblab ai")');
-      await telemetryHeading.waitFor({ state: 'visible', timeout: 10000 });
-      console.log('📋 Found telemetry consent page, clicking Decline...');
-
-      const declineButton = page.locator('button:has-text("Decline")');
-      await declineButton.waitFor({ state: 'visible' });
-      await declineButton.click();
-
-      await page.waitForLoadState('networkidle');
-      console.log('✅ Declined telemetry, waiting for redirect...');
-    } catch {
-      console.warn('ℹ️ No telemetry consent page found, continuing...');
-    }
-
-    // Step 3: Handle data source connection page
-    try {
-      console.log('🔍 Checking for data source connection page...');
-
-      const dataSourceHeading = page.locator('h1:has-text("Let\'s connect your data source")');
-      await dataSourceHeading.waitFor({ state: 'visible', timeout: 10000 });
-      console.log('💾 Found data source connection page, connecting to sample database...');
-
-      const connectButton = page.locator('button:has-text("Connect")');
-      await connectButton.waitFor({ state: 'visible', timeout: 10000 });
-      console.log('🔗 Found Connect button, clicking...');
-      await connectButton.click();
-
-      await page.waitForLoadState('networkidle');
-      console.log('✅ Connected to sample database, waiting for redirect...');
-    } catch {
-      console.warn('ℹ️ No data source connection page found, continuing...');
-    }
-
-    // Step 4: Find the homepage textarea using data-testid
+    // Find the homepage textarea using data-testid
     console.log('🔍 Looking for homepage textarea...');
 
     const textarea = page.locator('[data-testid="homepage-textarea"]');
@@ -74,7 +27,7 @@ test.describe('User Onboarding Flow Test', () => {
 
     await sampleDataSourceSelector.click();
 
-    // Step 5: Input the message and submit
+    // Input the message and submit
     console.log('✍️ Filling textarea with message...');
     await textarea.fill('Build hello world application with Hello World! h1 title');
 
@@ -102,7 +55,7 @@ test.describe('User Onboarding Flow Test', () => {
     console.log('✅ Iframe visible, waiting for content...');
 
     try {
-      // Step 7: Check for "Hello World!" content inside the iframe
+      // Check for "Hello World!" content inside the iframe
       console.log(' Looking for "Hello World!" content in iframe...');
 
       const frame = await iframe
