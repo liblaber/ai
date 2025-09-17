@@ -68,7 +68,20 @@ npm run test:debug
 npm run test:headless
 ```
 
-6. **View test report:**
+6. **Run specific data source tests:**
+
+```bash
+# Run MongoDB data source tests only
+npm run test:mongodb
+
+# Run PostgreSQL data source tests only
+npm run test:postgres
+
+# Run all data source tests
+npm run test:datasources
+```
+
+7. **View test report:**
 
 ```bash
 npm run report
