@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { performInitialSetup, navigateToSettings } from '@tests/e2e/helpers/setup';
+import { performInitialSetup, navigateToSettings } from '../helpers/setup';
 
 const TEST_MEMBER = 'test@example.com';
 

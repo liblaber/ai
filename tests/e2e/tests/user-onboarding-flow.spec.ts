@@ -1,5 +1,5 @@
 import { type ElementHandle, type Page, test } from '@playwright/test';
-import { performInitialSetup } from '@tests/e2e/helpers/setup';
+import { performInitialSetup } from '../helpers/setup';
 
 test.describe('User Onboarding Flow Test', () => {
   test('Complete user onboarding flow', async ({ page }: { page: Page }) => {

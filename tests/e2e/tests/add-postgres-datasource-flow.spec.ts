@@ -1,5 +1,5 @@
 import { type Page, test } from '@playwright/test';
-import { performInitialSetup, navigateToSettings } from '@tests/e2e/helpers/setup';
+import { performInitialSetup, navigateToSettings } from '../helpers/setup';
 
 test.describe('Add PostgreSQL Data Source Flow', () => {
   test.beforeEach(async ({ page }) => {
