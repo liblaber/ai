@@ -123,6 +123,11 @@ class PluginManager {
   // Mock API call until we implement the backend
   private async _fetchPluginAccess(): Promise<PluginAccessMap> {
     const license = env.server.LICENSE_KEY;
+
+    if (!license || license !== 'premium') {
+      return FREE_PLUGIN_ACCESS;
+    }
+
     const {
       GOOGLE_CLIENT_ID,
       GOOGLE_CLIENT_SECRET,
@@ -139,33 +144,15 @@ class PluginManager {
     // Check if OIDC SSO is configured
     const hasOIDCSSO = !!(OIDC_ISSUER && OIDC_CLIENT_ID && OIDC_CLIENT_SECRET && OIDC_DOMAIN && OIDC_PROVIDER_ID);
 
-    // If license is free, only allow anonymous auth and configured providers
-    if (!license || license !== 'premium') {
-      console.log('📋 Using FREE_PLUGIN_ACCESS with dynamic provider support');
-      return {
-        ...FREE_PLUGIN_ACCESS,
-        [PluginType.AUTH]: {
-          ...FREE_PLUGIN_ACCESS[PluginType.AUTH],
-          google: hasGoogleOAuth,
-          oidc: hasOIDCSSO,
-        },
-      };
-    }
-
-    // If license is premium but neither Google OAuth nor OIDC SSO is configured, fall back to free access
-    if (!hasGoogleOAuth && !hasOIDCSSO) {
-      console.warn(
-        'Premium license detected but neither Google OAuth nor OIDC SSO configured. Falling back to free access.',
-      );
-      console.log('📋 Falling back to FREE_PLUGIN_ACCESS');
-
-      return FREE_PLUGIN_ACCESS;
-    }
-
-    // Premium license with Google OAuth or OIDC SSO configured
-    console.log('📋 Using PREMIUM_PLUGIN_ACCESS');
-
-    return PREMIUM_PLUGIN_ACCESS;
+    return {
+      ...PREMIUM_PLUGIN_ACCESS,
+      [PluginType.AUTH]: {
+        ...PREMIUM_PLUGIN_ACCESS[PluginType.AUTH],
+        anonymous: !(hasGoogleOAuth || hasOIDCSSO),
+        google: hasGoogleOAuth,
+        oidc: hasOIDCSSO,
+      },
+    };
   }
 }
 
