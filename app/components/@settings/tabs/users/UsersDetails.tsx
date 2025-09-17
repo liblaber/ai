@@ -80,13 +80,13 @@ export default function MembersDetails({ onBack }: MembersDetailsProps) {
     return () => {
       resetControlPanelHeader();
     };
-  }, []); // Remove onBack dependency to prevent infinite loop
+  }, []);
 
   const fetchRoles = async () => {
     try {
       setIsLoadingRoles(true);
 
-      const response = await fetch('/api/roles');
+      const response = await fetch('/api/roles?scope=GENERAL');
       const data = (await response.json()) as { success: boolean; roles?: Role[] };
 
       if (data.success && data.roles) {
@@ -165,6 +165,7 @@ export default function MembersDetails({ onBack }: MembersDetailsProps) {
                   </Label>
                   <Input
                     id="invite-email-input"
+                    data-testid="invite-email-input"
                     autoComplete="off"
                     type="text"
                     value={inviteEmail}
@@ -214,6 +215,7 @@ export default function MembersDetails({ onBack }: MembersDetailsProps) {
                   </Label>
                   <select
                     id="inviteRole"
+                    data-testid="role-select"
                     value={inviteRoleId}
                     onChange={(e) => setInviteRoleId(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -233,6 +235,7 @@ export default function MembersDetails({ onBack }: MembersDetailsProps) {
 
                 <div className="flex items-center justify-end gap-3 pt-4">
                   <button
+                    data-testid="create-member-button"
                     onClick={handleInviteMember}
                     disabled={inviteEmails.size === 0 || isInviting}
                     className={classNames(
