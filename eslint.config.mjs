@@ -73,4 +73,11 @@ export default [
       'no-restricted-imports': 'off',
     },
   },
+  // Override for test files to allow relative imports
+  {
+    files: ['tests/**/*'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
 ];
