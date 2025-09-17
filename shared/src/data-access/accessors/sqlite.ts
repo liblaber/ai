@@ -1,7 +1,7 @@
 import type { Database as SQLiteDatabase } from 'better-sqlite3';
 import Database from 'better-sqlite3';
 import { type Column, type Table } from '../../types';
-import { SAMPLE_DB_ENUM_VALUES } from '../../constants/sample-db-enum-values';
+import { SAMPLE_DB_ENUM_VALUES } from '../constants/sample-db-enum-values';
 import { format } from 'sql-formatter';
 import { BaseDatabaseAccessor } from '../baseDatabaseAccessor';
 import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '../utils/types';
