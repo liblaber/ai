@@ -9,8 +9,7 @@ import {
   useDeploymentMethodsStore,
 } from '~/lib/stores/deploymentMethods';
 import { type CredentialField, type DeploymentProviderInfo } from '~/lib/validation/deploymentMethods';
-import { type DeploymentMethodResponse } from '~/types/deployment-methods';
-import type { CredentialType } from '~/components/@settings/tabs/deployment-methods/forms/AddDeploymentMethodForm';
+import { type CredentialType, type DeploymentMethodResponse } from '~/types/deployment-methods';
 
 interface EditDeploymentMethodFormProps {
   selectedDeploymentMethod: EnvironmentDeploymentMethod;

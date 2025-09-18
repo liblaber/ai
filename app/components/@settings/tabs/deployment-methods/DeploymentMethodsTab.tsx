@@ -18,46 +18,36 @@ import { useStore } from '@nanostores/react';
 
 // Helper function to get provider icon
 const getProviderIcon = (provider: string) => {
-  const iconContainerStyle = {
-    display: 'flex',
-    width: '60px',
-    height: '60px',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '10px',
-    flexShrink: 0,
-    borderRadius: '8px',
-    background: '#33373E',
-  };
+  const iconContainerClasses =
+    'flex w-[60px] h-[60px] justify-center items-center gap-[10px] flex-shrink-0 rounded-lg bg-[#33373E]';
 
   switch (provider) {
     case 'VERCEL':
       return (
-        <div style={iconContainerStyle}>
-          <img src="/icons/vercel.svg" alt="Vercel" className="w-8 h-8" />
+        <div className={iconContainerClasses}>
+          <img src="/icons/vercel.svg" alt="Vercel" className="w-8 h-8" />{' '}
         </div>
       );
     case 'NETLIFY':
       return (
-        <div style={iconContainerStyle}>
-          <img src="/icons/netlify.svg" alt="Netlify" className="w-8 h-8" />
+        <div className={iconContainerClasses}>
+          <img src="/icons/netlify.svg" alt="Netlify" className="w-8 h-8" />{' '}
         </div>
       );
     case 'AWS':
       return (
-        <div style={iconContainerStyle}>
-          <img src="/icons/aws.svg" alt="AWS" className="w-8 h-8" />
+        <div className={iconContainerClasses}>
+          <img src="/icons/aws.svg" alt="AWS" className="w-8 h-8" />{' '}
         </div>
       );
     default:
       return (
-        <div style={iconContainerStyle}>
-          <Rocket className="w-8 h-8 text-accent-500" />
+        <div className={iconContainerClasses}>
+          <Rocket className="w-8 h-8 text-accent-500" />{' '}
         </div>
       );
   }
 };
-
 // Helper function to get provider display name
 const getProviderDisplayName = (provider: string) => {
   switch (provider) {

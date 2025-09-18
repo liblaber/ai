@@ -5,13 +5,12 @@ import { ArrowLeft, Loader2, Save, XCircle } from 'lucide-react';
 import { BaseSelect } from '~/components/ui/Select';
 import { type CredentialField, type DeploymentProviderInfo } from '~/lib/validation/deploymentMethods';
 import {
+  type CredentialType,
   type DeploymentMethodResponse,
   type EnvironmentOption,
   type EnvironmentsResponse,
 } from '~/types/deployment-methods';
 import { useDeploymentMethodActions, useDeploymentMethodsStore } from '~/lib/stores/deploymentMethods';
-
-export type CredentialType = 'API_KEY' | 'ACCESS_KEY' | 'SECRET_KEY' | 'REGION';
 
 interface AddDeploymentMethodFormProps {
   isSubmitting: boolean;
