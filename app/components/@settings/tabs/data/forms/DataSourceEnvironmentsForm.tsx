@@ -63,7 +63,7 @@ export default function DataSourceEnvironmentsForm({
     appsScriptUrl: '',
   });
 
-  const isGoogleSheets = useMemo(() => dataSource.type === DataSourceType.GOOGLE_SHEETS, [dataSource.type]);
+  const isGoogleSheets = dataSource.type === DataSourceType.GOOGLE_SHEETS;
 
   // Helper functions for Google Sheets URLs
   const parseGoogleSheetsConnectionString = (connectionString: string): GoogleSheetsConfig => {
