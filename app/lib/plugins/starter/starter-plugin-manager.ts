@@ -3,7 +3,7 @@ import path from 'path';
 import { logger } from '~/utils/logger';
 import { PluginType, type StarterPluginId } from '~/lib/plugins/types';
 import PluginManager from '~/lib/plugins/plugin-manager';
-import { readStarterFileMap } from './read-starter-directory';
+import { readDataAccessFileMap, readStarterFileMap } from './read-starter-directory';
 import type { FileMap } from '~/lib/stores/files';
 import { StarterNotAvailableError, StarterNotFoundError } from './errors';
 import { env } from '~/env';
@@ -23,8 +23,8 @@ export class StarterPluginManager {
   static readonly defaultStarter: StarterPluginId = 'next';
   static starterId: StarterPluginId = `${env.server.STARTER || this.defaultStarter}` as StarterPluginId;
 
-  static async getStarterFileMap(): Promise<FileMap> {
-    const starter = this._getStarter();
+  static async getStarterFileMap(starterId?: StarterPluginId): Promise<FileMap> {
+    const starter = this._getStarter(starterId);
 
     logger.info(
       `Reading starter file map for starter ${this.starterId}, directory: ${this._getStarterDirectory(this.starterId)}`,
@@ -34,6 +34,19 @@ export class StarterPluginManager {
       dirPath: starter.directory,
       ignorePatterns: starter.ignorePatterns,
       sharedImportsToSkip: this._getSharedImportsToSkip(),
+    });
+  }
+
+  static async getDataAccessFileMap(packageJsonContent: string, starterId?: StarterPluginId): Promise<FileMap> {
+    const starter = this._getStarter(starterId);
+
+    logger.info(
+      `Reading additional external starter file map for starter ${this.starterId}, directory: ${this._getStarterDirectory(this.starterId)}`,
+    );
+
+    return readDataAccessFileMap({
+      dirPath: starter.directory,
+      packageJsonContent,
     });
   }
 

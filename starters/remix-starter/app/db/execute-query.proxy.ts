@@ -1,18 +1,42 @@
 import { decryptData, encryptData } from '@/lib/encryption/encryption';
+import { decodeUrlCompletely } from '@/utils/url-decoder';
 
-export async function executeQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
-  let databaseUrl = process.env.CONNECTION_URL || '';
+export type QueryData<T> =
+  | { isError: false; data: T }
+  | {
+      isError: true;
+      errorMessage: string;
+    };
 
-  // Handle double URL encoding - decode until we get a valid URL format
-  while (databaseUrl.includes('%')) {
-    const decoded = decodeURIComponent(databaseUrl);
-    if (decoded === databaseUrl) break; // No more decoding needed
-    databaseUrl = decoded;
+export async function executeQuery<T>(query: string, params?: string[]): Promise<QueryData<T[]>> {
+  let result: { data: T[] };
+
+  try {
+    result = await executeQueryThroughProxy<T>(query, params);
+
+    return {
+      ...result,
+      isError: false,
+    };
+  } catch (error) {
+    const typedError = error as Error;
+    const errorMessage = typedError?.message || `Something went wrong executing the query: ${query}`;
+
+    return {
+      isError: true,
+      errorMessage,
+    };
   }
+}
+
+async function executeQueryThroughProxy<T>(query: string, params?: string[]): Promise<{ data: T[] }> {
+  const databaseUrl = decodeUrlCompletely(process.env.CONNECTION_URL || '');
+  const dataSourceType = process.env.DATA_SOURCE_TYPE || '';
 
   const requestBody = {
     query,
     databaseUrl,
+    dataSourceType,
     ...(Array.isArray(params) && params.length > 0 ? { params } : {}),
   };
 
@@ -31,7 +55,7 @@ export async function executeQueryThroughProxy<T>(query: string, params?: string
 }
 
 async function fetchProxyApi<T>(endpoint: string, options: RequestInit = {}): Promise<{ data: T }> {
-  const proxyBaseUrl = `${import.meta.env.VITE_API_BASE_URL}/api`;
+  const proxyBaseUrl = `${process.env.VITE_API_BASE_URL}/api`;
 
   if (!proxyBaseUrl) {
     throw new Error(`No proxy baseUrl provided`);
