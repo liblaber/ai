@@ -3,6 +3,7 @@ import optimized from './prompts/optimized';
 import { getExperimentalSystemPrompt } from './prompts/experimental';
 import { getDashboardsPrompt } from '~/lib/common/prompts/dashboards';
 import { getAppsPrompt } from '~/lib/common/prompts/apps';
+import { getCodingAgentPrompt } from '~/lib/common/prompts/coding-agent';
 import type { StarterPluginId } from '~/lib/plugins/types';
 
 export interface PromptOptions {
@@ -45,6 +46,12 @@ export class PromptLibrary {
       label: 'Apps Prompt',
       description: 'This is a system prompt for general purpose applications',
       get: (options) => getAppsPrompt(options.cwd, options.starterId),
+    },
+    'coding-agent': {
+      label: 'Coding Agent Prompt',
+      description:
+        'A specialized prompt for Claude Code CLI that focuses on code generation without liblabArtifact or WebContainer concepts',
+      get: () => getCodingAgentPrompt(),
     },
   };
   static getList() {

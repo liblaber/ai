@@ -408,6 +408,7 @@ async function chatAction(request: NextRequest) {
           });
 
           (async () => {
+            // @ts-ignore POC we are not exposing fullStream yet in the types
             for await (const part of result.fullStream) {
               if (part.type === 'error') {
                 const error: any = part.error;

@@ -17,6 +17,10 @@ COPY package.json pnpm-lock.yaml ./
 # Install pnpm and dependencies
 RUN npm install -g pnpm && pnpm install
 
+RUN npm install -g @anthropic-ai/claude-code
+
+RUN export ANTHROPIC_API_KEY="MY-API-KEY"
+
 # Last supported deno version for netlify is 2.2.4
 RUN npm install -g deno@2.2.4
 

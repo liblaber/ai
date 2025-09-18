@@ -1,23 +1,57 @@
-import { convertToCoreMessages, generateId, type Message, streamText as _streamText } from 'ai';
+import { generateId, type Message } from 'ai';
 import { type FileMap } from './constants';
 import { getSystemPrompt } from '~/lib/common/prompts/prompts';
-import { DEFAULT_PROVIDER } from '~/utils/constants/server';
 import { MessageRole, MODIFICATIONS_TAG_NAME, WORK_DIR } from '~/utils/constants';
 import { PromptLibrary } from '~/lib/common/prompt-library';
 import { allowedHTMLElements } from '~/utils/markdown';
 import { createScopedLogger } from '~/utils/logger';
 import { createFilesContext, extractPropertiesFromMessage } from './utils';
 import { getFilePaths } from './select-context';
-import { getLlm } from '~/lib/.server/llm/get-llm';
 import type { StarterPluginId } from '~/lib/plugins/types';
 import type { ImplementationPlan } from '~/lib/.server/llm/create-implementation-plan';
 import { type Conversation } from '@prisma/client';
+import { spawn } from 'child_process';
+import { copyFile, mkdir, readdir, readFile, stat, writeFile } from 'fs/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
 
 export type Messages = Message[];
 
-export type StreamingOptions = Omit<Parameters<typeof _streamText>[0], 'model'>;
+export type StreamingOptions = {
+  experimental_generateMessageId?: () => string;
+  toolChoice?: 'none';
+  onFinish?: (params: {
+    text: string;
+    finishReason: string;
+    usage: any;
+    response: { messages: any[] };
+  }) => Promise<void>;
+};
 
 const logger = createScopedLogger('stream-text');
+
+// Helper function to recursively copy files and directories
+async function copyDirectory(src: string, dest: string): Promise<void> {
+  const srcStat = await stat(src);
+
+  if (srcStat.isDirectory()) {
+    // Create destination directory
+    await mkdir(dest, { recursive: true });
+
+    // Read all items in source directory
+    const items = await readdir(src);
+
+    // Copy each item recursively
+    for (const item of items) {
+      const srcPath = join(src, item);
+      const destPath = join(dest, item);
+      await copyDirectory(srcPath, destPath);
+    }
+  } else {
+    // Copy file
+    await copyFile(src, dest);
+  }
+}
 
 export async function streamText(props: {
   messages: Message[];
@@ -37,7 +71,6 @@ export async function streamText(props: {
     messages,
     options,
     files,
-    promptId,
     conversation,
     implementationPlan,
     contextOptimization,
@@ -69,7 +102,7 @@ export async function streamText(props: {
   }
 
   let systemPrompt =
-    (await PromptLibrary.getPromptFromLibrary(promptId || 'default', {
+    (await PromptLibrary.getPromptFromLibrary('coding-agent', {
       cwd: WORK_DIR,
       starterId: conversation.starterId as StarterPluginId,
       allowedHtmlElements: allowedHTMLElements,
@@ -133,18 +166,299 @@ ${props.summary}
     });
   }
 
-  const provider = DEFAULT_PROVIDER;
-  const llm = await getLlm();
+  // Prepare the user message for Claude Code CLI (remove newlines)
+  const cleanUserMessage = lastUserMessage.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
 
-  logger.info(`Sending llm call to ${provider.name} with model ${llm.instance.modelId}`);
+  // Create temporary directory for Claude Code execution
+  const tempDir = join(tmpdir(), `claude-code-${conversation.id}-${Date.now()}`);
+  await mkdir(tempDir, { recursive: true });
 
-  return _streamText({
-    model: llm.instance,
-    system: systemPrompt,
-    maxTokens: llm.maxOutputTokens,
-    messages: convertToCoreMessages(processedMessages as any),
-    ...options,
+  logger.info(`Created temporary directory for Claude Code: ${tempDir}`);
+
+  // Copy next-starter directory to temp directory
+  const nextStarterPath = join(process.cwd(), 'starters', 'next-starter');
+
+  try {
+    await copyDirectory(nextStarterPath, tempDir);
+    logger.info(`Copied next-starter directory to temp directory: ${tempDir}`);
+  } catch (copyError) {
+    logger.error('Error copying next-starter directory:', copyError);
+    // Continue execution even if copy fails
+  }
+
+  // Create CLAUDE.md file with the system prompt
+  try {
+    const claudeMdPath = join(tempDir, 'CLAUDE.md');
+    await writeFile(
+      claudeMdPath,
+      systemPrompt +
+        `
+ ${additionalDataSourceContext}`,
+      'utf-8',
+    );
+    logger.info(`Created CLAUDE.md file with system prompt: ${claudeMdPath}`);
+  } catch (writeError) {
+    logger.error('Error creating CLAUDE.md file:', writeError);
+    // Continue execution even if file creation fails
+  }
+
+  // Create a custom stream implementation that mimics the AI SDK's streamText return type
+  let fullOutput = '';
+  const createdFiles: { [key: string]: string } = {};
+  let isComplete = false;
+  let hasError = false;
+  let claudeProcess: any = null;
+
+  // Store all chunks for replay capability
+  const chunks: any[] = [];
+
+  // Create a readable stream for the full stream
+  const fullStream = new ReadableStream({
+    start(controller) {
+      // Spawn Claude Code CLI process (system prompt is in CLAUDE.md file)
+      logger.info(
+        `all messages: ${processedMessages.map((message, i) => `counter: ${i}, content: ${message.content}`).join('\n---\n')}`,
+      );
+      claudeProcess = spawn('claude', ['--dangerously-skip-permissions', '-p', cleanUserMessage], {
+        cwd: tempDir,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        shell: true,
+        env: {
+          ...process.env,
+          ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+        },
+      });
+
+      // Handle stdout (Claude Code output)
+      claudeProcess.stdout.on('data', (data: Buffer) => {
+        const output = data.toString();
+        fullOutput += output;
+
+        const chunk = {
+          type: 'text-delta',
+          textDelta: output,
+        };
+
+        // Store chunk for replay
+        chunks.push(chunk);
+
+        // Enqueue text chunks to the stream
+        controller.enqueue(chunk);
+      });
+
+      // Handle stderr (errors)
+      claudeProcess.stderr.on('data', (data: Buffer) => {
+        const errorOutput = data.toString();
+        logger.error(`Claude Code stderr: ${errorOutput}`);
+
+        const chunk = {
+          type: 'text-delta',
+          textDelta: `[ERROR] ${errorOutput}`,
+        };
+
+        // Store chunk for replay
+        chunks.push(chunk);
+
+        // Enqueue error chunks to the stream
+        controller.enqueue(chunk);
+      });
+
+      // Handle process completion
+      claudeProcess.on('close', async (code: number) => {
+        try {
+          logger.info(`Claude Code process completed with code: ${code}`);
+
+          // Read all files created in the temp directory
+          try {
+            const files = await readdir(tempDir, { withFileTypes: true });
+
+            for (const file of files) {
+              if (file.isFile()) {
+                const filePath = join(tempDir, file.name);
+                const content = await readFile(filePath, 'utf-8');
+                createdFiles[file.name] = content;
+
+                // Create file creation chunks
+                const fileChunks = [
+                  {
+                    type: 'text-delta',
+                    textDelta: `\n[FILE CREATED] ${file.name}\n`,
+                  },
+                  {
+                    type: 'text-delta',
+                    textDelta: `\`\`\`\n${content}\n\`\`\`\n`,
+                  },
+                ];
+
+                // Store chunks for replay
+                chunks.push(...fileChunks);
+
+                // Enqueue file creation information
+                for (const fileChunk of fileChunks) {
+                  controller.enqueue(fileChunk);
+                }
+              }
+            }
+          } catch (fileError) {
+            logger.error('Error reading created files:', fileError);
+          }
+
+          // Call onFinish callback if provided
+          if (options?.onFinish) {
+            await options.onFinish({
+              text: fullOutput,
+              finishReason: code === 0 ? 'stop' : 'error',
+              usage: { totalTokens: 0 }, // Claude Code doesn't provide token usage
+              response: { messages: [] },
+            });
+          }
+
+          // Clean up temporary directory
+          try {
+            // await rm(tempDir, { recursive: true, force: true });
+            logger.info(`Cleaned up temporary directory: ${tempDir}`);
+          } catch (cleanupError) {
+            logger.error('Error cleaning up temporary directory:', cleanupError);
+          }
+
+          isComplete = true;
+          controller.close();
+        } catch (err) {
+          logger.error('Error in Claude Code completion handler:', err);
+          hasError = true;
+          controller.error(err);
+        }
+      });
+
+      // Handle process errors
+      claudeProcess.on('error', (err: Error) => {
+        logger.error(`Claude Code process error: ${err.message}`);
+        hasError = true;
+        controller.error(err);
+      });
+
+      // Set up timeout (optional)
+      const timeout = setTimeout(() => {
+        if (claudeProcess) {
+          claudeProcess.kill();
+        }
+
+        const timeoutError = new Error('Claude Code process timed out');
+        hasError = true;
+        controller.error(timeoutError);
+      }, 300000); // 5 minutes timeout
+
+      claudeProcess.on('close', () => {
+        clearTimeout(timeout);
+      });
+    },
   });
+
+  // Create a function that creates a new readable stream from stored chunks
+  const createReplayStream = () => {
+    return new ReadableStream({
+      start(controller) {
+        // If we have stored chunks, replay them
+        if (chunks.length > 0) {
+          for (const chunk of chunks) {
+            controller.enqueue(chunk);
+          }
+
+          if (isComplete) {
+            controller.close();
+          }
+        } else {
+          // If no chunks yet, wait for them
+          const checkForChunks = () => {
+            if (chunks.length > 0) {
+              for (const chunk of chunks) {
+                controller.enqueue(chunk);
+              }
+
+              if (isComplete) {
+                controller.close();
+              }
+            } else if (!isComplete && !hasError) {
+              // Check again in a bit
+              setTimeout(checkForChunks, 10);
+            } else {
+              controller.close();
+            }
+          };
+          checkForChunks();
+        }
+      },
+    });
+  };
+
+  // Return an object that mimics the AI SDK's streamText return type
+  return {
+    fullStream,
+    mergeIntoDataStream: (targetStream: any) => {
+      // Create a new readable stream that forwards data to the target stream
+      const mergedStream = new ReadableStream({
+        start(controller) {
+          const replayStream = createReplayStream();
+          const reader = replayStream.getReader();
+
+          function pump(): Promise<void> {
+            return reader.read().then(({ done, value }) => {
+              if (done) {
+                controller.close();
+                return;
+              }
+
+              // Forward the chunk to both the controller and target stream
+              controller.enqueue(value);
+
+              // If targetStream has a write method, use it
+              if (targetStream && typeof targetStream.write === 'function') {
+                if (value.type === 'text-delta') {
+                  targetStream.write(value.textDelta);
+                }
+              }
+
+              // eslint-disable-next-line consistent-return
+              return pump();
+            });
+          }
+
+          return pump();
+        },
+      });
+
+      return mergedStream;
+    },
+
+    pipeTo: (destination: any) => {
+      // Simple pipe implementation using replay stream
+      const replayStream = createReplayStream();
+      const reader = replayStream.getReader();
+
+      function pump(): Promise<void> {
+        return reader.read().then(({ done, value }) => {
+          if (done) {
+            if (destination && typeof destination.close === 'function') {
+              destination.close();
+            }
+
+            return;
+          }
+
+          if (destination && typeof destination.write === 'function') {
+            if (value.type === 'text-delta') {
+              destination.write(value.textDelta);
+            }
+          }
+
+          // eslint-disable-next-line consistent-return
+          return pump();
+        });
+      }
+
+      return pump();
+    },
+  };
 }
 
 function getLastUserMessageContent(messages: Omit<Message, 'id'>[]): string | undefined {
