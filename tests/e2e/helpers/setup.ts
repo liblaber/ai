@@ -36,7 +36,7 @@ export async function performInitialSetup(page: Page) {
     console.log('💾 Found data source connection page, connecting to sample database...');
 
     const connectButton = page.locator('button:has-text("Connect")');
-    await connectButton.waitFor({ state: 'visible', timeout: 10000 });
+    await connectButton.waitFor({ state: 'visible', timeout: 5000 });
     console.log('🔗 Found Connect button, clicking...');
     await connectButton.click();
 
@@ -51,7 +51,7 @@ export async function navigateToSettings(page: Page) {
   console.log('🔍 Looking for settings button...');
 
   const settingsButton = page.locator('[data-testid="settings-button"]');
-  await settingsButton.waitFor({ state: 'attached', timeout: 10000 });
+  await settingsButton.waitFor({ state: 'attached', timeout: 5000 });
 
   // Use JavaScript click instead of Playwright click to bypass viewport restrictions
   await page.evaluate(() => {

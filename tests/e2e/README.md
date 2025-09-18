@@ -82,6 +82,9 @@ npm run test:postgres
 
 # Run all data source tests
 npm run test:datasources
+
+# Run environment management tests only
+npm run test:environments
 ```
 
 7. **View test report:**
@@ -92,6 +95,8 @@ npm run report
 
 ## Test Flow
 
+### Main User Onboarding Test
+
 The main test (`user-onboarding-flow.spec.ts`) follows this user journey:
 
 1. **Navigate to Application** - Opens the base URL (default: http://localhost:3000)
@@ -99,6 +104,16 @@ The main test (`user-onboarding-flow.spec.ts`) follows this user journey:
 3. **Connect Sample Database** - If the data source connection page appears, clicks "Connect" for the sample database
 4. **Submit Message** - On the homepage, enters "Build hello world application with Hello World! h1 title" and submits
 5. **The Chat Loads, Generates the App and Runs it** - The chat and the preview load, eventually the built app starts running in the preview
+
+### Environment Management Tests
+
+The environment tests (`tests/environments.spec.ts`) cover the complete CRUD workflow:
+
+1. **Create Environment** - Navigates to settings, opens environments tab, creates a new environment with name and description
+2. **Edit Environment** - Finds the created environment, opens edit form, updates name and description, saves changes
+3. **Delete Environment** - Finds the updated environment, clicks delete, confirms deletion in dialog
+4. **Form Validation** - Tests that create form validates required fields properly
+5. **Edit Form Pre-population** - Verifies that edit forms are pre-filled with existing values
 
 ## Configuration
 
@@ -212,6 +227,7 @@ const textarea = page.locator('[data-testid="homepage-textarea"]');
 
 **Why data-testid?**
 
+- Any custom attribute should be prefixed with 'data-' according to HTML specification ('data-testid' is a widely used convention in testing frameworks)
 - More stable than CSS classes (which can change with styling)
 - More reliable than text content (which can change with i18n)
 - Explicit intent for testing

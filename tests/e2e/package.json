@@ -13,6 +13,7 @@
     "test:mysql": "playwright test add-mysql-datasource-flow.spec.ts",
     "test:postgres": "playwright test add-postgres-datasource-flow.spec.ts",
     "test:datasources": "playwright test --grep \"Add.*Data Source Flow\"",
+    "test:environments": "playwright test tests/environments.spec.ts",
     "report": "playwright show-report"
   },
   "keywords": [
