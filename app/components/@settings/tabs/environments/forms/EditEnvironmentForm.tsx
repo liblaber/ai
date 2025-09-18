@@ -85,6 +85,7 @@ export default function EditEnvironmentForm({
           <input
             type="text"
             id="name"
+            data-testid="edit-environment-name-input"
             value={name}
             onChange={(e) => setName(e.target.value)}
             className={classNames(
@@ -105,6 +106,7 @@ export default function EditEnvironmentForm({
           </label>
           <textarea
             id="description"
+            data-testid="edit-environment-description-input"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
@@ -219,6 +221,7 @@ export default function EditEnvironmentForm({
       <div className="flex items-center justify-between pt-4">
         <button
           type="button"
+          data-testid="delete-environment-button"
           onClick={onDelete}
           className={classNames(
             'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
@@ -231,6 +234,7 @@ export default function EditEnvironmentForm({
 
         <button
           type="submit"
+          data-testid="update-environment-submit"
           disabled={isSubmitting || !name.trim()}
           className={classNames(
             'inline-flex items-center gap-2 px-6 py-2 text-sm font-medium rounded-lg transition-colors',
