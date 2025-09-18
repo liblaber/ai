@@ -9,6 +9,7 @@ import {
   type StarterPluginId,
   type UserManagementPluginId,
 } from '~/lib/plugins/types';
+import { logger } from '~/utils/logger';
 
 export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
   [PluginType.DATA_ACCESS]: {
@@ -123,6 +124,9 @@ class PluginManager {
   // Mock API call until we implement the backend
   private async _fetchPluginAccess(): Promise<PluginAccessMap> {
     const license = env.server.LICENSE_KEY;
+
+    logger.info('Fetching plugin access for license:', license);
+
     const {
       GOOGLE_CLIENT_ID,
       GOOGLE_CLIENT_SECRET,
