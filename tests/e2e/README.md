@@ -68,11 +68,10 @@ npm run test:debug
 npm run test:headless
 ```
 
-6. **Run data source tests:**
+6. **Run specific test:**
 
 ```bash
-# Run all data source tests
-npm run test:datasources
+npm run test -- test-file.spec.ts
 ```
 
 7. **View test report:**
@@ -80,16 +79,6 @@ npm run test:datasources
 ```bash
 npm run report
 ```
-
-## Test Flow
-
-The main test (`user-onboarding-flow.spec.ts`) follows this user journey:
-
-1. **Navigate to Application** - Opens the base URL (default: http://localhost:3000)
-2. **Handle Telemetry Consent** - If the telemetry consent page appears, clicks "Decline"
-3. **Connect Sample Database** - If the data source connection page appears, clicks "Connect" for the sample database
-4. **Submit Message** - On the homepage, enters "Build hello world application with Hello World! h1 title" and submits
-5. **The Chat Loads, Generates the App and Runs it** - The chat and the preview load, eventually the built app starts running in the preview
 
 ## Configuration
 
@@ -203,6 +192,7 @@ const textarea = page.locator('[data-testid="homepage-textarea"]');
 
 **Why data-testid?**
 
+- Any custom attribute should be prefixed with 'data-' according to HTML specification ('data-testid' is a widely used convention in testing frameworks)
 - More stable than CSS classes (which can change with styling)
 - More reliable than text content (which can change with i18n)
 - Explicit intent for testing

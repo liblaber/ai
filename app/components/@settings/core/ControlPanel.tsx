@@ -47,6 +47,7 @@ const TabSection = ({ title, tabs, activeTab, onTabClick }: TabSectionProps) => 
           <motion.div
             key={tabId}
             layout
+            data-testid={`settings-tab-${tabId}`}
             className={classNames(
               'flex items-center gap-3 p-3 h-9 rounded-[15px] mb-2 cursor-pointer',
               'transition-all duration-200',

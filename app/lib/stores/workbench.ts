@@ -448,7 +448,18 @@ export class WorkbenchStore {
 
   async downloadZip() {
     const zip = new JSZip();
-    const files = this.files.get();
+
+    let files = Object.fromEntries(
+      Object.entries(this.files.get()).map(([key, value]) => [extractRelativePath(key), value]),
+    );
+
+    const packageJsonFile = files['package.json'];
+
+    if (packageJsonFile?.type === 'file') {
+      const dataAccessFiles = await this.#fetchDataAccessFiles(packageJsonFile.content);
+      files = { ...files, ...dataAccessFiles };
+      logger.debug('Data-access files collected and merged.');
+    }
 
     // Get the project name from the description input, or use a default name
     const projectName = (description.value ?? 'project').toLocaleLowerCase().split(' ').join('_');
@@ -459,10 +470,8 @@ export class WorkbenchStore {
 
     for (const [filePath, dirent] of Object.entries(files)) {
       if (dirent?.type === 'file' && !dirent.isBinary) {
-        const relativePath = extractRelativePath(filePath);
-
         // split the path into segments
-        const pathSegments = relativePath.split('/');
+        const pathSegments = filePath.split('/');
 
         // if there's more than one segment, we need to create folders
         if (pathSegments.length > 1) {
@@ -476,13 +485,12 @@ export class WorkbenchStore {
           const lines = dirent.content.split('\n').filter((line) => line.trim() !== '');
 
           this.#updateOrWriteEnvironmentVariable(lines, 'VITE_API_BASE_URL', "'http://localhost:3000'");
-          this.#updateOrWriteEnvironmentVariable(lines, 'QUERY_MODE', 'direct');
           this.#updateOrWriteEnvironmentVariable(lines, 'API_MODE', 'direct');
 
-          zip.file(relativePath, lines.join('\n') + '\n');
+          zip.file(filePath, lines.join('\n') + '\n');
         } else {
           // if there's only one segment, it's a file in the root
-          zip.file(relativePath, dirent.content);
+          zip.file(filePath, dirent.content);
         }
       }
     }
@@ -490,6 +498,37 @@ export class WorkbenchStore {
     // Generate the zip file and save it
     const content = await zip.generateAsync({ type: 'blob' });
     saveAs(content, `${uniqueProjectName}.zip`);
+  }
+
+  async #fetchDataAccessFiles(packageJsonContent: string): Promise<FileMap> {
+    try {
+      const response = await fetch('/api/starter-template/data-access-files', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          packageJson: packageJsonContent,
+          conversationId: chatId.value,
+        }),
+      });
+
+      if (response.ok) {
+        const result = (await response.json()) as { files: FileMap };
+
+        if (result.files) {
+          logger.debug('Data-access files collected.');
+          return result.files;
+        }
+
+        logger.debug('Data-access files collected, but no files to return.');
+      } else {
+        logger.error('Failed to collect data-access files:', response.statusText);
+      }
+    } catch (error) {
+      logger.error('Error calling data-access-files endpoint:', error);
+    }
+    return {};
   }
 
   async syncFiles(targetHandle: FileSystemDirectoryHandle) {
