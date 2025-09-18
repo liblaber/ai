@@ -15,56 +15,67 @@ test.describe('Add SQLite Data Source Flow', () => {
 
     console.log('🔍 Looking for database name input...');
 
-    const dbNameInput = page.locator(
-      'input[placeholder*="data source name"], input[placeholder*="Data Source Name"], input[name*="dbName"], input[name*="name"]',
-    );
+    // Use more robust selector - preferring semantic role or data-testid if available
+    const dbNameInput = page
+      .locator('[data-testid="data-source-name-input"]')
+      .or(page.getByRole('textbox', { name: /data source name/i }))
+      .or(page.locator('input[placeholder*="data source name"], input[placeholder*="Data Source Name"]'));
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
     console.log('✅ Found database name input, filling "test-sqlite"...');
     await dbNameInput.fill('test-sqlite');
 
     console.log('🔍 Looking for connection string input...');
 
-    const connStrInput = page.locator('input[placeholder*="sqlite://path/to/database.db"]');
+    // Use more robust selector for connection string input
+    const connStrInput = page
+      .locator('[data-testid="connection-string-input"]')
+      .or(page.getByRole('textbox', { name: /connection string/i }))
+      .or(page.locator('input[placeholder*="sqlite://path/to/database.db"]'));
     await connStrInput.waitFor({ state: 'visible', timeout: 10000 });
     console.log('✅ Found connection string input, filling file path...');
     await connStrInput.fill('sqlite:///tmp/test.db');
 
     console.log('🔍 Looking for save/create button...');
 
-    const saveButton = page.locator('button:has-text("Create")');
+    // Use semantic role for button - more robust than text matching
+    const saveButton = page.getByRole('button', { name: /create/i });
     await saveButton.waitFor({ state: 'visible', timeout: 10000 });
 
     // Assert that the Create button is enabled with valid data
     await expect(saveButton, 'Create button should be enabled with valid data').toBeEnabled();
 
     console.log('✅ Found save button, clicking...');
-    await saveButton.click();
 
-    console.log('💾 Waiting for data source creation to complete...');
-    await page.waitForLoadState('networkidle');
+    // Wait for the API response to validate successful data source creation
+    const [response] = await Promise.all([
+      page.waitForResponse(
+        (response) => response.url().includes('/api/data-sources') && response.request().method() === 'POST',
+      ),
+      saveButton.click(),
+    ]);
 
-    // Look for success indicators - either success message or form disappearing
-    console.log('🔍 Verifying data source creation was successful...');
+    console.log('💾 Waiting for data source creation API response...');
 
-    try {
-      // Try to find a success message first
-      const successMessage = page.locator('text=successfully, text=Success, text=created, text=added').first();
-      await successMessage.waitFor({ state: 'visible', timeout: 5000 });
-      console.log('✅ Success message found - data source created successfully!');
-    } catch {
-      // If no success message, check if we're no longer on the add data source form
-      // This indicates successful submission and redirect
+    // Validate API response status
+    if (response.status() === 200 || response.status() === 201) {
+      console.log('✅ Data source created successfully via API!');
+
+      // Wait for UI to update after successful API call
+      await page.waitForLoadState('networkidle');
+
+      // Look for success message in UI as confirmation
+      const successMessage = page.getByText(/successfully|success|created/i).first();
+
       try {
-        const addDataSourceForm = page.locator('h1:has-text("Add Data Source"), h2:has-text("Add Data Source")');
-        await expect(addDataSourceForm).not.toBeVisible({ timeout: 5000 });
-        console.log('✅ Add data source form disappeared - indicating successful creation!');
+        await successMessage.waitFor({ state: 'visible', timeout: 5000 });
+        console.log('✅ Success message confirmed in UI!');
       } catch {
-        // As a fallback, verify that the form submission at least completed without errors
-        const errorMessage = page.locator('text=error, text=Error, text=failed, text=Failed').first();
-        await expect(errorMessage).not.toBeVisible({ timeout: 2000 });
-        console.log('✅ No error messages found - form submission completed successfully!');
+        console.log('ℹ️ API success confirmed, UI message may vary');
       }
+    } else {
+      throw new Error(`Data source creation failed with status: ${response.status()}`);
     }
+
     console.log('🎉 SQLite data source creation test completed successfully!');
   });
 
@@ -76,7 +87,8 @@ test.describe('Add SQLite Data Source Flow', () => {
     // Test 1: Try to create without filling required fields
     console.log('🔍 Testing form validation - attempting to create without required fields...');
 
-    const saveButton = page.locator('button:has-text("Create")');
+    // Use semantic role for button - more robust than text matching
+    const saveButton = page.getByRole('button', { name: /create/i });
     await saveButton.waitFor({ state: 'visible', timeout: 10000 });
 
     // Assert that the button should be disabled when required fields are empty
@@ -86,9 +98,11 @@ test.describe('Add SQLite Data Source Flow', () => {
     // Test 2: Fill name but leave connection string empty
     console.log('🔍 Testing partial form completion...');
 
-    const dbNameInput = page.locator(
-      'input[placeholder*="data source name"], input[placeholder*="Data Source Name"], input[name*="dbName"], input[name*="name"]',
-    );
+    // Use more robust selector - preferring semantic role or data-testid if available
+    const dbNameInput = page
+      .locator('[data-testid="data-source-name-input"]')
+      .or(page.getByRole('textbox', { name: /data source name/i }))
+      .or(page.locator('input[placeholder*="data source name"], input[placeholder*="Data Source Name"]'));
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
     await dbNameInput.fill('test-sqlite-validation');
     console.log('✅ Filled data source name');
@@ -100,7 +114,11 @@ test.describe('Add SQLite Data Source Flow', () => {
     // Test 3: Test connection functionality
     console.log('🔍 Testing file path input and test connection...');
 
-    const connStrInput = page.locator('input[placeholder*="sqlite://path/to/database.db"]');
+    // Use more robust selector for connection string input
+    const connStrInput = page
+      .locator('[data-testid="connection-string-input"]')
+      .or(page.getByRole('textbox', { name: /connection string/i }))
+      .or(page.locator('input[placeholder*="sqlite://path/to/database.db"]'));
     await connStrInput.waitFor({ state: 'visible', timeout: 10000 });
     await connStrInput.fill('sqlite:///tmp/validation-test.db');
     console.log('✅ Filled file path');
@@ -109,16 +127,36 @@ test.describe('Add SQLite Data Source Flow', () => {
     await expect(saveButton, 'Create button should be enabled with all required fields filled').toBeEnabled();
     console.log('✅ Create button is now enabled with all required fields filled');
 
-    // Try test connection
+    // Try test connection with API response validation
     try {
-      const testConnButton = page.locator('button:has-text("Test Connection")');
+      const testConnButton = page.getByRole('button', { name: /test connection/i });
       await testConnButton.waitFor({ state: 'visible', timeout: 5000 });
-      console.log('✅ Found Test Connection button, clicking...');
-      await testConnButton.click();
+      console.log('✅ Found Test Connection button, testing...');
 
-      // Wait for test result (either success or failure)
-      await page.waitForLoadState('networkidle');
-      console.log('✅ Test connection completed (result may vary based on file system permissions)');
+      // Wait for the test connection API response
+      const [testResponse] = await Promise.all([
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/data-sources/test') || response.url().includes('/test-connection'),
+        ),
+        testConnButton.click(),
+      ]);
+
+      console.log(`✅ Test connection API response: ${testResponse.status()}`);
+
+      // Wait for UI feedback based on API response
+      if (testResponse.status() === 200) {
+        const successFeedback = page.getByText(/connection successful|connected/i).first();
+
+        try {
+          await successFeedback.waitFor({ state: 'visible', timeout: 3000 });
+          console.log('✅ Test connection succeeded!');
+        } catch {
+          console.log('✅ Test connection API succeeded, UI feedback may vary');
+        }
+      } else {
+        console.log(`ℹ️ Test connection returned status ${testResponse.status()} - expected for test data`);
+      }
     } catch {
       console.log('ℹ️ Test Connection button not found or not clickable - this may be expected');
     }
@@ -133,16 +171,22 @@ test.describe('Add SQLite Data Source Flow', () => {
 
     console.log('🔍 Looking for database name input...');
 
-    const dbNameInput = page.locator(
-      'input[placeholder*="data source name"], input[placeholder*="Data Source Name"], input[name*="dbName"], input[name*="name"]',
-    );
+    // Use more robust selector - preferring semantic role or data-testid if available
+    const dbNameInput = page
+      .locator('[data-testid="data-source-name-input"]')
+      .or(page.getByRole('textbox', { name: /data source name/i }))
+      .or(page.locator('input[placeholder*="data source name"], input[placeholder*="Data Source Name"]'));
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
     console.log('✅ Found database name input, filling "sample-sqlite"...');
     await dbNameInput.fill('sample-sqlite');
 
     console.log('🔍 Looking for connection string input...');
 
-    const connStrInput = page.locator('input[placeholder*="sqlite://path/to/database.db"]');
+    // Use more robust selector for connection string input
+    const connStrInput = page
+      .locator('[data-testid="connection-string-input"]')
+      .or(page.getByRole('textbox', { name: /connection string/i }))
+      .or(page.locator('input[placeholder*="sqlite://path/to/database.db"]'));
     await connStrInput.waitFor({ state: 'visible', timeout: 10000 });
     console.log('✅ Found connection string input, filling sample database path...');
     // Use a more realistic sample database path that might exist in the application
@@ -150,53 +194,65 @@ test.describe('Add SQLite Data Source Flow', () => {
 
     console.log('🔍 Looking for save/create button...');
 
-    const saveButton = page.locator('button:has-text("Create")');
+    // Use semantic role for button - more robust than text matching
+    const saveButton = page.getByRole('button', { name: /create/i });
     await saveButton.waitFor({ state: 'visible', timeout: 10000 });
 
     // Assert that the Create button is enabled with valid data
     await expect(saveButton, 'Create button should be enabled with sample database path').toBeEnabled();
 
-    // Try test connection with sample database
+    // Try test connection with sample database and API validation
     try {
-      const testConnButton = page.locator('button:has-text("Test Connection")');
+      const testConnButton = page.getByRole('button', { name: /test connection/i });
       await testConnButton.waitFor({ state: 'visible', timeout: 5000 });
       console.log('✅ Found Test Connection button, testing sample database...');
-      await testConnButton.click();
 
-      // Wait for test result
-      await page.waitForLoadState('networkidle');
-      console.log('✅ Test connection with sample database completed');
+      // Wait for the test connection API response
+      const [testResponse] = await Promise.all([
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/data-sources/test') || response.url().includes('/test-connection'),
+        ),
+        testConnButton.click(),
+      ]);
+
+      console.log(`✅ Sample database test connection API response: ${testResponse.status()}`);
     } catch {
       console.log('ℹ️ Test Connection button not found - proceeding with creation test');
     }
 
     console.log('✅ Found save button, clicking...');
-    await saveButton.click();
 
-    console.log('💾 Waiting for data source creation to complete...');
-    await page.waitForLoadState('networkidle');
+    // Wait for the API response to validate successful sample database creation
+    const [response] = await Promise.all([
+      page.waitForResponse(
+        (response) => response.url().includes('/api/data-sources') && response.request().method() === 'POST',
+      ),
+      saveButton.click(),
+    ]);
 
-    // Look for success indicators
-    console.log('🔍 Verifying sample database data source creation was successful...');
+    console.log('💾 Waiting for sample database creation API response...');
 
-    try {
-      // Try to find a success message first
-      const successMessage = page.locator('text=successfully, text=Success, text=created, text=added').first();
-      await successMessage.waitFor({ state: 'visible', timeout: 5000 });
-      console.log('✅ Success message found - sample database connected successfully!');
-    } catch {
-      // If no success message, check if we're no longer on the add data source form
+    // Validate API response status
+    if (response.status() === 200 || response.status() === 201) {
+      console.log('✅ Sample database data source created successfully via API!');
+
+      // Wait for UI to update after successful API call
+      await page.waitForLoadState('networkidle');
+
+      // Look for success message in UI as confirmation
+      const successMessage = page.getByText(/successfully|success|created/i).first();
+
       try {
-        const addDataSourceForm = page.locator('h1:has-text("Add Data Source"), h2:has-text("Add Data Source")');
-        await expect(addDataSourceForm).not.toBeVisible({ timeout: 5000 });
-        console.log('✅ Add data source form disappeared - sample database creation successful!');
+        await successMessage.waitFor({ state: 'visible', timeout: 5000 });
+        console.log('✅ Sample database success message confirmed in UI!');
       } catch {
-        // As a fallback, verify that the form submission completed without errors
-        const errorMessage = page.locator('text=error, text=Error, text=failed, text=Failed').first();
-        await expect(errorMessage).not.toBeVisible({ timeout: 2000 });
-        console.log('✅ No error messages found - sample database form submission completed!');
+        console.log('ℹ️ Sample database API success confirmed, UI message may vary');
       }
+    } else {
+      throw new Error(`Sample database creation failed with status: ${response.status()}`);
     }
+
     console.log('🎉 SQLite sample database test completed successfully!');
   });
 });
