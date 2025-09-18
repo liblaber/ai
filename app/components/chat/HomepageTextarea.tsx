@@ -45,7 +45,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
     },
     ref,
   ) => {
-    const { environmentDataSources, selectedEnvironmentDataSource } = useEnvironmentDataSourcesStore();
+    const { dataSources, selectedEnvironmentDataSource } = useEnvironmentDataSourcesStore();
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
@@ -179,7 +179,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
             </div>
             <div className="absolute bottom-6 right-6 flex">
               <div className="flex gap-1 items-center mr-4">
-                <DataSourcePicker onAddNew={handleConnectDataSource} disabled={environmentDataSources.length === 0} />
+                <DataSourcePicker onAddNew={handleConnectDataSource} disabled={dataSources.length === 0} />
               </div>
               <button
                 data-testid="send-message-button"
