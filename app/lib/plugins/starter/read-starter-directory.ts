@@ -122,7 +122,6 @@ export function readDataAccessFileMap({ dirPath, packageJsonContent }: ReadDataA
   });
 
   const executeQueryDirectPath = path.join(dirPath, 'app/db/execute-query.direct.ts');
-  console.log(executeQueryDirectPath);
 
   if (fs.existsSync(executeQueryDirectPath)) {
     const content = fs.readFileSync(executeQueryDirectPath, 'utf-8');
@@ -200,7 +199,6 @@ function getSharedFiles({ directoriesToSkip = [] }: { directoriesToSkip?: string
 
       if (entry.isDirectory()) {
         if (directoriesToSkip.includes(entry.name)) {
-          logger.debug(`Skipping directory ${entry.name}`);
           continue;
         }
 
