@@ -12,13 +12,13 @@ test.describe.serial('Environment Management Tests', () => {
     test.setTimeout(120000);
     await performInitialSetup(page);
     await navigateToSettings(page);
+
+    const environmentsTab = page.locator('[data-testid="settings-tab-environments"]');
+    await environmentsTab.waitFor({ state: 'visible', timeout: 10000 });
+    await environmentsTab.click();
   });
 
   test('Create Environment', async ({ page }) => {
-    const environmentsTab = page.locator('text=Environments').first();
-    await environmentsTab.waitFor({ state: 'visible', timeout: 10000 });
-    await environmentsTab.click();
-
     const addButton = page.locator('[data-testid="add-environment-button"]');
     await addButton.waitFor({ state: 'visible', timeout: 10000 });
     await addButton.click();
@@ -51,10 +51,6 @@ test.describe.serial('Environment Management Tests', () => {
   });
 
   test('Update Environment', async ({ page }) => {
-    const environmentsTab = page.locator('text=Environments').first();
-    await environmentsTab.waitFor({ state: 'visible', timeout: 10000 });
-    await environmentsTab.click();
-
     const editButton = page.locator(`[data-testid="edit-environment-${testEnvironmentId}"]`);
     await editButton.waitFor({ state: 'visible', timeout: 10000 });
     await editButton.click();
@@ -80,10 +76,6 @@ test.describe.serial('Environment Management Tests', () => {
   });
 
   test('Delete Environment', async ({ page }) => {
-    const environmentsTab = page.locator('text=Environments').first();
-    await environmentsTab.waitFor({ state: 'visible', timeout: 10000 });
-    await environmentsTab.click();
-
     const deleteButton = page.locator(`[data-testid="delete-environment-${testEnvironmentId}"]`);
     await deleteButton.waitFor({ state: 'visible', timeout: 10000 });
     await deleteButton.click();
@@ -96,6 +88,6 @@ test.describe.serial('Environment Management Tests', () => {
     await page.waitForTimeout(3000);
 
     const deletedEnvironmentItem = page.locator(`text=${updatedEnvironmentName}`);
-    await expect(deletedEnvironmentItem).not.toBeVisible();
+    await expect(deletedEnvironmentItem).not.toBeVisible({ timeout: 5000 });
   });
 });
