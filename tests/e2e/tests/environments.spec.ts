@@ -88,6 +88,6 @@ test.describe.serial('Environment Management Tests', () => {
     await page.waitForTimeout(3000);
 
     const deletedEnvironmentItem = page.locator(`text=${updatedEnvironmentName}`);
-    await expect(deletedEnvironmentItem).not.toBeVisible({ timeout: 5000 });
+    await expect(deletedEnvironmentItem).not.toBeVisible();
   });
 });
