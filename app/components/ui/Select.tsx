@@ -2,7 +2,12 @@
 
 import React from 'react';
 import type { ControlProps, OptionProps, StylesConfig } from 'react-select';
-import Select, { components, type MultiValue, type SingleValue } from 'react-select';
+import Select, {
+  components,
+  type GroupBase as ReactSelectGroupBase,
+  type MultiValue,
+  type SingleValue,
+} from 'react-select';
 import { ClientOnly } from '~/components/ui/ClientOnly';
 
 export interface SelectOption {
@@ -11,6 +16,8 @@ export interface SelectOption {
   icon?: React.ReactNode;
   [key: string]: any;
 }
+
+export type GroupBase<T extends SelectOption> = Omit<ReactSelectGroupBase<T>, 'label'> & Omit<SelectOption, 'value'>;
 
 const Option = ({ children, ...props }: OptionProps<SelectOption>) => {
   const { data } = props;

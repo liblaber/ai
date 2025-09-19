@@ -14,6 +14,12 @@ export type DataSourceOption = {
   status: 'available' | 'locked' | 'coming-soon';
 };
 export const SAMPLE_DATABASE = 'sample';
+
+export enum ComingSoonDataSource {
+  SALESFORCE = 'SALESFORCE',
+  JIRA = 'JIRA',
+}
+
 export const DEFAULT_DATA_SOURCES: DataSourceOption[] = [
   {
     value: SAMPLE_DATABASE,
@@ -24,7 +30,6 @@ export const DEFAULT_DATA_SOURCES: DataSourceOption[] = [
   },
   { value: 'salesforce', label: 'Salesforce', properties: [], status: 'coming-soon' },
   { value: 'jira', label: 'Jira', properties: [], status: 'coming-soon' },
-  { value: 'github', label: 'Github', properties: [], status: 'coming-soon' },
 ];
 
 type DataSourceTypesHook = () => {
