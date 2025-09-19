@@ -68,6 +68,7 @@ export default function AddEnvironmentForm({ isSubmitting, setIsSubmitting, onSu
           <input
             type="text"
             id="name"
+            data-testid="environment-name-input"
             value={name}
             onChange={(e) => setName(e.target.value)}
             className={classNames(
@@ -88,6 +89,7 @@ export default function AddEnvironmentForm({ isSubmitting, setIsSubmitting, onSu
           </label>
           <textarea
             id="description"
+            data-testid="environment-description-input"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
@@ -107,6 +109,7 @@ export default function AddEnvironmentForm({ isSubmitting, setIsSubmitting, onSu
       <div className="flex items-center justify-end gap-3 pt-4">
         <button
           type="submit"
+          data-testid="create-environment-submit"
           disabled={isSubmitting || !name.trim()}
           className={classNames(
             'inline-flex items-center gap-2 px-6 py-2 text-sm font-medium rounded-lg transition-colors',
