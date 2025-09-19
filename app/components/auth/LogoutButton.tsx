@@ -47,6 +47,7 @@ export function LogoutButton() {
         aria-label="User menu"
         title="User menu"
         style={{ backgroundColor: 'transparent' }}
+        data-testid="user-menu-button"
       >
         <ProfilePicture user={user} />
       </button>
