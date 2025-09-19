@@ -17,6 +17,13 @@ setup('authenticate', async ({ request }) => {
     },
   });
 
+  if (!response.ok()) {
+    console.error('❌ Login failed with status:', response.status());
+    console.error('Response body:', await response.text());
+  } else {
+    console.log('✅ Login successful');
+  }
+
   // Check that the API call was successful.
   expect(response.ok(), 'API login failed').toBe(true);
 
