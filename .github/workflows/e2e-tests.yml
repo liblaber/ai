@@ -38,6 +38,8 @@ jobs:
           cp .env.example .env
 
           # Set mandatory values in .env because we can't set them interactively through the CLI from GitHub action
+          echo "NODE_ENV=test" >> .env
+          echo "LICENSE_KEY=premium" >> .env
           echo "ANTHROPIC_API_KEY=${{ secrets.DUMMY_ANTHROPIC_API_KEY }}" >> .env
           echo "DEFAULT_LLM_PROVIDER=Google" >> .env
           echo "DEFAULT_LLM_MODEL=gemini-2.5-flash" >> .env

@@ -174,7 +174,7 @@ export const auth = betterAuth({
   },
 });
 
-async function grantSystemAdminAccess(userId: string) {
+export async function grantSystemAdminAccess(userId: string) {
   // Check and potentially grant first-user system admin access
 
   // Use a transaction to serialize the check; attempt an advisory lock but
