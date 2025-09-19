@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { auth } from '~/auth/auth-config';
+import { auth, grantSystemAdminAccess } from '~/auth/auth-config';
 import { prisma } from '~/lib/prisma';
 import { userService } from '~/lib/services/userService';
 import { logger } from '~/utils/logger';
@@ -88,11 +88,7 @@ async function handleUserRole(userId: string, roleName: string) {
   } catch (error) {
     logger.warn(`Role assignment failed during test login:`, error);
 
-    // Simulate post-authentication hooks to ensure at least one admin user exists
-    const nonAnonymousCount = await prisma.user.count({ where: { isAnonymous: false } });
-
-    if (nonAnonymousCount === 1) {
-      await userService.grantSystemAdminAccess(userId);
-    }
+    // Simulate post-authentication hook to ensure at least one admin user exists
+    await grantSystemAdminAccess(userId);
   }
 }
