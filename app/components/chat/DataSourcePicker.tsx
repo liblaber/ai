@@ -1,8 +1,8 @@
-import { type FC, useEffect, useState } from 'react';
+import { type FC, useEffect, useMemo, useState } from 'react';
 import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import type { GroupBase, SelectOption as BaseSelectOption } from '~/components/ui/Select';
 import { BaseSelect } from '~/components/ui/Select';
-import { components, type OptionsOrGroups } from 'react-select';
+import { components, type MenuProps, type OptionsOrGroups, type SingleValueProps } from 'react-select';
 import { Check, ChevronDown, CirclePlus, Settings } from 'lucide-react';
 import IcDatabase from '~/icons/ic_database.svg';
 import { DATA_SOURCE_ICON_MAP } from '~/styles/data-source-icons';
@@ -35,6 +35,22 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
   const { dataSources, selectedEnvironmentDataSource, setSelectedEnvironmentDataSource } =
     useEnvironmentDataSourcesStore();
   const [openGroupIds, setOpenGroupIds] = useState<string[]>([]);
+
+  const selectedEnvironment = useMemo(() => {
+    if (!selectedEnvironmentDataSource.dataSourceId || !selectedEnvironmentDataSource.environmentId) {
+      return null;
+    }
+
+    return (
+      dataSources
+        .flatMap((ds) => ds.environments.map((env) => ({ ...env, dataSourceName: ds.name, dataSourceId: ds.id })))
+        .find(
+          (env) =>
+            env.dataSourceId === selectedEnvironmentDataSource.dataSourceId &&
+            env.id === selectedEnvironmentDataSource.environmentId,
+        ) || null
+    );
+  }, [dataSources, selectedEnvironmentDataSource.dataSourceId, selectedEnvironmentDataSource.environmentId]);
 
   useEffect(() => {
     if (selectedEnvironmentDataSource.dataSourceId) {
@@ -122,7 +138,7 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
     onDataSourceChange?.(dataSourceId, environmentId, dataSource.name, environment.name);
   };
 
-  const Menu = (props: any) => {
+  const Menu = (props: MenuProps<SelectOption, false, GroupBase<SelectOption>>) => {
     return (
       <components.Menu {...props}>
         <div className="flex flex-col p-2 text-primary">
@@ -206,21 +222,15 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
     return null; // Using custom Menu, so Option is not needed
   };
 
-  const SingleValue = (props: any) => {
-    const selectedEnvironment = dataSources
-      .flatMap((ds) => ds.environments.map((env) => ({ ...env, dataSourceName: ds.name, dataSourceId: ds.id })))
-      .find(
-        (env) =>
-          env.dataSourceId === selectedEnvironmentDataSource.dataSourceId &&
-          env.id === selectedEnvironmentDataSource.environmentId,
-      );
-
+  const SingleValue = (props: SingleValueProps<SelectOption>) => {
     return (
       <components.SingleValue {...props}>
         <div className="flex items-center gap-2">
           <span>{selectedEnvironment?.dataSourceName ?? 'Select Data Source'}</span>
-          {selectedEnvironment?.name && (
-            <span className="text-xs bg-depth-3 text-primary px-2 py-1 rounded-full">{selectedEnvironment.name}</span>
+          {selectedEnvironment?.name && !disabled && (
+            <span className="text-xs bg-transparent text-primary border border-secondary px-2 py-1 rounded-full">
+              {selectedEnvironment.name}
+            </span>
           )}
         </div>
       </components.SingleValue>
@@ -313,7 +323,7 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
     }
 
     for (const group of options) {
-      if ('options' in group) {
+      if (isGroupOption(group)) {
         const found = group.options.find((opt: SelectOption) => opt.value === value);
 
         if (found) {

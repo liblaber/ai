@@ -127,20 +127,15 @@ export const ControlPanel = () => {
       const lastAccessedTab = localStorage.getItem(LAST_ACCESSED_TAB_KEY) as TabType | null;
       const firstVisibleTab = visibleTabs[0]?.id as TabType | null;
 
-      // If there's a selected tab from props, use that
-      const selectedTabPaths = selectedTab?.split('/');
-      const selectedEntityId = selectedTabPaths?.[1];
-      const selectedSubTab = selectedTabPaths?.[2];
-
+      const [selectedTabId, selectedEntityId, selectedSubTab] = selectedTab?.split('/') ?? [];
       setActiveEntityId(selectedEntityId);
       setActiveSubTab(selectedSubTab);
-
-      const selectedTabId = selectedTabPaths?.[0];
 
       if (selectedTabId) {
         setActiveTab(selectedTabId as TabType);
         localStorage.setItem(LAST_ACCESSED_TAB_KEY, selectedTabId);
       }
+
       // Otherwise, try to restore the last accessed tab
       else if (lastAccessedTab && visibleTabs.some((tab) => tab.id === lastAccessedTab)) {
         setActiveTab(lastAccessedTab);
