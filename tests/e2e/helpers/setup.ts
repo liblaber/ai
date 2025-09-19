@@ -1,31 +1,12 @@
 import { type ConsoleMessage, type Page } from '@playwright/test';
+import { loginInitialUser } from './login';
 
 export async function performInitialSetup(page: Page) {
   // Enable browser console logging for debugging
   page.on('console', (msg: ConsoleMessage) => console.log('🖥️ Browser console:', msg.text()));
   page.on('pageerror', (error: Error) => console.log('🖥️ Browser error:', error.message));
 
-  // Navigate to the app
-  await page.goto('/');
-  await page.waitForLoadState('networkidle');
-
-  // Handle telemetry
-  try {
-    console.log('🔍 Checking for telemetry consent page...');
-
-    const telemetryHeading = page.locator('h1:has-text("Help us improve liblab ai")');
-    await telemetryHeading.waitFor({ state: 'visible', timeout: 5000 });
-    console.log('📋 Found telemetry consent page, clicking Decline...');
-
-    const declineButton = page.locator('button:has-text("Decline")');
-    await declineButton.waitFor({ state: 'visible' });
-    await declineButton.click();
-
-    await page.waitForLoadState('networkidle');
-    console.log('✅ Declined telemetry, waiting for redirect...');
-  } catch {
-    console.warn('ℹ️ No telemetry consent page found, continuing...');
-  }
+  await loginInitialUser(page);
 
   // Handle initial data source connection
   try {
