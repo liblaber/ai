@@ -3,7 +3,6 @@ import { type Page } from '@playwright/test';
 export async function loginInitialUser(page: Page) {
   // Navigate to the app
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
 
   const userLoggedInMenu = page.getByTestId('user-menu-button');
 
@@ -22,5 +21,10 @@ export async function loginInitialUser(page: Page) {
     },
   });
 
-  await page.goto('/');
+  // The API call sets the auth cookie. Reload the page to reflect the logged-in state.
+  await page.reload();
+
+  // The waits for the menu to be visible ensures that the login process is complete.
+  await userLoggedInMenu.waitFor({ state: 'visible', timeout: 10000 });
+  console.log('✅ Login successful!');
 }
