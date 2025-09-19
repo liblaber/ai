@@ -46,10 +46,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: `Validation failed: ${errorMessages}` }, { status: 400 });
     }
 
-    const { name, provider, credentials, applyToAllEnvironments } = validationResult.data;
+    const { provider, credentials, applyToAllEnvironments } = validationResult.data;
 
     const deploymentMethod = await updateDeploymentMethod(id, {
-      name,
       provider,
       credentials,
       applyToAllEnvironments,

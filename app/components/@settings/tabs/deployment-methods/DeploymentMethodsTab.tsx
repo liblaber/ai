@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, ArrowLeft, ChevronRight, Plus, Rocket, Trash2 } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Plus, Rocket, Trash2 } from 'lucide-react';
 import { Dialog, DialogClose, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import AddDeploymentMethodForm from './forms/AddDeploymentMethodForm';
 import EditDeploymentMethodForm from './forms/EditDeploymentMethodForm';
@@ -13,6 +13,54 @@ import {
 } from '~/lib/stores/deploymentMethods';
 import { settingsPanelStore, useSettingsStore } from '~/lib/stores/settings';
 import { useStore } from '@nanostores/react';
+
+// Provider icons will be loaded from public/icons directory
+
+// Helper function to get provider icon
+const getProviderIcon = (provider: string) => {
+  const iconContainerClasses =
+    'flex w-[60px] h-[60px] justify-center items-center gap-[10px] flex-shrink-0 rounded-lg bg-[#33373E]';
+
+  switch (provider) {
+    case 'VERCEL':
+      return (
+        <div className={iconContainerClasses}>
+          <img src="/icons/vercel.svg" alt="Vercel" className="w-8 h-8" />{' '}
+        </div>
+      );
+    case 'NETLIFY':
+      return (
+        <div className={iconContainerClasses}>
+          <img src="/icons/netlify.svg" alt="Netlify" className="w-8 h-8" />{' '}
+        </div>
+      );
+    case 'AWS':
+      return (
+        <div className={iconContainerClasses}>
+          <img src="/icons/aws.svg" alt="AWS" className="w-8 h-8" />{' '}
+        </div>
+      );
+    default:
+      return (
+        <div className={iconContainerClasses}>
+          <Rocket className="w-8 h-8 text-accent-500" />{' '}
+        </div>
+      );
+  }
+};
+// Helper function to get provider display name
+const getProviderDisplayName = (provider: string) => {
+  switch (provider) {
+    case 'VERCEL':
+      return 'Vercel';
+    case 'NETLIFY':
+      return 'Netlify';
+    case 'AWS':
+      return 'AWS';
+    default:
+      return provider;
+  }
+};
 
 export default function DeploymentMethodsTab() {
   const { showAddForm } = useStore(settingsPanelStore);
@@ -97,8 +145,8 @@ export default function DeploymentMethodsTab() {
       {!showEditForm && !showAddFormLocal && (
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-medium text-primary">Deployment Methods</h2>
-            <p className="text-sm text-secondary">Manage your deployment method connections</p>
+            <h2 className="text-lg font-medium text-primary">Publishing Methods</h2>
+            <p className="text-sm text-secondary">Manage your publishing method connections</p>
           </div>
           <button
             onClick={handleAdd}
@@ -109,31 +157,13 @@ export default function DeploymentMethodsTab() {
             )}
           >
             <Plus className="w-4 h-4" />
-            <span>Add Deployment Method</span>
+            <span>Add Publishing Method</span>
           </button>
         </div>
       )}
 
       {showAddFormLocal && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleBack}
-                className={classNames(
-                  'inline-flex items-center gap-2 p-2 text-sm font-medium rounded-lg transition-colors',
-                  'dark:bg-gray-900 dark:text-gray-300',
-                  'hover:bg-gray-100 dark:hover:bg-gray-800',
-                )}
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-              <div>
-                <h2 className="text-lg font-medium text-primary">Create Deployment Method</h2>
-                <p className="text-sm text-secondary">Add a new deployment method connection</p>
-              </div>
-            </div>
-          </div>
           <AddDeploymentMethodForm
             isSubmitting={isSubmitting}
             setIsSubmitting={setIsSubmitting}
@@ -148,31 +178,13 @@ export default function DeploymentMethodsTab() {
 
               handleBack();
             }}
+            onBack={handleBack}
           />
         </div>
       )}
 
       {showEditForm && selectedEnvironmentDeploymentMethod && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleBack}
-                className={classNames(
-                  'inline-flex items-center gap-2 p-2 text-sm font-medium rounded-lg transition-colors',
-                  'dark:bg-gray-900 dark:text-gray-300',
-                  'hover:bg-gray-100 dark:hover:bg-gray-800',
-                )}
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-              <div>
-                <h2 className="text-lg font-medium text-primary">Edit Deployment Method</h2>
-                <p className="text-sm text-secondary">Modify your deployment method connection settings</p>
-              </div>
-            </div>
-          </div>
-
           <EditDeploymentMethodForm
             selectedDeploymentMethod={selectedEnvironmentDeploymentMethod}
             isSubmitting={isSubmitting}
@@ -200,18 +212,19 @@ export default function DeploymentMethodsTab() {
               setShowEditForm(false);
               setSelectedEnvironmentDeploymentMethod(null);
             }}
+            onBack={handleBack}
           />
         </div>
       )}
 
       {!showEditForm && !showAddFormLocal && (
-        <div className="space-y-4">
+        <div>
           {environmentDeploymentMethods.length === 0 ? (
             <div className="text-center py-12">
               <Rocket className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Deployment Methods</h4>
+              <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Publishing Methods</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Get started by adding your first deployment method.
+                Get started by adding your first publishing method.
               </p>
             </div>
           ) : (
@@ -231,14 +244,16 @@ export default function DeploymentMethodsTab() {
                       handleEdit(environmentDeploymentMethod);
                     }
                   }}
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all duration-200 cursor-pointer"
+                  className="w-full flex items-center justify-between p-6 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all duration-200 cursor-pointer"
                 >
-                  <div className="flex items-center gap-3">
-                    <Rocket className="w-5 h-5 text-accent-500" />
+                  <div className="flex items-center gap-4">
+                    {getProviderIcon(environmentDeploymentMethod.provider)}
                     <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">{environmentDeploymentMethod.name}</h4>
+                      <h4 className="font-medium text-gray-900 dark:text-white">
+                        {getProviderDisplayName(environmentDeploymentMethod.provider)}
+                      </h4>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {environmentDeploymentMethod.provider} • {environmentDeploymentMethod.environment.name}
+                        {environmentDeploymentMethod.environment.name}
                       </p>
                     </div>
                   </div>
@@ -262,15 +277,15 @@ export default function DeploymentMethodsTab() {
                     <Trash2 className="w-5 h-5 text-tertiary" />
                   </div>
                   <div>
-                    <DialogTitle title="Delete Deployment Method" />
+                    <DialogTitle title="Delete Publishing Method" />
                     <p className="text-sm text-secondary">This action cannot be undone</p>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div>
                 <p className="text-sm text-secondary">
-                  Are you sure you want to delete the deployment method "{selectedEnvironmentDeploymentMethod?.name}"?
+                  Are you sure you want to delete the publishing method "{selectedEnvironmentDeploymentMethod?.name}"?
                   This will remove all associated data and cannot be undone.
                 </p>
 
@@ -279,10 +294,10 @@ export default function DeploymentMethodsTab() {
                     <AlertTriangle className="w-5 h-5 text-amber-500" />
                     <div className="text-sm">
                       <p className="text-amber-600 dark:text-amber-400 font-medium">
-                        Warning: This will permanently delete the deployment method!
+                        Warning: This will permanently delete the publishing method!
                       </p>
                       <p className="text-amber-600 dark:text-amber-400 mt-1">
-                        All deployment method data will be permanently deleted and cannot be recovered.
+                        All publishing method data will be permanently deleted and cannot be recovered.
                       </p>
                     </div>
                   </div>

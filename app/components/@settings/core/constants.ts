@@ -18,7 +18,7 @@ export const TAB_LABELS: Record<TabType, string> = {
   members: 'Members',
   environments: 'Environments',
   'secrets-manager': 'Secrets Manager',
-  'deployment-methods': 'Deployment Methods',
+  'deployment-methods': 'Publishing Methods',
 };
 
 export const TAB_DESCRIPTIONS: Record<TabType, string> = {
@@ -28,7 +28,7 @@ export const TAB_DESCRIPTIONS: Record<TabType, string> = {
   members: 'Manage your members',
   environments: 'Manage your environments',
   'secrets-manager': 'Manage environment variables and secrets',
-  'deployment-methods': 'Manage your deployment method connections',
+  'deployment-methods': 'Manage your publishing method connections',
 };
 
 export const DEFAULT_TAB_CONFIG: TabVisibilityConfig[] = [

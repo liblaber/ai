@@ -123,6 +123,7 @@ class PluginManager {
   // Mock API call until we implement the backend
   private async _fetchPluginAccess(): Promise<PluginAccessMap> {
     const license = env.server.LICENSE_KEY;
+
     const {
       GOOGLE_CLIENT_ID,
       GOOGLE_CLIENT_SECRET,
