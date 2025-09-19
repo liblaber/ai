@@ -7,7 +7,7 @@ This document helps you deploy **liblab.ai** on an **Ubuntu 22.04 EC2 instance**
 ## 1. EC2 & Initial Setup
 
 - Launch Ubuntu 22.04 (2 vCPU / 4–8 GB RAM, \~60 GB storage).
-- Security group: open ports **22** (SSH), **3000** (initial setup), and later **80**/**443** (HTTP/HTTPS).
+- Security group: open ports **22** (SSH), **3000** (initial setup). If using NGINX, also open **80**/**443** (HTTP/HTTPS).
 - SSH in:
 
   ```bash
@@ -65,7 +65,71 @@ Verify: `http://<EC2_PUBLIC_IP>:3000/`
 
 ---
 
-## 6. Configure NGINX as Reverse Proxy with HTTPS
+## 6. Configure Reverse Proxy
+
+Choose one of the following options:
+
+### Option A: Cloudflared Tunnel (Recommended - Simpler)
+
+Cloudflared creates a secure tunnel without needing to manage SSL certificates or open additional ports.
+
+**a.** Install Cloudflared:
+
+```bash
+wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared-linux-amd64.deb
+```
+
+**b.** Authenticate with Cloudflare:
+
+```bash
+cloudflared tunnel login
+```
+
+**c.** Create a tunnel:
+
+```bash
+cloudflared tunnel create liblab-ai
+```
+
+**d.** Configure the tunnel:
+
+```bash
+cloudflared tunnel route dns liblab-ai your-domain.com
+```
+
+**e.** Create tunnel configuration:
+
+```bash
+sudo mkdir -p /etc/cloudflared
+sudo tee /etc/cloudflared/config.yml <<EOF
+tunnel: liblab-ai
+credentials-file: /home/ubuntu/.cloudflared/$(cloudflared tunnel list --format json | jq -r '.[0].id').json
+
+ingress:
+  - hostname: your-domain.com
+    service: http://localhost:3000
+  - service: http_status:404
+EOF
+```
+
+**f.** Install as systemd service:
+
+```bash
+sudo cloudflared service install
+sudo systemctl enable cloudflared
+sudo systemctl start cloudflared
+```
+
+**g.** Update your `.env` file:
+
+```bash
+echo "BASE_URL=https://your-domain.com" >> .env
+```
+
+Your app will now be accessible at `https://your-domain.com` with automatic HTTPS and no need to manage certificates.
+
+### Option B: NGINX as Reverse Proxy with HTTPS
 
 **a.** Create NGINX site file:
 
@@ -130,16 +194,33 @@ This ensures liblab.ai auto-starts on reboot and restarts on failure.
 
 ## 8. Summary Table
 
-| Step | Action                                              |
-| ---- | --------------------------------------------------- |
-| 1    | Launch EC2 + open ports 22 & 3000                   |
-| 2    | Install Docker, Node, pnpm, NGINX, Certbot          |
-| 3    | Clone & `pnpm run setup` (prompts for provider/key) |
-| 4    | (Optional) Launch Postgres via Docker               |
-| 5    | `pnpm run quickstart` and test at port 3000         |
-| 6    | Configure NGINX & execute Certbot to enable HTTPS   |
-| 7    | Add systemd unit for auto-start on reboot           |
-| 8    | Visit `https://your-domain.com` to access the app   |
+| Step | Action                                                                 |
+| ---- | ---------------------------------------------------------------------- |
+| 1    | Launch EC2 + open ports 22 & 3000                                      |
+| 2    | Install Docker, Node, pnpm, NGINX (if using), Certbot (if using NGINX) |
+| 3    | Clone & `pnpm run setup` (prompts for provider/key)                    |
+| 4    | (Optional) Launch Postgres via Docker                                  |
+| 5    | `pnpm run quickstart` and test at port 3000                            |
+| 6    | Configure reverse proxy (Cloudflared or NGINX + HTTPS)                 |
+| 7    | Add systemd unit for auto-start on reboot                              |
+| 8    | Visit `https://your-domain.com` to access the app                      |
+
+---
+
+## Cloudflared vs NGINX Comparison
+
+| Feature              | Cloudflared Tunnel          | NGINX + Let's Encrypt             |
+| -------------------- | --------------------------- | --------------------------------- |
+| **Setup Complexity** | Simple - no SSL management  | More complex - requires SSL setup |
+| **Security**         | High - no open ports needed | Good - requires port management   |
+| **SSL/TLS**          | Automatic via Cloudflare    | Manual via Certbot                |
+| **Performance**      | Good - Cloudflare CDN       | Excellent - direct connection     |
+| **Cost**             | Free tier available         | Free (Let's Encrypt)              |
+| **Dependencies**     | Cloudflare account          | Domain + DNS management           |
+| **Ports Required**   | Only SSH (22)               | SSH (22), HTTP (80), HTTPS (443)  |
+| **Maintenance**      | Minimal                     | Certificate renewal needed        |
+
+**Recommendation**: Use Cloudflared for simpler setup and better security. Use NGINX if you need direct control over SSL certificates or want to avoid Cloudflare dependency.
 
 ---
 
@@ -149,4 +230,6 @@ This ensures liblab.ai auto-starts on reboot and restarts on failure.
 - Use RDS Postgres and configure `DATABASE_URL`.
 - Optionally deploy via ECS/Fargate for scaling.
 - Set up logging and monitoring (e.g., CloudWatch, metrics dashboards).
-- Restrict direct access to port 3000 via local interface only.
+- **With Cloudflared**: No additional port restrictions needed - tunnel provides security.
+- **With NGINX**: Restrict direct access to port 3000 via local interface only.
+- Consider using Cloudflare Access for additional authentication layers if using Cloudflared.
