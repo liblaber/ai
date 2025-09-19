@@ -1,11 +1,37 @@
 /// <reference types="node" />
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
+
+export const STORAGE_STATE = path.join(__dirname, 'playwright/.auth/user.json');
+
+export const CHROME_USE_PROPERTIES = {
+  ...devices['Desktop Chrome'],
+
+  // Show browser window during test execution (only in non-CI environments)
+  headless: !!process.env.CI,
+
+  // Set larger viewport for more reliable testing
+  viewport: { width: 1280, height: 720 },
+
+  // This reuses the initial user session cookie
+  storageState: STORAGE_STATE,
+
+  // Extra options for stability
+  launchOptions: {
+    args: [
+      '--disable-web-security',
+      '--disable-features=VizDisplayCompositor',
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+    ],
+  },
+};
 
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  testDir: './tests',
+  testDir: './',
 
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
@@ -43,26 +69,19 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
+      name: 'login',
+      testMatch: 'setup/login.ts',
+    },
+    {
+      name: 'initial-data-source',
+      testMatch: 'setup/initial-data-source.ts',
+      dependencies: ['login'],
+      use: CHROME_USE_PROPERTIES,
+    },
+    {
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-
-        // Show browser window during test execution (only in non-CI environments)
-        headless: !!process.env.CI,
-
-        // Set larger viewport for more reliable testing
-        viewport: { width: 1280, height: 720 },
-
-        // Extra options for stability
-        launchOptions: {
-          args: [
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-          ],
-        },
-      },
+      dependencies: ['initial-data-source'],
+      use: CHROME_USE_PROPERTIES,
     },
   ],
 });
