@@ -16,6 +16,7 @@ import { logger } from '~/utils/logger';
 import { useEnvironmentsStore } from '~/lib/stores/environments';
 import type { EnvironmentWithRelations } from '~/lib/services/environmentService';
 import { DeleteConfirmationModal } from '~/components/ui/DeleteConfirmationModal';
+import GoogleSheetsForm, { type GoogleSheetsConfig } from './GoogleSheetsForm';
 
 type Props = {
   dataSource: DataSourceWithEnvironments;
@@ -28,12 +29,6 @@ type Props = {
 };
 
 type SimpleProperty = { type: string; value: string };
-
-// Google Sheets specific state
-interface GoogleSheetsConfig {
-  googleSheetsUrl: string;
-  appsScriptUrl: string;
-}
 
 export default function DataSourceEnvironmentsForm({
   dataSource,
@@ -57,42 +52,12 @@ export default function DataSourceEnvironmentsForm({
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string>('');
   const { environments, setEnvironments } = useEnvironmentsStore();
 
-  // Google Sheets specific state
   const [googleSheetsConfig, setGoogleSheetsConfig] = useState<GoogleSheetsConfig>({
     googleSheetsUrl: '',
     appsScriptUrl: '',
   });
 
   const isGoogleSheets = dataSource.type === DataSourceType.GOOGLE_SHEETS;
-
-  // Helper functions for Google Sheets URLs
-  const parseGoogleSheetsConnectionString = (connectionString: string): GoogleSheetsConfig => {
-    try {
-      const url = new URL(connectionString);
-      const appsScriptParam = url.searchParams.get('appsScript');
-
-      return {
-        googleSheetsUrl: connectionString.split('?')[0], // Remove query params for display
-        appsScriptUrl: appsScriptParam ? decodeURIComponent(appsScriptParam) : '',
-      };
-    } catch {
-      // If not a valid URL, it might be a direct Google Sheets URL
-      return {
-        googleSheetsUrl: connectionString,
-        appsScriptUrl: '',
-      };
-    }
-  };
-
-  const createGoogleSheetsConnectionString = (config: GoogleSheetsConfig): string => {
-    let connectionString = config.googleSheetsUrl;
-
-    if (config.appsScriptUrl) {
-      connectionString += `${connectionString.includes('?') ? '&' : '?'}appsScript=${encodeURIComponent(config.appsScriptUrl)}`;
-    }
-
-    return connectionString;
-  };
 
   const selectedEnv = useMemo(() => {
     if (isCreateMode) {
@@ -150,13 +115,23 @@ export default function DataSourceEnvironmentsForm({
             setProperties(result);
             setEditedProperties(result);
 
-            // Parse Google Sheets URLs if this is a Google Sheets data source
             if (isGoogleSheets) {
               const connectionProperty = result.find((p) => p.type === DataSourcePropertyType.CONNECTION_URL);
 
               if (connectionProperty?.value) {
-                const parsedConfig = parseGoogleSheetsConnectionString(connectionProperty.value);
-                setGoogleSheetsConfig(parsedConfig);
+                try {
+                  const url = new URL(connectionProperty.value);
+                  const appsScriptParam = url.searchParams.get('appsScript');
+                  setGoogleSheetsConfig({
+                    googleSheetsUrl: connectionProperty.value.split('?')[0],
+                    appsScriptUrl: appsScriptParam ? decodeURIComponent(appsScriptParam) : '',
+                  });
+                } catch {
+                  setGoogleSheetsConfig({
+                    googleSheetsUrl: connectionProperty.value,
+                    appsScriptUrl: '',
+                  });
+                }
               }
             }
           } else {
@@ -165,15 +140,25 @@ export default function DataSourceEnvironmentsForm({
             setProperties(fallbackProperties);
             setEditedProperties(fallbackProperties);
 
-            // Parse Google Sheets URLs from fallback properties
             if (isGoogleSheets) {
               const connectionProperty = fallbackProperties.find(
                 (p: any) => p.type === DataSourcePropertyType.CONNECTION_URL,
               );
 
               if (connectionProperty?.value) {
-                const parsedConfig = parseGoogleSheetsConnectionString(connectionProperty.value);
-                setGoogleSheetsConfig(parsedConfig);
+                try {
+                  const url = new URL(connectionProperty.value);
+                  const appsScriptParam = url.searchParams.get('appsScript');
+                  setGoogleSheetsConfig({
+                    googleSheetsUrl: connectionProperty.value.split('?')[0],
+                    appsScriptUrl: appsScriptParam ? decodeURIComponent(appsScriptParam) : '',
+                  });
+                } catch {
+                  setGoogleSheetsConfig({
+                    googleSheetsUrl: connectionProperty.value,
+                    appsScriptUrl: '',
+                  });
+                }
               }
             }
           }
@@ -186,15 +171,25 @@ export default function DataSourceEnvironmentsForm({
         setProperties(fallbackProperties);
         setEditedProperties(fallbackProperties);
 
-        // Parse Google Sheets URLs from fallback properties in error case
         if (isGoogleSheets) {
           const connectionProperty = fallbackProperties.find(
             (p: any) => p.type === DataSourcePropertyType.CONNECTION_URL,
           );
 
           if (connectionProperty?.value) {
-            const parsedConfig = parseGoogleSheetsConnectionString(connectionProperty.value);
-            setGoogleSheetsConfig(parsedConfig);
+            try {
+              const url = new URL(connectionProperty.value);
+              const appsScriptParam = url.searchParams.get('appsScript');
+              setGoogleSheetsConfig({
+                googleSheetsUrl: connectionProperty.value.split('?')[0],
+                appsScriptUrl: appsScriptParam ? decodeURIComponent(appsScriptParam) : '',
+              });
+            } catch {
+              setGoogleSheetsConfig({
+                googleSheetsUrl: connectionProperty.value,
+                appsScriptUrl: '',
+              });
+            }
           }
         }
       } finally {
@@ -255,7 +250,12 @@ export default function DataSourceEnvironmentsForm({
     setGoogleSheetsConfig(config);
 
     if (isGoogleSheets) {
-      const connectionString = createGoogleSheetsConnectionString(config);
+      let connectionString = config.googleSheetsUrl;
+
+      if (config.appsScriptUrl) {
+        connectionString += `${connectionString.includes('?') ? '&' : '?'}appsScript=${encodeURIComponent(config.appsScriptUrl)}`;
+      }
+
       handlePropertyChange(DataSourcePropertyType.CONNECTION_URL, connectionString);
     }
   };
@@ -553,68 +553,12 @@ export default function DataSourceEnvironmentsForm({
             </div>
           )}
           {isGoogleSheets ? (
-            // Google Sheets specific inputs
-            <>
-              <div>
-                <label className="mb-3 block text-sm font-medium text-secondary">Google Sheets URL</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={googleSheetsConfig.googleSheetsUrl}
-                    onChange={(e) =>
-                      handleGoogleSheetsConfigChange({
-                        ...googleSheetsConfig,
-                        googleSheetsUrl: e.target.value,
-                      })
-                    }
-                    disabled={isSaving}
-                    className={classNames(
-                      'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                      'text-primary placeholder-tertiary text-base',
-                      'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
-                      'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
-                      'transition-all duration-200',
-                      'disabled:opacity-50 disabled:cursor-not-allowed',
-                    )}
-                    placeholder="https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit"
-                  />
-                </div>
-                <label className="mb-3 block !text-[11px] text-secondary mt-1">
-                  For read operations. e.g. https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit
-                </label>
-              </div>
-
-              <div>
-                <label className="mb-3 block text-sm font-medium text-secondary">
-                  Apps Script Web App URL (Optional)
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={googleSheetsConfig.appsScriptUrl}
-                    onChange={(e) =>
-                      handleGoogleSheetsConfigChange({
-                        ...googleSheetsConfig,
-                        appsScriptUrl: e.target.value,
-                      })
-                    }
-                    disabled={isSaving}
-                    className={classNames(
-                      'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                      'text-primary placeholder-tertiary text-base',
-                      'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
-                      'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
-                      'transition-all duration-200',
-                      'disabled:opacity-50 disabled:cursor-not-allowed',
-                    )}
-                    placeholder="https://script.google.com/macros/s/SCRIPT_ID/exec"
-                  />
-                </div>
-                <label className="mb-3 block !text-[11px] text-secondary mt-1">
-                  For write operations. e.g. https://script.google.com/macros/s/SCRIPT_ID/exec
-                </label>
-              </div>
-            </>
+            <GoogleSheetsForm
+              config={googleSheetsConfig}
+              onChange={handleGoogleSheetsConfigChange}
+              onPropertyChange={handlePropertyChange}
+              disabled={isSaving}
+            />
           ) : (
             // Regular properties for other data sources
             editedProperties.map((prop) => (
