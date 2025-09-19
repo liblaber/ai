@@ -86,13 +86,16 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
 
   useEffect(() => {
     const loadUserData = async () => {
-      const isProduction = process.env.NODE_ENV === 'production';
+      // Only attempt anonymous login for free licenses or when Google OAuth is not configured
+      if (!rootData.user && !session?.user && anonymousProvider && !isLoggingIn.current) {
+        // Check if we're in a premium license with Google OAuth - if so, don't auto-login
+        const isPremiumWithGoogle = !anonymousProvider; // If anonymous provider is not available, we're premium with Google
 
-      // Only attempt anonymous login for free licenses or when Google OAuth is not configured in production
-      if (!rootData.user && !session?.user && anonymousProvider && !isLoggingIn.current && isProduction) {
-        await loginAnonymous();
-        // this will trigger a re-render, and will re-fetch the data in layout.tsx
-        router.refresh();
+        if (!isPremiumWithGoogle) {
+          await loginAnonymous();
+          // this will trigger a re-render, and will re-fetch the data in layout.tsx
+          router.refresh();
+        }
       }
 
       if (!rootData.user && !session?.user && anonymousProvider && isLoggingIn.current) {
