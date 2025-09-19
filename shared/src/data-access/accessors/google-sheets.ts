@@ -248,7 +248,7 @@ export class GoogleSheetsAccessor extends BaseDatabaseAccessor {
       {
         type: DataSourcePropertyType.CONNECTION_URL,
         label: 'Google Sheets URL or Spreadsheet ID',
-        format: 'https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit or just SPREADSHEET_ID',
+        format: 'https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit',
       },
       // Optional properties for Apps Script Web App (for write operations)
       {
@@ -1529,9 +1529,10 @@ See documentation for setup instructions.
 
     // If all endpoints failed, provide helpful error message
     const errorMessage = `Failed to read sheet data from public Google Sheet. Please ensure:
-1. Sheet is set to "Anyone with the link can view"
+1. Sheet is set to "Anyone with the link can view" or "Anyone with the link can edit"
 2. Sheet ID is correct: ${spreadsheetId}
 3. Sheet name exists: ${sheetName}
+4. The URL is public and accessible
 Last error: ${lastError?.message || 'Unknown error'}`;
 
     throw new GoogleWorkspaceError(errorMessage);

@@ -325,7 +325,7 @@ export default function AddDeploymentMethodForm({
             <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
               <div className="flex items-center gap-2">
                 <XCircle className="w-5 h-5 text-red-500" />
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                <p className="text-sm text-red-600 dark:text-red-400 overflow-auto w-[94%]">{error}</p>
               </div>
             </div>
           )}
