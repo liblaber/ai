@@ -23,7 +23,10 @@ test.describe('Add HubSpot Data Source Flow', () => {
 
     const tokenInput = getHubSpotTokenInput(page);
     await tokenInput.waitFor({ state: 'visible', timeout: 10000 });
-    await tokenInput.fill('pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx');
+
+    // Use real token from environment variable if available, otherwise use test token
+    const hubspotToken = process.env.HUBSPOT_ACCESS_TOKEN || 'pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+    await tokenInput.fill(hubspotToken);
 
     const saveButton = getCreateButton(page);
     await saveButton.waitFor({ state: 'visible', timeout: 10000 });
@@ -77,7 +80,8 @@ test.describe('Add HubSpot Data Source Flow', () => {
     await tokenInput.fill('invalid-token-format');
 
     // Test 4: Test valid token format
-    await tokenInput.fill('pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx');
+    const hubspotToken = process.env.HUBSPOT_ACCESS_TOKEN || 'pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+    await tokenInput.fill(hubspotToken);
 
     // Assert that Create button is now enabled with valid token format
     await expect(saveButton, 'Create button should be enabled with valid token format').toBeEnabled();
@@ -124,9 +128,10 @@ test.describe('Add HubSpot Data Source Flow', () => {
     const saveButton = getCreateButton(page);
 
     // Test different token scenarios (note: client-side validation may vary)
+    const hubspotToken = process.env.HUBSPOT_ACCESS_TOKEN || 'pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
     const tokenScenarios = [
       { name: 'Empty token', token: '', shouldEnable: false },
-      { name: 'Valid format token', token: 'pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', shouldEnable: true },
+      { name: 'Valid format token', token: hubspotToken, shouldEnable: true },
     ];
 
     for (const scenario of tokenScenarios) {
@@ -146,7 +151,7 @@ test.describe('Add HubSpot Data Source Flow', () => {
     }
 
     // Test token validation with API call (if test connection button exists)
-    await tokenInput.fill('pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx');
+    await tokenInput.fill(hubspotToken);
 
     const testConnButton = getTestConnectionButton(page);
     const testConnButtonExists = await testConnButton.isVisible({ timeout: 2000 }).catch(() => false);
@@ -178,6 +183,6 @@ test.describe('Add HubSpot Data Source Flow', () => {
     const currentToken = await tokenInput.inputValue();
 
     expect(currentName).toBe('test-hubspot-error-handling');
-    expect(currentToken).toBe('pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx');
+    expect(currentToken).toBe(hubspotToken);
   });
 });

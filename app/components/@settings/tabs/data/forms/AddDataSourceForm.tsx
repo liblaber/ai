@@ -378,6 +378,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   value={dbName}
                   onChange={(e) => setDbName(e.target.value)}
                   disabled={isSubmitting}
+                  data-testid="data-source-name-input"
                   className={classNames(
                     'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
                     'text-primary placeholder-tertiary text-base',
@@ -400,6 +401,11 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                       value={propertyValues[property.type] || ''}
                       onChange={(e) => handlePropertyChange(property.type, e.target.value)}
                       disabled={isSubmitting}
+                      data-testid={
+                        property.type === 'ACCESS_TOKEN'
+                          ? 'hubspot-token-input'
+                          : `${property.type.toLowerCase()}-input`
+                      }
                       className={classNames(
                         'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
                         'text-primary placeholder-tertiary text-base',
@@ -470,6 +476,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                       await handleTestConnection();
                     }}
                     disabled={isFormDisabled}
+                    data-testid="test-connection-button"
                     className={classNames(
                       'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                       'bg-depth-1 bg-depth-1/50 ',
@@ -496,6 +503,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                   type="button"
                   onClick={handleSubmit}
                   disabled={isFormDisabled}
+                  data-testid="create-datasource-button"
                   className={classNames(
                     'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                     'bg-accent-500 hover:bg-accent-600',

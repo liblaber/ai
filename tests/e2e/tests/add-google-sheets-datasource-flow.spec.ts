@@ -44,15 +44,7 @@ test.describe('Add Google Sheets Data Source Flow', () => {
       await page.waitForLoadState('networkidle');
     }
 
-    // Use the shared selector function with extended fallbacks for Google Sheets
-    const saveButton = getCreateButton(page)
-      .or(page.locator('button:has-text("Create")'))
-      .or(page.locator('button:has-text("Save")'))
-      .or(page.locator('button:has-text("Connect")'))
-      .or(page.locator('[data-testid*="create"]'))
-      .or(page.locator('[data-testid*="save"]'))
-      .or(page.locator('button[type="submit"]'))
-      .or(page.locator('input[type="submit"]'));
+    const saveButton = getCreateButton(page);
 
     // Wait for the button with more tolerance for OAuth flows
     const saveButtonExists = await saveButton.isVisible({ timeout: 15000 }).catch(() => false);
@@ -95,15 +87,7 @@ test.describe('Add Google Sheets Data Source Flow', () => {
   test('Validate Google Sheets OAuth flow and required fields', async ({ page }: { page: Page }) => {
     await navigateToDataSourceForm(page, 'google-sheets');
 
-    // Use the shared selector function with extended fallbacks for Google Sheets
-    const saveButton = getCreateButton(page)
-      .or(page.locator('button:has-text("Create")'))
-      .or(page.locator('button:has-text("Save")'))
-      .or(page.locator('button:has-text("Connect")'))
-      .or(page.locator('[data-testid*="create"]'))
-      .or(page.locator('[data-testid*="save"]'))
-      .or(page.locator('button[type="submit"]'))
-      .or(page.locator('input[type="submit"]'));
+    const saveButton = getCreateButton(page);
 
     // Wait for the button with more tolerance for OAuth flows
     const saveButtonExists = await saveButton.isVisible({ timeout: 15000 }).catch(() => false);
@@ -233,10 +217,7 @@ test.describe('Add Google Sheets Data Source Flow', () => {
         await errorMessage.isVisible({ timeout: 3000 }).catch(() => false);
 
         // Verify that Create button remains disabled after OAuth error
-        const saveButton = getCreateButton(page)
-          .or(page.locator('button:has-text("Create")'))
-          .or(page.locator('button:has-text("Save")'))
-          .or(page.locator('[data-testid*="create"]'));
+        const saveButton = getCreateButton(page);
 
         const buttonStillDisabled = await saveButton.isDisabled({ timeout: 3000 }).catch(() => false);
 
