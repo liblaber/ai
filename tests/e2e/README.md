@@ -20,7 +20,14 @@ npx playwright install
 
 ### Prerequisites
 
-Make sure the main application is running. You can start it from the parent directory:
+1. **Create a `.env` file** in the `tests/e2e/` directory with a valid PostgreSQL connection string:
+
+   ```bash
+   # tests/e2e/.env
+   TEST_POSTGRES_URL=postgresql://username:password@localhost:5432/testdb
+   ```
+
+2. **Make sure the main application is running**. You can start it from the parent directory:
 
 ```bash
 # For local development
@@ -96,14 +103,46 @@ The tests are configured in `playwright.config.ts`:
 
 - `BASE_URL`: The base URL of your application (defaults to `http://localhost:3000`)
 - `CI`: Set to `true` in CI environments to enable retries and headless mode
+- `TEST_POSTGRES_URL`: **REQUIRED** - PostgreSQL connection string for database tests (required for postgres-datasource-app-creation.spec.ts)
+
+### Setting Up Environment Variables
+
+**⚠️ IMPORTANT: You must create a `.env` file in the `tests/e2e/` directory with a valid PostgreSQL connection string, otherwise the tests will fail.**
+
+You can set environment variables in several ways:
+
+1. **Using a .env file** (recommended for local development):
+
+   Create a `.env` file in the e2e directory:
+
+   ```bash
+   # tests/e2e/.env
+   TEST_POSTGRES_URL=postgresql://username:password@localhost:5432/testdb
+   BASE_URL=http://localhost:3000
+   ```
+
+2. **Using environment variables directly**:
+
+   ```bash
+   TEST_POSTGRES_URL=postgresql://username:password@localhost:5432/testdb npm test
+   ```
+
+3. **Using .env.local** (if you want to keep it out of version control):
+   ```bash
+   # tests/e2e/.env.local
+   TEST_POSTGRES_URL=postgresql://username:password@localhost:5432/testdb
+   ```
+
+The playwright config automatically loads environment variables from `.env` files.
 
 ## Common Issues
 
-1. **Browser not visible**: Make sure `headless: false` is set in `playwright.config.ts`
-2. **Tests failing**: Check that the main application is running on the correct port (`http://localhost:3000`)
-3. **Application not running**: Start your app with `npm run dev`, `pnpm run quickstart`, or `docker compose up`
-4. **Selectors not working**: There may have been some updates to the UI components
-5. **Slow tests**: Increase timeouts in the config if needed
+1. **Missing environment variables**: Make sure you have a `.env` file in `tests/e2e/` with `TEST_POSTGRES_URL` set
+2. **Browser not visible**: Make sure `headless: false` is set in `playwright.config.ts`
+3. **Tests failing**: Check that the main application is running on the correct port (`http://localhost:3000`)
+4. **Application not running**: Start your app with `npm run dev`, `pnpm run quickstart`, or `docker compose up`
+5. **Selectors not working**: There may have been some updates to the UI components
+6. **Slow tests**: Increase timeouts in the config if needed
 
 ## Adding New Tests
 
