@@ -1,11 +1,13 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { ChevronDown, Check, Search, Filter, X, Plus, ChevronRight, Mail, Trash2, Clock } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Check, ChevronDown, ChevronRight, Clock, Mail, Plus, Search, Trash2 } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { toast } from 'sonner';
 import { useUserStore } from '~/lib/stores/user';
 import UsersDetails from './UsersDetails';
 import { classNames } from '~/utils/classNames';
+import { FilterButton } from '~/components/@settings/shared/components/FilterButton';
+import ActiveFilters from '~/components/@settings/shared/components/ActiveFilters';
 
 interface Role {
   id: string;
@@ -107,7 +109,6 @@ export default function UsersTab() {
   const [isLoading, setIsLoading] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
   const [showUsersWithoutRoles, setShowUsersWithoutRoles] = useState(false);
@@ -137,7 +138,7 @@ export default function UsersTab() {
 
     const fetchRoles = async () => {
       try {
-        const response = await fetch('/api/roles');
+        const response = await fetch('/api/roles?scope=GENERAL');
         const data = (await response.json()) as { success: boolean; roles?: Role[] };
 
         if (data.success && data.roles) {
@@ -221,8 +222,6 @@ export default function UsersTab() {
     if (!activeFilters.includes(filter)) {
       setActiveFilters([...activeFilters, filter]);
     }
-
-    setShowFilterDropdown(false);
   };
 
   const removeFilter = (filter: string) => {
@@ -361,54 +360,15 @@ export default function UsersTab() {
               />
             </div>
 
-            <DropdownMenu.Root open={showFilterDropdown} onOpenChange={setShowFilterDropdown}>
-              <DropdownMenu.Trigger asChild>
-                <button className="px-3 py-2 rounded-lg bg-gray-600/70 text-white hover:bg-gray-600 transition-colors flex items-center gap-2">
-                  <Filter className="w-4 h-4" />
-                  Filter
-                </button>
-              </DropdownMenu.Trigger>
-
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  className="min-w-[140px] bg-[#2A2A2A] rounded-lg p-1 shadow-xl z-[9999]"
-                  sideOffset={5}
-                  align="end"
-                >
-                  {roles.map((role) => (
-                    <DropdownMenu.Item
-                      key={role.id}
-                      className="text-sm text-white px-3 py-2 rounded hover:bg-gray-600/50 cursor-pointer outline-none"
-                      onSelect={() => addFilter(role.name)}
-                    >
-                      {role.name}
-                    </DropdownMenu.Item>
-                  ))}
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
+            <FilterButton
+              options={roles}
+              getOptionLabel={(option) => option.name}
+              onSelect={(option) => addFilter(option.name)}
+            />
           </div>
         </div>
 
-        {/* Active Filters */}
-        {activeFilters.length > 0 && (
-          <div className="px-2 flex items-center gap-2">
-            {activeFilters.map((filter) => (
-              <span
-                key={filter}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-600/70 text-white text-sm"
-              >
-                {filter}
-                <button onClick={() => removeFilter(filter)} className="ml-1 hover:bg-gray-500/50 rounded-full p-0.5">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-            <button onClick={clearAllFilters} className="text-sm text-gray-400 hover:text-white transition-colors">
-              Clear Filters
-            </button>
-          </div>
-        )}
+        <ActiveFilters filters={activeFilters} onRemove={removeFilter} onClearAll={clearAllFilters} />
 
         <div className="px-2">
           <div className="flex justify-between text-sm text-gray-400 px-4 py-2 border-b border-gray-700">

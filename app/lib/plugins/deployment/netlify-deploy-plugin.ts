@@ -240,7 +240,7 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
 
       await this.runCommand(
         'netlify',
-        ['deploy', '--build', '--branch', deploymentAlias],
+        ['deploy', '--build', '--prod'],
         tempDir,
         { NETLIFY_AUTH_TOKEN: token },
         3 * 60 * 1000, // 3 minutes timeout
@@ -264,7 +264,11 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
       }
 
       const deploys = (await deployResponse.json()) as any[];
-      const latestDeploy = deploys[0];
+      const latestDeploy = deploys?.[0];
+
+      if (!latestDeploy) {
+        throw new Error('No deployment information found after deployment');
+      }
 
       // After successful deployment, save to database and track telemetry
       if (siteInfo) {
@@ -282,7 +286,7 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
           websiteId,
           siteInfo.id,
           siteInfo.name,
-          latestDeploy.links.permalink,
+          siteInfo.url,
           chatId,
           userId,
         );
@@ -291,7 +295,7 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
           deploy: {
             id: latestDeploy.id,
             state: latestDeploy.state,
-            url: latestDeploy.links.permalink,
+            url: siteInfo.url,
           },
           site: siteInfo,
           website,
@@ -299,6 +303,23 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
       }
 
       throw new Error('Site info not available after deployment');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Error during Netlify deployment', JSON.stringify({ chatId, error: errorMessage }));
+
+      try {
+        await this.trackDeploymentErrorTelemetry(errorMessage, userId, 'netlify', chatId);
+      } catch (telemetryError) {
+        logger.error(
+          'Failed to track deployment error telemetry',
+          JSON.stringify({
+            chatId,
+            telemetryError: telemetryError instanceof Error ? telemetryError.message : 'Unknown error',
+          }),
+        );
+      }
+
+      throw new Error(`Netlify deployment failed: ${errorMessage}`);
     } finally {
       // Clean up temporary directory
       await this.cleanupTempDirectory(tempDir, chatId);

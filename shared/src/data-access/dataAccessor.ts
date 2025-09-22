@@ -44,4 +44,18 @@ export class DataAccessor {
         throw new Error(`No accessor found for type: ${type}`);
     }
   }
+
+  static async getDataSourceLabel(type: DataSourceType): Promise<string> {
+    if (this._cachedTypeLabels.has(type)) {
+      return this._cachedTypeLabels.get(type)!;
+    }
+
+    const accessor = await this.getAccessor(type);
+
+    this._cachedTypeLabels.set(type, accessor.label);
+
+    return accessor.label;
+  }
+
+  static _cachedTypeLabels: Map<DataSourceType, string> = new Map<DataSourceType, string>();
 }

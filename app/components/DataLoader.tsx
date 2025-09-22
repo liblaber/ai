@@ -17,12 +17,16 @@ import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlug
 import { type DataSourceDescriptor } from '@liblab/data-access/utils/types';
 import type { EnvironmentDeploymentMethod } from '~/lib/stores/deploymentMethods';
 import { useDeploymentMethodsStore } from '~/lib/stores/deploymentMethods';
+import { EnvironmentVariableType } from '@prisma/client';
+import type { DeploymentProviderInfo } from '~/types/deployment-methods';
+import { logger } from '~/utils/logger';
 
 export interface RootData {
   user: UserProfile | null;
   environmentDataSources: EnvironmentDataSource[];
   environmentVariables: EnvironmentVariableWithDetails[];
   environmentDeploymentMethods: EnvironmentDeploymentMethod[];
+  deploymentProviders: DeploymentProviderInfo[];
   pluginAccess: PluginAccessMap;
   dataSourceTypes: DataSourceDescriptor[];
 }
@@ -39,7 +43,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
   const { setDataSourceTypes } = useDataSourceTypesStore();
   const { setUser } = useUserStore();
   const { setEnvironmentVariables } = useEnvironmentVariablesStore();
-  const { setEnvironmentDeploymentMethods } = useDeploymentMethodsStore();
+  const { setEnvironmentDeploymentMethods, setProviders } = useDeploymentMethodsStore();
   const { anonymousProvider } = useAuthProvidersPlugin();
   const router = useRouter();
   const isLoggingIn = useRef(false);
@@ -61,15 +65,23 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
     if (rootData.environmentDeploymentMethods) {
       setEnvironmentDeploymentMethods(rootData.environmentDeploymentMethods);
     }
+
+    if (rootData.deploymentProviders) {
+      setProviders(rootData.deploymentProviders);
+    }
   }, [
-    rootData.pluginAccess,
-    rootData.dataSourceTypes,
-    rootData.environmentVariables,
-    rootData.environmentDeploymentMethods,
+    JSON.stringify({
+      pluginAccess: rootData.pluginAccess,
+      dataSourceTypes: rootData.dataSourceTypes,
+      environmentVariables: rootData.environmentVariables,
+      environmentDeploymentMethods: rootData.environmentDeploymentMethods,
+      deploymentProviders: rootData.deploymentProviders,
+    }),
     setPluginAccess,
     setDataSourceTypes,
     setEnvironmentVariables,
     setEnvironmentDeploymentMethods,
+    setProviders,
   ]);
 
   useEffect(() => {
@@ -87,12 +99,12 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       }
 
       if (!rootData.user && !session?.user && anonymousProvider && isLoggingIn.current) {
-        console.debug('⏳ Anonymous login in progress, waiting...');
+        logger.debug('⏳ Anonymous login in progress, waiting...');
         return;
       }
 
       if (!rootData.user && !session?.user) {
-        console.debug('❌ No session available');
+        logger.debug('❌ No session available');
         return;
       }
 
@@ -100,7 +112,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       let currentUser = rootData.user;
 
       if (!currentUser && session?.user) {
-        console.debug('🔄 Fetching user data...');
+        logger.debug('🔄 Fetching user data...');
         currentUser = await fetchUserData();
         setUser(currentUser);
       } else if (currentUser) {
@@ -119,12 +131,12 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
             hasPermissions = data.hasPermissions;
           }
         } catch (error) {
-          console.error('❌ Error checking permissions:', error);
+          logger.error('❌ Error checking permissions:', error);
           // hasPermissions remains false, will trigger redirect
         }
 
         if (!hasPermissions) {
-          console.debug('❌ User has no permissions or check failed, redirecting to access-denied');
+          logger.debug('❌ User has no permissions or check failed, redirecting to access-denied');
           router.push('/access-denied');
 
           return;
@@ -135,7 +147,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       let currentEnvironmentDataSources = rootData.environmentDataSources || [];
 
       if ((!rootData.environmentDataSources || rootData.environmentDataSources.length === 0) && session?.user) {
-        console.debug('🔄 Fetching data sources...');
+        logger.debug('🔄 Fetching data sources...');
         currentEnvironmentDataSources = await fetchEnvironmentDataSources();
         setEnvironmentDataSources(currentEnvironmentDataSources);
       } else if (rootData.environmentDataSources) {
@@ -146,7 +158,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       let currentEnvironmentVariables = rootData.environmentVariables || [];
 
       if ((!rootData.environmentVariables || rootData.environmentVariables.length === 0) && session?.user) {
-        console.debug('🔄 Fetching environment variables...');
+        logger.debug('🔄 Fetching environment variables...');
         currentEnvironmentVariables = await fetchEnvironmentVariables();
         setEnvironmentVariables(currentEnvironmentVariables);
       } else if (rootData.environmentVariables) {
@@ -160,23 +172,31 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         (!rootData.environmentDeploymentMethods || rootData.environmentDeploymentMethods.length === 0) &&
         session?.user
       ) {
-        console.debug('🔄 Fetching deployment methods...');
+        logger.debug('🔄 Fetching deployment methods...');
         currentEnvironmentDeploymentMethods = await fetchEnvironmentDeploymentMethods();
         setEnvironmentDeploymentMethods(currentEnvironmentDeploymentMethods);
       } else if (rootData.environmentDeploymentMethods) {
         setEnvironmentDeploymentMethods(currentEnvironmentDeploymentMethods);
       }
 
+      // Handle deployment providers
+      let currentDeploymentProviders = rootData.deploymentProviders || [];
+
+      if ((!rootData.deploymentProviders || rootData.deploymentProviders.length === 0) && session?.user) {
+        logger.debug('🔄 Fetching deployment providers...');
+        currentDeploymentProviders = await fetchDeploymentProviders();
+        setProviders(currentDeploymentProviders);
+      } else if (rootData.deploymentProviders) {
+        setProviders(currentDeploymentProviders);
+      }
+
       // Handle user onboarding flow with telemetry and data sources
       if (currentUser) {
         // Redirect to telemetry consent screen if user hasn't answered yet
         if (currentUser.telemetryEnabled === null) {
-          const currentPath = window.location.pathname;
+          router.push(TELEMETRY_CONSENT_ROUTE);
 
-          if (currentPath !== TELEMETRY_CONSENT_ROUTE) {
-            router.push(TELEMETRY_CONSENT_ROUTE);
-            return;
-          }
+          return;
         }
 
         // Initialize telemetry if enabled
@@ -186,20 +206,31 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
 
         // Redirect to data source connection if no data sources exist
         if (currentEnvironmentDataSources.length === 0) {
-          const currentPath = window.location.pathname;
+          router.push(DATA_SOURCE_CONNECTION_ROUTE);
 
-          if (currentPath !== DATA_SOURCE_CONNECTION_ROUTE) {
-            router.push(DATA_SOURCE_CONNECTION_ROUTE);
-            return;
-          }
+          return;
         }
       }
 
-      console.debug('✅ Data loading and redirects completed');
+      logger.debug('✅ Data loading and redirects completed');
     };
 
     loadUserData();
-  }, [session?.user, anonymousProvider, rootData, router]);
+  }, [
+    JSON.stringify({
+      sessionUser: session?.user,
+      provider: anonymousProvider?.provider,
+      rootData: {
+        user: rootData.user,
+        environmentDataSources: rootData.environmentDataSources,
+        dataSourceTypes: rootData.dataSourceTypes,
+        environmentVariables: rootData.environmentVariables,
+        environmentDeploymentMethods: rootData.environmentDeploymentMethods,
+        deploymentProviders: rootData.deploymentProviders,
+      },
+    }),
+    router,
+  ]);
 
   const fetchUserData = async (): Promise<UserProfile> => {
     try {
@@ -214,11 +245,11 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         user: UserProfile;
       };
 
-      console.debug('✅ User data fetched successfully');
+      logger.debug('✅ User data fetched successfully');
 
       return userData.user;
     } catch (error) {
-      console.error('❌ Failed to fetch user data:', error);
+      logger.error('❌ Failed to fetch user data:', error);
       throw Error('Failed to fetch user data');
     }
   };
@@ -236,11 +267,11 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         environmentDataSources: EnvironmentDataSource[];
       };
 
-      console.log('✅ Data sources fetched successfully');
+      logger.info('✅ Data sources fetched successfully');
 
       return environmentDataSourcesData.environmentDataSources;
     } catch (error) {
-      console.error('❌ Failed to fetch data sources:', error);
+      logger.error('❌ Failed to fetch data sources:', error);
       throw new Error('Failed to fetch data sources');
     }
   };
@@ -267,7 +298,7 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       // Fetch environment variables for the first environment (could be enhanced to fetch for all)
       const firstEnvironmentId = environmentsData.environments[0].id;
       const environmentVariablesResponse = await fetch(
-        `/api/environment-variables?environmentId=${firstEnvironmentId}`,
+        `/api/environment-variables?environmentId=${firstEnvironmentId}&type=${EnvironmentVariableType.GLOBAL}`,
       );
 
       if (!environmentVariablesResponse.ok) {
@@ -279,11 +310,11 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         environmentVariables: EnvironmentVariableWithDetails[];
       };
 
-      console.log('✅ Environment variables fetched successfully');
+      logger.info('✅ Environment variables fetched successfully');
 
       return environmentVariablesData.environmentVariables || [];
     } catch (error) {
-      console.error('❌ Failed to fetch environment variables:', error);
+      logger.error('❌ Failed to fetch environment variables:', error);
       return [];
     }
   };
@@ -301,25 +332,44 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         environmentDeploymentMethods: EnvironmentDeploymentMethod[];
       };
 
-      console.log('✅ Deployment methods fetched successfully');
+      logger.info('✅ Deployment methods fetched successfully');
 
       return data.environmentDeploymentMethods || [];
     } catch (error) {
-      console.error('❌ Failed to fetch deployment methods:', error);
+      logger.error('❌ Failed to fetch deployment methods:', error);
+      return [];
+    }
+  };
+
+  const fetchDeploymentProviders = async (): Promise<DeploymentProviderInfo[]> => {
+    try {
+      const response = await fetch('/api/deployment-methods/providers');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch deployment providers');
+      }
+
+      const data = (await response.json()) as DeploymentProviderInfo[];
+
+      logger.info('✅ Deployment providers fetched successfully');
+
+      return data || [];
+    } catch (error) {
+      logger.error('❌ Failed to fetch deployment providers:', error);
       return [];
     }
   };
 
   const loginAnonymous = async () => {
     if (isLoggingIn.current) {
-      console.debug('⏳ Login already in progress, skipping...');
+      logger.debug('⏳ Login already in progress, skipping...');
       return;
     }
 
     isLoggingIn.current = true;
 
     try {
-      console.debug('🔐 Attempting anonymous login...');
+      logger.debug('🔐 Attempting anonymous login...');
 
       const { error: signInError } = await signIn.email({
         email: 'anonymous@anonymous.com',
@@ -328,13 +378,13 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       });
 
       if (signInError) {
-        console.error('❌ Failed to sign in anonymous user:', signInError);
+        logger.error('❌ Failed to sign in anonymous user:', signInError);
         return;
       }
 
-      console.debug('✅ Anonymous login successful');
+      logger.debug('✅ Anonymous login successful');
     } catch (error: any) {
-      console.error(`❌ Anonymous login failed: ${error?.message}`);
+      logger.error(`❌ Anonymous login failed: ${error?.message}`);
     } finally {
       isLoggingIn.current = false;
     }

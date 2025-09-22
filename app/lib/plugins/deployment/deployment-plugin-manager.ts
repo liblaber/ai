@@ -9,8 +9,6 @@ export class DeploymentPluginManager {
   private _plugins: Map<string, DeploymentPlugin> = new Map();
   private _initialized = false;
 
-  private constructor() {}
-
   static getInstance(): DeploymentPluginManager {
     if (!DeploymentPluginManager._instance) {
       DeploymentPluginManager._instance = new DeploymentPluginManager();

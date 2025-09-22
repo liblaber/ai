@@ -1,10 +1,8 @@
-import { prisma } from '~/lib/prisma';
+import { prisma, type PrismaTransaction } from '~/lib/prisma';
 import type { EnvironmentVariable, EnvironmentVariableType } from '@prisma/client';
 import { decryptData, encryptData } from '@liblab/encryption/encryption';
 import { env } from '~/env';
 import { logger } from '~/utils/logger';
-
-type PrismaTransaction = Omit<typeof prisma, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 
 export async function getEnvironmentVariable(id: string): Promise<EnvironmentVariable | null> {
   const envVar = await prisma.environmentVariable.findUnique({
@@ -18,13 +16,16 @@ export async function getEnvironmentVariable(id: string): Promise<EnvironmentVar
   return envVar ? decryptEnvironmentVariable(envVar) : null;
 }
 
-export async function getEnvironmentVariables(): Promise<EnvironmentVariable[]> {
+export async function getEnvironmentVariables(
+  environmentVariableType?: EnvironmentVariableType,
+): Promise<EnvironmentVariable[]> {
   const envVars = await prisma.environmentVariable.findMany({
     include: {
       environment: true,
       createdBy: true,
     },
     orderBy: { key: 'asc' },
+    where: environmentVariableType ? { type: environmentVariableType } : undefined,
   });
 
   return envVars.map(decryptEnvironmentVariable);
@@ -85,34 +86,46 @@ export async function createEnvironmentVariable(
   dataSourceId?: string,
   tx?: PrismaTransaction,
 ): Promise<EnvironmentVariable> {
-  const encryptedValue = encryptValue(value);
-  const client = tx || prisma;
+  try {
+    const encryptedValue = encryptValue(value);
+    const client = tx || prisma;
 
-  const envVar = await client.environmentVariable.create({
-    data: {
-      key,
-      value: encryptedValue,
-      description: description || null,
-      type,
-      environmentId,
-      createdById,
-    },
-  });
+    const envVar = await client.environmentVariable.create({
+      data: {
+        key,
+        value: encryptedValue,
+        description: description || null,
+        type,
+        environmentId,
+        createdById,
+      },
+    });
 
-  return decryptEnvironmentVariable(envVar);
+    return decryptEnvironmentVariable(envVar);
+  } catch (error: any) {
+    if (error.code === 'P2002' && error.meta?.target?.includes('key_environmentId')) {
+      throw new Error(`Environment variable with key '${key}' already exists in this environment.`);
+    }
+
+    throw error;
+  }
 }
 
 export async function updateEnvironmentVariable(
-  id: string,
-  key: string,
-  value: string,
-  type: EnvironmentVariableType,
-  environmentId: string,
-  description?: string,
+  data: {
+    id: string;
+    key: string;
+    value: string;
+    type: EnvironmentVariableType;
+    environmentId: string;
+    description?: string | null;
+  },
+  tx?: PrismaTransaction,
 ): Promise<EnvironmentVariable> {
+  const { id, key, value, type, environmentId, description } = data;
   const valueToStore = encryptValue(value);
 
-  const envVar = await prisma.environmentVariable.update({
+  const envVar = await (tx || prisma).environmentVariable.update({
     where: { id },
     data: {
       key,

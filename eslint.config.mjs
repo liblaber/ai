@@ -45,6 +45,7 @@ export default [
     files: ['**/*.d.ts'],
     rules: {
       '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/triple-slash-reference': 'off',
     },
   },
   {
@@ -68,6 +69,13 @@ export default [
   // Override for shared directory to allow relative imports
   {
     files: ['shared/**/*'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+  // Override for test files to allow relative imports
+  {
+    files: ['tests/**/*'],
     rules: {
       'no-restricted-imports': 'off',
     },

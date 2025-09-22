@@ -47,6 +47,7 @@ const TabSection = ({ title, tabs, activeTab, onTabClick }: TabSectionProps) => 
           <motion.div
             key={tabId}
             layout
+            data-testid={`settings-tab-${tabId}`}
             className={classNames(
               'flex items-center gap-3 p-3 h-9 rounded-[15px] mb-2 cursor-pointer',
               'transition-all duration-200',
@@ -242,7 +243,7 @@ export const ControlPanel = () => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="m-6"
+                    className="px-8 pt-2 pb-6"
                   >
                     {activeTab ? (
                       getTabComponent(activeTab)

@@ -6,7 +6,7 @@ Securely connect your database, build an app, and deploy in seconds.
 
 **🚀 [Jump to Quick Start](#-quick-start)** - Get up and running in minutes!
 
-![Alt text](https://github.com/liblaber/ai/raw/main/assets/videos/liblab-ai-preview.gif)
+![Alt text](https://github.com/liblaber/ai/raw/main/assets/videos/liblab-ai-demo.gif)
 
 ## **✨ Key features**
 
@@ -167,7 +167,11 @@ git clone https://github.com/liblaber/ai.git
 cd ai
 ```
 
-**Run the setup**
+**Run the quickstart**
+
+Make sure your Docker Desktop is running.
+
+Run the following command to set up and start the app:
 
 ```bash
 pnpm run quickstart
@@ -398,8 +402,11 @@ pnpm run dev
 - [**Contributing Guidelines**](https://github.com/liblaber/ai/blob/main/CONTRIBUTING.md) - How to contribute to the project
 - [Security & Privacy](docs/security-and-privacy.md)
 - [Configuration](docs/configuration.md)
+- [Deploy on EC2 with HTTPS & Auto-Restart](docs/ec2.md)
 - [Getting Started](docs/getting-started.md)
 - [Features](docs/features.md)
+- [Environments](docs/environments.md)
+- [Team Roles and Permissions](docs/team-roles-and-permissions.md)
 - [Tips](docs/tips.md)
 - [Governance](docs/governance.md)
 - [License](LICENSE)

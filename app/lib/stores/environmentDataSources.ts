@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { useRouter } from 'next/navigation';
 import { persist } from 'zustand/middleware';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
-import type { DataSourceType } from '@liblab/data-access/utils/types';
+import { DataSourcePropertyType, type DataSourceType } from '@liblab/data-access/utils/types';
 
 export interface EnvironmentVariable {
   id: string;
@@ -23,6 +23,7 @@ export interface EnvironmentDataSource {
   updatedAt: Date;
   dataSourceId: string;
   environmentId: string;
+  conversationCount: number;
   environment: {
     id: string;
     name: string;
@@ -33,19 +34,36 @@ export interface EnvironmentDataSource {
     name: string;
     createdAt: Date;
     type: DataSourceType;
+    typeLabel: string;
     updatedAt: Date;
   };
   dataSourceProperties: [
     {
-      // this must be synced with DataSourcePropertyType enum in prisma
-      type: 'CONNECTION_URL' | 'ACCESS_TOKEN' | 'REFRESH_TOKEN' | 'CLIENT_ID' | 'CLIENT_SECRET' | 'API_KEY';
-      environmentVariables: EnvironmentVariable[];
+      type: DataSourcePropertyType;
+      environmentVariable: EnvironmentVariable;
     },
   ];
 }
 
+export interface DataSourceWithEnvironments {
+  id: string;
+  name: string;
+  type: DataSourceType;
+  typeLabel: string;
+  environments: {
+    id: string;
+    name: string;
+    conversationCount: number;
+    dataSourceProperties: {
+      type: DataSourcePropertyType;
+      value: string;
+    }[];
+  }[];
+}
+
 interface EnvironmentDataSourcesStore {
   environmentDataSources: EnvironmentDataSource[];
+  dataSources: DataSourceWithEnvironments[];
   selectedEnvironmentDataSource: { dataSourceId: string | null; environmentId: string | null };
   setEnvironmentDataSources: (environmentDataSources: EnvironmentDataSource[]) => void;
   setSelectedEnvironmentDataSource: (dataSourceId: string | null, environmentId: string | null) => void;
@@ -56,9 +74,40 @@ export const useEnvironmentDataSourcesStore = create<EnvironmentDataSourcesStore
   persist(
     (set, getState) => ({
       environmentDataSources: [],
+      dataSources: [],
       selectedEnvironmentDataSource: { dataSourceId: null, environmentId: null },
       setEnvironmentDataSources: (environmentDataSources) => {
-        set({ environmentDataSources });
+        // Build derived dataSources grouped by dataSource
+        const grouped: Record<string, DataSourceWithEnvironments> = {};
+
+        for (const eds of environmentDataSources) {
+          const dataSourceId = eds.dataSource.id;
+
+          if (!grouped[dataSourceId]) {
+            grouped[dataSourceId] = {
+              id: eds.dataSource.id,
+              name: eds.dataSource.name,
+              type: eds.dataSource.type,
+              typeLabel: eds.dataSource.typeLabel,
+              environments: [],
+            };
+          }
+
+          grouped[dataSourceId].environments.push({
+            id: eds.environment.id,
+            name: eds.environment.name,
+            conversationCount: eds.conversationCount,
+            dataSourceProperties:
+              eds.dataSourceProperties?.map((prop) => ({
+                type: prop.type,
+                value: prop.environmentVariable?.value ?? '',
+              })) || [],
+          });
+        }
+
+        const dataSources: DataSourceWithEnvironments[] = Object.values(grouped);
+
+        set({ environmentDataSources, dataSources });
 
         if (environmentDataSources.length === 0) {
           getState().setSelectedEnvironmentDataSource(null, null);
@@ -86,7 +135,7 @@ export const useEnvironmentDataSourcesStore = create<EnvironmentDataSourcesStore
       },
       setSelectedEnvironmentDataSource: (dataSourceId: string | null, environmentId: string | null) =>
         set({ selectedEnvironmentDataSource: { dataSourceId, environmentId } }),
-      clearEnvironmentDataSources: () => set({ environmentDataSources: [] }),
+      clearEnvironmentDataSources: () => set({ environmentDataSources: [], dataSources: [] }),
     }),
     {
       name: 'data-sources-storage',

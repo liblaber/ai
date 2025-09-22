@@ -40,15 +40,12 @@ export async function POST(request: NextRequest) {
       environmentId,
     });
 
-    return NextResponse.json({ success: true, dataSource });
+    return NextResponse.json({ success: true, environmentDataSource: { dataSourceId: dataSource.id, environmentId } });
   } catch (error: any) {
     // Check if this is a "secret already exists" error from Infisical
     if (error?.message?.includes('Secret already exist')) {
-      console.error('Sample database already exists', error);
       return NextResponse.json({ success: false, error: 'Sample database already exists' }, { status: 400 });
     }
-
-    console.error('Error creating Sample database:', error);
 
     return NextResponse.json({ success: false, error: 'Failed to create Sample database' }, { status: 500 });
   }

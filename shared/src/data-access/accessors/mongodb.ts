@@ -1,4 +1,5 @@
-import { Collection, Db, MongoClient } from 'mongodb';
+import { Collection, Db, MongoClient, ObjectId } from 'mongodb';
+import * as parser from 'mongodb-query-parser';
 import type { Table } from '../../types';
 import { BaseDatabaseAccessor } from '../baseDatabaseAccessor';
 import { type DataAccessPluginId, type DataSourceProperty, DataSourceType } from '../utils/types';
@@ -24,8 +25,7 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
       await client.close();
 
       return true;
-    } catch (error) {
-      console.error('MongoDB connection test failed:', error);
+    } catch {
       await client.close();
 
       return false;
@@ -40,87 +40,184 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
     let parsedQuery: any;
 
     try {
-      // Parse the query which should be a MongoDB aggregation pipeline or find query
-      parsedQuery = JSON.parse(query);
+      // Use mongodb-query-parser for safe parsing with BSON type preservation
+      parsedQuery = parser.parseFilter(query);
     } catch (parseError) {
-      console.error('Failed to parse MongoDB query:', {
-        original: query,
-        error: parseError,
-      });
-      throw new Error(
-        `Invalid JSON format for MongoDB query: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`,
-      );
+      // Fallback to JSON parse for backward compatibility
+      try {
+        parsedQuery = JSON.parse(query);
+      } catch {
+        throw new Error(
+          `Invalid MongoDB query format: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`,
+        );
+      }
     }
 
     try {
-      console.log('MongoDB: Executing query:', JSON.stringify(parsedQuery, null, 2));
-
       if (!parsedQuery.collection) {
         throw new Error('MongoDB query must specify a collection name');
       }
 
       const collection: Collection = this._db.collection(parsedQuery.collection);
+      const processedQuery = this._processParameters(parsedQuery, params);
 
-      let result: any[] = [];
-
-      // Handle different types of MongoDB operations
-      if (parsedQuery.operation === 'find') {
-        const filter = parsedQuery.filter || {};
-        const options = parsedQuery.options || {};
-
-        // Apply parameters if provided
-        if (params && params.length > 0) {
-          this._applyParameters(filter, params);
-        }
-
-        console.log('MongoDB: Find operation with filter:', JSON.stringify(filter, null, 2));
-        console.log('MongoDB: Find operation with options:', JSON.stringify(options, null, 2));
-
-        const cursor = collection.find(filter, options);
-        result = await cursor.toArray();
-
-        console.log(`MongoDB: Query returned ${result.length} documents`);
-
-        if (result.length > 0) {
-          console.log('MongoDB: Sample result:', this._safeStringify(result[0]));
-        }
-      } else if (parsedQuery.operation === 'aggregate') {
-        const pipeline = parsedQuery.pipeline || [];
-
-        // Apply parameters if provided
-        if (params && params.length > 0) {
-          this._applyParametersToPipeline(pipeline, params);
-        }
-
-        console.log('MongoDB: Aggregate operation with pipeline:', JSON.stringify(pipeline, null, 2));
-
-        const cursor = collection.aggregate(pipeline);
-        result = await cursor.toArray();
-
-        console.log(`MongoDB: Aggregation returned ${result.length} documents`);
-
-        if (result.length > 0) {
-          console.log('MongoDB: Sample result:', this._safeStringify(result[0]));
-        }
-      } else {
-        throw new Error(`Unsupported MongoDB operation: ${parsedQuery.operation}`);
-      }
-
-      return result;
+      return await this._executeOperation(collection, processedQuery);
     } catch (error) {
-      console.error('Error executing MongoDB query:', error);
       throw new Error((error as Error)?.message);
     }
   }
 
-  private _applyParameters(obj: any, params: string[]): void {
-    // Securely replace parameter placeholders by recursively traversing the object
-    this._replaceParametersRecursively(obj, params);
+  private _processParameters(query: any, params?: string[]): any {
+    if (!params || params.length === 0) {
+      return query;
+    }
+
+    const processedQuery = JSON.parse(JSON.stringify(query));
+    this._replaceParametersRecursively(processedQuery, params);
+
+    return processedQuery;
   }
 
-  private _applyParametersToPipeline(pipeline: any[], params: string[]): void {
-    // Securely replace parameter placeholders in the aggregation pipeline
-    this._replaceParametersRecursively(pipeline, params);
+  private async _executeOperation(collection: Collection, query: any): Promise<any[]> {
+    const { operation } = query;
+
+    switch (operation) {
+      case 'find':
+        return await this._executeFindOperation(collection, query);
+      case 'aggregate':
+        return await this._executeAggregateOperation(collection, query);
+      case 'insertOne':
+        return await this._executeInsertOneOperation(collection, query);
+      case 'insertMany':
+        return await this._executeInsertManyOperation(collection, query);
+      case 'updateOne':
+        return await this._executeUpdateOneOperation(collection, query);
+      case 'updateMany':
+        return await this._executeUpdateManyOperation(collection, query);
+      case 'deleteOne':
+        return await this._executeDeleteOneOperation(collection, query);
+      case 'deleteMany':
+        return await this._executeDeleteManyOperation(collection, query);
+      default:
+        throw new Error(`Unsupported MongoDB operation: ${operation}`);
+    }
+  }
+
+  private async _executeFindOperation(collection: Collection, query: any): Promise<any[]> {
+    const filter = query.filter || {};
+    const options = query.options || {};
+    const cursor = collection.find(filter, options);
+
+    return await cursor.toArray();
+  }
+
+  private async _executeAggregateOperation(collection: Collection, query: any): Promise<any[]> {
+    const pipeline = query.pipeline || [];
+    const cursor = collection.aggregate(pipeline);
+
+    return await cursor.toArray();
+  }
+
+  private async _executeInsertOneOperation(collection: Collection, query: any): Promise<any[]> {
+    const document = query.document || {};
+    const result = await collection.insertOne(document);
+
+    return [
+      {
+        insertedId: result.insertedId,
+        acknowledged: result.acknowledged,
+      },
+    ];
+  }
+
+  private async _executeInsertManyOperation(collection: Collection, query: any): Promise<any[]> {
+    const documents = query.documents || [];
+    const result = await collection.insertMany(documents);
+
+    return [
+      {
+        insertedIds: result.insertedIds,
+        insertedCount: result.insertedCount,
+        acknowledged: result.acknowledged,
+      },
+    ];
+  }
+
+  private async _executeUpdateOneOperation(collection: Collection, query: any): Promise<any[]> {
+    const filter = query.filter || {};
+    const update = query.update || {};
+    const options = query.options || {};
+
+    let result = await collection.updateOne(filter, update, options);
+
+    if (result.matchedCount === 0 && filter._id !== undefined) {
+      result = await this._retryWithAlternativeIdFormats(collection, 'updateOne', filter, update, options);
+    }
+
+    return [
+      {
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+        acknowledged: result.acknowledged,
+        upsertedId: result.upsertedId,
+      },
+    ];
+  }
+
+  private async _executeUpdateManyOperation(collection: Collection, query: any): Promise<any[]> {
+    const filter = query.filter || {};
+    const update = query.update || {};
+    const options = query.options || {};
+
+    let result = await collection.updateMany(filter, update, options);
+
+    if (result.matchedCount === 0 && filter._id !== undefined) {
+      result = await this._retryWithAlternativeIdFormats(collection, 'updateMany', filter, update, options);
+    }
+
+    return [
+      {
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+        acknowledged: result.acknowledged,
+        upsertedCount: result.upsertedCount,
+        upsertedId: result.upsertedId,
+      },
+    ];
+  }
+
+  private async _executeDeleteOneOperation(collection: Collection, query: any): Promise<any[]> {
+    const filter = query.filter || {};
+
+    let result = await collection.deleteOne(filter);
+
+    if (result.deletedCount === 0 && filter._id !== undefined) {
+      result = await this._retryWithAlternativeIdFormats(collection, 'deleteOne', filter);
+    }
+
+    return [
+      {
+        deletedCount: result.deletedCount,
+        acknowledged: result.acknowledged,
+      },
+    ];
+  }
+
+  private async _executeDeleteManyOperation(collection: Collection, query: any): Promise<any[]> {
+    const filter = query.filter || {};
+
+    let result = await collection.deleteMany(filter);
+
+    if (result.deletedCount === 0 && filter._id !== undefined) {
+      result = await this._retryWithAlternativeIdFormats(collection, 'deleteMany', filter);
+    }
+
+    return [
+      {
+        deletedCount: result.deletedCount,
+        acknowledged: result.acknowledged,
+      },
+    ];
   }
 
   private _replaceParametersRecursively(obj: any, params: string[], visited = new WeakSet()): void {
@@ -170,6 +267,104 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
     }
   }
 
+  private async _retryWithAlternativeIdFormats(
+    collection: any,
+    operation: string,
+    filter: any,
+    updateOrOptions?: any,
+    options?: any,
+  ): Promise<any> {
+    const originalId = filter._id;
+    const alternativeFormats = this._getAlternativeIdFormats(originalId);
+
+    // Operation handlers map
+    const operationHandlers: { [key: string]: (filter: any, updateOrOptions?: any, options?: any) => Promise<any> } = {
+      updateOne: (f, u, o) => collection.updateOne(f, u, o),
+      updateMany: (f, u, o) => collection.updateMany(f, u, o),
+      deleteOne: (f) => collection.deleteOne(f),
+      deleteMany: (f) => collection.deleteMany(f),
+    };
+
+    const executeOperation = operationHandlers[operation];
+
+    if (!executeOperation) {
+      throw new Error(`Unsupported operation: ${operation}`);
+    }
+
+    // Success checkers map
+    const hasResults = (result: any): boolean => {
+      if (operation.includes('update') || operation.includes('delete')) {
+        return result.matchedCount > 0 || result.deletedCount > 0;
+      }
+
+      return false;
+    };
+
+    // Try alternative ID formats
+    for (const alternativeId of alternativeFormats) {
+      const alternativeFilter = { ...filter, _id: alternativeId };
+
+      try {
+        const result = await executeOperation(alternativeFilter, updateOrOptions, options);
+
+        if (hasResults(result)) {
+          return result;
+        }
+      } catch {
+        // Continue to next format
+      }
+    }
+
+    // Return default "not found" result based on operation type
+    const defaultResults: { [key: string]: any } = {
+      updateOne: { matchedCount: 0, modifiedCount: 0, acknowledged: true, upsertedId: null },
+      updateMany: { matchedCount: 0, modifiedCount: 0, acknowledged: true, upsertedCount: 0, upsertedId: null },
+      deleteOne: { deletedCount: 0, acknowledged: true },
+      deleteMany: { deletedCount: 0, acknowledged: true },
+    };
+
+    return defaultResults[operation] || {};
+  }
+
+  private _getAlternativeIdFormats(originalId: any): any[] {
+    const alternatives = [];
+
+    // If it's a number, try string
+    if (typeof originalId === 'number') {
+      alternatives.push(originalId.toString());
+    }
+
+    // If it's a string that looks like a number, try number
+    if (typeof originalId === 'string' && /^\d+$/.test(originalId)) {
+      const numValue = parseInt(originalId, 10);
+
+      if (!isNaN(numValue)) {
+        alternatives.push(numValue);
+      }
+    }
+
+    // If it's a string that looks like an ObjectId, try ObjectId
+    if (typeof originalId === 'string' && /^[0-9a-fA-F]{24}$/.test(originalId)) {
+      try {
+        alternatives.push(new ObjectId(originalId));
+      } catch {
+        // Ignore conversion error
+      }
+    }
+
+    // If it's an ObjectId, try string
+    if (
+      originalId &&
+      typeof originalId === 'object' &&
+      originalId.constructor &&
+      originalId.constructor.name === 'ObjectId'
+    ) {
+      alternatives.push(originalId.toString());
+    }
+
+    return alternatives;
+  }
+
   private _isValidParameterPlaceholder(value: string): boolean {
     // Only accept exact matches for parameter placeholders like $1, $2, etc.
     return /^\$\d+$/.test(value);
@@ -205,27 +400,42 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
     let parsedQuery: any;
 
     try {
-      // Try direct JSON parsing first
-      parsedQuery = JSON.parse(query);
+      // Use mongodb-query-parser for safe parsing
+      parsedQuery = parser.parseFilter(query);
     } catch (parseError) {
-      console.error('MongoDB JSON parsing error:', parseError);
-      throw new Error(
-        `Invalid JSON format for MongoDB query: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-      );
+      // Fallback to JSON parse for backward compatibility
+      try {
+        parsedQuery = JSON.parse(query);
+      } catch {
+        throw new Error(
+          `Invalid MongoDB query format: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+        );
+      }
     }
 
     try {
       // Validate that we have a proper MongoDB query structure
       if (!parsedQuery || typeof parsedQuery !== 'object') {
-        throw new Error('MongoDB query must be a valid JSON object');
+        throw new Error('MongoDB query must be a valid object');
       }
 
       if (!parsedQuery.collection) {
         throw new Error('MongoDB query must specify a collection name');
       }
 
-      if (!parsedQuery.operation || !['find', 'aggregate'].includes(parsedQuery.operation)) {
-        throw new Error('MongoDB query must specify a valid operation (find or aggregate)');
+      const validOperations = [
+        'find',
+        'aggregate',
+        'insertOne',
+        'insertMany',
+        'updateOne',
+        'updateMany',
+        'deleteOne',
+        'deleteMany',
+      ];
+
+      if (!parsedQuery.operation || !validOperations.includes(parsedQuery.operation)) {
+        throw new Error(`MongoDB query must specify a valid operation (${validOperations.join(', ')})`);
       }
 
       // Check for potentially dangerous operations
@@ -298,7 +508,6 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
 
       return tables;
     } catch (error) {
-      console.error('Error fetching MongoDB schema:', error);
       throw new Error((error as Error)?.message);
     }
   }
@@ -307,8 +516,6 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
     if (this._client) {
       await this.close();
     }
-
-    console.log('MongoDB: Initializing connection with URL:', databaseUrl);
 
     this._client = new MongoClient(databaseUrl, {
       serverSelectionTimeoutMS: 10000,
@@ -321,23 +528,13 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
     const url = new URL(databaseUrl);
     const dbName = url.pathname.substring(1) || 'test';
 
-    console.log('MongoDB: Using database name:', dbName);
-
     this._db = this._client.db(dbName);
 
-    // Log available collections for debugging
     try {
       const collections = await this._db.listCollections().toArray();
-      console.log(
-        'MongoDB: Available collections:',
-        collections.map((c: any) => c.name),
-      );
 
       if (collections.length === 0) {
-        console.log('⚠️  WARNING: No collections found in database "' + dbName + '"');
-        console.log('⚠️  Check if your connection string points to the correct database');
-        console.log('⚠️  Expected: mongodb://localhost:27017/local (for database "local")');
-        console.log('⚠️  Current:  ' + databaseUrl);
+        console.warn('MongoDB: No collections found in the database. Please verify the database name and connection.');
       }
     } catch (error) {
       console.log('MongoDB: Could not list collections:', (error as Error).message);
@@ -408,11 +605,18 @@ export class MongoDBAccessor extends BaseDatabaseAccessor {
 
   formatQuery(query: string): string {
     try {
-      const parsedQuery = JSON.parse(query);
+      // Try mongodb-query-parser first for better BSON type handling
+      const parsedQuery = parser.parseFilter(query);
       return JSON.stringify(parsedQuery, null, 2);
     } catch {
-      // If it's not valid JSON, return as-is
-      return query;
+      try {
+        // Fallback to JSON parse
+        const parsedQuery = JSON.parse(query);
+        return JSON.stringify(parsedQuery, null, 2);
+      } catch {
+        // If both fail, return as-is
+        return query;
+      }
     }
   }
 
@@ -441,12 +645,24 @@ To generate the MongoDB queries, follow these steps:
 1. Carefully analyze the user's request and the provided database schema.
 2. Create one or more MongoDB queries that accurately address the user's requirements.
 3. Structure queries as JSON objects with the following format:
+   // For read operations
    {
      "collection": "collection_name",
      "operation": "find" | "aggregate",
      "filter": {...}, // for find operations
      "options": {...}, // for find operations (limit, sort, etc.)
      "pipeline": [...] // for aggregate operations
+   }
+   
+   // For write operations
+   {
+     "collection": "collection_name",
+     "operation": "insertOne" | "insertMany" | "updateOne" | "updateMany" | "deleteOne" | "deleteMany",
+     "document": {...}, // for insertOne
+     "documents": [...], // for insertMany
+     "filter": {...}, // for update/delete operations
+     "update": {...}, // for update operations
+     "options": {...} // optional for all operations
    }
 4. Use MongoDB query operators like $match, $group, $sort, $limit, $project, etc.
 5. For array fields (like amenities), use appropriate operators:
@@ -455,13 +671,14 @@ To generate the MongoDB queries, follow these steps:
    - Use $regex for partial matches: {"amenities": {"$regex": "pets", "$options": "i"}}
 6. Do not use any administrative operations like drop, createUser, or eval.
 7. Use appropriate aggregation pipelines for complex queries.
-8. Optimize the queries for performance.
-9. Avoid using any collections or fields not present in the schema.
-10. If needed, parametrize the query using positional placeholders like $1, $2, etc.
-11. Use exact field names and values as shown in the schema.
-12. For queries about "having" or "containing" specific values in arrays, use exact string matching.
-13. Provide a brief explanation for each query.
-14. Specify the response schema for each query, including selected field types.
+8. For write operations, use appropriate update operators like $set, $unset, $inc, $push, $pull, etc.
+9. Optimize the queries for performance.
+10. Avoid using any collections or fields not present in the schema.
+11. If needed, parametrize the query using positional placeholders like $1, $2, etc.
+12. Use exact field names and values as shown in the schema.
+13. For queries about "having" or "containing" specific values in arrays, use exact string matching.
+14. Provide a brief explanation for each query.
+15. Specify the response schema for each query, including selected field types.
 
 Format your response as a JSON array containing objects with the following structure:
 {
@@ -478,14 +695,19 @@ Here's an example of a valid response:
     "responseSchema": "_id (string), name (string), amenities (array), room_type (string)"
   },
   {
-    "query": "{\"collection\": \"airbnb\", \"operation\": \"find\", \"filter\": {\"room_type\": \"Entire home/apt\"}, \"options\": {}}",
-    "explanation": "Retrieves all entire apartment listings",
-    "responseSchema": "_id (string), name (string), room_type (string), price (object)"
+    "query": "{\"collection\": \"airbnb\", \"operation\": \"insertOne\", \"document\": {\"name\": \"New Listing\", \"room_type\": \"Private room\", \"price\": 100}}",
+    "explanation": "Inserts a new listing with specified properties",
+    "responseSchema": "insertedId (ObjectId), acknowledged (boolean)"
   },
   {
-    "query": "{\"collection\": \"airbnb\", \"operation\": \"aggregate\", \"pipeline\": [{\"$group\": {\"_id\": \"$room_type\", \"count\": {\"$sum\": 1}}}]}",
-    "explanation": "Groups listings by room type and counts each type",
-    "responseSchema": "_id (string), count (number)"
+    "query": "{\"collection\": \"airbnb\", \"operation\": \"updateOne\", \"filter\": {\"_id\": \"$1\"}, \"update\": {\"$set\": {\"price\": \"$2\"}}}",
+    "explanation": "Updates the price of a specific listing by ID",
+    "responseSchema": "matchedCount (number), modifiedCount (number), acknowledged (boolean)"
+  },
+  {
+    "query": "{\"collection\": \"airbnb\", \"operation\": \"deleteMany\", \"filter\": {\"status\": \"inactive\"}}",
+    "explanation": "Deletes all inactive listings",
+    "responseSchema": "deletedCount (number), acknowledged (boolean)"
   }
 ]
 
@@ -496,43 +718,5 @@ Now, generate MongoDB queries based on the following user request:
 <userRequest>
 ${userPrompt}
 </userRequest>`;
-  }
-
-  private _safeStringify(obj: any, maxDepth = 3): string {
-    const seen = new WeakSet();
-
-    const replacer = (key: string, value: any, depth = 0): any => {
-      if (depth > maxDepth) {
-        return '[Max Depth Reached]';
-      }
-
-      if (typeof value === 'object' && value !== null) {
-        if (seen.has(value)) {
-          return '[Circular Reference]';
-        }
-
-        seen.add(value);
-
-        if (Array.isArray(value)) {
-          return value.map((item, index) => replacer(String(index), item, depth + 1));
-        } else {
-          const result: any = {};
-
-          for (const [k, v] of Object.entries(value)) {
-            result[k] = replacer(k, v, depth + 1);
-          }
-
-          return result;
-        }
-      }
-
-      return value;
-    };
-
-    try {
-      return JSON.stringify(replacer('', obj), null, 2);
-    } catch (error) {
-      return '[Serialization Error: ' + (error as Error).message + ']';
-    }
   }
 }

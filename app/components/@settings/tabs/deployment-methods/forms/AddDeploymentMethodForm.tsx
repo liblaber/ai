@@ -10,6 +10,7 @@ import {
   type EnvironmentOption,
   type EnvironmentsResponse,
 } from '~/types/deployment-methods';
+import { useDeploymentMethodActions, useDeploymentMethodsStore } from '~/lib/stores/deploymentMethods';
 
 interface AddDeploymentMethodFormProps {
   isSubmitting: boolean;
@@ -26,12 +27,14 @@ export default function AddDeploymentMethodForm({
   const [selectedProvider, setSelectedProvider] = useState<DeploymentProviderInfo | null>(null);
   const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
   const [environmentOptions, setEnvironmentOptions] = useState<EnvironmentOption[]>([]);
-  const [providers, setProviders] = useState<DeploymentProviderInfo[]>([]);
   const [isLoadingEnvironments, setIsLoadingEnvironments] = useState(true);
-  const [isLoadingProviders, setIsLoadingProviders] = useState(true);
   const [credentials, setCredentials] = useState<CredentialField[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [applyToAllEnvironments, setApplyToAllEnvironments] = useState(false);
+
+  // Use providers from store
+  const { providers } = useDeploymentMethodsStore();
+  const { loadProviders } = useDeploymentMethodActions();
 
   // Fetch environments and providers on component mount
   useEffect(() => {
@@ -57,31 +60,28 @@ export default function AddDeploymentMethodForm({
           setError(envResult.error || 'Failed to fetch environments');
         }
 
-        // Fetch providers
-        const providersResponse = await fetch('/api/deployment-methods/providers');
-        const providersResult = await providersResponse.json<DeploymentProviderInfo[]>();
-
-        if (providersResult) {
-          setProviders(providersResult);
-
-          // Auto-select provider if only one is available
-          if (providersResult.length === 1) {
-            setSelectedProvider(providersResult[0]);
-          }
-        } else {
-          setError('Failed to fetch providers');
-        }
+        // Load providers from store
+        await loadProviders();
       } catch (error) {
         setError('Failed to fetch data');
         console.error('Error fetching data:', error);
       } finally {
         setIsLoadingEnvironments(false);
-        setIsLoadingProviders(false);
       }
     };
 
     fetchData();
   }, []);
+
+  // Auto-select provider when providers are loaded
+  useEffect(() => {
+    if (providers.length > 0 && !selectedProvider) {
+      // Auto-select provider if only one is available
+      if (providers.length === 1) {
+        setSelectedProvider(providers[0]);
+      }
+    }
+  }, [providers, selectedProvider]);
 
   // Update credentials when provider changes
   useEffect(() => {
@@ -139,7 +139,7 @@ export default function AddDeploymentMethodForm({
     }
 
     // Check if all required credentials are filled
-    const missingCredentials = credentials.filter((cred) => !cred.value.trim());
+    const missingCredentials = credentials.filter((cred) => !String(cred.value).trim());
 
     if (missingCredentials.length > 0) {
       setError('Please fill in all required credentials');
@@ -162,7 +162,7 @@ export default function AddDeploymentMethodForm({
           applyToAllEnvironments,
           credentials: credentials.map((cred) => ({
             type: cred.type,
-            value: cred.value.trim(),
+            value: String(cred.value).trim(),
           })),
         }),
       });
@@ -282,8 +282,8 @@ export default function AddDeploymentMethodForm({
                 value: provider.id,
                 description: provider.description,
               }))}
-              placeholder={isLoadingProviders ? 'Loading providers...' : 'Select provider'}
-              isDisabled={isLoadingProviders || providers.length === 1}
+              placeholder={providers.length === 0 ? 'Loading providers...' : 'Select provider'}
+              isDisabled={providers.length === 0 || providers.length === 1}
               width="100%"
               minWidth="100%"
               isSearchable={false}
@@ -303,7 +303,7 @@ export default function AddDeploymentMethodForm({
                   </label>
                   <input
                     type={cred.type === DeploymentMethodCredentialsType.SECRET_KEY ? 'password' : 'text'}
-                    value={cred.value}
+                    value={String(cred.value)}
                     onChange={(e) => handleCredentialChange(index, e.target.value)}
                     disabled={isSubmitting}
                     className={classNames(
@@ -325,7 +325,7 @@ export default function AddDeploymentMethodForm({
             <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
               <div className="flex items-center gap-2">
                 <XCircle className="w-5 h-5 text-red-500" />
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                <p className="text-sm text-red-600 dark:text-red-400 overflow-auto w-[94%]">{error}</p>
               </div>
             </div>
           )}
@@ -342,7 +342,7 @@ export default function AddDeploymentMethodForm({
                   (!selectedEnvironment && !applyToAllEnvironments) ||
                   !name.trim() ||
                   !selectedProvider ||
-                  credentials.some((cred) => !cred.value.trim())
+                  credentials.some((cred) => !String(cred.value).trim())
                 }
                 className={classNames(
                   'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
