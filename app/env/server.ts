@@ -110,6 +110,9 @@ export const env = createEnv({
     npm_package_version: z.string().optional(),
     CUSTOM_KEY: z.string().optional(),
 
+    // Test configuration
+    ENABLE_TEST_LOGIN_ENDPOINT: z.string().optional(),
+
     // Google Sheets configuration
     GOOGLE_SHEETS_SEMANTIC_VERSION: z.string().default('3'),
   },

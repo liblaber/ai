@@ -3,10 +3,12 @@ import { z } from 'zod';
 import { auth, grantSystemAdminAccess } from '~/auth/auth-config';
 import { prisma } from '~/lib/prisma';
 import { userService } from '~/lib/services/userService';
+import { env } from '~/env/server';
 import { logger } from '~/utils/logger';
 
 // IMPORTANT: This should not be used in production.
 // This endpoint is specifically for testing purposes to simulate a login, bypassing OIDC.
+// It is protected by the presence of the ENABLE_TEST_LOGIN_ENDPOINT environment variable.
 
 const postRequestSchema = z.object({
   email: z.string().email().default('test.user@liblab.com'),
@@ -18,8 +20,8 @@ const postRequestSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  // Prevent usage in production
-  if (process.env.NODE_ENV === 'production') {
+  // Prevent usage unless explicitly enabled
+  if (env.ENABLE_TEST_LOGIN_ENDPOINT !== 'true') {
     return NextResponse.json({ error: 'Not Found' }, { status: 404 });
   }
 
