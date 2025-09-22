@@ -15,7 +15,7 @@ const postRequestSchema = z.object({
   name: z.string().optional().default('Test User'),
   password: z.string().optional().default('password1234'),
   picture: z.string().url().optional(),
-  telemetryEnabled: z.boolean().optional().default(false),
+  telemetryEnabled: z.boolean().optional(),
   role: z.string().optional().default('Admin'),
 });
 
