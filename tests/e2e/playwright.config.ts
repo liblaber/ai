@@ -73,14 +73,14 @@ export default defineConfig({
       testMatch: 'setup/login.ts',
     },
     {
-      name: 'initial-data-source',
-      testMatch: 'setup/initial-data-source.ts',
+      name: 'initial-setup',
+      testMatch: 'setup/initial-setup.ts',
       dependencies: ['login'],
       use: CHROME_USE_PROPERTIES,
     },
     {
       name: 'chromium',
-      dependencies: ['initial-data-source'],
+      dependencies: ['initial-setup'],
       use: CHROME_USE_PROPERTIES,
     },
   ],
