@@ -222,7 +222,7 @@ export function PublishProgressModal({
                   <div className="flex justify-start">
                     <button
                       onClick={onCancel}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#1E2125] hover:bg-[#2A2D32] text-white text-sm rounded-md transition-colors border border-white/8"
+                      className="flex items-center gap-2 px-4 py-2 bg-[#1E2125] hover:bg-[#2A2D32] text-white text-sm rounded-md transition-colors border border-white/8 cursor-pointer"
                     >
                       <StopCircle variant="Bold" className="w-4 h-4" />
                       Cancel
