@@ -72,6 +72,7 @@ jobs:
         env:
           BASE_URL: http://localhost:3000
           CI: true
+          TEST_POSTGRES_URL: ${{ secrets.TEST_POSTGRES_URL }}
 
       - name: 📋 Show Docker ai-app container logs after test run
         if: always()
