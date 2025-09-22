@@ -70,7 +70,12 @@ export interface TestConnectionResponse {
   message: string;
 }
 
-export default function DataTab() {
+type Props = {
+  activeDataSourceId?: string;
+  activeTab?: string;
+};
+
+export default function DataTab({ activeDataSourceId, activeTab }: Props) {
   const { showAddForm } = useStore(settingsPanelStore);
   const [showAddFormLocal, setShowAddFormLocal] = useState(showAddForm);
   const [showDetails, setShowDetails] = useState(false);
@@ -101,6 +106,17 @@ export default function DataTab() {
       setShowAddFormLocal(true);
     }
   }, [selectedTab]);
+
+  useEffect(() => {
+    if (activeDataSourceId && selectedDataSource?.id !== activeDataSourceId) {
+      const selectedDataSource = dataSources.find((ds) => ds.id === activeDataSourceId);
+
+      if (selectedDataSource) {
+        setActiveDetailsTab(activeTab || 'details');
+        setTimeout(() => handleShowDetails(selectedDataSource));
+      }
+    }
+  }, [activeDataSourceId]);
 
   // Centralized data source loading function with proper validation
   const loadDataSources = useCallback(async () => {

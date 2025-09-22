@@ -83,6 +83,8 @@ const TabSection = ({ title, tabs, activeTab, onTabClick }: TabSectionProps) => 
 export const ControlPanel = () => {
   const { isOpen, selectedTab } = useStore(settingsPanelStore);
   const [activeTab, setActiveTab] = useState<TabType | null>(null);
+  const [activeEntityId, setActiveEntityId] = useState<string>();
+  const [activeSubTab, setActiveSubTab] = useState<string>();
 
   // Store values
   const tabConfiguration = useStore(tabConfigurationStore);
@@ -126,11 +128,15 @@ export const ControlPanel = () => {
       const lastAccessedTab = localStorage.getItem(LAST_ACCESSED_TAB_KEY) as TabType | null;
       const firstVisibleTab = visibleTabs[0]?.id as TabType | null;
 
-      // If there's a selected tab from props, use that
-      if (selectedTab) {
-        setActiveTab(selectedTab as TabType);
-        localStorage.setItem(LAST_ACCESSED_TAB_KEY, selectedTab);
+      const [selectedTabId, selectedEntityId, selectedSubTab] = selectedTab?.split('/') ?? [];
+      setActiveEntityId(selectedEntityId);
+      setActiveSubTab(selectedSubTab);
+
+      if (selectedTabId) {
+        setActiveTab(selectedTabId as TabType);
+        localStorage.setItem(LAST_ACCESSED_TAB_KEY, selectedTabId);
       }
+
       // Otherwise, try to restore the last accessed tab
       else if (lastAccessedTab && visibleTabs.some((tab) => tab.id === lastAccessedTab)) {
         setActiveTab(lastAccessedTab);
@@ -166,7 +172,7 @@ export const ControlPanel = () => {
   const getTabComponent = (tabId: TabType) => {
     switch (tabId) {
       case 'data':
-        return <DataTab />;
+        return <DataTab activeDataSourceId={activeEntityId} activeTab={activeSubTab} />;
       case 'environments':
         return <EnvironmentsTab />;
       case 'secrets-manager':
