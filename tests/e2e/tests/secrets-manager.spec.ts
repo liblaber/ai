@@ -3,9 +3,11 @@ import { navigateToSettings, performInitialSetup } from '../helpers/setup';
 
 test.describe.serial('Secrets Manager Tests', () => {
   const environmentVariableName = 'SECRET_KEY';
+  const environmentVariableValue = 'SECRET_VALUE';
   const environmentVariableNameDescription = 'Description';
 
   const updatedEnvironmentVariableName = 'SECRET_KEY_UPDATED';
+  const updatedEnvironmentVariableValue = 'SECRET_VALUE_UPDATED';
   const updatedEnvironmentVariableNameDescription = 'Description Updated';
 
   test.beforeEach(async ({ page }) => {
@@ -21,21 +23,17 @@ test.describe.serial('Secrets Manager Tests', () => {
   test('Create Environment Variable', async ({ page }) => {
     await page.getByRole('button', { name: 'Add Secret' }).click();
     await page.getByLabel('Environment *').selectOption({ index: 0 });
-    await page.getByRole('textbox', { name: 'Key *' }).click();
     await page.getByRole('textbox', { name: 'Key *' }).fill(environmentVariableName);
-    await page.getByRole('textbox', { name: 'Value *' }).click();
-    await page.getByRole('textbox', { name: 'Value *' }).fill('test');
-    await page.getByRole('textbox', { name: 'Description' }).click();
+    await page.getByRole('textbox', { name: 'Value *' }).fill(environmentVariableValue);
     await page.getByRole('textbox', { name: 'Description' }).fill(environmentVariableNameDescription);
     await page.getByRole('button', { name: 'Create Secret' }).click();
 
     const secretElement = page.getByText(environmentVariableName);
-
     await secretElement.waitFor({ state: 'visible', timeout: 1000 });
-
     await secretElement.click();
 
     await expect(page.getByRole('textbox', { name: 'Key *' })).toHaveValue(environmentVariableName);
+    await expect(page.getByRole('textbox', { name: 'Value *' })).toHaveValue(environmentVariableValue);
     await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue(environmentVariableNameDescription);
   });
 
@@ -44,19 +42,17 @@ test.describe.serial('Secrets Manager Tests', () => {
     await secretElement.click();
 
     await page.getByRole('textbox', { name: 'Key *' }).fill(updatedEnvironmentVariableName);
+    await page.getByRole('textbox', { name: 'Value *' }).fill(updatedEnvironmentVariableValue);
     await page.getByRole('textbox', { name: 'Description' }).fill(updatedEnvironmentVariableNameDescription);
-
-    await page.waitForTimeout(1000);
 
     await page.getByRole('button', { name: 'Update Secret' }).click();
 
     const updatedSecretElement = page.getByText(updatedEnvironmentVariableName);
-
     await updatedSecretElement.waitFor({ state: 'visible', timeout: 10000 });
-
     await updatedSecretElement.click();
 
     await expect(page.getByRole('textbox', { name: 'Key *' })).toHaveValue(updatedEnvironmentVariableName);
+    await expect(page.getByRole('textbox', { name: 'Value *' })).toHaveValue(updatedEnvironmentVariableValue);
     await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue(
       updatedEnvironmentVariableNameDescription,
     );
@@ -74,8 +70,6 @@ test.describe.serial('Secrets Manager Tests', () => {
     await confirmationElement.waitFor({ state: 'visible', timeout: 10000 });
 
     await page.getByRole('button', { name: 'Delete Secret' }).click();
-
-    await page.waitForTimeout(1000);
 
     const deletedSecretElement = page.getByText(updatedEnvironmentVariableName);
     await expect(deletedSecretElement).not.toBeVisible();
