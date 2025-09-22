@@ -1,8 +1,8 @@
-import { type ElementHandle, type Page, test } from '@playwright/test';
+import { test } from '@playwright/test';
 import { navigateToDataSourceForm, navigateToSettings, performInitialSetup } from '../helpers/setup';
 
 test.describe('PostgreSQL Data Source App Creation Flow', () => {
-  test('Create PostgreSQL data source and build users dashboard app', async ({ page }: { page: Page }) => {
+  test('Create PostgreSQL data source and build users dashboard app', async ({ page }) => {
     test.setTimeout(300000); // 5 minutes timeout for this complex flow
     await performInitialSetup(page);
     await navigateToSettings(page);
@@ -68,8 +68,8 @@ test.describe('PostgreSQL Data Source App Creation Flow', () => {
     await page.keyboard.press('Escape');
     console.log('✅ Pressed escape to close control panel');
 
-    // Wait a moment for the panel to close
-    await page.waitForTimeout(1000);
+    // Wait for the dialog to disappear
+    await page.locator('div[role="dialog"]').waitFor({ state: 'hidden' });
 
     // Navigate to root to ensure we're on the homepage
     await page.goto('/');
@@ -128,9 +128,7 @@ test.describe('PostgreSQL Data Source App Creation Flow', () => {
     try {
       console.log('🔍 Looking for users dashboard content in iframe...');
 
-      const frame = await iframe
-        .elementHandle()
-        .then((handle: ElementHandle<SVGElement | HTMLElement> | null) => handle?.contentFrame());
+      const frame = iframe.contentFrame();
 
       if (!frame) {
         throw new Error('Could not get frame from iframe element');
@@ -147,16 +145,14 @@ test.describe('PostgreSQL Data Source App Creation Flow', () => {
 
       let foundDashboardElement = false;
 
-      for (const selector of dashboardElements) {
-        try {
-          const element = frame.locator(selector);
-          await element.waitFor({ state: 'visible', timeout: 10000 });
-          console.log(`✅ Found dashboard element: ${selector}`);
-          foundDashboardElement = true;
-          break;
-        } catch {
-          // Continue to next selector
-        }
+      const combinedSelector = dashboardElements.join(', ');
+
+      try {
+        await frame.locator(combinedSelector).first().waitFor({ state: 'visible', timeout: 30000 });
+        console.log(`✅ Found a dashboard element.`);
+        foundDashboardElement = true;
+      } catch {
+        // Continue to next selector
       }
 
       if (!foundDashboardElement) {
