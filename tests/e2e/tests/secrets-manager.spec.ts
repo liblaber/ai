@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { navigateToSettings, performInitialSetup } from '../helpers/setup';
+import { performInitialSetup } from '../helpers/setup';
+import { navigateToSettings } from '../helpers/navigate';
 
 test.describe.serial('Secrets Manager Tests', () => {
   const environmentVariableName = 'SECRET_KEY';
