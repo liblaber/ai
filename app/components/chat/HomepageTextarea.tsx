@@ -45,13 +45,17 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
     },
     ref,
   ) => {
-    const { environmentDataSources, selectedEnvironmentDataSource } = useEnvironmentDataSourcesStore();
+    const { dataSources, selectedEnvironmentDataSource } = useEnvironmentDataSourcesStore();
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
     const handleConnectDataSource = () => {
       openSettingsPanel('data', true, true);
+    };
+
+    const handleManageEnvironments = (dataSourceId: string) => {
+      openSettingsPanel(`data/${dataSourceId}/environments`, false, true);
     };
 
     const fetchSuggestions = async () => {
@@ -178,9 +182,11 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
               </div>
             </div>
             <div className="absolute bottom-6 right-6 flex">
-              <div className="flex gap-1 items-center mr-4">
-                <DataSourcePicker onAddNew={handleConnectDataSource} disabled={environmentDataSources.length === 0} />
-              </div>
+              <DataSourcePicker
+                onAddNew={handleConnectDataSource}
+                onManageEnvironments={handleManageEnvironments}
+                disabled={dataSources.length === 0}
+              />
               <button
                 data-testid="send-message-button"
                 className="flex cursor-pointer justify-center items-center w-[36px] h-[36px] p-1 bg-accent-500 enabled:hover:shadow-[0_0_20px_3px] enabled:hover:shadow-accent-700/80 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"

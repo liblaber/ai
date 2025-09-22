@@ -27,6 +27,16 @@ test.describe('User Onboarding Flow Test', () => {
 
     await sampleDataSourceSelector.click();
 
+    const developmentEnvironmentSelector = sampleDataSourceSelector
+      .locator('..')
+      .locator('..')
+      .locator('..')
+      .getByText('Development')
+      .first();
+    await developmentEnvironmentSelector.waitFor({ state: 'visible', timeout: 1000 });
+    console.log('✅ Found development environment select option.');
+    await developmentEnvironmentSelector.click();
+
     // Input the message and submit
     console.log('✍️ Filling textarea with message...');
     await textarea.fill('Build hello world application with Hello World! h1 title');
