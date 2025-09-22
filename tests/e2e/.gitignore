@@ -2,6 +2,9 @@
 test-results/
 playwright-report/
 
+# Test artifacts
+playwright
+
 # Dependencies
 node_modules/
 

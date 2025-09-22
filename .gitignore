@@ -63,5 +63,3 @@ tsconfig.tsbuildinfo
 tunnel.config
 
 next-env.d.ts
-
-tests/e2e/playwright
