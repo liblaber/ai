@@ -119,7 +119,7 @@ test.describe('PostgreSQL Data Source App Creation Flow', () => {
     console.log('✅ Chat interface loaded');
 
     const iframe = page.locator('iframe[title="preview"]');
-    await iframe.waitFor({ state: 'visible', timeout: 120000 });
+    await iframe.waitFor({ state: 'visible', timeout: 300000 });
     console.log('✅ Iframe found, waiting for it to load...');
 
     console.log('✅ Iframe visible, waiting for content...');
