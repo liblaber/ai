@@ -146,6 +146,7 @@ export class AwsDeployPlugin extends BaseDeploymentPlugin {
         siteInfo.url,
         chatId,
         userId,
+        config.slug,
       );
 
       return {

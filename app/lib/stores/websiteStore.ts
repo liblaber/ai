@@ -6,6 +6,22 @@ export interface Website {
   siteId: string | null;
   siteName: string | null;
   siteUrl: string | null;
+  slug: string | null;
+  chatId: string;
+  isPublic: boolean;
+  createdById: string;
+  environmentId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  environment?: {
+    id: string;
+    name: string;
+  };
+  createdBy?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 interface WebsiteResponse {

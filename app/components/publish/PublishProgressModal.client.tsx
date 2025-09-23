@@ -143,23 +143,45 @@ export function PublishProgressModal({ isOpen, onClose, onCancel, mode, onPublis
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            readOnly
-            value={website.siteUrl || ''}
-            className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-gray-700 dark:text-gray-300"
-          />
-          {website.siteUrl && (
-            <a
-              href={website.siteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
-            >
-              View
-              <ExternalLink className="w-4 h-4" />
-            </a>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              readOnly
+              value={website.siteUrl || ''}
+              className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-gray-700 dark:text-gray-300"
+            />
+            {website.siteUrl && (
+              <a
+                href={website.siteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+              >
+                View
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
+          </div>
+
+          {(website as any).slug && (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                value={`/apps/slug/${(website as any).slug}`}
+                className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-gray-700 dark:text-gray-300"
+              />
+              <a
+                href={`/apps/slug/${(website as any).slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-700 border border-blue-200 dark:border-blue-700"
+              >
+                App Viewer
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
           )}
         </div>
 

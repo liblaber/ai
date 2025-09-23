@@ -60,6 +60,7 @@ model Website {
   siteId        String?      @map("site_id")
   siteName      String?      @map("site_name")
   siteUrl       String?      @map("site_url")
+  slug          String?      @unique
   chatId        String       @map("chat_id")
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
