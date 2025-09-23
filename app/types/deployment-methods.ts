@@ -45,5 +45,7 @@ export interface DeploymentMethodResponse {
   }>;
 }
 
+export type CredentialType = 'API_KEY' | 'ACCESS_KEY' | 'SECRET_KEY' | 'REGION';
+
 // Re-export provider info type for convenience
 export type { DeploymentProviderInfo } from '~/lib/validation/deploymentMethods';
