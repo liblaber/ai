@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 import { useConversationsStore } from '~/lib/stores/conversations';
 import { useUserStore } from '~/lib/stores/user';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/Tabs';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Loader2 } from 'lucide-react';
 import { classNames } from '~/utils/classNames';
 import { formatDistance } from 'date-fns';
 import Link from 'next/link';
 
 export function ConversationsList() {
-  const { conversations, loadConversations } = useConversationsStore();
+  const { conversations, loadConversations, lastLoaded } = useConversationsStore();
   const { user } = useUserStore();
 
   useEffect(() => {
@@ -18,7 +18,12 @@ export function ConversationsList() {
   const myApps = conversations.filter((c) => c.userId === user?.id);
 
   return (
-    <div className="w-full sm:max-w-[90%] lg:max-w-[630px] mx-auto text-left mt-12">
+    <div
+      className={classNames(
+        'w-full sm:max-w-[90%] lg:max-w-[630px] mx-auto text-left mt-12 animate transition-height ease-in-out duration-500 overflow-hidden',
+        lastLoaded ? 'h-[310px]' : 'h-[80px]',
+      )}
+    >
       <div className="bg-depth-3 rounded-xl p-4">
         <Tabs defaultValue="my-apps">
           <TabsList className={classNames('rounded-lg bg-depth-1 !h-8 !px-0.5 justify-start', 'text-secondary')}>
@@ -29,7 +34,12 @@ export function ConversationsList() {
                 'data-[state=active]:bg-gray-700 data-[state=active]:text-white',
               )}
             >
-              My apps <span className="text-secondary ml-1 font-normal">{myApps.length}</span>
+              My apps{' '}
+              {lastLoaded ? (
+                <span className="text-secondary ml-1 font-normal">{myApps.length}</span>
+              ) : (
+                <Loader2 className="ml-1 h-4 w-4 animate-spin" />
+              )}
             </TabsTrigger>
             <TabsTrigger
               value="shared-apps"
@@ -38,7 +48,12 @@ export function ConversationsList() {
                 'data-[state=active]:bg-gray-700 data-[state=active]:text-white',
               )}
             >
-              Shared with me <span className="text-secondary ml-1 font-normal">0</span>
+              Shared with me{' '}
+              {lastLoaded ? (
+                <span className="text-secondary ml-1 font-normal">0</span>
+              ) : (
+                <Loader2 className="ml-1 h-4 w-4 animate-spin" />
+              )}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="my-apps" className="overflow-y-auto max-h-[230px]">

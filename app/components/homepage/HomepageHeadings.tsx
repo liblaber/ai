@@ -2,7 +2,7 @@ import React from 'react';
 
 export function HomepageHeadings() {
   return (
-    <div id="intro" className="mt-[14vh] mx-auto text-center px-4 lg:px-0">
+    <div id="intro" className="mx-auto xl:mt-[12vh] lg:mt-[8vh] text-center px-4 lg:px-0">
       <h1 className="text-4xl lg:text-5xl font-normal text-primary tracking-wide mb-8 animate-fade-in">
         Start building with{' '}
         <span className="font-extrabold">
