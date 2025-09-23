@@ -31,8 +31,10 @@ export function Header({ showMenuIcon = true }: Props) {
           <ClientOnly>
             {() =>
               session?.user && (
-                <IconButton size="xl" title="Open sidebar" className="mr-2">
-                  <Menu className="text-xl" />
+                <IconButton size="xl" title="Open sidebar" className="mr-1">
+                  <div className="rounded-md bg-secondary p-0.5">
+                    <Menu size={18} color="black" />
+                  </div>
                 </IconButton>
               )
             }
