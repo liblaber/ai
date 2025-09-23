@@ -22,16 +22,6 @@ export function generateAppUrl(options: AppUrlOptions): string {
 }
 
 /**
- * Generate a proxy URL for serving app content
- */
-export function generateProxyUrl(chatId: string, targetPath: string, baseUrl?: string): string {
-  const base = baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const encodedPath = encodeURIComponent(targetPath);
-
-  return `${base}/api/proxy-content/${chatId}?path=${encodedPath}`;
-}
-
-/**
  * Check if a URL is a deployment URL (Vercel, Netlify, AWS, etc.)
  */
 export function isDeploymentUrl(url: string): boolean {
