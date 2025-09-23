@@ -13,9 +13,10 @@ import { useSearchFilter } from '~/lib/hooks/useSearchFilter';
 import { classNames } from '~/utils/classNames';
 import { useStore } from '@nanostores/react';
 import { openSettingsPanel, settingsPanelStore } from '~/lib/stores/settings';
-import { deleteConversation, getConversations, type SimpleConversationResponse } from '~/lib/persistence/conversations';
+import { deleteConversation, type SimpleConversationResponse } from '~/lib/persistence/conversations';
 import { MessageCircle, Search } from 'lucide-react';
 import Link from 'next/link';
+import { useConversationsStore } from '~/lib/stores/conversations';
 
 const menuVariants = {
   closed: {
@@ -87,30 +88,25 @@ function CurrentDateTime() {
 export const Menu = () => {
   const { exportChat } = useConversationHistory(undefined);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [conversations, setConversations] = useState<SimpleConversationResponse[]>([]);
   // Open menu by default in test environments (when user agent contains "HeadlessChrome")
   const isTestEnv = typeof window !== 'undefined' && window.navigator.userAgent.includes('HeadlessChrome');
   const [open, setOpen] = useState(isTestEnv);
   const [dialogContent, setDialogContent] = useState<DialogContent>(null);
   const { isOpen } = useStore(settingsPanelStore);
 
+  const { conversations, loadConversations } = useConversationsStore();
+
   const { filteredItems: filteredList, handleSearchChange } = useSearchFilter({
     items: conversations,
     searchFields: ['description'],
   });
-
-  const loadEntries = () => {
-    getConversations()
-      .then(setConversations)
-      .catch((error) => toast.error(error.message));
-  };
 
   const deleteItem = useCallback((event: React.UIEvent, item: SimpleConversationResponse) => {
     event.preventDefault();
 
     deleteConversation(item.id)
       .then(() => {
-        loadEntries();
+        void loadConversations();
 
         if (chatId.get() === item.id) {
           // hard page navigation to clear the stores
@@ -129,9 +125,9 @@ export const Menu = () => {
 
   useEffect(() => {
     if (open) {
-      loadEntries();
+      loadConversations();
     }
-  }, [open]);
+  }, [loadConversations, open]);
 
   useEffect(() => {
     const enterThreshold = 40;

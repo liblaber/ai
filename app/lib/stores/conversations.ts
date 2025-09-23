@@ -8,6 +8,8 @@ interface ConversationsStore {
   loadConversations: () => Promise<void>;
 }
 
+const DEDUPE_INTERVAL = 5000;
+
 export const useConversationsStore = create<ConversationsStore>((set, get) => ({
   conversations: [],
   lastLoaded: null,
@@ -16,7 +18,7 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
     const { lastLoaded } = get();
     const now = Date.now();
 
-    if (lastLoaded && now - lastLoaded < 2000) {
+    if (lastLoaded && now - lastLoaded < DEDUPE_INTERVAL) {
       return;
     }
 
