@@ -231,6 +231,66 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
             },
           ],
         },
+        {
+          source: '/*.js',
+          headers: [
+            {
+              key: 'Cross-Origin-Resource-Policy',
+              value: 'cross-origin',
+            },
+            {
+              key: 'Access-Control-Allow-Origin',
+              value: '*',
+            },
+            {
+              key: 'Access-Control-Allow-Methods',
+              value: 'GET, POST, PUT, DELETE, OPTIONS',
+            },
+            {
+              key: 'Access-Control-Allow-Headers',
+              value: 'Content-Type, Authorization, X-Requested-With',
+            },
+          ],
+        },
+        {
+          source: '/*.css',
+          headers: [
+            {
+              key: 'Cross-Origin-Resource-Policy',
+              value: 'cross-origin',
+            },
+            {
+              key: 'Access-Control-Allow-Origin',
+              value: '*',
+            },
+          ],
+        },
+        {
+          source: '/*.{png,jpg,jpeg,gif,svg,ico}',
+          headers: [
+            {
+              key: 'Cross-Origin-Resource-Policy',
+              value: 'cross-origin',
+            },
+            {
+              key: 'Access-Control-Allow-Origin',
+              value: '*',
+            },
+          ],
+        },
+        {
+          source: '/*.{woff,woff2,ttf,eot}',
+          headers: [
+            {
+              key: 'Cross-Origin-Resource-Policy',
+              value: 'cross-origin',
+            },
+            {
+              key: 'Access-Control-Allow-Origin',
+              value: '*',
+            },
+          ],
+        },
       ],
       env: {
         NODE_ENV: 'production',
@@ -267,6 +327,14 @@ const nextConfig = {
           {
             key: 'X-Frame-Options',
             value: 'ALLOW-FROM *',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
           },
           {
             key: 'Cross-Origin-Resource-Policy',
