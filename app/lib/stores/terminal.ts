@@ -27,8 +27,10 @@ export class TerminalStore {
   }
 
   onTerminalResize(cols: number, rows: number) {
-    for (const { process } of this.#shells) {
-      process?.resize({ cols, rows });
+    for (const shell of this.#shells) {
+      if (shell && shell.process && shell.process.resize) {
+        shell.process.resize(cols, rows);
+      }
     }
   }
 }

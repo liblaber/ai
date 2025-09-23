@@ -62,7 +62,10 @@ export class WebContainerAdapter extends EventEmitter implements Container {
 
   // File System Operations
 
-  async readFile(path: string, encoding?: string): Promise<string | Uint8Array> {
+  // ReadFile overloads matching WebContainer API
+  async readFile(path: string, encoding?: null): Promise<Uint8Array>;
+  async readFile(path: string, encoding: BufferEncoding): Promise<string>;
+  async readFile(path: string, encoding?: BufferEncoding | null): Promise<string | Uint8Array> {
     if (encoding) {
       return await this._webContainer.fs.readFile(path, encoding as any);
     } else {

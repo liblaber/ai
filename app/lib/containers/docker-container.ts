@@ -20,7 +20,10 @@ export class DockerContainer extends EventEmitter implements Container {
   }
 
   // File System Operations
-  async readFile(_path: string, _encoding?: string): Promise<string | Uint8Array> {
+  // ReadFile overloads matching WebContainer API
+  async readFile(_path: string, _encoding?: null): Promise<Uint8Array>;
+  async readFile(_path: string, _encoding: BufferEncoding): Promise<string>;
+  async readFile(_path: string, _encoding?: BufferEncoding | null): Promise<string | Uint8Array> {
     // TODO: Implement Docker container file reading
     throw new Error('DockerContainer.readFile not implemented yet');
   }

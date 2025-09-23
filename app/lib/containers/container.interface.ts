@@ -72,12 +72,14 @@ export interface Container extends EventEmitter {
   // File System Operations
 
   /**
-   * Reads a file from the container file system
-   * @param path - File path relative to workdir
-   * @param encoding - File encoding (optional)
-   * @returns Promise resolving to file content as string or Uint8Array
+   * Reads a file from the container file system (returns Uint8Array)
    */
-  readFile(path: string, encoding?: string): Promise<string | Uint8Array>;
+  readFile(path: string, encoding?: null): Promise<Uint8Array>;
+
+  /**
+   * Reads a file from the container file system (returns string)
+   */
+  readFile(path: string, encoding: BufferEncoding): Promise<string>;
 
   /**
    * Writes content to a file in the container file system
