@@ -1,4 +1,5 @@
 'use client';
+import React, { useEffect, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { toast } from 'sonner';
 import useViewport from '~/lib/hooks';
@@ -19,7 +20,6 @@ import {
 import { webcontainer } from '~/lib/webcontainer';
 import { classNames } from '~/utils/classNames';
 import { path } from '~/utils/path';
-import { useEffect, useRef, useState } from 'react';
 import { chatId, description } from '~/lib/persistence/useConversationHistory';
 import { PublishProgressModal } from '~/components/publish/PublishProgressModal.client';
 import JSZip from 'jszip';
@@ -77,6 +77,7 @@ export function HeaderActionButtons() {
   const [isDeploymentTypeOpen, setIsDeploymentTypeOpen] = useState(false);
   const [selectedDeploymentType, setSelectedDeploymentType] = useState<DeploymentTypeId>('NETLIFY');
   const abortControllerRef = useRef<AbortController | null>(null);
+  const publishButtonRef = useRef<HTMLButtonElement>(null);
   const currentChatId = useStore(chatId);
   const chatDescription = useStore(description);
   const [modalMode, setModalMode] = useState<'publish' | 'settings' | 'initializing'>('publish');
@@ -423,7 +424,15 @@ export function HeaderActionButtons() {
       }
     } catch (error) {
       console.error('Error during deployment:', error);
-      toast.error('Failed to deploy website');
+
+      // Check if the error is due to cancellation
+      if (error instanceof Error && error.name === 'AbortError') {
+        // Don't show error toast for cancellation, it's already handled in onCancel
+        console.log('Deployment was cancelled by user');
+      } else {
+        toast.error('Failed to deploy website');
+      }
+
       setDeploymentProgress(null);
     } finally {
       setLoading(false);
@@ -441,6 +450,7 @@ export function HeaderActionButtons() {
 
   const handlePublishClick = () => {
     setModalMode('publish');
+    setIsDropdownOpen(false);
     startDeployment();
   };
 
@@ -548,6 +558,7 @@ export function HeaderActionButtons() {
         <div className="relative" ref={dropdownRef}>
           <div className="flex border border-depth-3 rounded-md overflow-hidden mr-2 text-sm">
             <Button
+              ref={publishButtonRef}
               active={!isPublishingDisabled}
               disabled={isPublishingDisabled}
               title={
@@ -607,9 +618,11 @@ export function HeaderActionButtons() {
           setDeploymentProgress(null);
           clearDeploymentLogs();
           setIsModalOpen(false);
+          toast.success('Deployment cancelled successfully');
         }}
         mode={modalMode}
         onPublishClick={handlePublishClick}
+        buttonRef={publishButtonRef}
       />
     </>
   );
@@ -622,25 +635,29 @@ interface ButtonProps {
   onClick?: VoidFunction;
   className?: string;
   title?: string;
+  ref?: React.RefObject<HTMLButtonElement>;
 }
 
-function Button({ active = false, disabled = false, children, onClick, className, title }: ButtonProps) {
-  return (
-    <button
-      className={classNames(
-        'flex items-center p-1.5',
-        {
-          'bg-depth-1 text-tertiary hover:text-primary': !active && !disabled,
-          'bg-accent/10 text-accent hover:bg-depth-3/10 cursor-pointer': active && !disabled,
-          'bg-depth-1 text-alpha-gray-20 dark:text-alpha-white-20 cursor-not-allowed': disabled,
-        },
-        className,
-      )}
-      onClick={disabled ? undefined : onClick}
-      title={title}
-      disabled={disabled}
-    >
-      {children}
-    </button>
-  );
-}
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ active = false, disabled = false, children, onClick, className, title }, ref) => {
+    return (
+      <button
+        ref={ref}
+        className={classNames(
+          'flex items-center p-1.5',
+          {
+            'bg-depth-1 text-tertiary hover:text-primary': !active && !disabled,
+            'bg-accent/10 text-accent hover:bg-depth-3/10 cursor-pointer': active && !disabled,
+            'bg-depth-1 text-alpha-gray-20 dark:text-alpha-white-20 cursor-not-allowed': disabled,
+          },
+          className,
+        )}
+        onClick={disabled ? undefined : onClick}
+        title={title}
+        disabled={disabled}
+      >
+        {children}
+      </button>
+    );
+  },
+);
