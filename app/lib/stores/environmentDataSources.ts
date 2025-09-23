@@ -65,6 +65,7 @@ interface EnvironmentDataSourcesStore {
   environmentDataSources: EnvironmentDataSource[];
   dataSources: DataSourceWithEnvironments[];
   selectedEnvironmentDataSource: { dataSourceId: string | null; environmentId: string | null };
+  selectedEnvironmentDataSourceName: string | null;
   setEnvironmentDataSources: (environmentDataSources: EnvironmentDataSource[]) => void;
   setSelectedEnvironmentDataSource: (dataSourceId: string | null, environmentId: string | null) => void;
   clearEnvironmentDataSources: () => void;
@@ -76,6 +77,7 @@ export const useEnvironmentDataSourcesStore = create<EnvironmentDataSourcesStore
       environmentDataSources: [],
       dataSources: [],
       selectedEnvironmentDataSource: { dataSourceId: null, environmentId: null },
+      selectedEnvironmentDataSourceName: null,
       setEnvironmentDataSources: (environmentDataSources) => {
         // Build derived dataSources grouped by dataSource
         const grouped: Record<string, DataSourceWithEnvironments> = {};
@@ -133,8 +135,13 @@ export const useEnvironmentDataSourcesStore = create<EnvironmentDataSourcesStore
           environmentDataSources[0].environmentId,
         );
       },
-      setSelectedEnvironmentDataSource: (dataSourceId: string | null, environmentId: string | null) =>
-        set({ selectedEnvironmentDataSource: { dataSourceId, environmentId } }),
+      setSelectedEnvironmentDataSource: (dataSourceId: string | null, environmentId: string | null) => {
+        const selectedEnvironmentDataSourceName = getState().dataSources.find((ds) => ds.id === dataSourceId)?.name;
+        return set({
+          selectedEnvironmentDataSource: { dataSourceId, environmentId },
+          selectedEnvironmentDataSourceName,
+        });
+      },
       clearEnvironmentDataSources: () => set({ environmentDataSources: [], dataSources: [] }),
     }),
     {

@@ -312,3 +312,35 @@ body {
     background-color: var(--color-scrollbar-dark-hover);
   }
 }
+
+.expandHeight {
+  animation: expandHeightAnnimation 1.5s ease-in-out forwards;
+}
+
+@keyframes expandHeightAnnimation {
+  0% {
+    height: 124px;
+  }
+  90% {
+    height: 124px;
+  }
+  100% {
+    height: 174px;
+  }
+}
+
+.fadeIn {
+  animation: fadeInAnnimation 1.7s ease-in-out forwards;
+}
+
+@keyframes fadeInAnnimation {
+  0% {
+    opacity: 0;
+  }
+  90% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
