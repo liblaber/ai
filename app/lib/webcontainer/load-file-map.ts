@@ -13,15 +13,15 @@ import { getBaseUrl } from '~/lib/utils/tunnel';
  * @param fileMap - The file map to load.
  */
 export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> => {
-  const webContainer = await webcontainer();
+  const container = await webcontainer();
 
   for (const [key, value] of Object.entries(fileMap)) {
     if (value?.type !== 'folder') {
       continue;
     }
 
-    const folderName = key.startsWith(webContainer.workdir) ? key.replace(webContainer.workdir, '') : key;
-    await webContainer.fs.mkdir(folderName, { recursive: true });
+    const folderName = key.startsWith(container.workdir) ? key.replace(container.workdir, '') : key;
+    await container.mkdir(folderName, { recursive: true });
   }
 
   for (const [key, value] of Object.entries(fileMap)) {
@@ -29,7 +29,7 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
       continue;
     }
 
-    const fileName = key.startsWith(webContainer.workdir) ? key.replace(webContainer.workdir, '') : key;
+    const fileName = key.startsWith(container.workdir) ? key.replace(container.workdir, '') : key;
 
     if (fileName === '.env' && env.NEXT_PUBLIC_ENV_NAME === 'local') {
       const tunnelForwardingUrl = await getBaseUrl();
@@ -41,7 +41,7 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
       );
     }
 
-    await webContainer.fs.writeFile(fileName, value.content, { encoding: value.isBinary ? undefined : 'utf8' });
+    await container.writeFile(fileName, value.content, { encoding: value.isBinary ? undefined : 'utf8' });
   }
 };
 
@@ -56,7 +56,7 @@ export const loadFileMapIntoContainer = async (fileMap: FileMap): Promise<void> 
  */
 export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap): Promise<void> => {
   const currentFileMap = workbenchStore.getFileMap();
-  const webContainer = await webcontainer();
+  const container = await webcontainer();
 
   const allUniquePaths = new Set([...Object.keys(currentFileMap), ...Object.keys(previousFileMap)]);
 
@@ -67,7 +67,7 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
     // Case 1: File exists in current but not in previous - remove it
     if (currentFile && !previousFile) {
       try {
-        await webContainer.fs.rm(filePath, { recursive: true, force: true });
+        await container.rm(filePath, { recursive: true, force: true });
       } catch (error) {
         // Ignore errors if file doesn't exist
         console.warn(`Failed to remove file ${filePath}:`, error);
@@ -78,7 +78,7 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
     // Case 2 & 3: File exists in previous but not in current, OR files are different - use previous
     if (previousFile && (!currentFile || currentFile !== previousFile)) {
       if (previousFile.type === 'folder') {
-        await webContainer.fs.mkdir(filePath, { recursive: true });
+        await container.mkdir(filePath, { recursive: true });
       } else if (previousFile.type === 'file') {
         let content = previousFile.content;
 
@@ -100,7 +100,7 @@ export const loadPreviousFileMapIntoContainer = async (previousFileMap: FileMap)
           }
         }
 
-        await webContainer.fs.writeFile(filePath, content, {
+        await container.writeFile(filePath, content, {
           encoding: previousFile.isBinary ? undefined : 'utf8',
         });
       }
