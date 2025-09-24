@@ -91,6 +91,15 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+**google-auth-library**
+No copyright found
+
+**googleapis**
+No copyright found
+
+**mongodb-query-parser**
+Copyright {yyyy} {name of copyright owner}
+
 **mongodb**
 No copyright found
 
@@ -99,3 +108,5 @@ No copyright found
 
 **react-beautiful-dnd**
 Copyright 2019 Atlassian Pty Ltd
+
+This project utilizes icons provided by Iconsax https://iconsax.io (Propietary Free Licensed.).
