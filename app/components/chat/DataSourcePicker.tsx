@@ -5,7 +5,7 @@ import { BaseSelect } from '~/components/ui/Select';
 import { components, type MenuProps, type OptionsOrGroups, type SingleValueProps } from 'react-select';
 import { Check, ChevronDown, CirclePlus } from 'lucide-react';
 import IcDatabase from '~/icons/ic_database.svg';
-import { DATA_SOURCE_ICON_MAP } from '~/styles/data-source-icons';
+import { getDataSourceIcon } from '~/styles/data-source-icons';
 
 interface SelectOption extends BaseSelectOption {
   environmentName?: string;
@@ -79,7 +79,7 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
         ]
       : dataSources.map((ds) => ({
           label: ds.name,
-          icon: DATA_SOURCE_ICON_MAP[ds.type] || <IcDatabase />,
+          icon: getDataSourceIcon({ type: ds.type, value: ds.name }),
           options: [
             ...ds.environments.map((env) => ({
               value: `${ds.id}:${env.id}`,
