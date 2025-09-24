@@ -3,6 +3,15 @@ import { env } from '~/env';
 import { decryptData, encryptData } from '@liblab/encryption/encryption';
 import { DeploymentMethodCredentialsType, DeploymentProvider } from '@prisma/client';
 import { type CreateDeploymentMethodInput, type UpdateDeploymentMethodInput } from '~/lib/validation/deploymentMethods';
+import PluginManager from '~/lib/plugins/plugin-manager';
+import { PluginType } from '~/lib/plugins/types';
+
+export interface DeploymentProviderInfo {
+  id: string;
+  name: string;
+  description: string;
+  requiredCredentials: DeploymentMethodCredentialsType[];
+}
 
 export interface EnvironmentDeploymentMethod {
   id: string;
@@ -430,4 +439,41 @@ export async function getDeploymentMethodCredentials(
   }
 
   return credentials;
+}
+
+export async function getDeploymentProviders(): Promise<DeploymentProviderInfo[]> {
+  // Initialize plugin manager
+  const pluginManager = PluginManager.getInstance();
+  await pluginManager.initialize();
+
+  // Get all possible providers
+  const allProviders: DeploymentProviderInfo[] = [
+    {
+      id: DeploymentProvider.VERCEL,
+      name: 'Vercel',
+      description: 'Deploy to Vercel platform',
+      requiredCredentials: [DeploymentMethodCredentialsType.API_KEY],
+    },
+    {
+      id: DeploymentProvider.NETLIFY,
+      name: 'Netlify',
+      description: 'Deploy to Netlify platform',
+      requiredCredentials: [DeploymentMethodCredentialsType.API_KEY],
+    },
+    {
+      id: DeploymentProvider.AWS,
+      name: 'AWS',
+      description: 'Deploy to Amazon Web Services',
+      requiredCredentials: [
+        DeploymentMethodCredentialsType.ACCESS_KEY,
+        DeploymentMethodCredentialsType.SECRET_KEY,
+        DeploymentMethodCredentialsType.REGION,
+      ],
+    },
+  ];
+
+  // Filter by available plugins
+  return allProviders.filter((provider) => {
+    return pluginManager.isPluginAvailable(PluginType.DEPLOYMENT, provider.id as any);
+  });
 }
