@@ -1,17 +1,15 @@
 import { type ChangeEvent, forwardRef, type KeyboardEvent } from 'react';
 import { classNames } from '~/utils/classNames';
-import { DataSourcePicker } from './DataSourcePicker';
 import { IconButton } from '~/components/ui/IconButton';
 import WithTooltip from '~/components/ui/Tooltip';
 import FilePreview from './FilePreview';
 import { ScreenshotStateManager } from './ScreenshotStateManager';
 import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
-import { openSettingsPanel } from '~/lib/stores/settings';
 import { SendButton } from './SendButton.client';
 import { processImageFile } from '~/utils/fileUtils';
 import { ClientOnly } from '~/components/ui/ClientOnly';
-import { Database } from 'lucide-react';
-import IcAttach from '~/icons/ic_attach.svg';
+import IcDatabase from '~/icons/ic_database.svg';
+import { AttachSquare } from 'iconsax-reactjs';
 
 interface ChatTextareaProps {
   value: string;
@@ -59,20 +57,15 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
       onSend,
       isStreaming = false,
       handleStop,
-      onDataSourceChange,
     },
     ref,
   ) => {
-    const { environmentDataSources } = useEnvironmentDataSourcesStore();
-
-    const handleConnectDataSource = () => {
-      openSettingsPanel('data', true);
-    };
+    const { selectedEnvironmentDataSourceName } = useEnvironmentDataSourcesStore();
 
     const fileUploadButton = (
-      <IconButton title="Upload file" className="transition-all" onClick={() => handleFileUpload()}>
-        <WithTooltip tooltip="Upload file">
-          <IcAttach className="text-3xl opacity-50 hover:opacity-100" />
+      <IconButton title="Attach files" className="transition-all" onClick={() => handleFileUpload()}>
+        <WithTooltip tooltip="Attach files">
+          <AttachSquare className="opacity-80 hover:opacity-100 cursor-pointer" variant="Bold" size={26} />
         </WithTooltip>
       </IconButton>
     );
@@ -162,29 +155,12 @@ export const ChatTextarea = forwardRef<HTMLTextAreaElement, ChatTextareaProps>(
             )}
           </ClientOnly>
         </div>
-        <div className="flex justify-between items-center text-sm mt-2">
+        <div className="flex justify-between items-center text-sm mt-2 font-medium">
           <div className="flex gap-1 items-center">
-            {environmentDataSources.length > 0 ? (
-              <DataSourcePicker
-                onAddNew={handleConnectDataSource}
-                disabled={true}
-                onDataSourceChange={onDataSourceChange}
-                placement={'top'}
-              />
-            ) : (
-              <button
-                onClick={handleConnectDataSource}
-                title="Connect external data sources to enhance AI responses"
-                className={classNames(
-                  'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
-                  'bg-accent-500 hover:bg-accent-600',
-                  'text-white',
-                )}
-              >
-                <Database className="w-4 h-4" />
-                <span>Connect Data Source</span>
-              </button>
-            )}
+            <div className="flex items-center gap-2 text-secondary ml-1">
+              <IcDatabase />
+              {selectedEnvironmentDataSourceName}
+            </div>
           </div>
           <div className="flex items-center gap-4">{fileUploadButton}</div>
         </div>

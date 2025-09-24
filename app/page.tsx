@@ -2,8 +2,7 @@
 
 import { HomepageTextarea } from '~/components/chat/HomepageTextarea';
 import { Header } from '~/components/header/Header';
-import { Background } from '~/components/ui/Background';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSources';
 import { Menu } from '~/components/sidebar/Menu.client';
@@ -13,8 +12,9 @@ import { HomepageHeadings } from '~/components/homepage/HomepageHeadings';
 import { DATA_SOURCE_CONNECTION_ROUTE } from '~/lib/constants/routes';
 import { useAuth } from '~/components/auth/AuthContext';
 import { useSession } from '~/auth/auth-client';
-import { detectBrowser, type BrowserInfo } from '~/lib/utils/browser-detection';
+import { type BrowserInfo, detectBrowser } from '~/lib/utils/browser-detection';
 import { BrowserCompatibilityModal } from '~/components/ui/BrowserCompatibilityModal';
+import { ConversationsList } from '~/components/chat/ConversationsList';
 
 export default function Index() {
   const router = useRouter();
@@ -73,9 +73,8 @@ export default function Index() {
     <Tooltip.Provider delayDuration={200}>
       <div className="flex flex-col h-full w-full bg-depth-1">
         {session?.user && <Menu />}
-        <Background />
         <Header />
-        <div className="flex flex-col h-full w-full z-1">
+        <div className="flex flex-col w-full z-1">
           <HomepageHeadings />
           <HomepageTextarea
             value={input}
@@ -120,6 +119,7 @@ export default function Index() {
               }
             }}
           />
+          <ConversationsList />
         </div>
 
         {/* Browser Compatibility Modal */}
