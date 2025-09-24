@@ -72,5 +72,5 @@ checker.init(options, (err: Error, packages: ModuleInfos) => {
   // Add on notices
 
   // Iconsax icons (free license unless commercial use)
-  console.log('\nThis project utilizes icons provided by Iconsax https://iconsax.io (Propietary Free Licensed.).\n');
+  console.log('\nThis project utilizes icons provided by Iconsax https://iconsax.io (Proprietary Free License).\n');
 });
