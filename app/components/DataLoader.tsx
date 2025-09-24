@@ -10,7 +10,7 @@ import type { PluginAccessMap } from '~/lib/plugins/types';
 import { useUserStore } from '~/lib/stores/user';
 import type { EnvironmentVariableWithDetails } from '~/lib/stores/environmentVariables';
 import { useEnvironmentVariablesStore } from '~/lib/stores/environmentVariables';
-import { DATA_SOURCE_CONNECTION_ROUTE, TELEMETRY_CONSENT_ROUTE } from '~/lib/constants/routes';
+import { DATA_SOURCE_CONNECTION_ROUTE, TELEMETRY_CONSENT_ROUTE, ONBOARDING_ROUTE } from '~/lib/constants/routes';
 import { initializeClientTelemetry } from '~/lib/telemetry/telemetry-client';
 import type { UserProfile } from '~/lib/services/userService';
 import { useAuthProvidersPlugin } from '~/lib/hooks/plugins/useAuthProvidersPlugin';
@@ -191,12 +191,14 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
       }
 
       // Handle user onboarding flow with telemetry and data sources
-      if (currentUser) {
+      // Only show telemetry consent and data source redirects for signed-in users
+      if (currentUser && session?.user) {
         // Redirect to telemetry consent screen if user hasn't answered yet
+        // Skip this check during admin onboarding to avoid interrupting the flow
         if (currentUser.telemetryEnabled === null) {
           const currentPath = window.location.pathname;
 
-          if (currentPath !== TELEMETRY_CONSENT_ROUTE) {
+          if (currentPath !== TELEMETRY_CONSENT_ROUTE && !currentPath.startsWith(ONBOARDING_ROUTE)) {
             router.push(TELEMETRY_CONSENT_ROUTE);
             return;
           }
@@ -208,10 +210,11 @@ export function DataLoader({ children, rootData }: DataLoaderProps) {
         }
 
         // Redirect to data source connection if no data sources exist
+        // Skip this check during admin onboarding to avoid interrupting the flow
         if (currentEnvironmentDataSources.length === 0) {
           const currentPath = window.location.pathname;
 
-          if (currentPath !== DATA_SOURCE_CONNECTION_ROUTE) {
+          if (currentPath !== DATA_SOURCE_CONNECTION_ROUTE && !currentPath.startsWith(ONBOARDING_ROUTE)) {
             router.push(DATA_SOURCE_CONNECTION_ROUTE);
             return;
           }

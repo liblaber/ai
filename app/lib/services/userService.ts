@@ -193,6 +193,24 @@ export const userService = {
     return nonAnonymousUserCount === 1;
   },
 
+  async isApplicationSetUp(): Promise<boolean> {
+    try {
+      // Check if there are any admin users
+      const adminCount = await prisma.userRole.count({
+        where: {
+          role: {
+            name: 'Admin',
+          },
+        },
+      });
+
+      return adminCount > 0;
+    } catch (error) {
+      logger.error('Error checking if application is set up:', error);
+      return false;
+    }
+  },
+
   async grantSystemAdminAccess(userId: string): Promise<void> {
     try {
       // Create the UserRole Join

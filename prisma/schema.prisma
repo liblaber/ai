@@ -389,6 +389,25 @@ model UserInvite {
   @@index([status])
 }
 
+model OnboardingProgress {
+  id                String    @id @default(cuid())
+  userId            String?   @unique
+  currentStep       String    // 'auth', 'auth-config', 'llm', 'datasource', 'users', 'complete'
+  authMethod        String?   // 'google', 'sso', 'password'
+  adminData         Json?     // { name, email, password? }
+  ssoConfig         Json?     // { hostUrl, clientId, clientSecret, scopes }
+  googleOAuthConfig Json?    // { clientId, clientSecret }
+  llmConfig         Json?     // { model, apiKey, baseUrl? }
+  datasourceConfig  Json?     // { name, type, connectionString, properties? }
+  usersConfig       Json?     // { invitations: [{ email, role }] }
+  telemetryConsent  Boolean?  @default(true)
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("onboarding_progress")
+}
+
 enum InviteStatus {
   PENDING
   ACCEPTED

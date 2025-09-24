@@ -1,6 +1,7 @@
 import './styles/index.scss';
 import type { ReactNode } from 'react';
 import { ClientProviders } from './components/ClientProviders';
+import { BodyWrapper } from './components/BodyWrapper';
 import './globals.css';
 import { getEnvironmentDataSources } from '~/lib/services/datasourceService';
 import { userService } from '~/lib/services/userService';
@@ -31,6 +32,9 @@ export const metadata = {
 
 async function getRootData() {
   try {
+    // Check if application is set up first
+    const isApplicationSetUp = await userService.isApplicationSetUp();
+
     // Get session from headers
     const headersList = await headers();
     const session = await auth.api.getSession({
@@ -79,6 +83,7 @@ async function getRootData() {
       deploymentProviders,
       pluginAccess,
       dataSourceTypes,
+      isApplicationSetUp,
     };
   } catch (error) {
     console.error('Error loading root data:', error);
@@ -90,6 +95,7 @@ async function getRootData() {
       deploymentProviders: [],
       pluginAccess: FREE_PLUGIN_ACCESS,
       dataSourceTypes: [],
+      isApplicationSetUp: false,
     };
   }
 }
@@ -113,8 +119,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" />
         <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
       </head>
-      <body className="w-full h-full bg-depth-1">
-        <ClientProviders rootData={rootData}>{children}</ClientProviders>
+      <body className="w-full h-full bg-depth-1" suppressHydrationWarning>
+        <BodyWrapper>
+          <ClientProviders rootData={rootData}>{children}</ClientProviders>
+        </BodyWrapper>
       </body>
     </html>
   );

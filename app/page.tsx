@@ -29,7 +29,6 @@ export default function Index() {
     version: 'unknown',
     supportsWebContainers: true,
   }));
-
   useEffect(() => {
     setBrowserInfo(detectBrowser());
   }, []);
