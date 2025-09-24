@@ -9,7 +9,6 @@ import { UserMenu } from '~/components/auth/UserMenu';
 import { useSession } from '~/auth/auth-client';
 import { Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import Link from 'next/link';
 
 interface Props {
   showMenuIcon?: boolean;
@@ -40,11 +39,11 @@ export function Header({ showMenuIcon = true }: Props) {
             }
           </ClientOnly>
         )}
-        <Link href="/" className="ml-1 font-semibold text-accent flex items-center">
+        <a href="/" className="ml-1 font-semibold text-accent flex items-center">
           <div className="h-8 flex items-center text-black dark:text-white">
             <Logo />
           </div>
-        </Link>
+        </a>
       </div>
       {pathname.startsWith('/chat') && (
         <>

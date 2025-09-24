@@ -15,7 +15,6 @@ import { useStore } from '@nanostores/react';
 import { openSettingsPanel, settingsPanelStore } from '~/lib/stores/settings';
 import { deleteConversation, type SimpleConversationResponse } from '~/lib/persistence/conversations';
 import { MessageCircle, Search } from 'lucide-react';
-import Link from 'next/link';
 import { useConversationsStore } from '~/lib/stores/conversations';
 
 const menuVariants = {
@@ -182,13 +181,13 @@ export const Menu = () => {
         <CurrentDateTime />
         <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
           <div className="p-4 space-y-3">
-            <Link
+            <a
               href="/"
               className="flex gap-2 items-center bg-accent-50 dark:bg-accent-500/10 text-accent-700 dark:text-accent-300 hover:bg-accent-100 dark:hover:bg-accent-500/20 rounded-lg px-4 py-2 transition-colors"
             >
               <MessageCircle className="h-4 w-4" />
               <span className="text-sm font-medium">Start new chat</span>
-            </Link>
+            </a>
             <div className="relative w-full">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 z-100">
                 <Search className="h-4 w-4 text-gray-400 dark:text-gray-500" />

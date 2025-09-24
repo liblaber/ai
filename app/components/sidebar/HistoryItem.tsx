@@ -7,7 +7,6 @@ import WithTooltip from '~/components/ui/Tooltip';
 import { classNames } from '~/utils/classNames';
 import { useEditChatDescription } from '~/lib/hooks';
 import type { SimpleConversationResponse } from '~/lib/persistence/conversations';
-import Link from 'next/link';
 
 interface HistoryItemProps {
   item: SimpleConversationResponse;
@@ -55,7 +54,7 @@ export function HistoryItem({ item, onDelete, onDuplicate, exportChat }: History
           </button>
         </form>
       ) : (
-        <Link href={`/chat/${item.id}`} className="flex w-full relative truncate block">
+        <a href={`/chat/${item.id}`} className="flex w-full relative truncate block">
           <WithTooltip tooltip={currentDescription}>
             <span className="truncate pr-24">{currentDescription}</span>
           </WithTooltip>
@@ -97,7 +96,7 @@ export function HistoryItem({ item, onDelete, onDuplicate, exportChat }: History
               </Dialog.Trigger>
             </div>
           </div>
-        </Link>
+        </a>
       )}
     </div>
   );

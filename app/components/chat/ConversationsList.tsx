@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/Tabs';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { classNames } from '~/utils/classNames';
 import { formatDistance } from 'date-fns';
-import Link from 'next/link';
 
 export function ConversationsList() {
   const { conversations, loadConversations, lastLoaded } = useConversationsStore();
@@ -59,7 +58,7 @@ export function ConversationsList() {
           <TabsContent value="my-apps" className="overflow-y-auto max-h-[230px]">
             <div className="flex flex-col">
               {myApps.map((conversation, index) => (
-                <Link key={conversation.id} href={`/chat/${conversation.id}`}>
+                <a key={conversation.id} href={`/chat/${conversation.id}`}>
                   <div
                     className={`flex items-center justify-between py-4 px-1 bg-transparent cursor-pointer transition-colors ${
                       index < myApps.length - 1 ? 'border-b border-depth-4' : ''
@@ -73,7 +72,7 @@ export function ConversationsList() {
                     </div>
                     <ChevronRight className="text-secondary" />
                   </div>
-                </Link>
+                </a>
               ))}
             </div>
           </TabsContent>
