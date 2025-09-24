@@ -113,7 +113,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
 
       const deployResult = await this.runCommand(
         'npx',
-        ['vercel', 'deploy', '--prod', '--token', token, '--yes'],
+        ['vercel', 'deploy', '--prod', '--token', token, '--yes', '--public'],
         tempDir,
         undefined,
         5 * 60 * 1000, // 5 minutes timeout
@@ -132,8 +132,27 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
 
       const deploymentInfo = this._parseVercelOutput(deployResult.output);
 
+      // Get project ID from .vercel/project.json file
+      const projectId = await this._getVercelProjectId(tempDir, chatId);
+
+      if (projectId) {
+        // Disable SSO protection to allow iframe embedding
+        await this._disableVercelSSOProtection(projectId, token, chatId);
+      } else {
+        logger.warn('Could not find Vercel project ID', JSON.stringify({ chatId }));
+      }
+
+      // Send final completion step
+      await this.sendProgress(
+        this.totalSteps,
+        this.totalSteps,
+        'Deployment completed successfully!',
+        'success',
+        onProgress,
+      );
+
       const siteInfo = {
-        id: deploymentInfo.projectId || `vercel-${chatId}`,
+        id: projectId || `vercel-${chatId}`,
         name: projectName,
         url: deploymentInfo.url || `https://${projectName}.vercel.app`,
         chatId,
@@ -190,16 +209,11 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
     const vercelConfig = {
       version: 2,
       name: `liblab-${chatId.slice(0, 8)}`,
+      public: true,
       builds: [
         {
           src: 'package.json',
           use: '@vercel/next',
-        },
-      ],
-      routes: [
-        {
-          src: '/(.*)',
-          dest: '/$1',
         },
       ],
       headers: [
@@ -233,7 +247,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
           ],
         },
         {
-          source: '/*.js',
+          source: '/:path*.js',
           headers: [
             {
               key: 'Cross-Origin-Resource-Policy',
@@ -254,7 +268,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
           ],
         },
         {
-          source: '/*.css',
+          source: '/:path*.css',
           headers: [
             {
               key: 'Cross-Origin-Resource-Policy',
@@ -267,7 +281,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
           ],
         },
         {
-          source: '/*.{png,jpg,jpeg,gif,svg,ico}',
+          source: '/:path*.(png|jpg|jpeg|gif|svg|ico)',
           headers: [
             {
               key: 'Cross-Origin-Resource-Policy',
@@ -280,7 +294,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
           ],
         },
         {
-          source: '/*.{woff,woff2,ttf,eot}',
+          source: '/:path*.(woff|woff2|ttf|eot)',
           headers: [
             {
               key: 'Cross-Origin-Resource-Policy',
@@ -437,5 +451,93 @@ module.exports = nextConfig;
     }
 
     return { projectId, deploymentId, url };
+  }
+
+  /**
+   * Gets the Vercel project ID from the .vercel/project.json file
+   */
+  private async _getVercelProjectId(tempDir: string, chatId: string): Promise<string | null> {
+    try {
+      const { readFile } = await import('fs/promises');
+      const { join } = await import('path');
+
+      const projectJsonPath = join(tempDir, '.vercel', 'project.json');
+
+      if (await this.fileExists(projectJsonPath)) {
+        const projectJsonContent = await readFile(projectJsonPath, 'utf-8');
+        const projectData = JSON.parse(projectJsonContent);
+
+        logger.info(
+          'Found Vercel project ID',
+          JSON.stringify({
+            chatId,
+            projectId: projectData.projectId,
+            projectName: projectData.projectName,
+          }),
+        );
+
+        return projectData.projectId || null;
+      } else {
+        logger.warn('Vercel project.json file not found', JSON.stringify({ chatId, path: projectJsonPath }));
+        return null;
+      }
+    } catch (error) {
+      logger.warn(
+        'Error reading Vercel project.json',
+        JSON.stringify({
+          chatId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }),
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Disables SSO protection on a Vercel project to allow iframe embedding
+   */
+  private async _disableVercelSSOProtection(projectId: string, token: string, chatId: string): Promise<void> {
+    try {
+      logger.info('Disabling Vercel SSO protection', JSON.stringify({ chatId, projectId }));
+
+      const response = await fetch(`https://api.vercel.com/v9/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ssoProtection: null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        logger.warn(
+          'Failed to disable SSO protection',
+          JSON.stringify({
+            chatId,
+            projectId,
+            status: response.status,
+            error: errorData,
+          }),
+        );
+
+        // Don't throw error - deployment was successful, just SSO protection couldn't be disabled
+        return;
+      }
+
+      logger.info('Successfully disabled Vercel SSO protection', JSON.stringify({ chatId, projectId }));
+    } catch (error) {
+      logger.warn(
+        'Error disabling SSO protection',
+        JSON.stringify({
+          chatId,
+          projectId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }),
+      );
+      // Don't throw error - deployment was successful, just SSO protection couldn't be disabled
+    }
   }
 }
