@@ -212,6 +212,7 @@ async function seedBuilderRole(): Promise<void> {
       { resource: PermissionResource.Environment, action: PermissionAction.manage },
       { resource: PermissionResource.DataSource, action: PermissionAction.manage },
       { resource: PermissionResource.Website, action: PermissionAction.manage },
+      { resource: PermissionResource.Conversation, action: PermissionAction.manage },
       { resource: PermissionResource.BuilderApp, action: PermissionAction.manage },
     ];
     await seedPermissions(builderRole.id, permissions);

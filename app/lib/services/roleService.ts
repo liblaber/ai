@@ -1,7 +1,6 @@
 import { prisma } from '~/lib/prisma';
-import { RoleScope, Prisma, PrismaClient } from '@prisma/client';
-import { type Role, PermissionAction, PermissionResource } from '@prisma/client';
-import { permissionLevels, type PermissionLevel } from '~/lib/services/permissionService';
+import { PermissionAction, PermissionResource, Prisma, PrismaClient, type Role, RoleScope } from '@prisma/client';
+import { type PermissionLevel, permissionLevels } from '~/lib/services/permissionService';
 
 export type ResourceRoleScope = Exclude<RoleScope, 'GENERAL'>;
 
@@ -9,6 +8,7 @@ export const roleScopeResourceMap: Record<ResourceRoleScope, PermissionResource>
   [RoleScope.DATA_SOURCE]: PermissionResource.DataSource,
   [RoleScope.ENVIRONMENT]: PermissionResource.Environment,
   [RoleScope.WEBSITE]: PermissionResource.Website,
+  [RoleScope.CONVERSATION]: PermissionResource.Conversation,
 };
 
 export async function getRole(id: string): Promise<Role | null> {
@@ -121,6 +121,7 @@ export async function findOrCreateResourceRole(
     dataSourceId?: string;
     environmentId?: string;
     websiteId?: string;
+    conversationId?: string;
   } = {
     action: permissionDetails.action,
     resource: roleScopeResourceMap[scope],
@@ -135,6 +136,9 @@ export async function findOrCreateResourceRole(
       break;
     case RoleScope.WEBSITE:
       permissionData.websiteId = resourceId;
+      break;
+    case RoleScope.CONVERSATION:
+      permissionData.conversationId = resourceId;
       break;
   }
 

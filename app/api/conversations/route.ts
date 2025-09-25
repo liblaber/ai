@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { conversationService } from '~/lib/services/conversationService';
 import type { Message } from '@prisma/client';
+import { PermissionAction } from '@prisma/client';
 import { snapshotService } from '~/lib/services/snapshotService';
 import { messageService } from '~/lib/services/messageService';
 import { createId } from '@paralleldrive/cuid2';
 import { logger } from '~/utils/logger';
-import { requireUserId } from '~/auth/session';
+import { requireUserAbility } from '~/auth/session';
 import { prisma } from '~/lib/prisma';
 
 export async function POST(request: NextRequest) {
-  const userId = await requireUserId(request);
+  const { userId, userAbility } = await requireUserAbility(request);
+
+  if (userAbility.cannot(PermissionAction.create, 'Conversation')) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+  }
 
   try {
     const body = (await request.json()) as {
@@ -92,10 +97,14 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const userId = await requireUserId(request);
+  const { userAbility } = await requireUserAbility(request);
+
+  if (userAbility.cannot(PermissionAction.read, 'Conversation')) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+  }
 
   try {
-    const conversations = await conversationService.getAllConversations(userId);
+    const conversations = await conversationService.getAllConversationsWithPermissions(userAbility);
     return NextResponse.json(conversations);
   } catch (error) {
     logger.error('Error fetching conversations:', error);
