@@ -81,11 +81,11 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
           label: ds.name,
           icon: getDataSourceIcon({ type: ds.type, value: ds.name }),
           options: [
-            ...ds.environments.map((env) => ({
+            ...(ds.environments?.map((env) => ({
               value: `${ds.id}:${env.id}`,
               label: env.name,
               dataSourceName: ds.name,
-            })),
+            })) ?? []),
             {
               value: `manage-environment:${ds.id}`,
               label: 'Manage environments...',
