@@ -20,7 +20,6 @@ export interface DockerContainerCreateRequest {
   conversationId: string;
   snapshotId?: string;
   image?: string;
-  ports?: number[];
   environment?: Record<string, string>;
 }
 

@@ -5,15 +5,9 @@ import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('DockerContainerExecAPI');
 
-interface RouteParams {
-  params: {
-    containerId: string;
-  };
-}
-
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ containerId: string }> }) {
   try {
-    const { containerId } = params;
+    const { containerId } = await params;
     const command = (await request.json()) as DockerShellCommand;
 
     if (!command.command) {
@@ -26,7 +20,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(result);
   } catch (error) {
-    logger.error(`Failed to execute command in container ${params.containerId}:`, error);
+    const { containerId } = await params;
+    logger.error(`Failed to execute command in container ${containerId}:`, error);
 
     return NextResponse.json(
       {

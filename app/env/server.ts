@@ -115,6 +115,9 @@ export const env = createEnv({
 
     // Google Sheets configuration
     GOOGLE_SHEETS_SEMANTIC_VERSION: z.string().default('3'),
+
+    // Docker configuration
+    DOCKER_BASE_IMAGE: z.string().default('liblab-ai-next-starter:latest'),
   },
   experimental__runtimeEnv: process.env,
 });

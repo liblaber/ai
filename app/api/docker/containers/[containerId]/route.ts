@@ -4,15 +4,9 @@ import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('DockerContainerAPI');
 
-interface RouteParams {
-  params: {
-    containerId: string;
-  };
-}
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ containerId: string }> }) {
   try {
-    const { containerId } = params;
+    const { containerId } = await params;
     const container = dockerContainerManager.getContainer(containerId);
 
     if (!container) {
@@ -24,7 +18,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       baseUrl: container.ports.length > 0 ? `http://localhost:${container.ports[0].hostPort}` : undefined,
     });
   } catch (error) {
-    logger.error(`Failed to get container ${params.containerId}:`, error);
+    const { containerId } = await params;
+    logger.error(`Failed to get container ${containerId}:`, error);
 
     return NextResponse.json(
       {
@@ -36,9 +31,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ containerId: string }> }) {
   try {
-    const { containerId } = params;
+    const { containerId } = await params;
 
     await dockerContainerManager.destroyContainer(containerId);
 
@@ -46,7 +41,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error(`Failed to destroy container ${params.containerId}:`, error);
+    const { containerId } = await params;
+    logger.error(`Failed to destroy container ${containerId}:`, error);
 
     return NextResponse.json(
       {

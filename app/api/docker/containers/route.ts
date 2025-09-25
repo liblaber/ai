@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createScopedLogger } from '~/utils/logger';
 import type { DockerContainerCreateRequest } from '~/types/docker';
+import { dockerContainerManager } from '~/lib/docker/container-manager';
 
 const logger = createScopedLogger('DockerContainersAPI');
 
@@ -9,9 +10,6 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as DockerContainerCreateRequest;
 
     logger.info(`Creating container for conversation ${body.conversationId}`);
-
-    // Dynamic import to ensure this only runs on server side
-    const { dockerContainerManager } = await import('~/lib/docker/container-manager');
 
     const container = await dockerContainerManager.createContainer(body);
 

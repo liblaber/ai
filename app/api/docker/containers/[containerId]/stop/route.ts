@@ -4,15 +4,9 @@ import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('DockerContainerStopAPI');
 
-interface RouteParams {
-  params: {
-    containerId: string;
-  };
-}
-
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ containerId: string }> }) {
   try {
-    const { containerId } = params;
+    const { containerId } = await params;
 
     const container = await dockerContainerManager.stopContainer(containerId);
 
@@ -20,7 +14,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ container });
   } catch (error) {
-    logger.error(`Failed to stop container ${params.containerId}:`, error);
+    const { containerId } = await params;
+    logger.error(`Failed to stop container ${containerId}:`, error);
 
     return NextResponse.json(
       {

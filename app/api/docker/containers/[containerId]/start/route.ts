@@ -4,15 +4,9 @@ import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('DockerContainerStartAPI');
 
-interface RouteParams {
-  params: {
-    containerId: string;
-  };
-}
-
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ containerId: string }> }) {
   try {
-    const { containerId } = params;
+    const { containerId } = await params;
 
     const container = await dockerContainerManager.startContainer(containerId);
 
@@ -23,7 +17,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       baseUrl: container.ports.length > 0 ? `http://localhost:${container.ports[0].hostPort}` : undefined,
     });
   } catch (error) {
-    logger.error(`Failed to start container ${params.containerId}:`, error);
+    const { containerId } = await params;
+    logger.error(`Failed to start container ${containerId}:`, error);
 
     return NextResponse.json(
       {

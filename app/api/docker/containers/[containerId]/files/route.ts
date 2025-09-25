@@ -5,15 +5,9 @@ import { createScopedLogger } from '~/utils/logger';
 
 const logger = createScopedLogger('DockerContainerFilesAPI');
 
-interface RouteParams {
-  params: {
-    containerId: string;
-  };
-}
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ containerId: string }> }) {
   try {
-    const { containerId } = params;
+    const { containerId } = await params;
     const { searchParams } = new URL(request.url);
     const path = searchParams.get('path') || '/app';
     const recursive = searchParams.get('recursive') === 'true';
@@ -77,7 +71,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ files });
   } catch (error) {
-    logger.error(`Failed to list files in container ${params.containerId}:`, error);
+    const { containerId } = await params;
+    logger.error(`Failed to list files in container ${containerId}:`, error);
 
     return NextResponse.json(
       {
@@ -89,9 +84,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ containerId: string }> }) {
   try {
-    const { containerId } = params;
+    const { containerId } = await params;
     const operation = (await request.json()) as DockerFileOperation;
 
     if (!operation.path) {
@@ -156,7 +151,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ file: fileEntry });
     }
   } catch (error) {
-    logger.error(`Failed to handle file operation in container ${params.containerId}:`, error);
+    const { containerId } = await params;
+    logger.error(`Failed to handle file operation in container ${containerId}:`, error);
 
     return NextResponse.json(
       {
@@ -168,9 +164,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ containerId: string }> }) {
   try {
-    const { containerId } = params;
+    const { containerId } = await params;
     const { searchParams } = new URL(request.url);
     const path = searchParams.get('path');
 
@@ -190,7 +186,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error(`Failed to delete file in container ${params.containerId}:`, error);
+    const { containerId } = await params;
+    logger.error(`Failed to delete file in container ${containerId}:`, error);
 
     return NextResponse.json(
       {

@@ -1,6 +1,5 @@
 import Docker from 'dockerode';
 import { EventEmitter } from 'events';
-import { createScopedLogger } from '~/utils/logger';
 import type {
   DockerContainer,
   DockerContainerCreateRequest,
@@ -10,112 +9,53 @@ import type {
   DockerShellResponse,
 } from '~/types/docker';
 
-const logger = createScopedLogger('DockerContainerManager');
-
 export class DockerContainerManager extends EventEmitter {
   private _docker: Docker;
   private _containers: Map<string, DockerContainer> = new Map();
   private _containerInstances: Map<string, Docker.Container> = new Map();
-  private _networkInitialized: boolean = false;
-  private _networkInitializationPromise: Promise<void> | null = null;
-  private readonly _networkName: string = 'liblab-ai-network';
   private readonly _baseImage: string = 'liblab-ai-next-starter:latest';
+  private _usedPorts: Set<number> = new Set();
 
   constructor() {
     super();
     this._docker = new Docker();
   }
 
-  async initializeNetwork(): Promise<void> {
-    // If already initialized, return immediately
-    if (this._networkInitialized) {
-      return;
-    }
-
-    // If initialization is in progress, wait for it to complete
-    if (this._networkInitializationPromise) {
-      await this._networkInitializationPromise;
-      return;
-    }
-
-    // Start initialization
-    this._networkInitializationPromise = this._doInitializeNetwork();
-
-    try {
-      await this._networkInitializationPromise;
-      this._networkInitialized = true;
-    } catch (error) {
-      // Reset the promise so it can be retried
-      this._networkInitializationPromise = null;
-      throw error;
-    }
-  }
-
-  private async _doInitializeNetwork(): Promise<void> {
-    try {
-      // Check if network exists, create if it doesn't
-      const networks = await this._docker.listNetworks({
-        filters: { name: [this._networkName] },
-      });
-
-      if (networks.length === 0) {
-        await this._docker.createNetwork({
-          Name: this._networkName,
-          Driver: 'bridge',
-        });
-        logger.info(`Created Docker network: ${this._networkName}`);
-      } else {
-        logger.info(`Docker network ${this._networkName} already exists`);
-      }
-    } catch (error) {
-      logger.error('Failed to initialize Docker network:', error);
-      throw error;
-    }
-  }
-
   async createContainer(request: DockerContainerCreateRequest): Promise<DockerContainer> {
-    // Ensure network is initialized before creating containers
-    await this.initializeNetwork();
-
-    const containerId = this._generateContainerId(request.conversationId);
+    const containerId = request.conversationId;
     const containerName = `liblab-ai-${containerId}`;
 
     try {
-      logger.info(`Creating container ${containerName} for conversation ${request.conversationId}`);
+      console.info(`Creating container ${containerName} for conversation ${request.conversationId}`);
 
-      // Prepare port mappings
-      const exposedPorts: Record<string, {}> = {};
-      const portBindings: Record<string, Array<{ HostPort: string }>> = {};
-      const ports: DockerPort[] = [];
+      // Simple port mapping - only expose port 3000
+      const containerPort = 3000;
+      const hostPort = await this._findAvailablePort();
+      console.info(`Allocated host port ${hostPort} for container ${containerName}`);
 
-      const requestPorts = request.ports || [3000, 5173, 8080]; // Default dev server ports
+      const exposedPorts = { '3000/tcp': {} };
+      const portBindings = { '3000/tcp': [{ HostPort: hostPort.toString() }] };
 
-      for (const containerPort of requestPorts) {
-        const hostPort = await this._findAvailablePort();
-        const portKey = `${containerPort}/tcp`;
-
-        exposedPorts[portKey] = {};
-        portBindings[portKey] = [{ HostPort: hostPort.toString() }];
-
-        ports.push({
+      const ports: DockerPort[] = [
+        {
           containerPort,
           hostPort,
           protocol: 'tcp',
-        });
-      }
+        },
+      ];
 
-      // Create volume mount for file persistence
+      // Create volume for app files
       const volumeName = `liblab-ai-app-${containerId}`;
       await this._createVolume(volumeName);
 
       const containerOptions: Docker.ContainerCreateOptions = {
-        Image: request.image || this._baseImage,
+        Image: this._baseImage, // Always use the same image
         name: containerName,
         ExposedPorts: exposedPorts,
         WorkingDir: '/app',
+        Env: ['CHOKIDAR_USEPOLLING=true', 'CI=true'],
         HostConfig: {
           PortBindings: portBindings,
-          NetworkMode: this._networkName,
           Mounts: [
             {
               Type: 'volume',
@@ -125,11 +65,6 @@ export class DockerContainerManager extends EventEmitter {
           ],
           AutoRemove: false, // We'll manage cleanup manually
         },
-        NetworkingConfig: {
-          EndpointsConfig: {
-            [this._networkName]: {},
-          },
-        },
       };
 
       const dockerContainer = await this._docker.createContainer(containerOptions);
@@ -137,7 +72,7 @@ export class DockerContainerManager extends EventEmitter {
       const container: DockerContainer = {
         id: containerId,
         name: containerName,
-        image: request.image || this._baseImage,
+        image: this._baseImage,
         status: 'creating',
         ports,
         createdAt: new Date(),
@@ -151,11 +86,11 @@ export class DockerContainerManager extends EventEmitter {
 
       this.emit('container-created', { type: 'container-created', container });
 
-      logger.info(`Container ${containerName} created successfully`);
+      console.info(`Container ${containerName} created successfully`);
 
       return container;
     } catch (error) {
-      logger.error(`Failed to create container ${containerName}:`, error);
+      console.error(`Failed to create container ${containerName}:`, error);
       throw new Error(`Failed to create container: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -169,7 +104,7 @@ export class DockerContainerManager extends EventEmitter {
     }
 
     try {
-      logger.info(`Starting container ${container.name}`);
+      console.info(`Starting container ${container.name}`);
 
       await dockerContainer.start();
 
@@ -178,12 +113,12 @@ export class DockerContainerManager extends EventEmitter {
 
       this._containers.set(containerId, container);
 
-      // Start monitoring container
+      // Start monitoring container (intentionally not awaited)
       this._monitorContainer(containerId);
 
       this.emit('container-started', { type: 'container-started', container });
 
-      logger.info(`Container ${container.name} started successfully`);
+      console.info(`Container ${container.name} started successfully`);
 
       return container;
     } catch (error) {
@@ -191,7 +126,7 @@ export class DockerContainerManager extends EventEmitter {
       container.updatedAt = new Date();
       this._containers.set(containerId, container);
 
-      logger.error(`Failed to start container ${container.name}:`, error);
+      console.error(`Failed to start container ${container.name}:`, error);
       this.emit('container-error', {
         type: 'container-error',
         container,
@@ -211,7 +146,7 @@ export class DockerContainerManager extends EventEmitter {
     }
 
     try {
-      logger.info(`Stopping container ${container.name}`);
+      console.info(`Stopping container ${container.name}`);
 
       await dockerContainer.stop({ t: 10 }); // 10 second timeout
 
@@ -222,11 +157,11 @@ export class DockerContainerManager extends EventEmitter {
 
       this.emit('container-stopped', { type: 'container-stopped', container });
 
-      logger.info(`Container ${container.name} stopped successfully`);
+      console.info(`Container ${container.name} stopped successfully`);
 
       return container;
     } catch (error) {
-      logger.error(`Failed to stop container ${container.name}:`, error);
+      console.error(`Failed to stop container ${container.name}:`, error);
       throw error;
     }
   }
@@ -240,7 +175,7 @@ export class DockerContainerManager extends EventEmitter {
     }
 
     try {
-      logger.info(`Destroying container ${container.name}`);
+      console.info(`Destroying container ${container.name}`);
 
       // Stop if running
       if (container.status === 'running') {
@@ -251,16 +186,19 @@ export class DockerContainerManager extends EventEmitter {
       await dockerContainer.remove({ force: true });
 
       // Remove volume
-      const volumeName = `liblab-ai-files-${containerId}`;
+      const volumeName = `liblab-ai-app-${containerId}`;
       await this._removeVolume(volumeName);
 
-      // Clean up local references
+      // Clean up local references and free up ports
+      container.ports.forEach((port) => {
+        this._usedPorts.delete(port.hostPort);
+      });
       this._containers.delete(containerId);
       this._containerInstances.delete(containerId);
 
-      logger.info(`Container ${container.name} destroyed successfully`);
+      console.info(`Container ${container.name} destroyed successfully`);
     } catch (error) {
-      logger.error(`Failed to destroy container ${container.name}:`, error);
+      console.error(`Failed to destroy container ${container.name}:`, error);
       throw error;
     }
   }
@@ -339,7 +277,7 @@ export class DockerContainerManager extends EventEmitter {
         stream.on('error', reject);
       });
     } catch (error) {
-      logger.error(`Failed to execute command in container ${containerId}:`, error);
+      console.error(`Failed to execute command in container ${containerId}:`, error);
       throw error;
     }
   }
@@ -393,7 +331,7 @@ export class DockerContainerManager extends EventEmitter {
 
       return logs;
     } catch (error) {
-      logger.error(`Failed to get logs for container ${containerId}:`, error);
+      console.error(`Failed to get logs for container ${containerId}:`, error);
       throw error;
     }
   }
@@ -419,9 +357,11 @@ export class DockerContainerManager extends EventEmitter {
     }
 
     try {
-      // Monitor for port readiness
+      // Monitor for port readiness (async, don't block)
       for (const port of container.ports) {
-        this._checkPortReadiness(containerId, port);
+        this._checkPortReadiness(containerId, port).catch((error) => {
+          console.error(`Failed to check port readiness for ${port.containerPort}:`, error);
+        });
       }
 
       // Monitor container status
@@ -439,10 +379,10 @@ export class DockerContainerManager extends EventEmitter {
           }
         })
         .catch((error) => {
-          logger.error(`Container ${container.name} monitoring error:`, error);
+          console.error(`Container ${container.name} monitoring error:`, error);
         });
     } catch (error) {
-      logger.error(`Failed to start monitoring container ${container.name}:`, error);
+      console.error(`Failed to start monitoring container ${container.name}:`, error);
     }
   }
 
@@ -483,37 +423,41 @@ export class DockerContainerManager extends EventEmitter {
       }
     }
 
-    logger.warn(`Port ${port.containerPort} on container ${container.name} never became ready`);
-  }
-
-  private _generateContainerId(conversationId: string): string {
-    return `${conversationId}-${Date.now().toString(36)}`;
+    console.warn(`Port ${port.containerPort} on container ${container.name} never became ready`);
   }
 
   private async _findAvailablePort(startPort: number = 3001): Promise<number> {
     const net = await import('net');
 
-    return new Promise((resolve, reject) => {
-      const server = net.createServer();
+    for (let port = startPort; port <= startPort + 999; port++) {
+      // Skip if we've already allocated this port
+      if (this._usedPorts.has(port)) {
+        continue;
+      }
 
-      server.listen(startPort, () => {
-        const port = (server.address() as net.AddressInfo)?.port;
-        server.close(() => {
-          if (port) {
-            resolve(port);
-          } else {
-            reject(new Error('Failed to find available port'));
-          }
+      // Test if port is available
+      const isAvailable = await new Promise<boolean>((resolve) => {
+        const server = net.createServer();
+
+        server.listen(port, () => {
+          server.close(() => {
+            resolve(true);
+          });
+        });
+
+        server.on('error', () => {
+          resolve(false);
         });
       });
 
-      server.on('error', () => {
-        // Port is busy, try next one
-        this._findAvailablePort(startPort + 1)
-          .then(resolve)
-          .catch(reject);
-      });
-    });
+      if (isAvailable) {
+        // Mark port as used and return it
+        this._usedPorts.add(port);
+        return port;
+      }
+    }
+
+    throw new Error(`No available ports found in range ${startPort}-${startPort + 100}`);
   }
 
   private async _createVolume(volumeName: string): Promise<void> {
@@ -532,7 +476,7 @@ export class DockerContainerManager extends EventEmitter {
       const volume = this._docker.getVolume(volumeName);
       await volume.remove();
     } catch (error) {
-      logger.warn(`Failed to remove volume ${volumeName}:`, error);
+      console.warn(`Failed to remove volume ${volumeName}:`, error);
     }
   }
 }
