@@ -1,22 +1,22 @@
 import { type Page, test, expect } from '@playwright/test';
-import { performInitialSetup, navigateToSettings, navigateToDataSourceForm } from '../helpers/setup';
+import { performInitialSetup } from '../helpers/setup';
 import {
   getDataSourceNameInput,
   getAccessTokenInput,
   getCreateButton,
   getTestConnectionButton,
 } from '../helpers/selectors';
+import { navigateToDataSourceForm, navigateToSettings } from '../helpers/navigate';
 
 test.describe('Add HubSpot Data Source Flow', () => {
   test.beforeEach(async ({ page }) => {
     test.setTimeout(120000);
     await performInitialSetup(page);
     await navigateToSettings(page);
+    await navigateToDataSourceForm(page, 'hubspot');
   });
 
   test('Validate HubSpot access token format and required fields', async ({ page }: { page: Page }) => {
-    await navigateToDataSourceForm(page, 'hubspot');
-
     const saveButton = getCreateButton(page);
     await saveButton.waitFor({ state: 'visible', timeout: 10000 });
 
@@ -74,8 +74,6 @@ test.describe('Add HubSpot Data Source Flow', () => {
   });
 
   test('Test HubSpot token validation and error handling', async ({ page }: { page: Page }) => {
-    await navigateToDataSourceForm(page, 'hubspot');
-
     // Fill in the data source name
     const dbNameInput = getDataSourceNameInput(page);
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });

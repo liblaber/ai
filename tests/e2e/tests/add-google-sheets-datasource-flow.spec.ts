@@ -1,17 +1,17 @@
 import { type Page, test, expect } from '@playwright/test';
-import { performInitialSetup, navigateToSettings, navigateToDataSourceForm } from '../helpers/setup';
+import { performInitialSetup } from '../helpers/setup';
 import { getDataSourceNameInput, getGoogleSheetsUrlInput, getCreateButton } from '../helpers/selectors';
+import { navigateToDataSourceForm, navigateToSettings } from '../helpers/navigate';
 
 test.describe('Add Google Sheets Data Source Flow', () => {
   test.beforeEach(async ({ page }) => {
     test.setTimeout(180000);
     await performInitialSetup(page);
     await navigateToSettings(page);
+    await navigateToDataSourceForm(page, 'google-sheets');
   });
 
   test('Create Google Sheets data source with public spreadsheet URL', async ({ page }: { page: Page }) => {
-    await navigateToDataSourceForm(page, 'google-sheets');
-
     const dbNameInput = getDataSourceNameInput(page);
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
     await dbNameInput.fill('test-google-sheets');
@@ -85,8 +85,6 @@ test.describe('Add Google Sheets Data Source Flow', () => {
   });
 
   test('Validate Google Sheets OAuth flow and required fields', async ({ page }: { page: Page }) => {
-    await navigateToDataSourceForm(page, 'google-sheets');
-
     const saveButton = getCreateButton(page);
 
     // Wait for the button with more tolerance for OAuth flows
@@ -183,8 +181,6 @@ test.describe('Add Google Sheets Data Source Flow', () => {
   });
 
   test('Test Google Sheets OAuth error handling', async ({ page }: { page: Page }) => {
-    await navigateToDataSourceForm(page, 'google-sheets');
-
     // Fill in the data source name
     const dbNameInput = getDataSourceNameInput(page);
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
