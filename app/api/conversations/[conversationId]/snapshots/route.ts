@@ -25,7 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
   }
 
-  if (userAbility.cannot(PermissionAction.create, subject('Conversation', conversation))) {
+  if (userAbility.cannot(PermissionAction.update, subject('Conversation', conversation))) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
 
