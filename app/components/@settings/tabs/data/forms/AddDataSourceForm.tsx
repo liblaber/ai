@@ -401,7 +401,7 @@ export default function AddDataSourceForm({ isSubmitting, setIsSubmitting, onSuc
                       value={propertyValues[property.type] || ''}
                       onChange={(e) => handlePropertyChange(property.type, e.target.value)}
                       disabled={isSubmitting}
-                      data-testid={`${property.type.toLowerCase()}-input`}
+                      data-testid={'data-source-token-input'}
                       className={classNames(
                         'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
                         'text-primary placeholder-tertiary text-base',

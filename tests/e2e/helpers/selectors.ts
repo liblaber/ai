@@ -8,7 +8,7 @@ export const getDataSourceNameInput = (page: Page) => {
 };
 
 export const getAccessTokenInput = (page: Page) => {
-  return page.locator('[data-testid="access_token-input"]');
+  return page.locator('[data-testid="data-source-token-input"]');
 };
 
 export const getGoogleSheetsUrlInput = (page: Page) => {
