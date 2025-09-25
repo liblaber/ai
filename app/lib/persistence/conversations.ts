@@ -34,6 +34,8 @@ type ConversationResponse = {
   updatedAt: number;
   dataSourceId: string;
   environmentId: string;
+  userId: string;
+  editedAt: number;
 };
 
 export type SimpleConversationResponse = Omit<ConversationResponse, 'messages'>;

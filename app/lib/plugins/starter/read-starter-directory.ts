@@ -32,45 +32,13 @@ export function readStarterFileMap(options: GetStarterFileMapOptions): FileMap {
       fileMap = { ...fileMap, ...subDirMap };
     } else {
       if (entry.name === 'package.json') {
-        const packageJson = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
-        const dependencies = packageJson.dependencies || {};
+        const packageJsonContent = fs.readFileSync(fullPath, 'utf8');
+        const updatedPackageJson = addMissingDependencies(packageJsonContent, sharedFiles, sharedImportsToSkip);
 
-        // Extract all imports from shared files
-        const sharedImports = new Set<string>();
-        Object.values(sharedFiles).forEach((file) => {
-          if (file?.type === 'file') {
-            const importMatches = file.content.match(/from ['"]([^'"]+)['"]/g) || [];
-            importMatches.forEach((match: string) => {
-              const importPath = match.match(/from ['"]([^'"]+)['"]/)?.[1];
-
-              if (importPath && !importPath.startsWith('.') && !importPath.startsWith('@/')) {
-                // Extract the package name from the import
-                const packageName = importPath.split('/')[0];
-
-                if (packageName && !sharedImportsToSkip.includes(packageName)) {
-                  sharedImports.add(packageName);
-                }
-              }
-            });
-          }
-        });
-
-        // Add missing dependencies
-        let hasChanges = false;
-        const rootPackageJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
-        sharedImports.forEach((pkg) => {
-          if (!dependencies[pkg]) {
-            dependencies[pkg] =
-              rootPackageJson.dependencies?.[pkg] || rootPackageJson.devDependencies?.[pkg] || 'latest';
-            hasChanges = true;
-          }
-        });
-
-        if (hasChanges) {
-          packageJson.dependencies = dependencies;
+        if (updatedPackageJson) {
           fileMap[relativePath] = {
             type: 'file',
-            content: JSON.stringify(packageJson, null, 2),
+            content: updatedPackageJson,
             isBinary: false,
           };
           continue; // Skip the rest of the file handling for this file
@@ -137,12 +105,33 @@ export function readDataAccessFileMap({ dirPath, packageJsonContent }: ReadDataA
     };
   }
 
+  const updatedPackageJson = addMissingDependencies(packageJsonContent, dataAccessFiles);
+
+  if (updatedPackageJson) {
+    fileMap['package.json'] = {
+      type: 'file',
+      content: updatedPackageJson,
+      isBinary: false,
+    };
+  }
+
+  // Merge data-access files into the result
+  fileMap = { ...fileMap, ...dataAccessFiles };
+
+  return fileMap;
+}
+
+function addMissingDependencies(
+  packageJsonContent: string,
+  filesToScan: FileMap,
+  sharedImportsToSkip: string[] = [],
+): string | null {
   const packageJson = JSON.parse(packageJsonContent);
   const dependencies = packageJson.dependencies || {};
 
-  // Extract all imports from data-access files
+  // Extract all imports from the files to scan
   const sharedImports = new Set<string>();
-  Object.values(dataAccessFiles).forEach((file) => {
+  Object.values(filesToScan).forEach((file) => {
     if (file?.type === 'file') {
       const importMatches = file.content.match(/from ['"]([^'"]+)['"]/g) || [];
       importMatches.forEach((match: string) => {
@@ -152,7 +141,7 @@ export function readDataAccessFileMap({ dirPath, packageJsonContent }: ReadDataA
           // Extract the package name from the import
           const packageName = importPath.split('/')[0];
 
-          if (packageName) {
+          if (packageName && !sharedImportsToSkip.includes(packageName)) {
             sharedImports.add(packageName);
           }
         }
@@ -170,20 +159,12 @@ export function readDataAccessFileMap({ dirPath, packageJsonContent }: ReadDataA
     }
   });
 
-  // Update package.json if there are changes
   if (hasChanges) {
     packageJson.dependencies = dependencies;
-    fileMap['package.json'] = {
-      type: 'file',
-      content: JSON.stringify(packageJson, null, 2),
-      isBinary: false,
-    };
+    return JSON.stringify(packageJson, null, 2);
   }
 
-  // Merge data-access files into the result
-  fileMap = { ...fileMap, ...dataAccessFiles };
-
-  return fileMap;
+  return null;
 }
 
 function getSharedFiles({ directoriesToSkip = [] }: { directoriesToSkip?: string[] }): FileMap {

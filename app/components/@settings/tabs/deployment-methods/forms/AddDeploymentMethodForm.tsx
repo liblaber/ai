@@ -1,11 +1,11 @@
 import { classNames } from '~/utils/classNames';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Loader2, Save, XCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, XCircle } from 'lucide-react';
 import { BaseSelect } from '~/components/ui/Select';
-import { DeploymentMethodCredentialsType } from '@prisma/client';
 import { type CredentialField, type DeploymentProviderInfo } from '~/lib/validation/deploymentMethods';
 import {
+  type CredentialType,
   type DeploymentMethodResponse,
   type EnvironmentOption,
   type EnvironmentsResponse,
@@ -16,14 +16,15 @@ interface AddDeploymentMethodFormProps {
   isSubmitting: boolean;
   setIsSubmitting: (isSubmitting: boolean) => void;
   onSuccess: (responseData?: any) => void;
+  onBack?: () => void;
 }
 
 export default function AddDeploymentMethodForm({
   isSubmitting,
   setIsSubmitting,
   onSuccess,
+  onBack,
 }: AddDeploymentMethodFormProps) {
-  const [name, setName] = useState('');
   const [selectedProvider, setSelectedProvider] = useState<DeploymentProviderInfo | null>(null);
   const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
   const [environmentOptions, setEnvironmentOptions] = useState<EnvironmentOption[]>([]);
@@ -87,7 +88,7 @@ export default function AddDeploymentMethodForm({
   useEffect(() => {
     if (selectedProvider) {
       const newCredentials: CredentialField[] = selectedProvider.requiredCredentials.map((credType) => ({
-        type: credType as DeploymentMethodCredentialsType,
+        type: credType as CredentialType,
         value: '',
       }));
       setCredentials(newCredentials);
@@ -107,13 +108,13 @@ export default function AddDeploymentMethodForm({
 
   const getCredentialDisplayName = (type: string): string => {
     switch (type) {
-      case DeploymentMethodCredentialsType.API_KEY:
+      case 'API_KEY':
         return 'API Key';
-      case DeploymentMethodCredentialsType.ACCESS_KEY:
+      case 'ACCESS_KEY':
         return 'Access Key';
-      case DeploymentMethodCredentialsType.SECRET_KEY:
+      case 'SECRET_KEY':
         return 'Secret Key';
-      case DeploymentMethodCredentialsType.REGION:
+      case 'REGION':
         return 'Region';
       default:
         return type;
@@ -125,11 +126,6 @@ export default function AddDeploymentMethodForm({
 
     if (!selectedEnvironment && !applyToAllEnvironments) {
       setError('Please select an environment');
-      return;
-    }
-
-    if (!name.trim()) {
-      setError('Please enter a deployment method name');
       return;
     }
 
@@ -156,7 +152,6 @@ export default function AddDeploymentMethodForm({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: name.trim(),
           provider: selectedProvider.id,
           ...(applyToAllEnvironments ? {} : { environmentId: selectedEnvironment?.value }),
           applyToAllEnvironments,
@@ -171,20 +166,20 @@ export default function AddDeploymentMethodForm({
 
       if (data.success) {
         const successMessage = applyToAllEnvironments
-          ? `Deployment method added successfully to all environments`
-          : 'Deployment method added successfully';
+          ? `Publishing method added successfully to all environments`
+          : 'Publishing method added successfully';
         toast.success(successMessage);
 
         // Pass the response data to the parent component
         onSuccess(data);
       } else {
-        const message = data.error || 'Failed to add deployment method';
+        const message = data.error || 'Failed to add publishing method';
         setError(message);
         toast.error(message);
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : String(error) || 'Failed to add deployment method. Please try again.';
+        error instanceof Error ? error.message : String(error) || 'Failed to add publishing method. Please try again.';
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -193,6 +188,32 @@ export default function AddDeploymentMethodForm({
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className={classNames(
+                'inline-flex items-center gap-2 p-2 text-sm font-medium rounded-lg transition-colors',
+                'dark:bg-gray-900 dark:text-gray-300',
+                'hover:bg-gray-100 dark:hover:bg-gray-800',
+              )}
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div>
+            <h2 className="text-lg font-medium text-primary">
+              {selectedProvider ? `Connect to ${selectedProvider.name}` : 'Create Publishing Method'}
+            </h2>
+            <p className="text-sm text-secondary">
+              {selectedProvider
+                ? `Add a new ${selectedProvider.name} publishing method connection`
+                : 'Add a new publishing method connection'}
+            </p>
+          </div>
+        </div>
+      </div>
       <div className="space-y-4">
         <div className="space-y-4">
           {!applyToAllEnvironments && (
@@ -242,25 +263,6 @@ export default function AddDeploymentMethodForm({
           </div>
 
           <div className="mb-6">
-            <label className="mb-3 block text-sm font-medium text-secondary">Deployment Method Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isSubmitting}
-              className={classNames(
-                'w-full px-4 py-2.5 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                'text-primary placeholder-tertiary text-base',
-                'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
-                'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
-                'transition-all duration-200',
-                'disabled:opacity-50 disabled:cursor-not-allowed',
-              )}
-              placeholder="Enter deployment method name"
-            />
-          </div>
-
-          <div className="mb-6">
             <label className="mb-3 block text-sm font-medium text-secondary">Provider</label>
             <BaseSelect
               value={
@@ -299,11 +301,11 @@ export default function AddDeploymentMethodForm({
               {credentials.map((cred, index) => (
                 <div key={index}>
                   <label className="mb-3 block text-sm font-medium text-secondary">
-                    {getCredentialDisplayName(cred.type)}
+                    {getCredentialDisplayName(String(cred.type))}
                   </label>
                   <input
-                    type={cred.type === DeploymentMethodCredentialsType.SECRET_KEY ? 'password' : 'text'}
-                    value={String(cred.value)}
+                    type={String(cred.type) === 'SECRET_KEY' ? 'password' : 'text'}
+                    value={String(cred.value || '')}
                     onChange={(e) => handleCredentialChange(index, e.target.value)}
                     disabled={isSubmitting}
                     className={classNames(
@@ -314,7 +316,7 @@ export default function AddDeploymentMethodForm({
                       'transition-all duration-200',
                       'disabled:opacity-50 disabled:cursor-not-allowed',
                     )}
-                    placeholder={`Enter ${getCredentialDisplayName(cred.type).toLowerCase()}`}
+                    placeholder={`Enter ${getCredentialDisplayName(String(cred.type)).toLowerCase()}`}
                   />
                 </div>
               ))}
@@ -325,7 +327,7 @@ export default function AddDeploymentMethodForm({
             <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
               <div className="flex items-center gap-2">
                 <XCircle className="w-5 h-5 text-red-500" />
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                <p className="text-sm text-red-600 dark:text-red-400 overflow-auto w-[94%]">{error}</p>
               </div>
             </div>
           )}
@@ -340,7 +342,6 @@ export default function AddDeploymentMethodForm({
                 disabled={
                   isSubmitting ||
                   (!selectedEnvironment && !applyToAllEnvironments) ||
-                  !name.trim() ||
                   !selectedProvider ||
                   credentials.some((cred) => !String(cred.value).trim())
                 }

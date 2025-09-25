@@ -11,7 +11,6 @@ export const credentialFieldSchema = z.object({
 
 export const createDeploymentMethodSchema = z
   .object({
-    name: z.string().min(1, 'Name is required').max(255, 'Name must be less than 255 characters'),
     provider: deploymentProviderSchema,
     environmentId: z.string().min(1, 'Environment ID is required').optional(),
     applyToAllEnvironments: z.boolean().optional().default(false),
@@ -34,7 +33,6 @@ export const createDeploymentMethodSchema = z
   );
 
 export const updateDeploymentMethodSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(255, 'Name must be less than 255 characters').optional(),
   provider: deploymentProviderSchema.optional(),
   applyToAllEnvironments: z.boolean().optional().default(false),
   credentials: z.array(credentialFieldSchema).min(1, 'At least one credential is required').optional(),

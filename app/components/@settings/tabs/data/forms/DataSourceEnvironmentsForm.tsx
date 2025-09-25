@@ -3,7 +3,11 @@ import { CheckCircle, Eye, EyeOff, Info, Loader2, Plug, Trash2, XCircle } from '
 import { classNames } from '~/utils/classNames';
 import type { DataSourceWithEnvironments } from '~/lib/stores/environmentDataSources';
 import { type DataSourceOption, useDataSourceTypesPlugin } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
-import type { DataSourcePropertyDescriptor } from '@liblab/data-access/utils/types';
+import {
+  DataSourcePropertyType,
+  DataSourceType,
+  type DataSourcePropertyDescriptor,
+} from '@liblab/data-access/utils/types';
 import { getDataSourceProperties } from '~/components/@settings/utils/data-sources';
 import { z } from 'zod';
 import { Button } from '~/components/ui/Button';
@@ -12,6 +16,7 @@ import { logger } from '~/utils/logger';
 import { useEnvironmentsStore } from '~/lib/stores/environments';
 import type { EnvironmentWithRelations } from '~/lib/services/environmentService';
 import { DeleteConfirmationModal } from '~/components/ui/DeleteConfirmationModal';
+import GoogleSheetsForm, { type GoogleSheetsConfig } from './GoogleSheetsForm';
 
 type Props = {
   dataSource: DataSourceWithEnvironments;
@@ -47,6 +52,13 @@ export default function DataSourceEnvironmentsForm({
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string>('');
   const { environments, setEnvironments } = useEnvironmentsStore();
 
+  const [googleSheetsConfig, setGoogleSheetsConfig] = useState<GoogleSheetsConfig>({
+    googleSheetsUrl: '',
+    appsScriptUrl: '',
+  });
+
+  const isGoogleSheets = dataSource.type === DataSourceType.GOOGLE_SHEETS;
+
   const selectedEnv = useMemo(() => {
     if (isCreateMode) {
       return null; // No environment selected in create mode
@@ -67,14 +79,17 @@ export default function DataSourceEnvironmentsForm({
   const expectedProps = useMemo(() => (propertyDescriptors || []).map((p) => p.type), [propertyDescriptors]);
   const providedPropsMap = useMemo(() => new Map(editedProperties.map((p) => [p.type, p.value])), [editedProperties]);
 
-  const hasAllRequiredProperties = useMemo(
-    () =>
-      expectedProps.every((t) => {
-        const v = providedPropsMap.get(t);
-        return Boolean(v && v.trim() !== '');
-      }),
-    [expectedProps, providedPropsMap],
-  );
+  const hasAllRequiredProperties = useMemo(() => {
+    if (isGoogleSheets) {
+      // For Google Sheets, only require the Google Sheets URL
+      return Boolean(googleSheetsConfig.googleSheetsUrl && googleSheetsConfig.googleSheetsUrl.trim() !== '');
+    }
+
+    return expectedProps.every((t) => {
+      const v = providedPropsMap.get(t);
+      return Boolean(v && v.trim() !== '');
+    });
+  }, [expectedProps, providedPropsMap, isGoogleSheets, googleSheetsConfig]);
 
   useEffect(() => {
     let mounted = true;
@@ -99,11 +114,53 @@ export default function DataSourceEnvironmentsForm({
           if (result) {
             setProperties(result);
             setEditedProperties(result);
+
+            if (isGoogleSheets) {
+              const connectionProperty = result.find((p) => p.type === DataSourcePropertyType.CONNECTION_URL);
+
+              if (connectionProperty?.value) {
+                try {
+                  const url = new URL(connectionProperty.value);
+                  const appsScriptParam = url.searchParams.get('appsScript');
+                  setGoogleSheetsConfig({
+                    googleSheetsUrl: connectionProperty.value.split('?')[0],
+                    appsScriptUrl: appsScriptParam ? decodeURIComponent(appsScriptParam) : '',
+                  });
+                } catch {
+                  setGoogleSheetsConfig({
+                    googleSheetsUrl: connectionProperty.value,
+                    appsScriptUrl: '',
+                  });
+                }
+              }
+            }
           } else {
             // fallback to values we already have on the details object
             const fallbackProperties = (selectedEnv?.dataSourceProperties as any) || [];
             setProperties(fallbackProperties);
             setEditedProperties(fallbackProperties);
+
+            if (isGoogleSheets) {
+              const connectionProperty = fallbackProperties.find(
+                (p: any) => p.type === DataSourcePropertyType.CONNECTION_URL,
+              );
+
+              if (connectionProperty?.value) {
+                try {
+                  const url = new URL(connectionProperty.value);
+                  const appsScriptParam = url.searchParams.get('appsScript');
+                  setGoogleSheetsConfig({
+                    googleSheetsUrl: connectionProperty.value.split('?')[0],
+                    appsScriptUrl: appsScriptParam ? decodeURIComponent(appsScriptParam) : '',
+                  });
+                } catch {
+                  setGoogleSheetsConfig({
+                    googleSheetsUrl: connectionProperty.value,
+                    appsScriptUrl: '',
+                  });
+                }
+              }
+            }
           }
         }
       } catch (e) {
@@ -113,6 +170,28 @@ export default function DataSourceEnvironmentsForm({
         const fallbackProperties = (selectedEnv?.dataSourceProperties as any) || [];
         setProperties(fallbackProperties);
         setEditedProperties(fallbackProperties);
+
+        if (isGoogleSheets) {
+          const connectionProperty = fallbackProperties.find(
+            (p: any) => p.type === DataSourcePropertyType.CONNECTION_URL,
+          );
+
+          if (connectionProperty?.value) {
+            try {
+              const url = new URL(connectionProperty.value);
+              const appsScriptParam = url.searchParams.get('appsScript');
+              setGoogleSheetsConfig({
+                googleSheetsUrl: connectionProperty.value.split('?')[0],
+                appsScriptUrl: appsScriptParam ? decodeURIComponent(appsScriptParam) : '',
+              });
+            } catch {
+              setGoogleSheetsConfig({
+                googleSheetsUrl: connectionProperty.value,
+                appsScriptUrl: '',
+              });
+            }
+          }
+        }
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -165,6 +244,20 @@ export default function DataSourceEnvironmentsForm({
         return [...prev, { type, value }];
       }
     });
+  };
+
+  const handleGoogleSheetsConfigChange = (config: GoogleSheetsConfig) => {
+    setGoogleSheetsConfig(config);
+
+    if (isGoogleSheets) {
+      let connectionString = config.googleSheetsUrl;
+
+      if (config.appsScriptUrl) {
+        connectionString += `${connectionString.includes('?') ? '&' : '?'}appsScript=${encodeURIComponent(config.appsScriptUrl)}`;
+      }
+
+      handlePropertyChange(DataSourcePropertyType.CONNECTION_URL, connectionString);
+    }
   };
 
   const hasChanges = useMemo(() => {
@@ -459,39 +552,51 @@ export default function DataSourceEnvironmentsForm({
               </select>
             </div>
           )}
-          {editedProperties.map((prop) => (
-            <div key={prop.type}>
-              <label className="mb-3 block text-sm font-medium text-secondary">{getLabelForType(prop.type)}</label>
-              <div className="relative">
-                <input
-                  type={showSensitiveInput ? 'text' : 'password'}
-                  value={prop.value}
-                  onChange={(e) => handlePropertyChange(prop.type, e.target.value)}
-                  disabled={isSaving}
-                  className={classNames(
-                    'w-full px-4 py-2.5 pr-12 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
-                    'text-primary placeholder-tertiary text-base',
-                    'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
-                    'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
-                    'transition-all duration-200',
-                    'disabled:opacity-50 disabled:cursor-not-allowed',
-                  )}
-                  placeholder={getFormatForType(prop.type)}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowSensitiveInput((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group"
-                  tabIndex={-1}
-                >
-                  <span className="text-gray-400 group-hover:text-white transition-colors">
-                    {showSensitiveInput ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </span>
-                </button>
+          {isGoogleSheets ? (
+            <GoogleSheetsForm
+              config={googleSheetsConfig}
+              onChange={handleGoogleSheetsConfigChange}
+              onPropertyChange={handlePropertyChange}
+              disabled={isSaving}
+            />
+          ) : (
+            // Regular properties for other data sources
+            editedProperties.map((prop) => (
+              <div key={prop.type}>
+                <label className="mb-3 block text-sm font-medium text-secondary">{getLabelForType(prop.type)}</label>
+                <div className="relative">
+                  <input
+                    type={showSensitiveInput ? 'text' : 'password'}
+                    value={prop.value}
+                    onChange={(e) => handlePropertyChange(prop.type, e.target.value)}
+                    disabled={isSaving}
+                    className={classNames(
+                      'w-full px-4 py-2.5 pr-12 bg-[#F5F5F5] dark:bg-gray-700 border rounded-lg',
+                      'text-primary placeholder-tertiary text-base',
+                      'border-[#E5E5E5] dark:border-[#1A1A1A] rounded-lg',
+                      'focus:ring-2 focus:ring-accent-500/50 focus:border-accent-500',
+                      'transition-all duration-200',
+                      'disabled:opacity-50 disabled:cursor-not-allowed',
+                    )}
+                    placeholder={getFormatForType(prop.type)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSensitiveInput((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#4b4f5a] rounded group"
+                    tabIndex={-1}
+                  >
+                    <span className="text-gray-400 group-hover:text-white transition-colors">
+                      {showSensitiveInput ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </span>
+                  </button>
+                </div>
+                <label className="mb-3 block !text-[13px] text-secondary mt-2">
+                  e.g. {getFormatForType(prop.type)}
+                </label>
               </div>
-              <label className="mb-3 block !text-[13px] text-secondary mt-2">e.g. {getFormatForType(prop.type)}</label>
-            </div>
-          ))}
+            ))
+          )}
 
           {(testResult || error) && (
             <div

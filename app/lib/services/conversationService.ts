@@ -63,14 +63,22 @@ export const conversationService = {
     });
   },
 
-  async getAllConversations(userId: string): Promise<Conversation[]> {
-    return await prisma.conversation.findMany({
+  async getAllConversations(userId: string): Promise<(Conversation & { editedAt: Date | null })[]> {
+    const conversations = await prisma.conversation.findMany({
       select: {
         id: true,
         description: true,
         starterId: true,
         environmentDataSource: true,
-        snapshots: true,
+        snapshots: {
+          select: {
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        },
         userId: true,
         createdAt: true,
         updatedAt: true,
@@ -87,6 +95,15 @@ export const conversationService = {
         createdAt: 'desc',
       },
     });
+
+    // Calculate editedAt field from the latest snapshot
+    return conversations.map((conversation) => ({
+      ...conversation,
+      snapshots: undefined, // Reset to undefined to match original Conversation type
+      editedAt: new Date(
+        Math.max(conversation.snapshots[0]?.createdAt?.getTime() || 0, conversation.updatedAt.getTime()),
+      ),
+    }));
   },
 
   async deleteConversation(conversationId: string, userId: string): Promise<void> {

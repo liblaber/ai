@@ -618,6 +618,14 @@ export default function GoogleSheetsSetup({ onSuccess, environmentId }: GoogleSh
     }
   };
 
+  const setErrorMessage = (error: string | null) => {
+    return error ? (
+      <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+        <p className="text-sm text-red-600 dark:text-red-400 overflow-auto w-[94%]">{error}</p>
+      </div>
+    ) : null;
+  };
+
   const isSetupEnabled = Boolean(selectedMethod && dataSourceName.trim() && (environmentId || selectedEnvironment));
   const isUrlEnabled = Boolean(googleSheetsUrl.trim());
 
@@ -667,11 +675,7 @@ export default function GoogleSheetsSetup({ onSuccess, environmentId }: GoogleSh
           onMethodSelect={(methodId) => handleMethodSelect(methodId as ConnectionMethod)}
         />
 
-        {error && (
-          <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          </div>
-        )}
+        {setErrorMessage(error)}
 
         <div className="flex justify-end">
           <button
@@ -781,11 +785,7 @@ export default function GoogleSheetsSetup({ onSuccess, environmentId }: GoogleSh
           </div>
         )}
 
-        {error && (
-          <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          </div>
-        )}
+        {setErrorMessage(error)}
 
         <NavigationButtons onBack={handleBack} onNext={handleUrlSubmit} nextDisabled={!isUrlEnabled} />
       </div>
@@ -871,11 +871,7 @@ export default function GoogleSheetsSetup({ onSuccess, environmentId }: GoogleSh
           </div>
         )}
 
-        {error && (
-          <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          </div>
-        )}
+        {setErrorMessage(error)}
 
         <NavigationButtons
           onBack={handleBack}
@@ -904,11 +900,7 @@ export default function GoogleSheetsSetup({ onSuccess, environmentId }: GoogleSh
           checkOAuthStatus={checkOAuthStatus}
         />
 
-        {error && (
-          <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          </div>
-        )}
+        {setErrorMessage(error)}
 
         <NavigationButtons
           onBack={() => setCurrentStep('setup')}
@@ -933,11 +925,7 @@ export default function GoogleSheetsSetup({ onSuccess, environmentId }: GoogleSh
           isLoading={isLoadingDocuments}
         />
 
-        {error && (
-          <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          </div>
-        )}
+        {setErrorMessage(error)}
 
         <NavigationButtons
           onBack={() => setCurrentStep('oauth-login')}

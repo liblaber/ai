@@ -364,7 +364,7 @@ model SsoProvider {
   oidcConfig     String? // JSON string
   samlConfig     String? // JSON string
   userId         String?
-  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
   organizationId String?
 
   @@map("sso_provider")
@@ -398,7 +398,6 @@ enum InviteStatus {
 
 model DeploymentMethod {
   id            String                        @id @default(cuid())
-  name          String
   provider      String
   credentials   DeploymentMethodCredentials[]
   environmentId String                        @map("environment_id")
@@ -407,7 +406,6 @@ model DeploymentMethod {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([environmentId, name])
   @@map("deployment_method")
 }
 

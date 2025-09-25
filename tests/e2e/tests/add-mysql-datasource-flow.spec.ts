@@ -1,17 +1,17 @@
 import { type Page, test, expect } from '@playwright/test';
-import { performInitialSetup, navigateToSettings, navigateToDataSourceForm } from '../helpers/setup';
+import { performInitialSetup } from '../helpers/setup';
+import { navigateToDataSourceForm, navigateToSettings } from '../helpers/navigate';
 
 test.describe('Add MySQL Data Source Flow', () => {
   test.beforeEach(async ({ page }) => {
     test.setTimeout(120000);
     await performInitialSetup(page);
     await navigateToSettings(page);
+    await navigateToDataSourceForm(page, 'mysql');
   });
 
   test('Create MySQL data source with valid connection string', async ({ page }: { page: Page }) => {
     console.log('Starting MySQL data source creation test...');
-
-    await navigateToDataSourceForm(page, 'mysql');
 
     console.log('🔍 Looking for database name input...');
 
@@ -81,8 +81,6 @@ test.describe('Add MySQL Data Source Flow', () => {
 
   test('Validate MySQL connection string format and required fields', async ({ page }: { page: Page }) => {
     console.log('Starting MySQL validation test...');
-
-    await navigateToDataSourceForm(page, 'mysql');
 
     // Test 1: Try to create without filling required fields
     console.log('🔍 Testing form validation - attempting to create without required fields...');

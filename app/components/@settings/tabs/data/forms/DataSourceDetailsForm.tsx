@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { Loader2, Trash2 } from 'lucide-react';
 import { Button } from '~/components/ui/Button';
 import { DeleteConfirmationModal } from '~/components/ui/DeleteConfirmationModal';
+import { DataSourceType } from '@prisma/client';
 
 interface Props {
   dataSource: DataSourceWithEnvironments | null;
@@ -36,11 +37,16 @@ export default function DataSourceDetailsForm({ dataSource }: Props) {
       return;
     }
 
-    const matchingOption = availableDataSourceOptions.find((opt) => opt.value === dataSource.type.toLowerCase());
+    const matchingOption = availableDataSourceOptions.find(
+      (opt) =>
+        opt.value === dataSource.type.toLowerCase() ||
+        (opt.type && opt.type === dataSource.type) ||
+        (opt.value === 'google-sheets' && dataSource.type === DataSourceType.GOOGLE_SHEETS),
+    );
 
     setDataSourceType(matchingOption || DEFAULT_DATA_SOURCES[0]);
     setDataSourceName(dataSource.name);
-  }, [dataSource?.id, dataSource?.name]);
+  }, [dataSource?.id, dataSource?.name, dataSource?.type, availableDataSourceOptions]);
 
   if (!dataSource) {
     return null;

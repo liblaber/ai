@@ -6,7 +6,7 @@ import { type CreateDeploymentMethodInput, type UpdateDeploymentMethodInput } fr
 
 export interface EnvironmentDeploymentMethod {
   id: string;
-  name: string;
+  name: string; // This will be derived from provider
   provider: string;
   environmentId: string;
   environment: {
@@ -24,6 +24,19 @@ export interface EnvironmentDeploymentMethod {
 }
 
 const ENCRYPTION_KEY = env.server.ENCRYPTION_KEY;
+
+function getProviderName(provider: string): string {
+  switch (provider) {
+    case DeploymentProvider.VERCEL:
+      return 'Vercel';
+    case DeploymentProvider.NETLIFY:
+      return 'Netlify';
+    case DeploymentProvider.AWS:
+      return 'AWS';
+    default:
+      return provider;
+  }
+}
 
 function encryptValue(value: string): string {
   if (!ENCRYPTION_KEY) {
@@ -54,11 +67,12 @@ export async function getEnvironmentDeploymentMethods(): Promise<EnvironmentDepl
       environment: true,
       credentials: true,
     },
-    orderBy: [{ environment: { name: 'asc' } }, { name: 'asc' }],
+    orderBy: [{ environment: { name: 'asc' } }, { provider: 'asc' }],
   });
 
   return deploymentMethods.map((dm) => ({
     ...dm,
+    name: getProviderName(dm.provider),
     credentials: dm.credentials.map((cred) => ({
       ...cred,
       value: decryptValue(cred.value),
@@ -87,6 +101,7 @@ export async function getEnvironmentDeploymentMethod(
 
   return {
     ...deploymentMethod,
+    name: getProviderName(deploymentMethod.provider),
     credentials: deploymentMethod.credentials.map((cred) => ({
       ...cred,
       value: decryptValue(cred.value),
@@ -95,7 +110,7 @@ export async function getEnvironmentDeploymentMethod(
 }
 
 export async function createDeploymentMethod(data: CreateDeploymentMethodInput) {
-  const { name, provider, environmentId, credentials, applyToAllEnvironments } = data;
+  const { provider, environmentId, credentials, applyToAllEnvironments } = data;
 
   // Validate that all required credentials are provided
   const requiredCredentials = getRequiredCredentialsForProvider(provider);
@@ -122,7 +137,6 @@ export async function createDeploymentMethod(data: CreateDeploymentMethodInput) 
         environments.map((env) =>
           tx.deploymentMethod.create({
             data: {
-              name,
               provider,
               environmentId: env.id,
               credentials: {
@@ -142,7 +156,6 @@ export async function createDeploymentMethod(data: CreateDeploymentMethodInput) 
 
       const deploymentMethod = await tx.deploymentMethod.create({
         data: {
-          name,
           provider,
           environmentId,
           credentials: {
@@ -157,11 +170,11 @@ export async function createDeploymentMethod(data: CreateDeploymentMethodInput) 
 }
 
 export async function updateDeploymentMethod(id: string, data: UpdateDeploymentMethodInput) {
-  const { name, provider, credentials, applyToAllEnvironments } = data;
+  const { provider, credentials, applyToAllEnvironments } = data;
 
   return await prisma.$transaction(async (tx) => {
     if (applyToAllEnvironments) {
-      // Get the current deployment method to find all deployment methods with the same name and provider
+      // Get the current deployment method to find all deployment methods with the same provider
       const currentDeploymentMethod = await tx.deploymentMethod.findUnique({
         where: { id },
         include: { environment: true },
@@ -171,10 +184,9 @@ export async function updateDeploymentMethod(id: string, data: UpdateDeploymentM
         throw new Error('Deployment method not found');
       }
 
-      // Find all deployment methods with the same name and provider across all environments
+      // Find all deployment methods with the same provider across all environments
       const allDeploymentMethods = await tx.deploymentMethod.findMany({
         where: {
-          name: currentDeploymentMethod.name,
           provider: currentDeploymentMethod.provider,
         },
       });
@@ -186,7 +198,6 @@ export async function updateDeploymentMethod(id: string, data: UpdateDeploymentM
           const updatedDeploymentMethod = await tx.deploymentMethod.update({
             where: { id: dm.id },
             data: {
-              ...(name && { name }),
               ...(provider && { provider }),
             },
           });
@@ -234,7 +245,6 @@ export async function updateDeploymentMethod(id: string, data: UpdateDeploymentM
       const updatedDeploymentMethod = await tx.deploymentMethod.update({
         where: { id },
         data: {
-          ...(name && { name }),
           ...(provider && { provider }),
         },
       });
