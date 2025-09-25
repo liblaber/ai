@@ -1,12 +1,12 @@
 import { type Page, test, expect } from '@playwright/test';
-import { performInitialSetup, navigateToDataSourceForm } from '../helpers/setup';
+import { performInitialSetup, navigateToSettings, navigateToDataSourceForm } from '../helpers/setup';
 import { getDataSourceNameInput, getGoogleSheetsUrlInput, getCreateButton } from '../helpers/selectors';
 
 test.describe('Add Google Sheets Data Source Flow', () => {
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(180000); // 3 minutes for OAuth complexity
+    test.setTimeout(180000);
     await performInitialSetup(page);
-    // await navigateToSettings(page);
+    await navigateToSettings(page);
   });
 
   test('Create Google Sheets data source with public spreadsheet URL', async ({ page }: { page: Page }) => {

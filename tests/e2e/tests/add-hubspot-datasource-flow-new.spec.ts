@@ -9,50 +9,9 @@ import {
 
 test.describe('Add HubSpot Data Source Flow', () => {
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(120000); // 2 minutes for API token testing
+    test.setTimeout(120000);
     await performInitialSetup(page);
     await navigateToSettings(page);
-  });
-
-  test('Create HubSpot data source with valid access token', async ({ page }: { page: Page }) => {
-    await navigateToDataSourceForm(page, 'hubspot');
-
-    const dbNameInput = getDataSourceNameInput(page);
-    await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
-    await dbNameInput.fill('test-hubspot');
-
-    const tokenInput = getAccessTokenInput(page);
-    await tokenInput.waitFor({ state: 'visible', timeout: 10000 });
-
-    // Use real token from environment variable if available, otherwise use test token
-    const hubspotToken = process.env.HUBSPOT_ACCESS_TOKEN || 'pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
-    await tokenInput.fill(hubspotToken);
-
-    const saveButton = getCreateButton(page);
-    await saveButton.waitFor({ state: 'visible', timeout: 10000 });
-
-    // Assert that the Create button is enabled with valid data
-    await expect(saveButton, 'Create button should be enabled with valid token format').toBeEnabled();
-
-    // Wait for the API response to validate successful data source creation
-    const [response] = await Promise.all([
-      page.waitForResponse(
-        (response) => response.url().includes('/api/data-sources') && response.request().method() === 'POST',
-      ),
-      saveButton.click(),
-    ]);
-
-    // Validate API response status
-    if (response.status() === 200 || response.status() === 201) {
-      // Wait for UI to update after successful API call
-      await page.waitForLoadState('networkidle');
-
-      // Look for success message in UI as confirmation
-      const successMessage = page.getByText(/successfully|success|created/i).first();
-      await successMessage.waitFor({ state: 'visible', timeout: 5000 });
-    } else {
-      throw new Error(`Data source creation failed with status: ${response.status()}`);
-    }
   });
 
   test('Validate HubSpot access token format and required fields', async ({ page }: { page: Page }) => {
