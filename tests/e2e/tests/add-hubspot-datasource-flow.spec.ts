@@ -2,7 +2,7 @@ import { type Page, test, expect } from '@playwright/test';
 import { performInitialSetup, navigateToSettings, navigateToDataSourceForm } from '../helpers/setup';
 import {
   getDataSourceNameInput,
-  getHubSpotTokenInput,
+  getAccessTokenInput,
   getCreateButton,
   getTestConnectionButton,
 } from '../helpers/selectors';
@@ -21,7 +21,7 @@ test.describe('Add HubSpot Data Source Flow', () => {
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
     await dbNameInput.fill('test-hubspot');
 
-    const tokenInput = getHubSpotTokenInput(page);
+    const tokenInput = getAccessTokenInput(page);
     await tokenInput.waitFor({ state: 'visible', timeout: 10000 });
 
     // Use real token from environment variable if available, otherwise use test token
@@ -73,7 +73,7 @@ test.describe('Add HubSpot Data Source Flow', () => {
     await expect(saveButton, 'Create button should remain disabled without access token').toBeDisabled();
 
     // Test 3: Test invalid token format
-    const tokenInput = getHubSpotTokenInput(page);
+    const tokenInput = getAccessTokenInput(page);
     await tokenInput.waitFor({ state: 'visible', timeout: 10000 });
 
     // Test with invalid token format (this may be validated at API level)
@@ -122,7 +122,7 @@ test.describe('Add HubSpot Data Source Flow', () => {
     await dbNameInput.waitFor({ state: 'visible', timeout: 10000 });
     await dbNameInput.fill('test-hubspot-error-handling');
 
-    const tokenInput = getHubSpotTokenInput(page);
+    const tokenInput = getAccessTokenInput(page);
     await tokenInput.waitFor({ state: 'visible', timeout: 10000 });
 
     const saveButton = getCreateButton(page);

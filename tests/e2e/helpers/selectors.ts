@@ -7,8 +7,8 @@ export const getDataSourceNameInput = (page: Page) => {
   return page.locator('[data-testid="data-source-name-input"]');
 };
 
-export const getHubSpotTokenInput = (page: Page) => {
-  return page.locator('[data-testid="hubspot-token-input"]');
+export const getAccessTokenInput = (page: Page) => {
+  return page.locator('[data-testid="access_token-input"]');
 };
 
 export const getGoogleSheetsUrlInput = (page: Page) => {
