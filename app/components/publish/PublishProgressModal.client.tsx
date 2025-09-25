@@ -12,17 +12,51 @@ interface PublishProgressModalProps {
   mode: 'publish' | 'settings' | 'initializing';
   onPublishClick: () => void;
   buttonRef?: React.RefObject<HTMLButtonElement>;
+  deploymentMethod?: string;
 }
 
-// Constants
-const PUBLISH_STEPS = [
-  { title: 'Initializing', description: 'Preparing deployment environment' },
-  { title: 'Website Setup', description: 'Creating or updating Netlify site' },
-  { title: 'File Preparation', description: 'Preparing project files' },
-  { title: 'Dependencies', description: 'Installing project dependencies' },
-  { title: 'Configuration', description: 'Configuring deployment settings' },
-  { title: 'Deployment', description: 'Deploying to Netlify' },
-];
+// Helper function to get deployment-specific steps
+const getDeploymentSteps = (deploymentMethod?: string) => {
+  const baseSteps = [
+    { title: 'Initializing', description: 'Preparing deployment environment' },
+    { title: 'File Preparation', description: 'Preparing project files' },
+    { title: 'Dependencies', description: 'Installing project dependencies' },
+    { title: 'Configuration', description: 'Configuring deployment settings' },
+    { title: 'Deployment', description: 'Deploying application' },
+  ];
+
+  switch (deploymentMethod?.toLowerCase()) {
+    case 'netlify':
+      return [
+        { title: 'Initializing', description: 'Preparing deployment environment' },
+        { title: 'Website Setup', description: 'Creating or updating Netlify site' },
+        { title: 'File Preparation', description: 'Preparing project files' },
+        { title: 'Dependencies', description: 'Installing project dependencies' },
+        { title: 'Configuration', description: 'Configuring Netlify settings' },
+        { title: 'Deployment', description: 'Deploying to Netlify' },
+      ];
+    case 'vercel':
+      return [
+        { title: 'Initializing', description: 'Preparing deployment environment' },
+        { title: 'Project Setup', description: 'Creating or updating Vercel project' },
+        { title: 'File Preparation', description: 'Preparing project files' },
+        { title: 'Dependencies', description: 'Installing project dependencies' },
+        { title: 'Configuration', description: 'Configuring Vercel settings' },
+        { title: 'Deployment', description: 'Deploying to Vercel' },
+      ];
+    case 'aws':
+      return [
+        { title: 'Initializing', description: 'Preparing deployment environment' },
+        { title: 'Infrastructure Setup', description: 'Setting up AWS infrastructure' },
+        { title: 'File Preparation', description: 'Preparing project files' },
+        { title: 'Dependencies', description: 'Installing project dependencies' },
+        { title: 'Configuration', description: 'Configuring AWS settings' },
+        { title: 'Deployment', description: 'Deploying to AWS' },
+      ];
+    default:
+      return baseSteps;
+  }
+};
 
 // Main Component
 export function PublishProgressModal({
@@ -32,6 +66,7 @@ export function PublishProgressModal({
   mode,
   onPublishClick,
   buttonRef,
+  deploymentMethod,
 }: PublishProgressModalProps) {
   // State
   const { website, isLoading, deploymentProgress } = useStore(websiteStore);
@@ -92,7 +127,8 @@ export function PublishProgressModal({
     }
 
     const currentStepIndex = deploymentProgress.step - 1;
-    const currentStep = PUBLISH_STEPS[currentStepIndex];
+    const publishSteps = getDeploymentSteps(deploymentMethod);
+    const currentStep = publishSteps[currentStepIndex];
 
     return (
       <div className="flex items-center gap-3">

@@ -623,6 +623,7 @@ export function HeaderActionButtons() {
         mode={modalMode}
         onPublishClick={handlePublishClick}
         buttonRef={publishButtonRef}
+        deploymentMethod={deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name}
       />
     </>
   );

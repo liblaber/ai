@@ -101,14 +101,16 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
 
       const newSite = (await createSiteResponse.json()) as any;
       targetSiteId = newSite.id;
+
+      const siteUrl = this._ensureHttpsUrl(newSite.url);
       siteInfo = {
         id: newSite.id,
         name: newSite.name,
-        url: newSite.url,
+        url: siteUrl,
         chatId,
       };
 
-      await this.updateWebsiteDatabase(undefined, targetSiteId, newSite.name, newSite.url, chatId, userId);
+      await this.updateWebsiteDatabase(undefined, targetSiteId, newSite.name, siteUrl, chatId, userId);
       logger.info('Site created successfully', JSON.stringify({ chatId, siteId: targetSiteId }));
     } else {
       // Get existing site info
@@ -152,10 +154,12 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
 
       const existingSite = (await siteResponse.json()) as any;
       logger.info('Existing site info retrieved', JSON.stringify({ chatId, existingSite }));
+
+      const siteUrl = this._ensureHttpsUrl(existingSite.url);
       siteInfo = {
         id: existingSite.id,
         name: existingSite.name,
-        url: existingSite.url,
+        url: siteUrl,
         chatId,
       };
       targetSiteId = existingSite.id;
@@ -325,6 +329,22 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
       // Clean up temporary directory
       await this.cleanupTempDirectory(tempDir, chatId);
     }
+  }
+
+  private _ensureHttpsUrl(url: string): string {
+    if (!url) {
+      return url;
+    }
+
+    if (url.startsWith('https://')) {
+      return url;
+    }
+
+    if (url.startsWith('http://')) {
+      return url.replace('http://', 'https://');
+    }
+
+    return `https://${url}`;
   }
 
   private async _createNetlifyConfig(tempDir: string): Promise<void> {
