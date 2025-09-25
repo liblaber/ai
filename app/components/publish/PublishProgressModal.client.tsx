@@ -155,11 +155,11 @@ export function PublishProgressModal({
               <input
                 type="text"
                 readOnly
-                value={`/apps/slug/${(website as any).slug}`}
+                value={`/apps/${(website as any).slug}`}
                 className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md text-gray-700 dark:text-gray-300"
               />
               <a
-                href={`/apps/slug/${(website as any).slug}`}
+                href={`/apps/${(website as any).slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-700 border border-blue-200 dark:border-blue-700"
@@ -261,39 +261,88 @@ export function PublishProgressModal({
                     <Check className="w-4 h-4 text-green-500" />
                     <span className="text-sm font-medium text-white">Published Successfully!</span>
                   </div>
-                  <input
-                    type="text"
-                    readOnly
-                    value={website?.siteUrl || ''}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm"
-                  />
-                  {website?.siteUrl && (
-                    <div className="flex gap-2">
-                      <a
-                        href={website.siteUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm transition-colors"
-                      >
-                        View
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                      <button
-                        onClick={handleCopyLink}
-                        className="inline-flex items-center gap-2 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm transition-colors"
-                      >
-                        {isCopying ? (
-                          <>
-                            <Check className="w-3 h-3" />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            Copy Link
-                          </>
-                        )}
-                      </button>
+
+                  {/* Direct Link */}
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-400">Direct Link</label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={website?.siteUrl || ''}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm"
+                    />
+                    {website?.siteUrl && (
+                      <div className="flex gap-2">
+                        <a
+                          href={website.siteUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm transition-colors"
+                        >
+                          View
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                        <button
+                          onClick={handleCopyLink}
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm transition-colors"
+                        >
+                          {isCopying ? (
+                            <>
+                              <Check className="w-3 h-3" />
+                              Copied!
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              Copy Link
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* App Viewer Link */}
+                  {(website as any)?.slug && (
+                    <div className="space-y-2">
+                      <label className="text-xs text-gray-400">App Viewer</label>
+                      <input
+                        type="text"
+                        readOnly
+                        value={`/apps/${(website as any).slug}`}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm"
+                      />
+                      <div className="flex gap-2">
+                        <a
+                          href={`/apps/${(website as any).slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
+                        >
+                          App Viewer
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(`/apps/${(website as any).slug}`);
+                            setIsCopying(true);
+                            setTimeout(() => setIsCopying(false), 2000);
+                          }}
+                          className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
+                        >
+                          {isCopying ? (
+                            <>
+                              <Check className="w-3 h-3" />
+                              Copied!
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              Copy
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

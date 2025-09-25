@@ -1,19 +1,17 @@
 import { notFound } from 'next/navigation';
 import { prisma } from '~/lib/prisma';
-import AppViewer from './AppViewer';
+import AppViewer from '~/apps/[slug]/AppViewer';
 
 interface AppPageProps {
-  params: Promise<{ chatId: string }>;
+  params: Promise<{ slug: string }>;
 }
 
 export default async function AppPage({ params }: AppPageProps) {
-  const { chatId } = await params;
+  const { slug } = await params;
 
-  // Find the website by chatId
   const website = await prisma.website.findFirst({
     where: {
-      chatId,
-      // Only show public websites or websites created by the current user
+      slug,
     },
     include: {
       environment: {
@@ -51,10 +49,10 @@ export default async function AppPage({ params }: AppPageProps) {
 }
 
 export async function generateMetadata({ params }: AppPageProps) {
-  const { chatId } = await params;
+  const { slug } = await params;
 
   const website = await prisma.website.findFirst({
-    where: { chatId },
+    where: { slug },
     select: { siteName: true, siteUrl: true },
     orderBy: { updatedAt: 'desc' },
   });

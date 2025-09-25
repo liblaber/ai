@@ -196,13 +196,13 @@ export default function DeployedAppsTab() {
                       )}
                       {website.slug && (
                         <a
-                          href={`/apps/slug/${website.slug}`}
+                          href={`/apps/${website.slug}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          App Viewer: /apps/slug/{website.slug}
+                          App Viewer: /apps/{website.slug}
                         </a>
                       )}
                     </div>

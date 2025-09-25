@@ -91,6 +91,7 @@ export default function AppViewer({ website }: AppViewerProps) {
       )}
     >
       {/* Header */}
+      {/* TODO: remove whole header? */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -101,9 +102,6 @@ export default function AppViewer({ website }: AppViewerProps) {
               <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {website.siteName || 'Untitled App'}
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {website.environment?.name || 'Unknown Environment'}
-              </p>
             </div>
           </div>
 

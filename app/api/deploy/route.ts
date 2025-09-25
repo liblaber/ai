@@ -3,7 +3,6 @@ import { requireUserId } from '~/auth/session';
 import { DeploymentPluginManager } from '~/lib/plugins/deployment/deployment-plugin-manager';
 import type { DeploymentConfig, DeploymentProgress } from '~/lib/plugins/types';
 import { logger } from '~/utils/logger';
-import { generateDefaultSlug } from '~/utils/slug';
 
 export async function POST(request: NextRequest) {
   const userId = await requireUserId(request);
@@ -26,11 +25,7 @@ export async function POST(request: NextRequest) {
       const chatId = formData.get('chatId') as string;
       const description = formData.get('description') as string;
       const environmentId = formData.get('environmentId') as string | undefined;
-      const providedSlug = formData.get('slug') as string | undefined;
       const zipFile = formData.get('zipFile') as File;
-
-      // Generate slug if not provided
-      const slug = providedSlug || generateDefaultSlug(chatId, description);
 
       const deploymentType = (formData.get('deploymentType') as string) || 'netlify';
 
@@ -68,7 +63,6 @@ export async function POST(request: NextRequest) {
         description,
         userId,
         environmentId,
-        slug,
       };
 
       // Create progress handler
