@@ -1,5 +1,6 @@
 import Docker from 'dockerode';
 import { EventEmitter } from 'events';
+import path from 'path';
 import type {
   DockerContainer,
   DockerContainerCreateRequest,
@@ -53,16 +54,21 @@ export class DockerContainerManager extends EventEmitter {
         name: containerName,
         ExposedPorts: exposedPorts,
         WorkingDir: '/app',
-        Env: ['CHOKIDAR_USEPOLLING=true', 'CI=true'],
+        Volumes: {
+          ['/app']: {},
+          ['/app/node_modules']: {},
+        },
+        Env: ['CI=true'],
         HostConfig: {
           PortBindings: portBindings,
-          Mounts: [
-            {
-              Type: 'volume',
-              Source: volumeName,
-              Target: '/app',
-            },
-          ],
+          Binds: [`${path.resolve(process.cwd(), 'starters/liblab-ai-next-starter-main')}:/app`],
+          // Mounts: [
+          //   {
+          //     Type: 'volume',
+          //     Source: `${path.resolve(process.cwd(), 'starters/liblab-ai-next-starter-main')}`,
+          //     Target: '/app:cached',
+          //   },
+          // ],
           AutoRemove: false, // We'll manage cleanup manually
         },
       };

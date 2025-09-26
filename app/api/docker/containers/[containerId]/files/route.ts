@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { dockerContainerManager } from '~/lib/docker/container-manager';
 import type { DockerFileOperation, DockerFileSystemEntry } from '~/types/docker';
 import { createScopedLogger } from '~/utils/logger';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 const logger = createScopedLogger('DockerContainerFilesAPI');
 
@@ -93,63 +95,46 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'path is required' }, { status: 400 });
     }
 
-    if (operation.content !== undefined) {
-      // Write file
-      const encoding = operation.encoding || 'utf8';
-      let writeCommand: string;
-
-      if (encoding === 'base64') {
-        writeCommand = `echo "${operation.content}" | base64 -d > "${operation.path}"`;
-      } else {
-        // Escape content for shell
-        const escapedContent = operation.content.replace(/'/g, "'\"'\"'");
-        writeCommand = `cat > "${operation.path}" << 'EOF'\n${escapedContent}\nEOF`;
-      }
-
-      // Ensure directory exists
-      const dirCommand = `mkdir -p "$(dirname "${operation.path}")"`;
-      await dockerContainerManager.executeCommand(containerId, { command: dirCommand });
-
-      const result = await dockerContainerManager.executeCommand(containerId, {
-        command: writeCommand,
-      });
-
-      if (result.exitCode !== 0) {
-        return NextResponse.json({ error: 'Failed to write file', details: result.stderr }, { status: 400 });
-      }
-
-      logger.debug(`Wrote file ${operation.path} in container ${containerId}`);
-
-      return NextResponse.json({ success: true });
-    } else {
-      // Read file
-      const result = await dockerContainerManager.executeCommand(containerId, {
-        command: `cat "${operation.path}"`,
-      });
-
-      if (result.exitCode !== 0) {
-        return NextResponse.json({ error: 'Failed to read file', details: result.stderr }, { status: 400 });
-      }
-
-      // Check if file is binary
-      const fileTypeResult = await dockerContainerManager.executeCommand(containerId, {
-        command: `file --mime-type "${operation.path}"`,
-      });
-
-      const isBinary =
-        !fileTypeResult.stdout.includes('text/') &&
-        !fileTypeResult.stdout.includes('application/json') &&
-        !fileTypeResult.stdout.includes('application/javascript');
-
-      const fileEntry: DockerFileSystemEntry = {
-        path: operation.path,
-        type: 'file',
-        content: result.stdout,
-        isBinary,
-      };
-
-      return NextResponse.json({ file: fileEntry });
+    if (!operation.content) {
+      return NextResponse.json({ error: 'content is required' }, { status: 400 });
     }
+
+    // Define the target directory for the liblab-ai-next-starter
+    const starterBasePath = path.resolve(process.cwd(), 'starters/liblab-ai-next-starter-main');
+
+    // Ensure the operation path is relative and safe
+    const relativePath = operation.path.startsWith('/') ? operation.path.slice(1) : operation.path;
+    const targetFilePath = path.join(starterBasePath, relativePath);
+
+    // Security check: ensure the target path is within the starter directory
+    const resolvedTargetPath = path.resolve(targetFilePath);
+    const resolvedBasePath = path.resolve(starterBasePath);
+
+    if (!resolvedTargetPath.startsWith(resolvedBasePath)) {
+      return NextResponse.json({ error: 'Invalid file path - path traversal not allowed' }, { status: 400 });
+    }
+
+    // Ensure the target directory exists
+    const targetDir = path.dirname(resolvedTargetPath);
+    await fs.mkdir(targetDir, { recursive: true });
+
+    // Write the file content
+    const encoding = operation.encoding || 'utf8';
+
+    if (encoding === 'base64') {
+      const buffer = Buffer.from(operation.content, 'base64');
+      await fs.writeFile(resolvedTargetPath, buffer);
+    } else {
+      await fs.writeFile(resolvedTargetPath, operation.content, 'utf8');
+    }
+
+    logger.debug(`Successfully wrote file ${operation.path} to ${resolvedTargetPath} for container ${containerId}`);
+
+    return NextResponse.json({
+      success: true,
+      path: operation.path,
+      targetPath: resolvedTargetPath,
+    });
   } catch (error) {
     const { containerId } = await params;
     logger.error(`Failed to handle file operation in container ${containerId}:`, error);

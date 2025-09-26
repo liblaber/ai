@@ -12,6 +12,8 @@ import { webcontainer as webcontainerPromise } from '~/lib/webcontainer';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { env } from '~/env/client';
 import { getBaseUrl } from '~/lib/utils/tunnel';
+import { dockerClient } from '~/lib/docker/docker-client';
+import { chatId } from '~/lib/persistence';
 
 const logger = createScopedLogger('ActionRunner');
 
@@ -499,6 +501,15 @@ export class ActionRunner {
       }
 
       await webcontainer.fs.writeFile(relativePath, content);
+
+      // HERE CALL THE ENDPOINT api/docker/containers/123/files
+      const response = await dockerClient.writeFile(chatId.get()!, action.filePath, content);
+      console.log('DOCKER WRITE FILE RESPONSE', response);
+
+      if (!response.success) {
+        throw new Error(`Failed to write file: ${response}`);
+      }
+
       logger.debug(`File written ${relativePath}`);
     } catch (error) {
       logger.error('Failed to write file\n\n', error);

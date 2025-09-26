@@ -20,7 +20,6 @@ import { classNames } from '~/utils/classNames';
 import { cubicEasingFn } from '~/utils/easings';
 import { renderLogger } from '~/utils/logger';
 import { EditorPanel } from './EditorPanel';
-import { Preview } from './Preview';
 import useViewport from '~/lib/hooks';
 import { PushToGitHubDialog } from '~/components/@settings/tabs/connections/components/PushToGitHubDialog';
 import { useGitStore } from '~/lib/stores/git';
@@ -42,6 +41,7 @@ import {
   Search,
   Terminal,
 } from 'lucide-react';
+import { PreviewDocker } from '~/components/workbench/PreviewDocker';
 
 interface WorkspaceProps {
   chatStarted?: boolean;
@@ -501,7 +501,8 @@ export const Workbench = memo(
                     <DiffView fileHistory={fileHistory} setFileHistory={setFileHistory} actionRunner={actionRunner} />
                   </View>
                   <View initial={{ x: '100%' }} animate={{ x: selectedView === 'preview' ? '0%' : '100%' }}>
-                    <Preview sendMessage={sendMessage} />
+                    {/*<Preview sendMessage={sendMessage} />*/}
+                    {currentChatId ? <PreviewDocker containerId={currentChatId} /> : <></>}
                   </View>
                 </div>
               </div>

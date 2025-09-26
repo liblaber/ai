@@ -39,6 +39,7 @@ import { trackTelemetryEvent } from '~/lib/telemetry/telemetry-client';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import type { DataSourcePropertyType } from '~/lib/datasource';
 import type { DataSourceType } from '@liblab/data-access/utils/types';
+import { dockerClient } from '~/lib/docker/docker-client';
 
 export type DataSourcePropertyResponse = {
   type: DataSourcePropertyType;
@@ -323,6 +324,7 @@ export const ChatImpl = ({
     if (!chatStarted) {
       setChatStarted(true);
       await workbenchStore.initialize();
+
       await startChatWithInitialMessage(
         messageContent,
         {
@@ -489,6 +491,10 @@ export const ChatImpl = ({
         environmentDataSource.environmentId,
       );
       chatId.set(conversationId);
+
+      void dockerClient.createContainer({
+        conversationId,
+      });
 
       // Don't update URL during active chat - causes component unmounting
       // Store the conversation ID for potential future navigation
