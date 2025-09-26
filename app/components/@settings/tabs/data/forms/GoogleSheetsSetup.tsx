@@ -659,6 +659,7 @@ export default function GoogleSheetsSetup({ onSuccess, environmentId }: GoogleSh
             value={dataSourceName}
             onChange={(e) => setDataSourceName(e.target.value)}
             placeholder="Enter data source name"
+            data-testid="data-source-name-input"
             style={{
               borderRadius: '8px',
               padding: '8px 12px',
@@ -770,6 +771,7 @@ export default function GoogleSheetsSetup({ onSuccess, environmentId }: GoogleSh
             value={googleSheetsUrl}
             onChange={(e) => setGoogleSheetsUrl(e.target.value)}
             placeholder="https://docs.google.com/spreadsheets/d/..."
+            data-testid="google-sheets-url-input"
             style={{
               background: 'var(--color-gray-600)',
               color: '#fff',

@@ -9,22 +9,34 @@ import { type DataSourcePropertyDescriptor, DataSourceType } from '@liblab/data-
 export type DataSourceOption = {
   value: string;
   label: string;
-  type?: DataSourceType;
+  type?: DataSourceType | ComingSoonDataSource;
   properties: DataSourcePropertyDescriptor[];
   status: 'available' | 'locked' | 'coming-soon';
 };
 export const SAMPLE_DATABASE = 'sample';
+export const SAMPLE_DATABASE_NAME = 'Sample Database';
+
+export enum ComingSoonDataSource {
+  SALESFORCE = 'SALESFORCE',
+  JIRA = 'JIRA',
+}
+
 export const DEFAULT_DATA_SOURCES: DataSourceOption[] = [
   {
     value: SAMPLE_DATABASE,
-    label: 'Sample Database',
+    label: SAMPLE_DATABASE_NAME,
     properties: [],
     status: 'available',
     type: DataSourceType.SQLITE,
   },
-  { value: 'salesforce', label: 'Salesforce', properties: [], status: 'coming-soon' },
-  { value: 'jira', label: 'Jira', properties: [], status: 'coming-soon' },
-  { value: 'github', label: 'Github', properties: [], status: 'coming-soon' },
+  {
+    value: 'salesforce',
+    label: 'Salesforce',
+    properties: [],
+    status: 'coming-soon',
+    type: ComingSoonDataSource.SALESFORCE,
+  },
+  { value: 'jira', label: 'Jira', properties: [], status: 'coming-soon', type: ComingSoonDataSource.JIRA },
 ];
 
 type DataSourceTypesHook = () => {
@@ -40,6 +52,7 @@ export const useDataSourceTypesPlugin: DataSourceTypesHook = () => {
 
   const allDataSourceTypes = useMemo(
     () => [
+      ...DEFAULT_DATA_SOURCES,
       ...dataSourceTypes.map(({ value, label, properties, type }) => ({
         value,
         label,
@@ -52,7 +65,6 @@ export const useDataSourceTypesPlugin: DataSourceTypesHook = () => {
               ? 'available'
               : 'locked',
       })),
-      ...DEFAULT_DATA_SOURCES,
     ],
     [dataSourceTypes, pluginAccess],
   ) as DataSourceOption[];

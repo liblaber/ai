@@ -38,12 +38,14 @@ jobs:
           cp .env.example .env
 
           # Set mandatory values in .env because we can't set them interactively through the CLI from GitHub action
+          echo "LICENSE_KEY=premium" >> .env
           echo "ANTHROPIC_API_KEY=${{ secrets.DUMMY_ANTHROPIC_API_KEY }}" >> .env
           echo "DEFAULT_LLM_PROVIDER=Google" >> .env
           echo "DEFAULT_LLM_MODEL=gemini-2.5-flash" >> .env
           echo "GOOGLE_GENERATIVE_AI_API_KEY=${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}" >> .env
           echo "AUTH_SECRET=${{ secrets.AUTH_SECRET }}" >> .env
           echo "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}" >> .env
+          echo "ENABLE_TEST_LOGIN_ENDPOINT=true" >> .env
 
       - name: 🐳 Run liblab quickstart
         run: |
@@ -72,6 +74,7 @@ jobs:
         env:
           BASE_URL: http://localhost:3000
           CI: true
+          HUBSPOT_ACCESS_TOKEN: ${{ secrets.HUBSPOT_ACCESS_TOKEN }}
           TEST_POSTGRES_URL: ${{ secrets.TEST_POSTGRES_URL }}
 
       - name: 📋 Show Docker ai-app container logs after test run

@@ -55,12 +55,22 @@ checker.init(options, (err: Error, packages: ModuleInfos) => {
       const licensesStr = Array.isArray(info.licenses) ? info.licenses.join(', ') : info.licenses || 'Unknown';
 
       if (licensesStr.startsWith('BSD')) {
-        console.log(`**${trimmedPkg}:**`);
+        console.log(`**${trimmedPkg}:** (BSD License)`);
         console.log(`${info.licenseText}\n`);
       } else if (licensesStr.startsWith('Apache')) {
-        // Add other licenses like || licensesStr.startsWith('MIT') if needed
-        console.log(`**${trimmedPkg}**\n${copyrightLine || 'No copyright found'}\n`);
+        console.log(`**${trimmedPkg}** (Apache License)`);
+
+        // Remove copyright line if it was just part of the template (it would have 'yyyy' in the template)
+        if (copyrightLine && copyrightLine.search('yyyy') === -1) {
+          // Add other licenses like || licensesStr.startsWith('MIT') if needed
+          console.log(`${copyrightLine || '\n'}\n`);
+        }
       }
     }
   });
+
+  // Add on notices
+
+  // Iconsax icons (free license unless commercial use)
+  console.log('\nThis project utilizes icons provided by Iconsax https://iconsax.io (Proprietary Free License).\n');
 });
