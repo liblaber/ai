@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { conversationService } from '~/lib/services/conversationService';
 import { StorageServiceFactory } from '~/lib/services/storage/storage-service-factory';
 import { snapshotService } from '~/lib/services/snapshotService';
 import { logger } from '~/utils/logger';
-import { requireUserId } from '~/auth/session';
+import { requireUserAbility } from '~/auth/session';
+import { PermissionAction } from '@prisma/client';
+import { subject } from '@casl/ability';
 
 export async function GET(
   request: NextRequest,
@@ -15,17 +16,10 @@ export async function GET(
     return NextResponse.json({ error: 'Conversation ID and Snapshot ID are required' }, { status: 400 });
   }
 
-  const userId = await requireUserId(request);
+  const { userAbility } = await requireUserAbility(request);
 
-  const conversation = await conversationService.getConversation(conversationId);
-
-  if (!conversation) {
-    return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
-  }
-
-  // Check if the conversation belongs to the authenticated user
-  if (conversation.userId !== userId) {
-    return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+  if (userAbility.cannot(PermissionAction.read, subject('Conversation', { id: conversationId }))) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
 
   try {

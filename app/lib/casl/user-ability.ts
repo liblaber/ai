@@ -3,7 +3,7 @@ import { PureAbility, AbilityBuilder } from '@casl/ability';
 import { createPrismaAbility } from '@casl/prisma';
 import { PermissionResource, PermissionAction } from '@prisma/client';
 import type { PrismaQuery, Subjects } from '@casl/prisma';
-import type { DataSource, Environment, EnvironmentVariable, Permission, Website } from '@prisma/client';
+import type { DataSource, Environment, EnvironmentVariable, Permission, Website, Conversation } from '@prisma/client';
 import type { PrismaResources } from './prisma-helpers';
 import { getUserPermissions } from '~/lib/services/permissionService';
 import { logger } from '~/utils/logger';
@@ -19,6 +19,7 @@ type PrismaSubjects = Subjects<{
   DataSource: Partial<DataSource>;
   Website: Partial<Website>;
   EnvironmentVariable: Partial<EnvironmentVariable>;
+  Conversation: Partial<Conversation>;
 }>;
 
 type NonPrismaSubjects = Exclude<PermissionResource, PrismaResources>;
@@ -30,7 +31,7 @@ export function createAbilityForUser(userId: string, permissions: Permission[]):
   const { can, build } = new AbilityBuilder<AppAbility>(createPrismaAbility);
 
   permissions.forEach((permission) => {
-    const { action, resource, environmentId, dataSourceId, websiteId } = permission as Permission;
+    const { action, resource, environmentId, dataSourceId, websiteId, conversationId } = permission as Permission;
 
     // Handle different permission scenarios
     switch (resource) {
@@ -75,6 +76,15 @@ export function createAbilityForUser(userId: string, permissions: Permission[]):
 
         break;
 
+      case PermissionResource.Conversation:
+        if (conversationId) {
+          can(action, PermissionResource.Conversation, { id: conversationId });
+        } else {
+          can(action, PermissionResource.Conversation);
+        }
+
+        break;
+
       // Add other resource types as needed...
       default:
         logger.warn(`User ability: Unknown resource type '${resource}' for action '${action}'`);
@@ -86,6 +96,7 @@ export function createAbilityForUser(userId: string, permissions: Permission[]):
   can(PermissionAction.manage, PermissionResource.DataSource, { createdById: userId });
   can(PermissionAction.manage, PermissionResource.Website, { createdById: userId });
   can(PermissionAction.manage, PermissionResource.EnvironmentVariable, { createdById: userId });
+  can(PermissionAction.manage, PermissionResource.Conversation, { userId });
 
   return build();
 }

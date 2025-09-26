@@ -3,7 +3,9 @@ import { conversationService } from '~/lib/services/conversationService';
 import { StorageServiceFactory } from '~/lib/services/storage/storage-service-factory';
 import { snapshotService } from '~/lib/services/snapshotService';
 import { logger } from '~/utils/logger';
-import { requireUserId } from '~/auth/session';
+import { requireUserAbility } from '~/auth/session';
+import { PermissionAction } from '@prisma/client';
+import { subject } from '@casl/ability';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) {
   const { conversationId } = await params;
@@ -12,7 +14,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'Conversation ID is required' }, { status: 400 });
   }
 
-  const userId = await requireUserId(request);
+  const { userAbility } = await requireUserAbility(request);
 
   const conversation = await conversationService.getConversation(conversationId);
 
@@ -20,9 +22,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
   }
 
-  // Check if the conversation belongs to the authenticated user
-  if (conversation.userId !== userId) {
-    return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+  if (userAbility.cannot(PermissionAction.read, subject('Conversation', conversation))) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
 
   try {
@@ -58,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'Conversation ID is required' }, { status: 400 });
   }
 
-  const userId = await requireUserId(request);
+  const { userAbility } = await requireUserAbility(request);
 
   const conversation = await conversationService.getConversation(conversationId);
 
@@ -66,9 +67,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
   }
 
-  // Check if the conversation belongs to the authenticated user
-  if (conversation.userId !== userId) {
-    return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+  if (userAbility.cannot(PermissionAction.update, subject('Conversation', conversation))) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
 
   try {

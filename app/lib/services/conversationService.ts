@@ -1,7 +1,9 @@
 import { prisma } from '~/lib/prisma';
-import { type Conversation, type Prisma } from '@prisma/client';
+import { type Conversation, PermissionAction, type Prisma } from '@prisma/client';
 import { StarterPluginManager } from '~/lib/plugins/starter/starter-plugin-manager';
 import { getEnvironmentDataSource } from '~/lib/services/datasourceService';
+import { buildResourceWhereClause } from '~/lib/casl/prisma-helpers';
+import type { AppAbility } from '~/lib/casl/user-ability';
 
 export const conversationService = {
   async getConversation(conversationId: string): Promise<Conversation | null> {
@@ -52,18 +54,16 @@ export const conversationService = {
     });
   },
 
-  async updateConversation(
-    conversationId: string,
-    userId: string,
-    data: Partial<Conversation>,
-  ): Promise<Conversation | null> {
+  async updateConversation(conversationId: string, data: Partial<Conversation>): Promise<Conversation | null> {
     return await prisma.conversation.update({
-      where: { id: conversationId, userId },
+      where: { id: conversationId },
       data,
     });
   },
 
-  async getAllConversations(userId: string): Promise<(Conversation & { editedAt: Date | null })[]> {
+  async getAllConversationsWithPermissions(ability: AppAbility): Promise<(Conversation & { editedAt: Date | null })[]> {
+    const permissionWhere = buildResourceWhereClause<'Conversation'>(ability, PermissionAction.read, 'Conversation');
+
     const conversations = await prisma.conversation.findMany({
       select: {
         id: true,
@@ -86,10 +86,14 @@ export const conversationService = {
         environmentId: true,
       },
       where: {
-        userId,
-        snapshots: {
-          some: {},
-        },
+        AND: [
+          permissionWhere as Prisma.ConversationWhereInput,
+          {
+            snapshots: {
+              some: {},
+            },
+          },
+        ],
       },
       orderBy: {
         createdAt: 'desc',
@@ -106,9 +110,9 @@ export const conversationService = {
     }));
   },
 
-  async deleteConversation(conversationId: string, userId: string): Promise<void> {
+  async deleteConversation(conversationId: string): Promise<void> {
     await prisma.conversation.delete({
-      where: { id: conversationId, userId },
+      where: { id: conversationId },
     });
   },
 };

@@ -4,10 +4,13 @@ import { snapshotService } from '~/lib/services/snapshotService';
 import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
 import { messageService } from '~/lib/services/messageService';
-import { requireUserId } from '~/auth/session';
+import { requireUserAbility } from '~/auth/session';
 import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import { userService } from '~/lib/services/userService';
+import { PermissionAction, Prisma } from '@prisma/client';
+import { subject } from '@casl/ability';
+import { buildResourceWhereClause } from '~/lib/casl/prisma-helpers';
 
 export async function POST(
   request: NextRequest,
@@ -19,10 +22,16 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 
-  const userId = await requireUserId(request);
+  const { userAbility, userId } = await requireUserAbility(request);
+
+  if (userAbility.cannot(PermissionAction.update, subject('Conversation', { id: conversationId }))) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+  }
+
+  const permissionWhere = buildResourceWhereClause<'Conversation'>(userAbility, PermissionAction.read, 'Conversation');
 
   const conversation = await prisma.conversation.findUnique({
-    where: { id: conversationId, userId },
+    where: permissionWhere as Prisma.ConversationWhereUniqueInput,
     include: {
       messages: {
         select: {

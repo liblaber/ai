@@ -4,7 +4,9 @@ import { z } from 'zod';
 import { conversationService } from '~/lib/services/conversationService';
 import { logger } from '~/utils/logger';
 import { StorageServiceFactory } from '~/lib/services/storage/storage-service-factory';
-import { requireUserId } from '~/auth/session';
+import { requireUserAbility } from '~/auth/session';
+import { PermissionAction } from '@prisma/client';
+import { subject } from '@casl/ability';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) {
   const { conversationId } = await params;
@@ -13,11 +15,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'Conversation ID is required' }, { status: 400 });
   }
 
-  const userId = await requireUserId(request);
+  const { userAbility } = await requireUserAbility(request);
 
   try {
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId, userId },
+    if (userAbility.cannot(PermissionAction.read, subject('Conversation', { id: conversationId }))) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    const conversationWithMessages = await prisma.conversation.findUnique({
+      where: { id: conversationId },
       include: {
         messages: {
           include: {
@@ -34,11 +40,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
     });
 
-    if (!conversation) {
+    if (!conversationWithMessages) {
       return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
     }
 
-    return NextResponse.json(conversation);
+    return NextResponse.json(conversationWithMessages);
   } catch (error) {
     logger.error('Error fetching conversation:', error);
     return NextResponse.json(
@@ -57,9 +63,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ error: 'Conversation ID is required' }, { status: 400 });
   }
 
-  const userId = await requireUserId(request);
+  const { userAbility } = await requireUserAbility(request);
 
-  return handleDelete(conversationId, userId);
+  if (userAbility.cannot(PermissionAction.delete, subject('Conversation', { id: conversationId }))) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+  }
+
+  return handleDelete(conversationId);
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ conversationId: string }> }) {
@@ -69,17 +79,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: 'Conversation ID is required' }, { status: 400 });
   }
 
-  const userId = await requireUserId(request);
+  const { userAbility } = await requireUserAbility(request);
 
-  return handlePatch(conversationId, userId, request);
+  if (userAbility.cannot(PermissionAction.update, subject('Conversation', { id: conversationId }))) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+  }
+
+  return handlePatch(conversationId, request);
 }
 
-async function handleDelete(conversationId: string, userId: string) {
+async function handleDelete(conversationId: string) {
   try {
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId, userId },
-      select: { id: true },
-    });
+    const conversation = await conversationService.getConversation(conversationId);
 
     if (!conversation) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -89,7 +100,7 @@ async function handleDelete(conversationId: string, userId: string) {
 
     logger.info(`Deleting conversation ${conversationId}`);
 
-    await conversationService.deleteConversation(conversationId, userId);
+    await conversationService.deleteConversation(conversationId);
     await storageService.deleteAll(`snapshots/${conversationId}`);
 
     logger.info(`Deleted conversation ${conversationId}`);
@@ -112,12 +123,12 @@ const UPDATE_CONVERSATION_SCHEMA = z.object({
   dataSourceId: z.string().optional(),
 });
 
-async function handlePatch(conversationId: string, userId: string, request: NextRequest) {
+async function handlePatch(conversationId: string, request: NextRequest) {
   try {
     const body = await request.json();
     const updateData = UPDATE_CONVERSATION_SCHEMA.parse(body);
 
-    const updatedConversation = await conversationService.updateConversation(conversationId, userId, updateData);
+    const updatedConversation = await conversationService.updateConversation(conversationId, updateData);
 
     if (!updatedConversation) {
       return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
