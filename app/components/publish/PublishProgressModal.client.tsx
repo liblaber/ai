@@ -100,6 +100,28 @@ export function PublishProgressModal({
     }
   }, [isOpen, buttonRef]);
 
+  // Handle click outside to close modal
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isOpen && deploymentProgress?.status !== 'in_progress') {
+        const target = event.target as Element;
+        const modal = document.querySelector('[data-modal="publish-progress"]');
+
+        if (modal && !modal.contains(target)) {
+          handleClose();
+        }
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, deploymentProgress?.status]);
+
   // Handlers
   const handleClose = () => {
     setTimeout(() => {
@@ -256,6 +278,7 @@ export function PublishProgressModal({
       transition={{ duration: 0.2 }}
     >
       <div
+        data-modal="publish-progress"
         className="flex flex-col items-start gap-4 p-6 rounded-[15px] border border-white/8 bg-[#1E2125] shadow-[0_8px_16px_0_rgba(0,0,0,0.45)]"
         style={{
           width: '480px',
