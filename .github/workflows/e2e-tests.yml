@@ -15,7 +15,7 @@ jobs:
   e2e-tests:
     name: 🧪 Run E2E Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 60
 
     steps:
       - name: 📥 Checkout code
@@ -75,6 +75,7 @@ jobs:
           BASE_URL: http://localhost:3000
           CI: true
           HUBSPOT_ACCESS_TOKEN: ${{ secrets.HUBSPOT_ACCESS_TOKEN }}
+          TEST_POSTGRES_URL: ${{ secrets.TEST_POSTGRES_URL }}
 
       - name: 📋 Show Docker ai-app container logs after test run
         if: always()

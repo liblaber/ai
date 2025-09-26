@@ -1,6 +1,10 @@
 /// <reference types="node" />
 import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
+import { config } from 'dotenv';
+
+// Load environment variables from .env file
+config({ path: '.env' });
 
 export const STORAGE_STATE = path.join(__dirname, 'playwright/.auth/user.json');
 
