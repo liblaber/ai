@@ -3,7 +3,7 @@ import { atom, map, type MapStore, type ReadableAtom, type WritableAtom } from '
 import type { EditorDocument, ScrollPosition } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { ActionRunner } from '~/lib/runtime/action-runner';
 import type { ActionCallbackData, ArtifactCallbackData } from '~/lib/runtime/message-parser';
-import { webcontainer } from '~/lib/webcontainer';
+import { rawWebContainer, webcontainer } from '~/lib/webcontainer';
 import type { ITerminal } from '~/types/terminal';
 import { unreachable } from '~/utils/unreachable';
 import { EditorStore } from './editor';
@@ -418,8 +418,8 @@ export class WorkbenchStore {
     }
 
     if (data.action.type === 'file') {
-      const wc = await webcontainer();
-      const fullPath = path.join(wc.workdir, data.action.filePath);
+      const container = await webcontainer();
+      const fullPath = path.join(container.workdir, data.action.filePath);
 
       if (this.selectedFile.value !== fullPath) {
         this.setSelectedFile(fullPath);
@@ -713,9 +713,11 @@ export class WorkbenchStore {
   }
 
   async #initializeStores(): Promise<void> {
-    const webcontainerInstance = await webcontainer();
-    this.#previewsStore = new PreviewsStore(Promise.resolve(webcontainerInstance));
-    this.#filesStore = new FilesStore(Promise.resolve(webcontainerInstance));
+    const containerInstance = await webcontainer();
+    // TODO: @skos handle the watchPaths
+    const rawWebContainerInstance = await rawWebContainer();
+    this.#previewsStore = new PreviewsStore(Promise.resolve(containerInstance));
+    this.#filesStore = new FilesStore(Promise.resolve(containerInstance), Promise.resolve(rawWebContainerInstance));
     this.#editorStore = new EditorStore(this.#filesStore);
   }
 

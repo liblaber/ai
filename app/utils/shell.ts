@@ -1,9 +1,9 @@
 'use client';
-import type { WebContainerProcess } from '@webcontainer/api';
 import type { ITerminal } from '~/types/terminal';
 import { withResolvers } from './promises';
 import { atom } from 'nanostores';
 import { webcontainer as webcontainerPromise } from '~/lib/webcontainer';
+import type { ContainerProcess } from '~/lib/containers';
 
 export type ExecutionResult = { output: string; exitCode: number } | undefined;
 
@@ -20,7 +20,7 @@ export class LiblabShell {
   #isInitialized = atom<boolean>(false);
   #readyPromise: Promise<void>;
   #terminal: ITerminal | undefined;
-  #process: WebContainerProcess | undefined;
+  #process: ContainerProcess | undefined;
   #outputStream: ReadableStreamDefaultReader<string> | undefined;
   #shellInputStream: WritableStreamDefaultWriter<string> | undefined;
 
@@ -104,17 +104,17 @@ export class LiblabShell {
 
   async newLiblabShellProcess(terminal: ITerminal) {
     const args: string[] = [];
-    const webcontainer = await webcontainerPromise();
+    const container = await webcontainerPromise();
 
     // we spawn a JSH process with a fallback cols and rows in case the process is not attached yet to a visible terminal
-    const process = await webcontainer.spawn('/bin/jsh', ['--osc', ...args], {
+    const process = await container.spawn('/bin/jsh', ['--osc', ...args], {
       terminal: {
         cols: terminal.cols ?? 80,
         rows: terminal.rows ?? 15,
       },
     });
 
-    const input = process.input.getWriter();
+    const input = process.input;
     this.#shellInputStream = input;
 
     const [internalOutput, terminalOutput] = process.output.tee();
