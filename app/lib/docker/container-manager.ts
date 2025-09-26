@@ -1,4 +1,5 @@
 import Docker from 'dockerode';
+import fs from 'fs-extra';
 import { EventEmitter } from 'events';
 import path from 'path';
 import type {
@@ -9,6 +10,12 @@ import type {
   DockerShellCommand,
   DockerShellResponse,
 } from '~/types/docker';
+
+// Directory used for mounting Docker volumes with app files apps/{conversationId}
+const APPS_DIRECTORY = 'apps';
+
+// Next starter template used to bootstrap mounted apps/{conversationId} folder
+const NEXT_STARTER_DOCKER_PATH = 'starters/next-starter-docker';
 
 export class DockerContainerManager extends EventEmitter {
   private _docker: Docker;
@@ -25,13 +32,23 @@ export class DockerContainerManager extends EventEmitter {
   async createContainer(request: DockerContainerCreateRequest): Promise<DockerContainer> {
     const containerId = request.conversationId;
     const containerName = `liblab-ai-${containerId}`;
+    const hostAppPath = path.resolve(process.cwd(), `${APPS_DIRECTORY}/${containerId}`);
+    const starterPath = path.resolve(process.cwd(), NEXT_STARTER_DOCKER_PATH);
 
     try {
       console.info(`Creating container ${containerName} for conversation ${request.conversationId}`);
 
+      // Bootstrap if app folder does not exist on host
+      if (!(await fs.pathExists(hostAppPath)) || (await fs.readdir(hostAppPath)).length === 0) {
+        console.info(`Bootstrapping app folder for ${containerName}...`);
+        await fs.ensureDir(hostAppPath);
+        await fs.copy(starterPath, hostAppPath, { overwrite: true });
+        console.info(`Copied starter from ${starterPath} to ${hostAppPath}`);
+      }
+
       // Simple port mapping - only expose port 3000
       const containerPort = 3000;
-      const hostPort = await this._findAvailablePort();
+      const hostPort = await this._findAvailableHostPort();
       console.info(`Allocated host port ${hostPort} for container ${containerName}`);
 
       const exposedPorts = { '3000/tcp': {} };
@@ -58,17 +75,10 @@ export class DockerContainerManager extends EventEmitter {
           ['/app']: {},
           ['/app/node_modules']: {},
         },
-        Env: ['CI=true'],
+        Env: ['CI=true'], // no prompts, stricter handling of warnings, stable logs
         HostConfig: {
           PortBindings: portBindings,
-          Binds: [`${path.resolve(process.cwd(), 'starters/liblab-ai-next-starter-main')}:/app`],
-          // Mounts: [
-          //   {
-          //     Type: 'volume',
-          //     Source: `${path.resolve(process.cwd(), 'starters/liblab-ai-next-starter-main')}`,
-          //     Target: '/app:cached',
-          //   },
-          // ],
+          Binds: [`${path.resolve(process.cwd(), `${APPS_DIRECTORY}/${containerId}`)}:/app`],
           AutoRemove: false, // We'll manage cleanup manually
         },
       };
@@ -432,7 +442,7 @@ export class DockerContainerManager extends EventEmitter {
     console.warn(`Port ${port.containerPort} on container ${container.name} never became ready`);
   }
 
-  private async _findAvailablePort(startPort: number = 3001): Promise<number> {
+  private async _findAvailableHostPort(startPort: number = 3001): Promise<number> {
     const net = await import('net');
 
     for (let port = startPort; port <= startPort + 999; port++) {

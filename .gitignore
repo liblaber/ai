@@ -65,3 +65,4 @@ tunnel.config
 next-env.d.ts
 
 starters/liblab-ai-next-starter-main
+apps/*
