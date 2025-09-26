@@ -74,6 +74,7 @@ export interface DeploymentConfig {
   description?: string;
   userId: string;
   environmentId?: string;
+  slug?: string;
 }
 
 export interface DeploymentProgress {

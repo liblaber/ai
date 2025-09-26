@@ -11,6 +11,7 @@ import { logger } from '~/utils/logger';
 import { getTelemetry } from '~/lib/telemetry/telemetry-manager';
 import { TelemetryEventType } from '~/lib/telemetry/telemetry-types';
 import { userService } from '~/lib/services/userService';
+import { generateDefaultSlug, generateUniqueSlug } from '~/utils/slug';
 import type {
   DeploymentConfig,
   DeploymentPlugin,
@@ -166,9 +167,23 @@ export abstract class BaseDeploymentPlugin implements DeploymentPlugin {
     siteUrl: string,
     chatId: string,
     userId: string,
+    customSlug?: string,
   ): Promise<any> {
     if (websiteId) {
       // Update existing website
+      const existingWebsite = await prisma.website.findUnique({
+        where: { id: websiteId },
+        select: { slug: true },
+      });
+
+      let slug = existingWebsite?.slug;
+
+      // Generate slug if it doesn't exist or if custom slug is provided
+      if (!slug || customSlug) {
+        const baseSlug = customSlug || generateDefaultSlug(chatId, siteName);
+        slug = await generateUniqueSlug(baseSlug, existingWebsite?.slug || '');
+      }
+
       const website = await prisma.website.update({
         where: {
           id: websiteId,
@@ -178,23 +193,28 @@ export abstract class BaseDeploymentPlugin implements DeploymentPlugin {
           siteId,
           siteName,
           siteUrl,
+          slug,
         },
       });
-      logger.info('Website updated in database', JSON.stringify({ chatId, siteId }));
+      logger.info('Website updated in database', JSON.stringify({ chatId, siteId, slug }));
 
       return website;
     } else {
       // Create new website
+      const baseSlug = customSlug || generateDefaultSlug(chatId, siteName);
+      const slug = await generateUniqueSlug(baseSlug);
+
       const website = await prisma.website.create({
         data: {
           siteId,
           siteName,
           siteUrl,
+          slug,
           chatId,
           createdById: userId,
         },
       });
-      logger.info('Website saved to database successfully', JSON.stringify({ chatId, siteId }));
+      logger.info('Website saved to database successfully', JSON.stringify({ chatId, siteId, slug }));
 
       return website;
     }

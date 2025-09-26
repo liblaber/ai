@@ -183,16 +183,19 @@ export default function DeployedAppsTab() {
                   <Monitor className="w-5 h-5 text-accent-500" />
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-white">{website.siteName}</h4>
-                    {website.siteUrl && (
-                      <a
-                        href={website.siteUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-accent-500 hover:text-accent-600 dark:text-accent-400 dark:hover:text-accent-300 mt-2"
-                      >
-                        {website.siteUrl}
-                      </a>
-                    )}
+                    <div className="flex flex-col gap-1 mt-2">
+                      {website.slug && (
+                        <a
+                          href={`/apps/${website.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-accent-500 hover:text-accent-600 dark:text-accent-400 dark:hover:text-accent-300"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {typeof window !== 'undefined' ? window.location.origin : ''}/apps/{website.slug}
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

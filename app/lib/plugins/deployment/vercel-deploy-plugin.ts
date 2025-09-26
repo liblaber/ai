@@ -2,7 +2,15 @@ import { logger } from '~/utils/logger';
 import { BaseDeploymentPlugin } from './base-deployment-plugin';
 import type { DeploymentConfig, DeploymentProgress, DeploymentResult } from '~/lib/plugins/types';
 import { getDeploymentMethodCredential } from '~/lib/services/deploymentMethodService';
-import { DeploymentMethodCredentialsType } from '@prisma/client';
+import { env } from '~/env/server';
+
+// Define the enum locally until Prisma client is regenerated
+enum DeploymentMethodCredentialsType {
+  API_KEY = 'API_KEY',
+  ACCESS_KEY = 'ACCESS_KEY',
+  SECRET_KEY = 'SECRET_KEY',
+  REGION = 'REGION',
+}
 
 const TOTAL_STEPS = 7;
 
@@ -106,7 +114,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
 
       const deployResult = await this.runCommand(
         'npx',
-        ['vercel', 'deploy', '--prod', '--token', token, '--yes'],
+        ['vercel', 'deploy', '--prod', '--token', token, '--yes', '--public'],
         tempDir,
         undefined,
         5 * 60 * 1000, // 5 minutes timeout
@@ -125,8 +133,27 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
 
       const deploymentInfo = this._parseVercelOutput(deployResult.output);
 
+      // Get project ID from .vercel/project.json file
+      const projectId = await this._getVercelProjectId(tempDir, chatId);
+
+      if (projectId) {
+        // Disable SSO protection to allow iframe embedding
+        await this._disableVercelSSOProtection(projectId, token, chatId);
+      } else {
+        logger.warn('Could not find Vercel project ID', JSON.stringify({ chatId }));
+      }
+
+      // Send final completion step
+      await this.sendProgress(
+        this.totalSteps,
+        this.totalSteps,
+        'Deployment completed successfully!',
+        'success',
+        onProgress,
+      );
+
       const siteInfo = {
-        id: deploymentInfo.projectId || `vercel-${chatId}`,
+        id: projectId || `vercel-${chatId}`,
         name: projectName,
         url: deploymentInfo.url || `https://${projectName}.vercel.app`,
         chatId,
@@ -141,6 +168,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
         siteInfo.url,
         chatId,
         userId,
+        config.slug,
       );
 
       return {
@@ -182,16 +210,102 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
     const vercelConfig = {
       version: 2,
       name: `liblab-${chatId.slice(0, 8)}`,
+      public: true,
       builds: [
         {
           src: 'package.json',
           use: '@vercel/next',
         },
       ],
-      routes: [
+      headers: [
         {
-          src: '/(.*)',
-          dest: '/$1',
+          source: '/(.*)',
+          headers: [
+            {
+              key: 'X-Frame-Options',
+              value: 'ALLOW-FROM *',
+            },
+            {
+              key: 'X-Content-Type-Options',
+              value: 'nosniff',
+            },
+            {
+              key: 'Referrer-Policy',
+              value: 'strict-origin-when-cross-origin',
+            },
+            {
+              key: 'Cross-Origin-Resource-Policy',
+              value: 'cross-origin',
+            },
+            {
+              key: 'Cross-Origin-Embedder-Policy',
+              value: 'require-corp',
+            },
+            {
+              key: 'Cross-Origin-Opener-Policy',
+              value: 'same-origin-allow-popups',
+            },
+          ],
+        },
+        {
+          source: '/:path*.js',
+          headers: [
+            {
+              key: 'Cross-Origin-Resource-Policy',
+              value: 'cross-origin',
+            },
+            {
+              key: 'Access-Control-Allow-Origin',
+              value: env.BASE_URL,
+            },
+            {
+              key: 'Access-Control-Allow-Methods',
+              value: 'GET, POST, PUT, DELETE, OPTIONS',
+            },
+            {
+              key: 'Access-Control-Allow-Headers',
+              value: 'Content-Type, Authorization, X-Requested-With',
+            },
+          ],
+        },
+        {
+          source: '/:path*.css',
+          headers: [
+            {
+              key: 'Cross-Origin-Resource-Policy',
+              value: 'cross-origin',
+            },
+            {
+              key: 'Access-Control-Allow-Origin',
+              value: env.BASE_URL,
+            },
+          ],
+        },
+        {
+          source: '/:path*.(png|jpg|jpeg|gif|svg|ico)',
+          headers: [
+            {
+              key: 'Cross-Origin-Resource-Policy',
+              value: 'cross-origin',
+            },
+            {
+              key: 'Access-Control-Allow-Origin',
+              value: env.BASE_URL,
+            },
+          ],
+        },
+        {
+          source: '/:path*.(woff|woff2|ttf|eot)',
+          headers: [
+            {
+              key: 'Cross-Origin-Resource-Policy',
+              value: 'cross-origin',
+            },
+            {
+              key: 'Access-Control-Allow-Origin',
+              value: env.BASE_URL,
+            },
+          ],
         },
       ],
       env: {
@@ -202,7 +316,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
     await writeFile(join(tempDir, 'vercel.json'), JSON.stringify(vercelConfig, null, 2));
 
     // Create next.config.js if it doesn't exist to ensure proper Next.js configuration
-    const nextConfigPath = join(tempDir, 'next.config.js');
+    const nextConfigPath = join(tempDir, 'next.config.ts');
     const nextConfigExists = await this.fileExists(nextConfigPath);
 
     if (!nextConfigExists) {
@@ -221,6 +335,39 @@ const nextConfig = {
   trailingSlash: true,
   // Disable x-powered-by header
   poweredByHeader: false,
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'ALLOW-FROM *',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
@@ -305,5 +452,93 @@ module.exports = nextConfig;
     }
 
     return { projectId, deploymentId, url };
+  }
+
+  /**
+   * Gets the Vercel project ID from the .vercel/project.json file
+   */
+  private async _getVercelProjectId(tempDir: string, chatId: string): Promise<string | null> {
+    try {
+      const { readFile } = await import('fs/promises');
+      const { join } = await import('path');
+
+      const projectJsonPath = join(tempDir, '.vercel', 'project.json');
+
+      if (await this.fileExists(projectJsonPath)) {
+        const projectJsonContent = await readFile(projectJsonPath, 'utf-8');
+        const projectData = JSON.parse(projectJsonContent);
+
+        logger.info(
+          'Found Vercel project ID',
+          JSON.stringify({
+            chatId,
+            projectId: projectData.projectId,
+            projectName: projectData.projectName,
+          }),
+        );
+
+        return projectData.projectId || null;
+      } else {
+        logger.warn('Vercel project.json file not found', JSON.stringify({ chatId, path: projectJsonPath }));
+        return null;
+      }
+    } catch (error) {
+      logger.warn(
+        'Error reading Vercel project.json',
+        JSON.stringify({
+          chatId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }),
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Disables SSO protection on a Vercel project to allow iframe embedding
+   */
+  private async _disableVercelSSOProtection(projectId: string, token: string, chatId: string): Promise<void> {
+    try {
+      logger.info('Disabling Vercel SSO protection', JSON.stringify({ chatId, projectId }));
+
+      const response = await fetch(`https://api.vercel.com/v9/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ssoProtection: null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        logger.warn(
+          'Failed to disable SSO protection',
+          JSON.stringify({
+            chatId,
+            projectId,
+            status: response.status,
+            error: errorData,
+          }),
+        );
+
+        // Don't throw error - deployment was successful, just SSO protection couldn't be disabled
+        return;
+      }
+
+      logger.info('Successfully disabled Vercel SSO protection', JSON.stringify({ chatId, projectId }));
+    } catch (error) {
+      logger.warn(
+        'Error disabling SSO protection',
+        JSON.stringify({
+          chatId,
+          projectId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }),
+      );
+      // Don't throw error - deployment was successful, just SSO protection couldn't be disabled
+    }
   }
 }

@@ -331,6 +331,7 @@ export function HeaderActionButtons() {
       formData.append('chatId', currentChatId || '');
       formData.append('description', chatDescription || '');
       formData.append('deploymentType', selectedDeploymentType);
+      // Slug will be generated server-side from description or chatId
       formData.append('zipFile', zipBlob, 'project.zip');
       formData.append('environmentId', selectedEnvironmentDataSource.environmentId || '');
 
@@ -383,12 +384,17 @@ export function HeaderActionButtons() {
 
                 const deploymentTypeName =
                   deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name || selectedDeploymentType;
+                // Generate the slug URL for viewing in our system
+                const slugUrl = data.data.website?.slug ? `/apps/${data.data.website.slug}` : null;
+
                 toast.success(
                   <div>
                     Deployed successfully to {deploymentTypeName}!{' '}
-                    <a href={data.data.deploy.url} target="_blank" rel="noopener noreferrer" className="underline">
-                      View site
-                    </a>
+                    {slugUrl && (
+                      <a href={slugUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                        View app
+                      </a>
+                    )}
                   </div>,
                 );
 
@@ -611,6 +617,7 @@ export function HeaderActionButtons() {
         mode={modalMode}
         onPublishClick={handlePublishClick}
         buttonRef={publishButtonRef}
+        deploymentMethod={deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name}
       />
     </>
   );

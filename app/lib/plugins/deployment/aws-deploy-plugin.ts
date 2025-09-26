@@ -6,6 +6,7 @@ import { BaseDeploymentPlugin, type SiteInfo } from './base-deployment-plugin';
 import rimraf from 'rimraf';
 import { getDeploymentMethodCredentials } from '~/lib/services/deploymentMethodService';
 import { DeploymentMethodCredentialsType } from '@prisma/client';
+import { env } from '~/env/server';
 
 const TOTAL_STEPS = 6;
 
@@ -146,6 +147,7 @@ export class AwsDeployPlugin extends BaseDeploymentPlugin {
         siteInfo.url,
         chatId,
         userId,
+        config.slug,
       );
 
       return {
@@ -198,6 +200,14 @@ export default $config({
     new sst.aws.Nextjs("liblab-${chatId}", {
       environment: {
       ${Object.entries(envFile).map(([key, value]) => `${key}: '${value}'`)},
+      },
+      cors: {
+        allowCredentials: false,
+        allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowOrigins: ["${env.BASE_URL}"],
+        exposeHeaders: [],
+        maxAge: 86400,
       },
     });
   },
@@ -292,11 +302,44 @@ CMD ["node", "server.js"]
     `;
 
     if (!nextConfigContent.includes("output: 'standalone'")) {
-      // Ensure the output field is set to 'standalone'
-      nextConfigContent = nextConfigContent.replace(
-        'export default nextConfig;',
-        'export default { ...nextConfig, output: "standalone" };',
-      );
+      // Remove any existing output configuration
+      nextConfigContent = nextConfigContent.replace(/output:\s*['"`]export['"`],?\s*/g, '');
+      nextConfigContent = nextConfigContent.replace(/output:\s*['"`]standalone['"`],?\s*/g, '');
+
+      // Handle both ES6 and CommonJS module syntax
+      if (nextConfigContent.includes('export default nextConfig;')) {
+        nextConfigContent = nextConfigContent.replace(
+          'export default nextConfig;',
+          'export default { ...nextConfig, output: "standalone" };',
+        );
+      } else if (nextConfigContent.includes('module.exports = nextConfig;')) {
+        nextConfigContent = nextConfigContent.replace(
+          'module.exports = nextConfig;',
+          'module.exports = { ...nextConfig, output: "standalone" };',
+        );
+      } else if (nextConfigContent.includes('export default')) {
+        // Handle other export default patterns
+        nextConfigContent = nextConfigContent.replace(
+          /export default\s+(\w+);/,
+          'export default { ...$1, output: "standalone" };',
+        );
+      } else if (nextConfigContent.includes('module.exports')) {
+        // Handle other module.exports patterns
+        nextConfigContent = nextConfigContent.replace(
+          /module\.exports\s*=\s*(\w+);/,
+          'module.exports = { ...$1, output: "standalone" };',
+        );
+      } else {
+        // Fallback: add the configuration at the end of the file
+        nextConfigContent = nextConfigContent.trim();
+
+        if (!nextConfigContent.endsWith(';')) {
+          nextConfigContent += ';';
+        }
+
+        nextConfigContent +=
+          '\n\n// Ensure standalone output for SST v2\nexport default { ...nextConfig, output: "standalone" };';
+      }
     }
 
     await writeFile(nextConfigPath, nextConfigContent);

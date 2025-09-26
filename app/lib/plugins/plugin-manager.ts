@@ -37,8 +37,8 @@ export const FREE_PLUGIN_ACCESS: PluginAccessMap = {
   },
   [PluginType.DEPLOYMENT]: {
     NETLIFY: true,
-    VERCEL: false,
-    AWS: false,
+    VERCEL: true,
+    AWS: true,
   },
 };
 

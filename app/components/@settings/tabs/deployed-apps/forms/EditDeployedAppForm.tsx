@@ -24,10 +24,70 @@ export default function EditDeployedAppForm({
   onAddMembers,
 }: EditDeployedAppFormProps) {
   const [name, setName] = useState(website.siteName || '');
+  const [slug, setSlug] = useState((website as any).slug || '');
+  const [initialSlug] = useState((website as any).slug || '');
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+  const [slugError, setSlugError] = useState('');
 
   useEffect(() => {
     setName(website.siteName || '');
+    setSlug((website as any).slug || '');
   }, [website]);
+
+  const checkSlugAvailability = async (slugToCheck: string) => {
+    if (!slugToCheck.trim()) {
+      setSlugError('');
+      return true;
+    }
+
+    // If slug hasn't changed from initial, it's always valid
+    if (slugToCheck === initialSlug) {
+      setSlugError('');
+      return true;
+    }
+
+    setIsCheckingSlug(true);
+    setSlugError('');
+
+    try {
+      const response = await fetch(`/api/slugs?slug=${encodeURIComponent(slugToCheck)}`);
+      const data = await response.json<{ isValid: boolean; isAvailable: boolean; message?: string }>();
+
+      if (data.isValid && data.isAvailable) {
+        return true;
+      } else if (!data.isValid) {
+        setSlugError('Invalid slug format');
+        return false;
+      } else {
+        setSlugError(data.message || 'This slug is already taken');
+        return false;
+      }
+    } catch (error) {
+      logger.error('Failed to check slug availability:', error);
+      setSlugError('Failed to check slug availability');
+
+      return false;
+    } finally {
+      setIsCheckingSlug(false);
+    }
+  };
+
+  // eslint-disable-next-line consistent-return
+  const handleSlugChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSlug = e.target.value;
+    setSlug(newSlug);
+
+    if (newSlug.trim() && newSlug !== initialSlug) {
+      // Debounce the check
+      const timeoutId = setTimeout(() => {
+        checkSlugAvailability(newSlug);
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSlugError('');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +95,20 @@ export default function EditDeployedAppForm({
     if (!name.trim()) {
       toast.error('App name is required');
       return;
+    }
+
+    if (slug.trim() && slugError) {
+      toast.error('Please fix the slug error before saving');
+      return;
+    }
+
+    // Final slug availability check (only if slug has changed)
+    if (slug.trim() && slug !== initialSlug) {
+      const isSlugAvailable = await checkSlugAvailability(slug);
+
+      if (!isSlugAvailable) {
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -47,6 +121,7 @@ export default function EditDeployedAppForm({
         },
         body: JSON.stringify({
           siteName: name.trim(),
+          slug: slug.trim() || null,
         }),
       });
 
@@ -95,6 +170,38 @@ export default function EditDeployedAppForm({
             required
           />
         </div>
+
+        <div>
+          <label htmlFor="slug" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            App Slug
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              id="slug"
+              value={slug}
+              onChange={handleSlugChange}
+              className={classNames(
+                'w-full px-3 py-2 border rounded-lg',
+                'bg-white dark:bg-gray-800 text-gray-900 dark:text-white',
+                'focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent',
+                'placeholder-gray-500 dark:placeholder-gray-400',
+                slugError ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600',
+              )}
+              placeholder="e.g., my-awesome-app"
+              disabled={isSubmitting}
+            />
+            {isCheckingSlug && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
+          {slugError && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{slugError}</p>}
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            App will be accessible at /apps/{slug || 'auto-generated-slug'}
+          </p>
+        </div>
       </div>
 
       <ResourceAccessMembers
@@ -119,7 +226,13 @@ export default function EditDeployedAppForm({
 
         <button
           type="submit"
-          disabled={isSubmitting || !name.trim()}
+          disabled={
+            isSubmitting ||
+            !name.trim() ||
+            !!slugError ||
+            isCheckingSlug ||
+            (name === website.siteName && slug === initialSlug)
+          }
           className={classNames(
             'inline-flex items-center gap-2 px-6 py-2 text-sm font-medium rounded-lg transition-colors',
             'bg-accent-500 hover:bg-accent-600 disabled:bg-accent-300',
