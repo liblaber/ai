@@ -40,5 +40,5 @@
     "next-env.d.ts",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["datawiz", "starters", "node_modules", "tests/e2e"]
+  "exclude": ["datawiz", "starters", "node_modules", "tests/e2e", "apps"]
 }

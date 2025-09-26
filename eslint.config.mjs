@@ -12,6 +12,7 @@ export default [
       '**/.history',
       '**/.next',
       '**/starters',
+      '**/apps',
     ],
   },
   ...blitzPlugin.configs.recommended(),

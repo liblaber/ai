@@ -15,7 +15,7 @@ import type {
 const APPS_DIRECTORY = 'apps';
 
 // Next starter template used to bootstrap mounted apps/{conversationId} folder
-const NEXT_STARTER_DOCKER_PATH = 'starters/next-starter-docker';
+export const NEXT_STARTER_DOCKER_PATH = 'starters/next-starter-docker';
 
 export class DockerContainerManager extends EventEmitter {
   private _docker: Docker;
@@ -83,8 +83,6 @@ export class DockerContainerManager extends EventEmitter {
         },
       };
 
-      const dockerContainer = await this._docker.createContainer(containerOptions);
-
       const container: DockerContainer = {
         id: containerId,
         name: containerName,
@@ -98,6 +96,9 @@ export class DockerContainerManager extends EventEmitter {
       };
 
       this._containers.set(containerId, container);
+
+      const dockerContainer = await this._docker.createContainer(containerOptions);
+
       this._containerInstances.set(containerId, dockerContainer);
 
       this.emit('container-created', { type: 'container-created', container });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dockerContainerManager } from '~/lib/docker/container-manager';
+import { dockerContainerManager, NEXT_STARTER_DOCKER_PATH } from '~/lib/docker/container-manager';
 import type { DockerFileOperation, DockerFileSystemEntry } from '~/types/docker';
 import { createScopedLogger } from '~/utils/logger';
 import * as fs from 'fs/promises';
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Define the target directory for the liblab-ai-next-starter
-    const starterBasePath = path.resolve(process.cwd(), 'starters/liblab-ai-next-starter-main');
+    const starterBasePath = path.resolve(process.cwd(), NEXT_STARTER_DOCKER_PATH);
 
     // Ensure the operation path is relative and safe
     const relativePath = operation.path.startsWith('/') ? operation.path.slice(1) : operation.path;

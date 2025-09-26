@@ -5,29 +5,35 @@ import { dockerContainerManager } from '~/lib/docker/container-manager';
 
 const logger = createScopedLogger('DockerContainersAPI');
 
-export async function POST(request: NextRequest) {
+async function createAndStartContainer(body: DockerContainerCreateRequest) {
   try {
-    const body = (await request.json()) as DockerContainerCreateRequest;
-
     logger.info(`Creating container for conversation ${body.conversationId}`);
 
     const container = await dockerContainerManager.createContainer(body);
 
     // Start the container after creation
-    const startedContainer = await dockerContainerManager.startContainer(container.id);
+    await dockerContainerManager.startContainer(container.id);
 
     logger.info(`Created and started container ${container.name}`);
-
-    return NextResponse.json({
-      container: startedContainer,
-      baseUrl: startedContainer.ports.length > 0 ? `http://localhost:${startedContainer.ports[0].hostPort}` : undefined,
-    });
   } catch (error) {
-    logger.error('Failed to create container:', error);
+    logger.error('Failed to create and start container:', error);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = (await request.json()) as DockerContainerCreateRequest;
+
+    // Fire and forget
+    void createAndStartContainer(body);
+
+    return NextResponse.json({ status: 'creating', containerId: body.conversationId }, { status: 202 });
+  } catch (error) {
+    logger.error('Failed to acknowledge container creation request:', error);
 
     return NextResponse.json(
       {
-        error: 'Failed to create container',
+        error: 'Failed to acknowledge container creation request',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
