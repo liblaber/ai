@@ -5,14 +5,11 @@ import { dockerContainerManager } from '~/lib/docker/container-manager';
 
 const logger = createScopedLogger('DockerContainersAPI');
 
-async function createAndStartContainer(body: DockerContainerCreateRequest) {
+async function createContainer(body: DockerContainerCreateRequest) {
   try {
     logger.info(`Creating container for conversation ${body.conversationId}`);
 
     const container = await dockerContainerManager.createContainer(body);
-
-    // Start the container after creation
-    await dockerContainerManager.startContainer(container.id);
 
     logger.info(`Created and started container ${container.name}`);
   } catch (error) {
@@ -24,8 +21,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as DockerContainerCreateRequest;
 
-    // Fire and forget
-    void createAndStartContainer(body);
+    // Fire and forget, let the container build in the background
+    void createContainer(body);
 
     return NextResponse.json({ status: 'creating', containerId: body.conversationId }, { status: 202 });
   } catch (error) {
@@ -45,9 +42,6 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const conversationId = searchParams.get('conversationId');
-
-    // Dynamic import to ensure this only runs on server side
-    const { dockerContainerManager } = await import('~/lib/docker/container-manager');
 
     if (conversationId) {
       // Get container by conversation ID

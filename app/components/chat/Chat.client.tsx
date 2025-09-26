@@ -245,6 +245,8 @@ export const ChatImpl = ({
           }
         }
 
+        await dockerClient.startContainer(chatId.get()!);
+
         // Set flag to update URL after all async operations are complete
         setShouldUpdateUrl(true);
       }, 2000);

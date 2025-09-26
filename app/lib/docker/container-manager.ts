@@ -12,7 +12,7 @@ import type {
 } from '~/types/docker';
 
 // Directory used for mounting Docker volumes with app files apps/{conversationId}
-const APPS_DIRECTORY = 'apps';
+export const APPS_DIRECTORY = 'apps';
 
 // Next starter template used to bootstrap mounted apps/{conversationId} folder
 export const NEXT_STARTER_DOCKER_PATH = 'starters/next-starter-docker';
