@@ -1,8 +1,9 @@
-import { test } from '@playwright/test';
-import { navigateToDataSourceForm, navigateToSettings, performInitialSetup } from '../helpers/setup';
+import { type ElementHandle, type Page, test } from '@playwright/test';
+import { performInitialSetup } from '../helpers/setup';
+import { navigateToSettings } from '../helpers/navigate';
 
 test.describe('PostgreSQL Data Source App Creation Flow', () => {
-  test('Create PostgreSQL data source and build users dashboard app', async ({ page }) => {
+  test('Create PostgreSQL data source and build users dashboard app', async ({ page }: { page: Page }) => {
     test.setTimeout(300000); // 5 minutes timeout for this complex flow
     await performInitialSetup(page);
     await navigateToSettings(page);
@@ -12,7 +13,24 @@ test.describe('PostgreSQL Data Source App Creation Flow', () => {
     // Step 1: Create PostgreSQL data source
     console.log('🔍 Step 1: Creating PostgreSQL data source...');
 
-    await navigateToDataSourceForm(page, 'postgres');
+    await page.getByRole('button', { name: 'Add Data Source' }).click();
+
+    // Look for the database type selector
+    console.log('🔍 Looking for database type selector...');
+
+    const dbTypeSelector = page.locator('select, [data-testid="add-data-source-select"]');
+    await dbTypeSelector.waitFor({ state: 'visible', timeout: 10000 });
+    console.log('✅ Found database type selector, selecting PostgreSQL...');
+
+    // Click to open the dropdown and select PostgreSQL
+    await dbTypeSelector.click();
+
+    await page.waitForLoadState('domcontentloaded');
+
+    const postgresOption = page.locator('[id="postgres"]');
+    await postgresOption.waitFor({ state: 'visible', timeout: 5000 });
+    await postgresOption.click();
+    console.log('✅ Selected PostgreSQL database type');
 
     console.log('🔍 Looking for database name input...');
 
@@ -61,15 +79,8 @@ test.describe('PostgreSQL Data Source App Creation Flow', () => {
       console.log('ℹ️ No explicit success message found, but form submission completed');
     }
 
-    // Step 2: Close control panel and navigate to homepage to build app
-    console.log('🔍 Step 2: Closing control panel and navigating to homepage...');
-
-    // Close the control panel popup by pressing escape
-    await page.keyboard.press('Escape');
-    console.log('✅ Pressed escape to close control panel');
-
-    // Wait for the dialog to disappear
-    await page.locator('div[role="dialog"]').waitFor({ state: 'hidden' });
+    // Step 2: Navigate back to homepage to build app
+    console.log('🔍 Step 2: Navigating to homepage to build app...');
 
     // Navigate to root to ensure we're on the homepage
     await page.goto('/');
@@ -96,6 +107,17 @@ test.describe('PostgreSQL Data Source App Creation Flow', () => {
     console.log('✅ Found test-postgres data source option.');
 
     await postgresDataSourceSelector.click();
+
+    // Select the environment (Development)
+    const developmentEnvironmentSelector = postgresDataSourceSelector
+      .locator('..')
+      .locator('..')
+      .locator('..')
+      .getByText('Development')
+      .first();
+    await developmentEnvironmentSelector.waitFor({ state: 'visible', timeout: 1000 });
+    console.log('✅ Found development environment select option.');
+    await developmentEnvironmentSelector.click();
 
     // Input the message and submit
     console.log('✍️ Filling textarea with users dashboard prompt...');
@@ -126,9 +148,12 @@ test.describe('PostgreSQL Data Source App Creation Flow', () => {
 
     // Step 5: Assert that the users dashboard was rendered
     try {
+      // Check for users dashboard content inside the iframe
       console.log('🔍 Looking for users dashboard content in iframe...');
 
-      const frame = iframe.contentFrame();
+      const frame = await iframe
+        .elementHandle()
+        .then((handle: ElementHandle<SVGElement | HTMLElement> | null) => handle?.contentFrame());
 
       if (!frame) {
         throw new Error('Could not get frame from iframe element');
@@ -145,14 +170,16 @@ test.describe('PostgreSQL Data Source App Creation Flow', () => {
 
       let foundDashboardElement = false;
 
-      const combinedSelector = dashboardElements.join(', ');
-
-      try {
-        await frame.locator(combinedSelector).first().waitFor({ state: 'visible', timeout: 30000 });
-        console.log(`✅ Found a dashboard element.`);
-        foundDashboardElement = true;
-      } catch {
-        // Continue to next selector
+      for (const selector of dashboardElements) {
+        try {
+          const element = frame.locator(selector);
+          await element.waitFor({ state: 'visible', timeout: 10000 });
+          console.log(`✅ Found dashboard element: ${selector}`);
+          foundDashboardElement = true;
+          break;
+        } catch {
+          // Continue to next selector
+        }
       }
 
       if (!foundDashboardElement) {
