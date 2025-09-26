@@ -120,21 +120,6 @@ export const BaseChat = ({
   }, []);
 
   // Data source change handlers
-  const handleDataSourceChangeRequest = (
-    dataSourceId: string,
-    environmentId: string,
-    dataSourceName: string,
-    environmentName: string,
-  ) => {
-    setPendingDataSourceChange({
-      dataSourceId,
-      environmentId,
-      dataSourceName,
-      environmentName,
-    });
-    setShowDataSourceChangeModal(true);
-  };
-
   const handleDataSourceChangeConfirm = async () => {
     if (!pendingDataSourceChange) {
       setShowDataSourceChangeModal(false);
@@ -456,7 +441,6 @@ export const BaseChat = ({
                   onSend={handleSendMessage}
                   isStreaming={isStreaming}
                   handleStop={handleStop}
-                  onDataSourceChange={handleDataSourceChangeRequest}
                 />
               )}
             </div>

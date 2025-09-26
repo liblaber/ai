@@ -10,9 +10,8 @@ import { processImageFile } from '~/utils/fileUtils';
 import { Suggestions } from './Suggestions';
 import { toast } from 'sonner';
 import { logger } from '~/utils/logger';
-import IcSendBlack from '~/icons/ic_send_black.svg';
-import IcAttach from '~/icons/ic_attach.svg';
-import IcMagic from '~/icons/ic_magic.svg';
+import { AttachSquare, Magicpen, Send2 } from 'iconsax-reactjs';
+import WithTooltip from '~/components/ui/Tooltip';
 
 interface HomepageTextareaProps {
   value: string;
@@ -105,30 +104,14 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
 
     const fileUploadButton = (
       <div className="relative group">
-        <button
-          className="flex justify-center cursor-pointer items-center text-white opacity-80 hover:opacity-100 bg-transparent p-1"
-          onClick={() => handleFileUpload()}
-        >
-          <IcAttach className="text-2xl mr-2" />
-          <span className="font-thick">
-            Attach
-            {uploadedFiles.length > 0
-              ? ` (${uploadedFiles.length} ${uploadedFiles.length === 1 ? 'file' : 'files'} selected)`
-              : ''}
-          </span>
-        </button>
-        {uploadedFiles.length > 0 && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <FilePreview
-              files={uploadedFiles}
-              imageDataList={imageDataList}
-              onRemove={(index) => {
-                setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
-                setImageDataList(imageDataList.filter((_, i) => i !== index));
-              }}
-            />
-          </div>
-        )}
+        <WithTooltip tooltip="Attach files">
+          <button
+            className="flex justify-center cursor-pointer items-center text-white opacity-60 hover:opacity-100 bg-transparent p-1"
+            onClick={() => handleFileUpload()}
+          >
+            <AttachSquare size={26} variant="Bold" />
+          </button>
+        </WithTooltip>
       </div>
     );
 
@@ -154,84 +137,77 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
     }
 
     return (
-      <div className="w-full sm:max-w-[90%] lg:max-w-3xl mx-auto text-center space-y-8">
-        <div className="relative">
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[80px] rounded-full blur-[80px] shadow-[0_20px_50px_80px] shadow-accent-700/80" />
-          <div
+      <div className="w-full sm:max-w-[90%] lg:max-w-[630px] mx-auto text-center">
+        <div
+          className={classNames(
+            'relative rounded-xl bg-depth-3 space-y-1.5 px-3 py-3 focus-within:border-accent-800/70  expandHeight',
+          )}
+        >
+          <textarea
+            ref={ref}
+            value={value}
+            onChange={onChange}
+            onKeyDown={onKeyDown}
+            onPaste={onPaste}
+            placeholder="Describe what you want to build..."
+            data-testid="homepage-textarea"
             className={classNames(
-              'relative h-[190px] p-7 border-2 border-accent-900/50 rounded-2xl',
-              'bg-black/60',
-              'focus-within:border-accent-800/70 transition-all duration-300',
+              'w-full h-[100px] rounded-lg text-md tracking-wide',
+              'bg-depth-4 p-3 resize-none',
+              'outline-none transition-colors',
+              'text-primary placeholder-secondary space-y-10',
             )}
-          >
-            <div className="absolute bottom-6 left-6">
-              <div className="flex items-center text-sm mt-2">
-                <div className="flex items-center gap-4">
-                  {selectedEnvironmentDataSource && (
-                    <button
-                      className="flex justify-center cursor-pointer items-center text-white opacity-80 hover:opacity-100 bg-transparent p-1 transition-all"
-                      onClick={fetchSuggestions}
-                      disabled={isLoadingSuggestions}
-                    >
-                      <IcMagic className="mr-1 transition-all" />
-                      <span className="font-thick">{isLoadingSuggestions ? 'Loading...' : 'Suggestions'}</span>
-                    </button>
-                  )}
-                  {fileUploadButton}
-                </div>
-              </div>
-            </div>
-            <div className="absolute bottom-6 right-6 flex">
-              <DataSourcePicker
-                onAddNew={handleConnectDataSource}
-                onManageEnvironments={handleManageEnvironments}
-                disabled={dataSources.length === 0}
-              />
-              <button
-                data-testid="send-message-button"
-                className="flex cursor-pointer justify-center items-center w-[36px] h-[36px] p-1 bg-accent-500 enabled:hover:shadow-[0_0_20px_3px] enabled:hover:shadow-accent-700/80 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!value.length || isStreaming}
-                onClick={(event) => {
-                  if (isStreaming) {
-                    handleStop?.();
-                    return;
-                  }
-
-                  if (value.length > 0 || uploadedFiles.length > 0) {
-                    onSend(event);
-                  }
-                }}
-              >
-                <IcSendBlack />
-              </button>
-            </div>
-
-            <textarea
-              ref={ref}
-              value={value}
-              onChange={onChange}
-              onKeyDown={onKeyDown}
-              onPaste={onPaste}
-              placeholder="Create a clean revenue dashboard"
-              data-testid="homepage-textarea"
-              className={classNames(
-                'w-full max-h-[120px] text-2xl font-light tracking-wide',
-                'bg-transparent resize-none',
-                'outline-none transition-colors',
-                'text-primary placeholder-tertiary',
-              )}
+          />
+          <div className="flex items-center gap-4 fadeIn">
+            <DataSourcePicker
+              onAddNew={handleConnectDataSource}
+              onManageEnvironments={handleManageEnvironments}
+              disabled={dataSources.length === 0}
             />
+            {fileUploadButton}
+            {selectedEnvironmentDataSource && (
+              <WithTooltip tooltip="Get suggestions">
+                <button
+                  className="flex justify-center cursor-pointer items-center text-white opacity-60 hover:opacity-100 bg-transparent p-1 transition-all"
+                  onClick={fetchSuggestions}
+                  disabled={isLoadingSuggestions}
+                >
+                  <Magicpen size={26} variant="Bold" />
+                </button>
+              </WithTooltip>
+            )}
+
+            <button
+              data-testid="send-message-button"
+              className="flex cursor-pointer justify-center items-center w-[36px] h-[36px] p-1 bg-depth-4  rounded-full transition-all enabled:hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!value.length || isStreaming}
+              onClick={(event) => {
+                if (isStreaming) {
+                  handleStop?.();
+                  return;
+                }
+
+                if (value.length > 0 || uploadedFiles.length > 0) {
+                  onSend(event);
+                }
+              }}
+            >
+              <Send2 size={24} variant="Bold" />
+            </button>
           </div>
         </div>
-        <Suggestions suggestions={suggestions} onSuggestionClick={handleSuggestionClick} visible={showSuggestions} />
-        <FilePreview
-          files={uploadedFiles}
-          imageDataList={imageDataList}
-          onRemove={(index) => {
-            setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
-            setImageDataList(imageDataList.filter((_, i) => i !== index));
-          }}
-        />
+        {uploadedFiles.length > 0 && (
+          <div className="group-hover:opacity-100 transition-opacity duration-200">
+            <FilePreview
+              files={uploadedFiles}
+              imageDataList={imageDataList}
+              onRemove={(index) => {
+                setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+                setImageDataList(imageDataList.filter((_, i) => i !== index));
+              }}
+            />
+          </div>
+        )}
         <ClientOnly>
           {() => (
             <ScreenshotStateManager
@@ -242,6 +218,7 @@ export const HomepageTextarea = forwardRef<HTMLTextAreaElement, HomepageTextarea
             />
           )}
         </ClientOnly>
+        <Suggestions suggestions={suggestions} onSuggestionClick={handleSuggestionClick} visible={showSuggestions} />
       </div>
     );
   },

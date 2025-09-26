@@ -74,6 +74,7 @@ jobs:
         env:
           BASE_URL: http://localhost:3000
           CI: true
+          HUBSPOT_ACCESS_TOKEN: ${{ secrets.HUBSPOT_ACCESS_TOKEN }}
 
       - name: 📋 Show Docker ai-app container logs after test run
         if: always()

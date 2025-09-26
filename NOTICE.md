@@ -2,40 +2,36 @@
 
 This software contains components from the following third-party libraries:
 
-**@ai-sdk/amazon-bedrock**
+**@ai-sdk/amazon-bedrock** (Apache License)
 Copyright 2023 Vercel, Inc.
 
-**@ai-sdk/anthropic**
+**@ai-sdk/anthropic** (Apache License)
 Copyright 2023 Vercel, Inc.
 
-**@ai-sdk/cohere**
+**@ai-sdk/cohere** (Apache License)
 Copyright 2023 Vercel, Inc.
 
-**@ai-sdk/deepseek**
+**@ai-sdk/deepseek** (Apache License)
 Copyright 2023 Vercel, Inc.
 
-**@ai-sdk/google**
+**@ai-sdk/google** (Apache License)
 Copyright 2023 Vercel, Inc.
 
-**@ai-sdk/mistral**
+**@ai-sdk/mistral** (Apache License)
 Copyright 2023 Vercel, Inc.
 
-**@ai-sdk/openai**
+**@ai-sdk/openai** (Apache License)
 Copyright 2023 Vercel, Inc.
 
-**@ai-sdk/react**
+**@ai-sdk/react** (Apache License)
 Copyright 2023 Vercel, Inc.
 
-**@openrouter/ai-sdk-provider**
-No copyright found
-
-**ai**
+**@openrouter/ai-sdk-provider** (Apache License)
+**ai** (Apache License)
 Copyright 2023 Vercel, Inc.
 
-**class-variance-authority**
-No copyright found
-
-**diff:**
+**class-variance-authority** (Apache License)
+**diff:** (BSD License)
 BSD 3-Clause License
 
 Copyright (c) 2009-2015, Kevin Decker <kpdecker@gmail.com>
@@ -66,7 +62,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-**dotenv:**
+**dotenv:** (BSD License)
 Copyright (c) 2015, Scott Motte
 All rights reserved.
 
@@ -91,11 +87,12 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-**mongodb**
-No copyright found
-
-**ollama-ai-provider**
-No copyright found
-
-**react-beautiful-dnd**
+**google-auth-library** (Apache License)
+**googleapis** (Apache License)
+**mongodb-query-parser** (Apache License)
+**mongodb** (Apache License)
+**ollama-ai-provider** (Apache License)
+**react-beautiful-dnd** (Apache License)
 Copyright 2019 Atlassian Pty Ltd
+
+This project utilizes icons provided by Iconsax https://iconsax.io (Propietary Free Licensed.).

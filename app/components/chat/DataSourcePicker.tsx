@@ -3,9 +3,9 @@ import { useEnvironmentDataSourcesStore } from '~/lib/stores/environmentDataSour
 import type { GroupBase, SelectOption as BaseSelectOption } from '~/components/ui/Select';
 import { BaseSelect } from '~/components/ui/Select';
 import { components, type MenuProps, type OptionsOrGroups, type SingleValueProps } from 'react-select';
-import { Check, ChevronDown, CirclePlus, Settings } from 'lucide-react';
+import { Check, ChevronDown, CirclePlus } from 'lucide-react';
 import IcDatabase from '~/icons/ic_database.svg';
-import { DATA_SOURCE_ICON_MAP } from '~/styles/data-source-icons';
+import { getDataSourceIcon } from '~/styles/data-source-icons';
 
 interface SelectOption extends BaseSelectOption {
   environmentName?: string;
@@ -79,18 +79,17 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
         ]
       : dataSources.map((ds) => ({
           label: ds.name,
-          icon: DATA_SOURCE_ICON_MAP[ds.type] || <IcDatabase />,
+          icon: getDataSourceIcon({ type: ds.type, value: ds.name }),
           options: [
-            ...ds.environments.map((env) => ({
+            ...(ds.environments?.map((env) => ({
               value: `${ds.id}:${env.id}`,
               label: env.name,
               dataSourceName: ds.name,
-            })),
+            })) ?? []),
             {
               value: `manage-environment:${ds.id}`,
-              label: 'Manage environments',
+              label: 'Manage environments...',
               isAddNew: true,
-              icon: <Settings size={16} fill="var(--color-tertiary)" color="var(--color-depth-3)" />,
             },
           ],
         }))),
@@ -228,7 +227,7 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
         <div className="flex items-center gap-2">
           <span>{selectedEnvironment?.dataSourceName ?? 'Select Data Source'}</span>
           {selectedEnvironment?.name && !disabled && (
-            <span className="text-xs bg-transparent text-primary border border-secondary px-2 py-1 rounded-full">
+            <span className="text-xs bg-transparent text-primary font-medium border border-tertiary px-2 py-0.5 rounded-full">
               {selectedEnvironment.name}
             </span>
           )}
@@ -240,7 +239,8 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
   const customStyles = {
     control: (base: any) => ({
       ...base,
-      backgroundColor: 'transparent',
+      backgroundColor: 'var(--color-depth-4)',
+
       cursor: 'pointer',
       border: 'none',
       boxShadow: 'none',
@@ -252,14 +252,13 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
       },
       paddingLeft: '4px',
       gap: '8px',
-      justifyContent: 'flex-start',
       flexWrap: 'unset',
-      width: 'max-content',
+      borderRadius: 'var(--radius-lg)',
+      width: '450px',
     }),
     valueContainer: (base: any) => ({
       ...base,
       padding: '0',
-      flex: 'unset',
       gap: '8px',
     }),
     singleValue: (base: any) => ({
@@ -271,12 +270,11 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
     menu: (base: any) => ({
       ...base,
       minWidth: '280px',
-      borderRadius: '0.8rem',
+      borderRadius: 'var(--radius-lg)',
       backgroundColor: 'var(--color-depth-2)',
       boxShadow: '0 4px 6px 2px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       marginTop: '0.25rem',
       cursor: 'pointer',
-      border: '2px solid var(--color-depth-3)',
       zIndex: 9999,
       textAlign: 'initial',
     }),
@@ -302,6 +300,7 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
     dropdownIndicator: (base: any) => ({
       ...base,
       padding: '0 2px',
+      marginRight: '6px',
       color: 'var(--color-primary)',
       '&:hover': {
         color: 'var(--color-primary)',
@@ -338,13 +337,13 @@ export const DataSourcePicker: FC<DataSourcePickerProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-2 mr-5">
+    <div className="flex items-center gap-2">
       <BaseSelect
         value={findOptionByValue(selectedValue)}
         onChange={handleDataSourceChange}
         options={[]}
         isSearchable={false}
-        controlIcon={<IcDatabase className="text-xl" />}
+        controlIcon={<IcDatabase className="text-sm" />}
         isDisabled={disabled}
         components={{ DropdownIndicator, Option, SingleValue, Menu }}
         styles={customStyles}

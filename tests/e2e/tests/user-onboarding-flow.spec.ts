@@ -8,6 +8,8 @@ test.describe('User Onboarding Flow Test', () => {
 
     console.log('Starting user onboarding flow test...');
 
+    await page.waitForLoadState('networkidle');
+
     // Find the homepage textarea using data-testid
     console.log('🔍 Looking for homepage textarea...');
 
@@ -46,10 +48,6 @@ test.describe('User Onboarding Flow Test', () => {
     await sendButton.waitFor({ state: 'visible', timeout: 10000 });
     console.log('🖱️ Clicking send button...');
     await sendButton.click();
-
-    // Wait for the action to complete
-    await page.waitForLoadState('networkidle');
-    console.log(' Message submitted, waiting for response...');
 
     // Step 6: Wait for the chat interface to appear and iframe to load
     console.log('🔍 Waiting for chat interface and iframe to load...');

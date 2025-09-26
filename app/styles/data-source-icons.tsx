@@ -9,7 +9,13 @@ import SalesforceIc from '~/icons/salesforce.svg';
 import JiraIc from '~/icons/jira.svg';
 import { DataSourceType } from '@liblab/data-access/utils/types';
 import type { ReactElement } from 'react';
-import { ComingSoonDataSource } from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
+import {
+  ComingSoonDataSource,
+  type DataSourceOption,
+  SAMPLE_DATABASE,
+  SAMPLE_DATABASE_NAME,
+} from '~/lib/hooks/plugins/useDataSourceTypesPlugin';
+import IcDatabase from '~/icons/ic_database.svg';
 
 export const DATA_SOURCE_ICON_MAP: Record<DataSourceType | ComingSoonDataSource, ReactElement> = {
   [DataSourceType.SQLITE]: <SQLiteIc />,
@@ -21,4 +27,12 @@ export const DATA_SOURCE_ICON_MAP: Record<DataSourceType | ComingSoonDataSource,
   [DataSourceType.GOOGLE_DOCS]: <GoogleDocsIc className="w-4 h-4" />,
   [ComingSoonDataSource.SALESFORCE]: <SalesforceIc className="w-4 h-4" />,
   [ComingSoonDataSource.JIRA]: <JiraIc className="w-4 h-4" />,
+};
+
+export const getDataSourceIcon = ({ type, value }: Pick<DataSourceOption, 'type' | 'value'>) => {
+  if (value === SAMPLE_DATABASE || value === SAMPLE_DATABASE_NAME || !type) {
+    return <IcDatabase />;
+  }
+
+  return DATA_SOURCE_ICON_MAP[type] || <IcDatabase />;
 };
