@@ -184,25 +184,15 @@ export default function DeployedAppsTab() {
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-white">{website.siteName}</h4>
                     <div className="flex flex-col gap-1 mt-2">
-                      {website.siteUrl && (
-                        <a
-                          href={website.siteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-accent-500 hover:text-accent-600 dark:text-accent-400 dark:hover:text-accent-300"
-                        >
-                          Direct link: {website.siteUrl}
-                        </a>
-                      )}
                       {website.slug && (
                         <a
                           href={`/apps/${website.slug}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
+                          className="text-sm text-accent-500 hover:text-accent-600 dark:text-accent-400 dark:hover:text-accent-300"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          App Viewer: /apps/{website.slug}
+                          {typeof window !== 'undefined' ? window.location.origin : ''}/apps/{website.slug}
                         </a>
                       )}
                     </div>

@@ -1,136 +1,126 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { PermissionAction, PermissionResource, Prisma } from '@prisma/client';
-import { subject } from '@casl/ability';
-import { requireUserAbility } from '~/auth/session';
-import { deleteWebsite, getWebsite, updateWebsite } from '~/lib/services/websiteService';
-import { env } from '~/env';
+import { requireUserId } from '~/auth/session';
+import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
+import { generateUniqueSlug } from '~/utils/slug';
+import { z } from 'zod';
 
-// Netlify API client
-const NETLIFY_API_URL = 'https://api.netlify.com/api/v1';
-const NETLIFY_ACCESS_TOKEN = env.server.NETLIFY_AUTH_TOKEN;
-
-async function deleteNetlifySite(siteId: string) {
-  if (!NETLIFY_ACCESS_TOKEN) {
-    throw new Error('NETLIFY_ACCESS_TOKEN is not configured');
-  }
-
-  const response = await fetch(`${NETLIFY_API_URL}/sites/${siteId}`, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${NETLIFY_ACCESS_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const error = (await response.json()) as any;
-    throw new Error(`Failed to delete Netlify site: ${error.message || response.statusText}`);
-  }
-
-  return true;
-}
-
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { userAbility } = await requireUserAbility(request);
-    const { id } = await params;
-
-    const website = await getWebsite(id);
-
-    if (
-      userAbility.cannot(PermissionAction.read, subject(PermissionResource.Website, website)) &&
-      userAbility.cannot(
-        PermissionAction.read,
-        subject(PermissionResource.Environment, { id: website.environmentId ?? undefined }),
-      )
-    ) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-
-    return NextResponse.json({ success: true, website });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      return NextResponse.json({ success: false, error: 'Website not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: false, error: 'Failed to fetch website' }, { status: 500 });
-  }
-}
-
-const patchRequestSchema = z.object({
-  siteName: z.string().min(1, 'Site name is required'),
+const requestBodySchema = z.object({
+  siteName: z.string().min(1).max(100).optional(),
+  slug: z.string().min(1).max(50).optional(),
 });
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { userAbility } = await requireUserAbility(request);
+    const userId = await requireUserId(request);
     const { id } = await params;
-
     const body = await request.json();
-    const parsedBody = patchRequestSchema.safeParse(body);
+    const parseResult = requestBodySchema.parse(body);
+    const { siteName, slug } = parseResult;
 
-    if (!parsedBody.success) {
-      return NextResponse.json({ success: false, error: parsedBody.error.flatten().fieldErrors }, { status: 400 });
+    // Verify the website belongs to the user
+    const existingWebsite = await prisma.website.findFirst({
+      where: {
+        id,
+        createdById: userId,
+      },
+    });
+
+    if (!existingWebsite) {
+      return NextResponse.json({ error: 'Website not found' }, { status: 404 });
     }
 
-    const website = await getWebsite(id);
+    // Prepare update data
+    const updateData: any = {};
 
-    if (
-      userAbility.cannot(PermissionAction.update, subject(PermissionResource.Website, website)) &&
-      userAbility.cannot(
-        PermissionAction.update,
-        subject(PermissionResource.Environment, { id: website.environmentId ?? undefined }),
-      )
-    ) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    if (siteName !== undefined) {
+      updateData.siteName = siteName;
     }
 
-    const updatedWebsite = await updateWebsite(id, parsedBody.data);
+    if (slug !== undefined) {
+      if (slug && slug.trim()) {
+        // Check if slug is already taken by another website
+        const existingSlugWebsite = await prisma.website.findFirst({
+          where: {
+            slug: slug.trim(),
+            id: { not: id }, // Exclude current website
+          },
+        });
 
-    return NextResponse.json({ success: true, website: updatedWebsite });
+        if (existingSlugWebsite) {
+          return NextResponse.json({ error: 'Slug is already taken' }, { status: 400 });
+        }
+
+        updateData.slug = slug.trim();
+      } else {
+        // Generate a new slug if empty
+        const baseSlug = siteName || existingWebsite.siteName || 'untitled-app';
+        updateData.slug = await generateUniqueSlug(baseSlug, existingWebsite.slug || undefined);
+      }
+    }
+
+    // Update the website
+    const updatedWebsite = await prisma.website.update({
+      where: { id },
+      data: updateData,
+      include: {
+        environment: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      website: updatedWebsite,
+    });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      return NextResponse.json({ success: false, error: `Website not found` }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: false, error: 'Failed to update website' }, { status: 500 });
+    logger.error('Error updating website', {
+      error: error instanceof Error ? error.message : String(error),
+      websiteId: (await params).id,
+    });
+    return NextResponse.json({ error: 'Failed to update website' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { userAbility } = await requireUserAbility(request);
+    const userId = await requireUserId(request);
     const { id } = await params;
 
-    const website = await getWebsite(id);
+    // Verify the website belongs to the user
+    const existingWebsite = await prisma.website.findFirst({
+      where: {
+        id,
+        createdById: userId,
+      },
+    });
 
-    if (
-      userAbility.cannot(PermissionAction.delete, subject(PermissionResource.Website, website)) &&
-      userAbility.cannot(
-        PermissionAction.delete,
-        subject(PermissionResource.Environment, { id: website.environmentId ?? undefined }),
-      )
-    ) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    if (!existingWebsite) {
+      return NextResponse.json({ error: 'Website not found' }, { status: 404 });
     }
 
-    // Delete from Netlify first
-    if (website?.siteId) {
-      await deleteNetlifySite(website.siteId);
-    }
-
-    await deleteWebsite(id);
+    // Delete the website
+    await prisma.website.delete({
+      where: { id },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error('Error deleting website:', error);
-
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      return NextResponse.json({ success: false, error: `Website not found` }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: false, error: 'Failed to delete website' }, { status: 500 });
+    logger.error('Error deleting website', {
+      error: error instanceof Error ? error.message : String(error),
+      websiteId: (await params).id,
+    });
+    return NextResponse.json({ error: 'Failed to delete website' }, { status: 500 });
   }
 }

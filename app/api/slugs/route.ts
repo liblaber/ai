@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId } from '~/auth/session';
 import { generateDefaultSlug, generateUniqueSlug, isValidSlug } from '~/utils/slug';
+import { prisma } from '~/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,10 +41,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Slug parameter is required' }, { status: 400 });
     }
 
-    // Validate slug
+    // Validate slug format
     const isValid = isValidSlug(slug);
 
-    return NextResponse.json({ isValid });
+    if (!isValid) {
+      return NextResponse.json({ isValid: false, isAvailable: false });
+    }
+
+    // Check if slug is available (not used by other websites)
+    const existingWebsite = await prisma.website.findFirst({
+      where: {
+        slug,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const isAvailable = !existingWebsite;
+
+    return NextResponse.json({
+      isValid: true,
+      isAvailable,
+      message: isAvailable ? 'Slug is available' : 'Slug is already taken',
+    });
   } catch (error) {
     console.error('Error validating slug:', error);
     return NextResponse.json({ error: 'Failed to validate slug' }, { status: 500 });

@@ -385,21 +385,15 @@ export function HeaderActionButtons() {
                 const deploymentTypeName =
                   deploymentTypesConfig.find((t) => t.id === selectedDeploymentType)?.name || selectedDeploymentType;
                 // Generate the slug URL for viewing in our system
-                const slugUrl = data.data.website?.slug ? `/apps/slug/${data.data.website.slug}` : null;
+                const slugUrl = data.data.website?.slug ? `/apps/${data.data.website.slug}` : null;
 
                 toast.success(
                   <div>
                     Deployed successfully to {deploymentTypeName}!{' '}
-                    <a href={data.data.deploy.url} target="_blank" rel="noopener noreferrer" className="underline">
-                      View site
-                    </a>
                     {slugUrl && (
-                      <>
-                        {' | '}
-                        <a href={slugUrl} target="_blank" rel="noopener noreferrer" className="underline">
-                          View in app viewer
-                        </a>
-                      </>
+                      <a href={slugUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                        View app
+                      </a>
                     )}
                   </div>,
                 );

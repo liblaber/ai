@@ -1,55 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import { requireUserId } from '~/auth/session';
+import { prisma } from '~/lib/prisma';
 import { logger } from '~/utils/logger';
-import { requireUserAbility } from '~/auth/session';
-import { createWebsite, getWebsites } from '~/lib/services/websiteService';
-import { PermissionAction, PermissionResource } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
-  const { userAbility } = await requireUserAbility(request);
-
-  if (userAbility.cannot(PermissionAction.read, PermissionResource.Website)) {
-    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-  }
-
-  const websites = await getWebsites(userAbility);
-
-  return NextResponse.json({ success: true, websites });
-}
-
-const postRequestSchema = z.object({
-  chatId: z.string().min(1, 'Chat ID is required'),
-  createdById: z.string().min(1, 'User ID is required'),
-  siteId: z.string().optional().default(''),
-  siteName: z.string().optional().default(''),
-  siteUrl: z.string().optional().default(''),
-});
-
-export async function POST(request: NextRequest) {
   try {
-    const { userAbility } = await requireUserAbility(request);
+    const userId = await requireUserId(request);
+    const { searchParams } = new URL(request.url);
+    const slug = searchParams.get('slug');
 
-    const body = await request.json();
-    const parsedBody = postRequestSchema.safeParse(body);
+    if (slug) {
+      // Check if slug is available
+      const websites = await prisma.website.findMany({
+        where: {
+          slug,
+        },
+        select: {
+          id: true,
+          slug: true,
+        },
+      });
 
-    if (!parsedBody.success) {
-      return NextResponse.json({ success: false, error: parsedBody.error.flatten().fieldErrors }, { status: 400 });
+      return NextResponse.json({ websites });
     }
 
-    if (userAbility.cannot(PermissionAction.create, PermissionResource.Website)) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
+    // Get all websites for the user
+    const websites = await prisma.website.findMany({
+      where: {
+        createdById: userId,
+      },
+      include: {
+        environment: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
 
-    const website = await createWebsite(parsedBody.data);
-
-    logger.info(
-      'Website created successfully',
-      JSON.stringify({ chatId: parsedBody.data.chatId, websiteId: website.id }),
-    );
-
-    return NextResponse.json({ success: true, website });
+    return NextResponse.json({
+      success: true,
+      websites,
+    });
   } catch (error) {
-    logger.error('Failed to create website', error);
-    return NextResponse.json({ success: false, error: 'Failed to create website' }, { status: 500 });
+    logger.error('Error fetching websites', { error: error instanceof Error ? error.message : String(error) });
+    return NextResponse.json({ error: 'Failed to fetch websites' }, { status: 500 });
   }
 }
