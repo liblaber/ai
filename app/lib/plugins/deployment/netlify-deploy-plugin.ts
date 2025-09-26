@@ -3,6 +3,7 @@ import { BaseDeploymentPlugin } from './base-deployment-plugin';
 import type { DeploymentConfig, DeploymentProgress, DeploymentResult } from '~/lib/plugins/types';
 import type { NetlifySiteInfo } from '~/types/netlify';
 import { getDeploymentMethodCredential } from '~/lib/services/deploymentMethodService';
+import { env } from '~/env/server';
 
 // Define the enum locally until Prisma client is regenerated
 enum DeploymentMethodCredentialsType {
@@ -379,7 +380,7 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
   for = "/*.js"
   [headers.values]
     Cross-Origin-Resource-Policy = "cross-origin"
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin = "${env.BASE_URL}"
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type, Authorization, X-Requested-With"
 
@@ -387,61 +388,61 @@ export class NetlifyDeployPlugin extends BaseDeploymentPlugin {
   for = "/*.css"
   [headers.values]
     Cross-Origin-Resource-Policy = "cross-origin"
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin = "${env.BASE_URL}"
 
 [[headers]]
   for = "/*.png"
   [headers.values]
     Cross-Origin-Resource-Policy = "cross-origin"
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin = "${env.BASE_URL}"
 
 [[headers]]
   for = "/*.jpg"
   [headers.values]
     Cross-Origin-Resource-Policy = "cross-origin"
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin = "${env.BASE_URL}"
 
 [[headers]]
   for = "/*.jpeg"
   [headers.values]
     Cross-Origin-Resource-Policy = "cross-origin"
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin = "${env.BASE_URL}"
 
 [[headers]]
   for = "/*.gif"
   [headers.values]
     Cross-Origin-Resource-Policy = "cross-origin"
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin = "${env.BASE_URL}"
 
 [[headers]]
   for = "/*.svg"
   [headers.values]
     Cross-Origin-Resource-Policy = "cross-origin"
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin = "${env.BASE_URL}"
 
 [[headers]]
   for = "/*.woff"
   [headers.values]
     Cross-Origin-Resource-Policy = "cross-origin"
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin = "${env.BASE_URL}"
 
 [[headers]]
   for = "/*.woff2"
   [headers.values]
     Cross-Origin-Resource-Policy = "cross-origin"
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin = "${env.BASE_URL}"
 
 [[headers]]
   for = "/*.ttf"
   [headers.values]
     Cross-Origin-Resource-Policy = "cross-origin"
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin = "${env.BASE_URL}"
 
 [[headers]]
   for = "/*.eot"
   [headers.values]
     Cross-Origin-Resource-Policy = "cross-origin"
-    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Origin = "${env.BASE_URL}"
 
 [dev]
   command = "npm run dev"

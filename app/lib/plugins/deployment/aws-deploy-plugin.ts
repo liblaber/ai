@@ -6,6 +6,7 @@ import { BaseDeploymentPlugin, type SiteInfo } from './base-deployment-plugin';
 import rimraf from 'rimraf';
 import { getDeploymentMethodCredentials } from '~/lib/services/deploymentMethodService';
 import { DeploymentMethodCredentialsType } from '@prisma/client';
+import { env } from '~/env/server';
 
 const TOTAL_STEPS = 6;
 
@@ -199,6 +200,14 @@ export default $config({
     new sst.aws.Nextjs("liblab-${chatId}", {
       environment: {
       ${Object.entries(envFile).map(([key, value]) => `${key}: '${value}'`)},
+      },
+      cors: {
+        allowCredentials: false,
+        allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowOrigins: ["${env.BASE_URL}"],
+        exposeHeaders: [],
+        maxAge: 86400,
       },
     });
   },

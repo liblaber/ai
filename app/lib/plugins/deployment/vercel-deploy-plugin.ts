@@ -2,6 +2,7 @@ import { logger } from '~/utils/logger';
 import { BaseDeploymentPlugin } from './base-deployment-plugin';
 import type { DeploymentConfig, DeploymentProgress, DeploymentResult } from '~/lib/plugins/types';
 import { getDeploymentMethodCredential } from '~/lib/services/deploymentMethodService';
+import { env } from '~/env/server';
 
 // Define the enum locally until Prisma client is regenerated
 enum DeploymentMethodCredentialsType {
@@ -255,7 +256,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
             },
             {
               key: 'Access-Control-Allow-Origin',
-              value: '*',
+              value: env.BASE_URL,
             },
             {
               key: 'Access-Control-Allow-Methods',
@@ -276,7 +277,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
             },
             {
               key: 'Access-Control-Allow-Origin',
-              value: '*',
+              value: env.BASE_URL,
             },
           ],
         },
@@ -289,7 +290,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
             },
             {
               key: 'Access-Control-Allow-Origin',
-              value: '*',
+              value: env.BASE_URL,
             },
           ],
         },
@@ -302,7 +303,7 @@ export class VercelDeployPlugin extends BaseDeploymentPlugin {
             },
             {
               key: 'Access-Control-Allow-Origin',
-              value: '*',
+              value: env.BASE_URL,
             },
           ],
         },
