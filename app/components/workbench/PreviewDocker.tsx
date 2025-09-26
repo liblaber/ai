@@ -79,7 +79,7 @@ export const PreviewDocker = memo(({ containerId }: Props) => {
       const response = await dockerClient.getContainer(containerId);
       setContainerData(response);
 
-      if (response.baseUrl) {
+      if (response.container.status !== 'creating') {
         // Stop polling once we have a baseUrl
         if (pollingIntervalRef.current) {
           clearInterval(pollingIntervalRef.current);
@@ -87,27 +87,10 @@ export const PreviewDocker = memo(({ containerId }: Props) => {
         }
 
         setIsLoading(false);
-        setLoadingText('');
+        setLoadingText('Loading...');
       } else {
         // Update loading text based on container status
-        const status = response.container.status;
-
-        switch (status) {
-          case 'creating':
-            setLoadingText('Creating container...');
-            break;
-          case 'running':
-            setLoadingText('Container starting up...');
-            break;
-          case 'stopped':
-            setLoadingText('Container stopped');
-            break;
-          case 'error':
-            setLoadingText('Container error');
-            break;
-          default:
-            setLoadingText('Loading...');
-        }
+        setLoadingText('Spinning-up container...');
       }
     } catch (error) {
       console.error('Failed to poll container:', error);
@@ -460,9 +443,7 @@ export const PreviewDocker = memo(({ containerId }: Props) => {
                 hidden={isLoading}
               />
               {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-depth-2 z-50">
-                  Loading preview...
-                </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-depth-2 z-50">{loadingText}</div>
               )}
               <ScreenshotSelector
                 isSelectionMode={isSelectionMode}
@@ -471,9 +452,7 @@ export const PreviewDocker = memo(({ containerId }: Props) => {
               />
             </>
           ) : (
-            <div className="flex w-full h-full justify-center items-center bg-depth-2 text-primary">
-              Loading preview...
-            </div>
+            <div className="flex w-full h-full justify-center items-center bg-depth-2 text-primary">{loadingText}</div>
           )}
 
           {isDeviceModeOn && hasBaseUrl && (
