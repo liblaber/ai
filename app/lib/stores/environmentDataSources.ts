@@ -151,23 +151,17 @@ export const useEnvironmentDataSourcesStore = create<EnvironmentDataSourcesStore
 );
 
 export const useDataSourceActions = () => {
-  const { setEnvironmentDataSources } = useEnvironmentDataSourcesStore();
   const router = useRouter();
 
   const refetchEnvironmentDataSources = async () => {
-    try {
-      const response = await fetch('/api/data-sources');
-      const data = (await response.json()) as { success: boolean; environmentDataSources: EnvironmentDataSource[] };
+    // API call is now handled by StoreHydrator component
+    // Use the globally available refetch function
+    if (typeof window !== 'undefined' && (window as any).refetchEnvironmentDataSources) {
+      const data = await (window as any).refetchEnvironmentDataSources();
 
-      if (data.success) {
-        setEnvironmentDataSources(data.environmentDataSources);
-
-        if (!data.environmentDataSources?.length) {
-          router.push(DATA_SOURCE_CONNECTION_ROUTE);
-        }
+      if (!data?.length) {
+        router.push(DATA_SOURCE_CONNECTION_ROUTE);
       }
-    } catch (error) {
-      console.error('Failed to fetch data sources:', error);
     }
   };
 

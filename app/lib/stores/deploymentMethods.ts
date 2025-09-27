@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { deploymentProviderInfoSchema, environmentDeploymentMethodSchema } from '~/lib/validation/deploymentMethods';
 import { type DeploymentProviderInfo } from '~/types/deployment-methods';
 
 export interface DeploymentMethodCredential {
@@ -79,53 +78,21 @@ export const useDeploymentMethodsStore = create<DeploymentMethodsStore>()(
 );
 
 export const useDeploymentMethodActions = () => {
-  const {
-    setEnvironmentDeploymentMethods,
-    setSelectedEnvironmentDeploymentMethod,
-    setProviders,
-    clearEnvironmentDeploymentMethods,
-  } = useDeploymentMethodsStore();
+  const { setSelectedEnvironmentDeploymentMethod, clearEnvironmentDeploymentMethods } = useDeploymentMethodsStore();
 
   const loadDeploymentMethods = async () => {
-    try {
-      const response = await fetch('/api/deployment-methods');
-      const data = await response.json<{
-        success: boolean;
-        environmentDeploymentMethods?: EnvironmentDeploymentMethod[];
-      }>();
-
-      if (data.success) {
-        // Validate the response data with Zod
-        const validationResult = environmentDeploymentMethodSchema.array().safeParse(data.environmentDeploymentMethods);
-
-        if (validationResult.success) {
-          setEnvironmentDeploymentMethods(validationResult.data);
-        } else {
-          console.error('Invalid deployment methods data structure:', validationResult.error);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load deployment methods:', error);
+    // API call is now handled by StoreHydrator component
+    // Use the globally available refetch function
+    if (typeof window !== 'undefined' && (window as any).refetchEnvironmentDeploymentMethods) {
+      await (window as any).refetchEnvironmentDeploymentMethods();
     }
   };
 
   const loadProviders = async () => {
-    try {
-      const response = await fetch('/api/deployment-methods/providers');
-      const data = await response.json();
-
-      if (data) {
-        // Validate the response data with Zod
-        const validationResult = deploymentProviderInfoSchema.array().safeParse(data);
-
-        if (validationResult.success) {
-          setProviders(validationResult.data);
-        } else {
-          console.error('Invalid providers data structure:', validationResult.error);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load providers:', error);
+    // API call is now handled by StoreHydrator component
+    // Use the globally available refetch function
+    if (typeof window !== 'undefined' && (window as any).refetchDeploymentProviders) {
+      await (window as any).refetchDeploymentProviders();
     }
   };
 
