@@ -1,4 +1,4 @@
-import type { WebContainer } from '@webcontainer/api';
+import type { Container } from '~/lib/containers';
 import { atom } from 'nanostores';
 import { errorHandler } from '~/lib/error-handler';
 
@@ -25,11 +25,11 @@ export class PreviewsStore {
   isGenerationErrors = atom<boolean>(false);
   isFixingIssues = atom<boolean>(false);
   #availablePreviews = new Map<number, PreviewInfo>();
-  #webcontainer: Promise<WebContainer>;
+  #container: Promise<Container>;
   #errorCollectionTimeout: NodeJS.Timeout | null = null;
 
-  constructor(webcontainerPromise: Promise<WebContainer>) {
-    this.#webcontainer = webcontainerPromise;
+  constructor(containerPromise: Promise<Container>) {
+    this.#container = containerPromise;
 
     this.#init();
   }
@@ -78,16 +78,16 @@ export class PreviewsStore {
   }
 
   async #init() {
-    const webcontainer = await this.#webcontainer;
+    const container = await this.#container;
 
     // Listen for server ready events
-    webcontainer.on('server-ready', (port, url) => {
+    container.on('server-ready', (port, url) => {
       console.log('[Preview] Server ready on port:', port, url);
       this.startLoading();
     });
 
     // Listen for port events
-    webcontainer.on('port', (port, type, url) => {
+    container.on('port', (port, type, url) => {
       this.startLoading();
 
       let previewInfo = this.#availablePreviews.get(port);

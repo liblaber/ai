@@ -1,4 +1,5 @@
 import type { PathWatcherEvent, WebContainer } from '@webcontainer/api';
+import type { Container } from '~/lib/containers';
 import { getEncoding } from 'istextorbinary';
 import { map, type MapStore } from 'nanostores';
 import { Buffer } from 'buffer';
@@ -31,9 +32,10 @@ export type FileMap = Record<string, Dirent | undefined>;
 
 export class FilesStore {
   /**
-   * Map of files that matches the state of WebContainer.
+   * Map of files that matches the state of Container.
    */
   files: MapStore<FileMap> = map({});
+  #container: Promise<Container>;
   #webcontainer: Promise<WebContainer>;
 
   /**
@@ -52,8 +54,9 @@ export class FilesStore {
     return this.#size;
   }
 
-  constructor(webcontainerPromise: Promise<WebContainer>) {
-    this.#webcontainer = webcontainerPromise;
+  constructor(containerPromise: Promise<Container>, rawWebContainerInstance: Promise<WebContainer>) {
+    this.#container = containerPromise;
+    this.#webcontainer = rawWebContainerInstance;
 
     this.#init();
   }
@@ -69,20 +72,20 @@ export class FilesStore {
   }
 
   async syncPackageJsonFile(): Promise<File> {
-    const webcontainer = await this.#webcontainer;
+    const container = await this.#container;
 
     try {
-      const webcontainerFileContent = await webcontainer.fs.readFile('package.json', 'utf-8');
+      const containerFileContent = (await container.readFile('package.json', 'utf-8')) as string;
 
       const fileMapFile = this.getFile(toAbsoluteFilePath('package.json'));
 
-      if (webcontainerFileContent === fileMapFile?.content) {
+      if (containerFileContent === fileMapFile?.content) {
         return fileMapFile;
       }
 
       logger.debug('Webcontainer package.json file content differs from the one in the map, updating it...');
 
-      const updatedFileMapFile: File = { type: 'file', content: webcontainerFileContent, isBinary: false };
+      const updatedFileMapFile: File = { type: 'file', content: containerFileContent, isBinary: false };
 
       this.files.setKey('package.json', updatedFileMapFile);
 
@@ -127,10 +130,10 @@ export class FilesStore {
   }
 
   async saveFile(filePath: string, content: string) {
-    const webcontainer = await this.#webcontainer;
+    const container = await this.#container;
 
     try {
-      const relativePath = path.relative(webcontainer.workdir, filePath);
+      const relativePath = path.relative(container.workdir, filePath);
 
       if (!relativePath) {
         throw new Error(`EINVAL: invalid file path, write '${relativePath}'`);
@@ -142,7 +145,7 @@ export class FilesStore {
         unreachable('Expected content to be defined');
       }
 
-      await webcontainer.fs.writeFile(relativePath, content);
+      await container.writeFile(relativePath, content);
 
       if (!this.#modifiedFiles.has(filePath)) {
         this.#modifiedFiles.set(filePath, oldContent);

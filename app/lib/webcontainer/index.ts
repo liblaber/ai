@@ -10,6 +10,7 @@ import { cleanStackTrace } from '~/utils/stacktrace';
 import { streamingState } from '~/lib/stores/streaming';
 import { errorHandler } from '~/lib/error-handler';
 import { logger } from '~/utils/logger';
+import { WebContainerAdapter, type Container } from '~/lib/containers';
 
 interface WebContainerContext {
   loaded: boolean;
@@ -24,6 +25,7 @@ const REFRESH_COOLDOWN_MS = 30000; // 30 seconds
 
 class WebContainerManager {
   private static _instance: WebContainer | null = null;
+  private static _containerInstance: Container | null = null;
   private static _isCreating = false;
   private static _initializationPromise: Promise<WebContainer> | null = null;
 
@@ -59,8 +61,26 @@ class WebContainerManager {
     }
   }
 
+  /**
+   * Get the Container instance (primary interface)
+   */
+  static async getContainerInstance(): Promise<Container> {
+    if (WebContainerManager._containerInstance) {
+      return WebContainerManager._containerInstance;
+    }
+
+    // Get the raw WebContainer instance first
+    const webContainer = await WebContainerManager.getInstance();
+
+    // Create and cache the adapter
+    WebContainerManager._containerInstance = WebContainerAdapter.fromWebContainer(webContainer);
+
+    return WebContainerManager._containerInstance;
+  }
+
   static reset(): void {
     WebContainerManager._instance = null;
+    WebContainerManager._containerInstance = null;
     WebContainerManager._isCreating = false;
     WebContainerManager._initializationPromise = null;
   }
@@ -183,8 +203,11 @@ class WebContainerManager {
   }
 }
 
-// Export the singleton instance promise for backward compatibility
-export const webcontainer: () => Promise<WebContainer> = WebContainerManager.getInstance;
+// Export the Container instance (primary interface)
+export const webcontainer: () => Promise<Container> = WebContainerManager.getContainerInstance;
+
+// Export raw WebContainer for internal APIs not available in Container interface
+export const rawWebContainer: () => Promise<WebContainer> = WebContainerManager.getInstance;
 
 function isInitialHydrationError(message: PreviewMessage) {
   if (message.type !== 'PREVIEW_CONSOLE_ERROR') {
@@ -255,3 +278,6 @@ function getDescriptionAndContent(message: ConsoleErrorMessage & BasePreviewMess
 
 // Export the manager class for advanced usage
 export { WebContainerManager };
+
+// Export Container type for type annotations
+export type { Container } from '~/lib/containers';

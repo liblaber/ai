@@ -92,10 +92,10 @@ export class ActionRunner {
   }
 
   static async getRunningAppPid() {
-    const webcontainer = await webcontainerPromise();
+    const container = await webcontainerPromise();
     logger.debug('Getting PID of the running app process');
 
-    const { output } = await webcontainer.spawn('ps', ['-ef']);
+    const { output } = await container.spawn('ps', ['-ef']);
     const outputResult = await output.getReader().read();
     const pid = this.#getCommandPid(workbenchStore.startCommand.get(), outputResult.value);
 
@@ -110,14 +110,14 @@ export class ActionRunner {
 
   static async updateEnvironmentVariable(envName: string, envValue: string): Promise<string> {
     try {
-      const webcontainer = await webcontainerPromise();
+      const container = await webcontainerPromise();
       const envFilePath = '.env';
 
       // Check if .env file exists
       let currentContent = '';
 
       try {
-        currentContent = await webcontainer.fs.readFile(envFilePath, 'utf-8');
+        currentContent = (await container.readFile(envFilePath, 'utf-8')) as string;
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (_error) {
         // .env file doesn't exist, create it
@@ -152,7 +152,7 @@ export class ActionRunner {
         .join('\n');
 
       // Write the updated .env file
-      await webcontainer.fs.writeFile(envFilePath, newContent);
+      await container.writeFile(envFilePath, newContent);
       logger.debug(`Updated environment variable ${envName} in .env file`);
 
       return newContent;
@@ -384,8 +384,8 @@ export class ActionRunner {
 
       logger.debug(`Killing PID (${pid})`);
 
-      const webcontainer = await webcontainerPromise();
-      await webcontainer.spawn('kill', [pid.toString()]);
+      const container = await webcontainerPromise();
+      await container.spawn('kill', [pid.toString()]);
 
       shell.executionState.set({
         ...shell.executionState.get(),
@@ -469,8 +469,8 @@ export class ActionRunner {
       unreachable('Expected file action');
     }
 
-    const webcontainer = await webcontainerPromise();
-    const relativePath = nodePath.relative(webcontainer.workdir, action.filePath);
+    const container = await webcontainerPromise();
+    const relativePath = nodePath.relative(container.workdir, action.filePath);
 
     let folder = nodePath.dirname(relativePath);
 
@@ -479,7 +479,7 @@ export class ActionRunner {
 
     if (folder !== '.') {
       try {
-        await webcontainer.fs.mkdir(folder, { recursive: true });
+        await container.mkdir(folder, { recursive: true });
         logger.debug('Created folder', folder);
       } catch (error) {
         logger.error('Failed to create folder\n\n', error);
@@ -498,7 +498,7 @@ export class ActionRunner {
         }
       }
 
-      await webcontainer.fs.writeFile(relativePath, content);
+      await container.writeFile(relativePath, content);
       logger.debug(`File written ${relativePath}`);
     } catch (error) {
       logger.error('Failed to write file\n\n', error);
@@ -520,10 +520,10 @@ export class ActionRunner {
       unreachable('Expected build action');
     }
 
-    const webcontainer = await webcontainerPromise();
+    const container = await webcontainerPromise();
 
     // Create a new terminal specifically for the build
-    const buildProcess = await webcontainer.spawn('pnpm', ['run', 'build']);
+    const buildProcess = await container.spawn('pnpm', ['run', 'build']);
 
     let output = '';
     buildProcess.output.pipeTo(
@@ -541,7 +541,7 @@ export class ActionRunner {
     }
 
     // Get the build output directory path
-    const buildDir = nodePath.join(webcontainer.workdir, 'build');
+    const buildDir = nodePath.join(container.workdir, 'build');
 
     return {
       path: buildDir,
