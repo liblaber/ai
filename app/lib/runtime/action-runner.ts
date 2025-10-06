@@ -502,9 +502,8 @@ export class ActionRunner {
 
       await webcontainer.fs.writeFile(relativePath, content);
 
-      // HERE CALL THE ENDPOINT api/docker/containers/123/files
       const response = await dockerClient.writeFile(chatId.get()!, action.filePath, content);
-      console.log('DOCKER WRITE FILE RESPONSE', response);
+      logger.info('Docker write file response', response);
 
       if (!response.success) {
         throw new Error(`Failed to write file: ${response}`);

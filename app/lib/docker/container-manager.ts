@@ -78,7 +78,7 @@ export class DockerContainerManager extends EventEmitter {
         Env: ['CI=true'], // no prompts, stricter handling of warnings, stable logs
         HostConfig: {
           PortBindings: portBindings,
-          Binds: [`${path.resolve(process.cwd(), `${APPS_DIRECTORY}/${containerId}`)}:/app`],
+          Binds: [`${hostAppPath}:/app`],
           AutoRemove: false, // We'll manage cleanup manually
         },
       };

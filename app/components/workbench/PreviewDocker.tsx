@@ -88,9 +88,16 @@ export const PreviewDocker = memo(({ containerId }: Props) => {
 
         setIsLoading(false);
         setLoadingText('Loading...');
+
+        if (response.container.status === 'running') {
+          console.log('Container running... Reloading preview');
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          console.log('Refreshing the preview...');
+          reloadPreview();
+        }
       } else {
         // Update loading text based on container status
-        setLoadingText('Spinning-up container...');
+        setLoadingText('Preparing environment...');
       }
     } catch (error) {
       console.error('Failed to poll container:', error);
