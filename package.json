@@ -147,7 +147,7 @@
     "mysql2": "^3.14.1",
     "nanostores": "^0.10.3",
     "netlify": "^13.3.4",
-    "next": "^15.0.0",
+    "next": "^15.5.7",
     "nextjs-cors": "^2.2.0",
     "ollama-ai-provider": "^0.15.2",
     "path-browserify": "^1.0.1",
