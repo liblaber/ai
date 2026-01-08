@@ -37,7 +37,7 @@
     "@radix-ui/react-toggle-group": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.8",
     "@remix-run/node": "^2.16.4",
-    "@remix-run/react": "^2.16.4",
+    "@remix-run/react": "^2.17.3",
     "@remix-run/serve": "^2.16.4",
     "@tanstack/react-query": "^5.74.4",
     "@tanstack/react-table": "^8.21.3",
