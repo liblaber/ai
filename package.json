@@ -124,7 +124,7 @@
     "cloudflared": "^0.7.1",
     "clsx": "^2.1.0",
     "date-fns": "^3.6.0",
-    "diff": "^5.2.0",
+    "diff": "^8.0.3",
     "dotenv": "^16.4.7",
     "file-saver": "^2.0.5",
     "framer-motion": "^11.12.0",
