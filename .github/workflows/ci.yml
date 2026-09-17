@@ -98,6 +98,7 @@ jobs:
   all-checks:
     name: ✅ All Checks Passed
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     needs: [quality, build-and-test]
     if: always()
 
